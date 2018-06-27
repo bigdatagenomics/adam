@@ -600,4 +600,114 @@ class VariantRDDSuite extends ADAMFunSuite {
 
     checkSave(variantContexts)
   }
+
+  sparkTest("filter RDD bound variants to filters passed") {
+    val variants = sc.loadVariants(testFile("random.vcf"))
+    assert(variants.filterToFiltersPassed().rdd.count() === 4)
+  }
+
+  sparkTest("filter dataset bound variants to filters passed") {
+    val variants = sc.loadVariants(testFile("random.vcf"))
+    val variantsDs = variants.transformDataset(ds => ds)
+    assert(variantsDs.filterToFiltersPassed().dataset.count() === 4)
+  }
+
+  sparkTest("filter RDD bound variants by quality") {
+    val variants = sc.loadVariants(testFile("random.vcf"))
+    assert(variants.filterByQuality(2000.0d).rdd.count() === 3)
+  }
+
+  sparkTest("filter dataset bound variants by quality") {
+    val variants = sc.loadVariants(testFile("random.vcf"))
+    val variantsDs = variants.transformDataset(ds => ds)
+    assert(variantsDs.filterByQuality(2000.0d).dataset.count() === 3)
+  }
+
+  sparkTest("filter RDD bound variants by read depth") {
+    val variants = sc.loadVariants(testFile("random.vcf"))
+    assert(variants.filterByReadDepth(20).rdd.count() === 0)
+  }
+
+  sparkTest("filter dataset bound variants by read depth") {
+    val variants = sc.loadVariants(testFile("random.vcf"))
+    val variantsDs = variants.transformDataset(ds => ds)
+    assert(variantsDs.filterByReadDepth(20).dataset.count() === 0)
+  }
+
+  sparkTest("filter RDD bound variants by reference read depth") {
+    val variants = sc.loadVariants(testFile("random.vcf"))
+    assert(variants.filterByReferenceReadDepth(20).rdd.count() === 0)
+  }
+
+  sparkTest("filter dataset bound variants by reference read depth") {
+    val variants = sc.loadVariants(testFile("random.vcf"))
+    val variantsDs = variants.transformDataset(ds => ds)
+    assert(variantsDs.filterByReferenceReadDepth(20).dataset.count() === 0)
+  }
+
+  sparkTest("filter RDD bound single nucleotide variants") {
+    val variants = sc.loadVariants(testFile("NA12878.chr22.tiny.freebayes.vcf"))
+    assert(variants.filterSingleNucleotideVariants().rdd.count() === 3)
+  }
+
+  sparkTest("filter dataset bound single nucleotide variants") {
+    val variants = sc.loadVariants(testFile("NA12878.chr22.tiny.freebayes.vcf"))
+    val variantsDs = variants.transformDataset(ds => ds)
+    assert(variantsDs.filterSingleNucleotideVariants().dataset.count() === 3)
+  }
+
+  sparkTest("filter RDD bound multiple nucleotide variants") {
+    val variants = sc.loadVariants(testFile("NA12878.chr22.tiny.freebayes.vcf"))
+    assert(variants.filterMultipleNucleotideVariants().rdd.count() === 18)
+  }
+
+  sparkTest("filter dataset bound multiple nucleotide variants") {
+    val variants = sc.loadVariants(testFile("NA12878.chr22.tiny.freebayes.vcf"))
+    val variantsDs = variants.transformDataset(ds => ds)
+    assert(variantsDs.filterMultipleNucleotideVariants().dataset.count() === 18)
+  }
+
+  sparkTest("filter RDD bound indel variants") {
+    val variants = sc.loadVariants(testFile("NA12878.chr22.tiny.freebayes.vcf"))
+    assert(variants.filterIndels().rdd.count() === 17)
+  }
+
+  sparkTest("filter dataset bound indel variants") {
+    val variants = sc.loadVariants(testFile("NA12878.chr22.tiny.freebayes.vcf"))
+    val variantsDs = variants.transformDataset(ds => ds)
+    assert(variantsDs.filterIndels().dataset.count() === 17)
+  }
+
+  sparkTest("filter RDD bound variants to single nucleotide variants") {
+    val variants = sc.loadVariants(testFile("NA12878.chr22.tiny.freebayes.vcf"))
+    assert(variants.filterToSingleNucleotideVariants().rdd.count() === 16)
+  }
+
+  sparkTest("filter dataset bound variants to single nucleotide variants") {
+    val variants = sc.loadVariants(testFile("NA12878.chr22.tiny.freebayes.vcf"))
+    val variantsDs = variants.transformDataset(ds => ds)
+    assert(variantsDs.filterToSingleNucleotideVariants().dataset.count() === 16)
+  }
+
+  sparkTest("filter RDD bound variants to multiple nucleotide variants") {
+    val variants = sc.loadVariants(testFile("NA12878.chr22.tiny.freebayes.vcf"))
+    assert(variants.filterToMultipleNucleotideVariants().rdd.count() === 1)
+  }
+
+  sparkTest("filter dataset bound variants to multiple nucleotide variants") {
+    val variants = sc.loadVariants(testFile("NA12878.chr22.tiny.freebayes.vcf"))
+    val variantsDs = variants.transformDataset(ds => ds)
+    assert(variantsDs.filterToMultipleNucleotideVariants().dataset.count() === 1)
+  }
+
+  sparkTest("filter RDD bound variants to indel variants") {
+    val variants = sc.loadVariants(testFile("NA12878.chr22.tiny.freebayes.vcf"))
+    assert(variants.filterToIndels().rdd.count() === 2)
+  }
+
+  sparkTest("filter dataset bound variants to indel variants") {
+    val variants = sc.loadVariants(testFile("NA12878.chr22.tiny.freebayes.vcf"))
+    val variantsDs = variants.transformDataset(ds => ds)
+    assert(variantsDs.filterToIndels().dataset.count() === 2)
+  }
 }
