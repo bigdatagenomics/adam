@@ -579,7 +579,7 @@ class FragmentRDDSuite extends ADAMFunSuite {
 
   sparkTest("Paired read names with index sequences in read names can grouped into fragments") {
     val path1 = testFile("read_names_with_index_sequences_pair1.fq")
-    val path2 = testFile("read_names_with_index_sequences_pair1.fq")
+    val path2 = testFile("read_names_with_index_sequences_pair2.fq")
     val fragments = sc.loadPairedFastq(path1, path2).toFragments()
 
     assert(fragments.rdd.count() == 4)
