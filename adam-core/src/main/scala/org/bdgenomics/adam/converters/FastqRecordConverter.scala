@@ -42,7 +42,7 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
 
   private val firstReadSuffix = """[/ +_]1$"""
   private val secondReadSuffix = """[/ +_]2$"""
-  private val illuminaMetadata = """ [12]:[YN]:[02468]+:[0-9]+$"""
+  private val illuminaMetadata = """ [12]:[YN]:[02468]+:[0-9ACTG+]+$"""
   private val firstReadRegex = firstReadSuffix.r
   private val secondReadRegex = secondReadSuffix.r
   private val suffixRegex = "%s|%s|%s".format(firstReadSuffix,
