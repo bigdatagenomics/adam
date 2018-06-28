@@ -258,4 +258,19 @@ class SequenceDictionarySuite extends ADAMFunSuite {
     assert(filtered("1").exists(_.name === "1"))
     assert(filtered("X").exists(_.name === "X"))
   }
+
+  test("test filter to reference name by function") {
+    val sd = new SequenceDictionary(Vector(SequenceRecord("MT", 1000L),
+      SequenceRecord("4", 1000L),
+      SequenceRecord("1", 1000L),
+      SequenceRecord("3", 1000L),
+      SequenceRecord("2", 1000L),
+      SequenceRecord("HLA-DRB1*16:02:01", 1000L))).sorted
+
+    val filtered = sd.filterToReferenceNames(_.length() == 1)
+    assert(filtered.records.size() == 4)
+    assert(filtered.containsReferenceName("1"))
+    assert(filtered.containsReferenceName("HLA-DRB1*16:02:01") === false)
+    assert(filtered("1").exists(_.name === "1"))
+  }
 }

@@ -227,6 +227,18 @@ class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializab
   }
 
   /**
+   * Filter this sequence dictionary to include only those sequence records
+   * with reference names that pass the specified filter function.
+   *
+   * @param fn Reference name filter function to filter by.
+   * @return SequenceDictionary filtered to include only those sequence records
+   *    with reference names that pass the specified filter function
+   */
+  def filterToReferenceNames(fn: (String) => Boolean): SequenceDictionary = {
+    new SequenceDictionary(records.filter(sr => fn.apply(sr.name)))
+  }
+
+  /**
    * Sort the records in a sequence dictionary.
    *
    * @return Returns a new sequence dictionary where the sequence records are
