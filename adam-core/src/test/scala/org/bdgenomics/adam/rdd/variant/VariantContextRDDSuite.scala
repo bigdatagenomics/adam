@@ -506,7 +506,7 @@ class VariantContextRDDSuite extends ADAMFunSuite {
 
   sparkTest("save and reload from partitioned parquet") {
     def testMetadata(vcs: VariantContextRDD) {
-      assert(vcs.sequences.containsRefName("13"))
+      assert(vcs.sequences.containsReferenceName("13"))
       assert(vcs.samples.isEmpty)
       assert(vcs.headerLines.exists(_.getKey == "GATKCommandLine"))
     }
