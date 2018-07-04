@@ -148,7 +148,7 @@ class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializab
    * @param name The name of the contig to extract.
    * @return True if we have a sequence record for this contig.
    */
-  def containsRefName(name: String): Boolean = byName.contains(name)
+  def containsReferenceName(name: String): Boolean = byName.contains(name)
 
   /**
    * Adds a sequence record to this dictionary.
@@ -200,6 +200,42 @@ class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializab
    */
   def stripIndices: SequenceDictionary = {
     new SequenceDictionary(records.map(_.stripIndex))
+  }
+
+  /**
+   * Filter this sequence dictionary to include only those sequence records
+   * for the specified reference name.
+   *
+   * @param referenceName Reference name to filter by.
+   * @return SequenceDictionary filtered to include only those sequence records
+   *    for the specified reference name
+   */
+  def filterToReferenceName(referenceName: String): SequenceDictionary = {
+    byName.get(referenceName).fold(SequenceDictionary.empty)(sr => new SequenceDictionary(Vector(sr)))
+  }
+
+  /**
+   * Filter this sequence dictionary to include only those sequence records
+   * for the specified reference names.
+   *
+   * @param referenceNames Reference names to filter by.
+   * @return SequenceDictionary filtered to include only those sequence records
+   *    for the specified reference names
+   */
+  def filterToReferenceNames(referenceNames: Iterable[String]): SequenceDictionary = {
+    new SequenceDictionary(referenceNames.map(byName.get).flatten.toVector)
+  }
+
+  /**
+   * Filter this sequence dictionary to include only those sequence records
+   * with reference names that pass the specified filter function.
+   *
+   * @param fn Reference name filter function to filter by.
+   * @return SequenceDictionary filtered to include only those sequence records
+   *    with reference names that pass the specified filter function
+   */
+  def filterToReferenceNames(fn: (String) => Boolean): SequenceDictionary = {
+    new SequenceDictionary(records.filter(sr => fn.apply(sr.name)))
   }
 
   /**

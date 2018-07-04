@@ -347,7 +347,7 @@ class FragmentRDDSuite extends ADAMFunSuite {
   sparkTest("load parquet to sql, save, re-read from avro") {
     def testMetadata(fRdd: FragmentRDD) {
       val sequenceRdd = fRdd.addSequence(SequenceRecord("aSequence", 1000L))
-      assert(sequenceRdd.sequences.containsRefName("aSequence"))
+      assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
 
       val rgRdd = fRdd.addRecordGroup(RecordGroup("test", "aRg"))
       assert(rgRdd.recordGroups("aRg").sample === "test")

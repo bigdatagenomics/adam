@@ -614,7 +614,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
   sparkTest("load parquet to sql, save, re-read from avro") {
     def testMetadata(arRdd: AlignmentRecordRDD) {
       val sequenceRdd = arRdd.addSequence(SequenceRecord("aSequence", 1000L))
-      assert(sequenceRdd.sequences.containsRefName("aSequence"))
+      assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
 
       val rgRdd = arRdd.addRecordGroup(RecordGroup("test", "aRg"))
       assert(rgRdd.recordGroups("aRg").sample === "test")
@@ -650,7 +650,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
   sparkTest("load from sam, save as partitioned parquet, and re-read from partitioned parquet") {
     def testMetadata(arRdd: AlignmentRecordRDD) {
       val sequenceRdd = arRdd.addSequence(SequenceRecord("aSequence", 1000L))
-      assert(sequenceRdd.sequences.containsRefName("aSequence"))
+      assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
 
       val rgRdd = arRdd.addRecordGroup(RecordGroup("test", "aRg"))
       assert(rgRdd.recordGroups("aRg").sample === "test")

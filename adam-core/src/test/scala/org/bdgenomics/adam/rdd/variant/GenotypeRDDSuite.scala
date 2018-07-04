@@ -333,7 +333,7 @@ class GenotypeRDDSuite extends ADAMFunSuite {
     val genotypes = sc.loadGenotypes(genotypesPath)
     val variantContexts = genotypes.toVariantContexts
 
-    assert(variantContexts.sequences.containsRefName("1"))
+    assert(variantContexts.sequences.containsReferenceName("1"))
     assert(variantContexts.samples.nonEmpty)
 
     val vcs = variantContexts.rdd.collect
@@ -348,7 +348,7 @@ class GenotypeRDDSuite extends ADAMFunSuite {
   sparkTest("load parquet to sql, save, re-read from avro") {
     def testMetadata(gRdd: GenotypeRDD) {
       val sequenceRdd = gRdd.addSequence(SequenceRecord("aSequence", 1000L))
-      assert(sequenceRdd.sequences.containsRefName("aSequence"))
+      assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
 
       val headerRdd = gRdd.addHeaderLine(new VCFHeaderLine("ABC", "123"))
       assert(headerRdd.headerLines.exists(_.getKey == "ABC"))
