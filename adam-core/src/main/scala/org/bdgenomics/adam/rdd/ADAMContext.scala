@@ -2556,6 +2556,58 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
+   * Load paired unaligned alignment records grouped by sequencing fragment
+   * from paired FASTQ files into an FragmentRDD.
+   *
+   * In paired FASTQ, the two reads from a paired sequencing protocol in separated files.
+   *
+   * Fragments represent all of the reads from a single sequenced fragment as
+   * a single object, which is a useful representation for some tasks.
+   *
+   * @param pathNameR1 The path name to load unaligned alignment records from.
+   *   Globs/directories are supported.
+   * @param pathNameR2 The path name to load unaligned alignment records from.
+   *   Globs/directories are supported.
+   * @return Returns a FragmentRDD containing the paired reads grouped by
+   *   sequencing fragment.
+   */
+  def loadPairedFastqAsFragments(pathNameR1: String,
+                                 pathNameR2: String,
+                                 recordGroup: RecordGroup): FragmentRDD = LoadPairedFastqFragments.time {
+
+    def readFastq(path: String) = {
+      val job = HadoopUtil.newJob(sc)
+      val conf = ContextUtil.getConfiguration(job)
+      conf.setStrings("io.compression.codecs",
+        classOf[BGZFCodec].getCanonicalName,
+        classOf[BGZFEnhancedGzipCodec].getCanonicalName)
+      val file = sc.newAPIHadoopFile(
+        path,
+        classOf[SingleFastqInputFormat],
+        classOf[Void],
+        classOf[Text],
+        conf
+      )
+      if (Metrics.isRecording) file.instrument()
+      else file
+    }
+    val recordsR1 = readFastq(pathNameR1)
+    val recordsR2 = readFastq(pathNameR2)
+
+    // convert records
+    val fastqRecordConverter = new FastqRecordConverter
+    // Zip will fail if R1 and R2 has an different number of reads
+    // Checking this explicitly like in loadPairedFastq is not required and not blocking anymore
+    val rdd = recordsR1.zip(recordsR2)
+      .map {
+        case (r1, r2) =>
+          val pairText = new Text(r1._2.toString + r2._2.toString)
+          fastqRecordConverter.convertFragment((null, pairText))
+      }
+    FragmentRDD(rdd, SequenceDictionary.empty, RecordGroupDictionary(Seq(recordGroup)), Seq.empty)
+  }
+
+  /**
    * Load features into a FeatureRDD and convert to a CoverageRDD.
    * Coverage is stored in the score field of Feature.
    *
