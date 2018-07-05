@@ -58,7 +58,7 @@ public final class InterleavedFastqInputFormat extends FastqInputFormat {
      */
     private static class InterleavedFastqRecordReader extends FastqRecordReader {
 
-        private final String firstReadSuffix = ".+([/ +_]1| 1:[YN]:[02468]+:[0-9]+)$";
+        private final String firstReadSuffix = ".+([/ +_]1| 1:[YN]:[02468]+:[0-9ACTG]+)$";
         private Pattern firstReadRegex;
 
         InterleavedFastqRecordReader(final Configuration conf,
