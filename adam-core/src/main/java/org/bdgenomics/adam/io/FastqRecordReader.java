@@ -42,7 +42,7 @@ import org.apache.hadoop.util.LineReader;
  * a single Text output. This is then fed into the FastqConverter, which
  * converts the single Text instance into two AlignmentRecords.
  */
-abstract class FastqRecordReader extends RecordReader<Void, Text> {
+public abstract class FastqRecordReader extends RecordReader<Void, Text> {
     /*
      * fastq format:
      * <fastq>  :=  <block>+
@@ -60,6 +60,13 @@ abstract class FastqRecordReader extends RecordReader<Void, Text> {
      * application.  We'll see if someone complains in other applications.
      */
 
+    public static final String MAX_READ_LENGTH_PROPERTY = "org.bdgenomics.adam.io.FastqRecordReader.MAX_READ_LENGTH";
+
+    public static void setMaxReadLength(Configuration conf,
+					int maxReadLength) {
+	conf.setInt(MAX_READ_LENGTH_PROPERTY, maxReadLength);
+    }
+	
     /**
      * First valid data index in the stream.
      */
@@ -104,7 +111,7 @@ abstract class FastqRecordReader extends RecordReader<Void, Text> {
     /**
      * Maximum length for a read string.
      */
-    private static final int MAX_LINE_LENGTH = 10000;
+    private int MAX_LINE_LENGTH;
 
     /**
      * True if the underlying data is splittable.
@@ -135,6 +142,8 @@ abstract class FastqRecordReader extends RecordReader<Void, Text> {
      */
     protected FastqRecordReader(final Configuration conf,
                                 final FileSplit split) throws IOException {
+	MAX_LINE_LENGTH = conf.getInt(MAX_READ_LENGTH_PROPERTY, 10000);
+	
         file = split.getPath();
         start = split.getStart();
         end = start + split.getLength();
