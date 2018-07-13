@@ -64,13 +64,11 @@ private[rdd] object MarkDuplicates extends Serializable with Logging {
   }
 
   def apply(rdd: AlignmentRecordRDD): RDD[AlignmentRecord] = {
-
     markBuckets(rdd.groupReadsByFragment(), rdd.recordGroups)
       .flatMap(_.allReads)
   }
 
   def apply(rdd: FragmentRDD): RDD[Fragment] = {
-
     markBuckets(rdd.rdd.map(f => SingleReadBucket(f)), rdd.recordGroups)
       .map(_.toFragment)
   }
@@ -96,14 +94,20 @@ private[rdd] object MarkDuplicates extends Serializable with Logging {
                           recordGroups: RecordGroupDictionary): RDD[SingleReadBucket] = {
     checkRecordGroups(recordGroups)
 
+    // Gets the library of a SingleReadBucket
+    def getLibrary(singleReadBucket: SingleReadBucket): Option[String] = {
+      val recordGroupName = singleReadBucket.allReads.head.getRecordGroupName
+      recordGroups.recordGroupMap.get(recordGroupName).flatMap(v => {
+        val (recordGroup, index) = v
+        recordGroup.library
+      })
+    }
+
     // Group by library and left position
     def leftPositionAndLibrary(p: (ReferencePositionPair, SingleReadBucket),
-                               rgd: RecordGroupDictionary): (Option[ReferencePosition], String) = {
-      if (p._2.allReads.head.getRecordGroupName != null) {
-        (p._1.read1refPos, rgd(p._2.allReads.head.getRecordGroupName).library.getOrElse(null))
-      } else {
-        (p._1.read1refPos, null)
-      }
+                               rgd: RecordGroupDictionary): (Option[ReferencePosition], Option[String]) = {
+      val (refPosPair, singleReadBucket) = p
+      (refPosPair.read1refPos, getLibrary(singleReadBucket))
     }
 
     // Group by right position
