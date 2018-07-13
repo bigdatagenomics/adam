@@ -53,7 +53,7 @@ object RecordGroupDictionary {
  *
  * @param recordGroups A seq of record groups to populate the dictionary.
  *
- * @throws IllegalArgumentError Throws an assertion error if there are multiple record
+ * @throws IllegalArgumentException Throws an assertion error if there are multiple record
  *   groups with the same name.
  */
 case class RecordGroupDictionary(recordGroups: Seq[RecordGroup]) {
