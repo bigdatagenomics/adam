@@ -382,6 +382,14 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     sam.rdd.collect().foreach(r => assert(r.getReadMapped))
   }
 
+  sparkTest("load FASTQ with no bases") {
+    val readsPath = testFile("fastq_nobases.fq")
+    val reads = sc.loadAlignments(readsPath)
+
+    assert(reads.dataset.count === 2)
+    assert(reads.rdd.map(_.getSequence.length).reduce(_ + _) === 0)
+  }
+
   sparkTest("convert malformed FASTQ (no quality scores) => SAM => well-formed FASTQ => SAM") {
     val noqualPath = Thread.currentThread().getContextClassLoader.getResource("fastq_noqual.fq").getFile
     val tempBase = Files.createTempDirectory("noqual").toAbsolutePath.toString
@@ -606,7 +614,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
   sparkTest("load parquet to sql, save, re-read from avro") {
     def testMetadata(arRdd: AlignmentRecordRDD) {
       val sequenceRdd = arRdd.addSequence(SequenceRecord("aSequence", 1000L))
-      assert(sequenceRdd.sequences.containsRefName("aSequence"))
+      assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
 
       val rgRdd = arRdd.addRecordGroup(RecordGroup("test", "aRg"))
       assert(rgRdd.recordGroups("aRg").sample === "test")
@@ -642,7 +650,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
   sparkTest("load from sam, save as partitioned parquet, and re-read from partitioned parquet") {
     def testMetadata(arRdd: AlignmentRecordRDD) {
       val sequenceRdd = arRdd.addSequence(SequenceRecord("aSequence", 1000L))
-      assert(sequenceRdd.sequences.containsRefName("aSequence"))
+      assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
 
       val rgRdd = arRdd.addRecordGroup(RecordGroup("test", "aRg"))
       assert(rgRdd.recordGroups("aRg").sample === "test")
@@ -1656,5 +1664,115 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
       optSamplingFraction = Some(0.1))
 
     assert(recalReadsNoSampling.rdd.count === recalReadsWithSampling.rdd.count)
+  }
+
+  sparkTest("filter RDD bound alignments by MAPQ") {
+    val alignments = sc.loadAlignments(testFile("small.sam"))
+    assert(alignments.filterByMapq(40).rdd.count() === 17)
+  }
+
+  sparkTest("filter dataset bound alignments by MAPQ") {
+    val alignments = sc.loadAlignments(testFile("small.sam"))
+    val alignmentsDs = alignments.transformDataset(ds => ds)
+    assert(alignmentsDs.filterByMapq(40).dataset.count() === 17)
+  }
+
+  sparkTest("filter RDD bound unaligned alignments") {
+    val alignments = sc.loadAlignments(testFile("unmapped.sam"))
+    assert(alignments.filterUnalignedReads().rdd.count() === 102)
+  }
+
+  sparkTest("filter dataset bound unaligned alignments") {
+    val alignments = sc.loadAlignments(testFile("unmapped.sam"))
+    val alignmentsDs = alignments.transformDataset(ds => ds)
+    assert(alignmentsDs.filterUnalignedReads().dataset.count() === 102)
+  }
+
+  sparkTest("filter RDD bound unpaired alignments") {
+    val pairedAlignments = sc.loadAlignments(testFile("NA12878.sam"))
+    assert(pairedAlignments.filterUnpairedReads().rdd.count() === 565)
+
+    val unpairedAlignments = sc.loadAlignments(testFile("small.sam"))
+    assert(unpairedAlignments.filterUnpairedReads().rdd.count() === 0)
+  }
+
+  sparkTest("filter dataset bound unpaired alignments") {
+    val pairedAlignments = sc.loadAlignments(testFile("NA12878.sam"))
+    val pairedAlignmentsDs = pairedAlignments.transformDataset(ds => ds)
+    assert(pairedAlignmentsDs.filterUnpairedReads().dataset.count() === 565)
+
+    val unpairedAlignments = sc.loadAlignments(testFile("small.sam"))
+    val unpairedAlignmentsDs = unpairedAlignments.transformDataset(ds => ds)
+    assert(unpairedAlignmentsDs.filterUnpairedReads().dataset.count() === 0)
+  }
+
+  sparkTest("filter RDD bound duplicate alignments") {
+    val alignments = sc.loadAlignments(testFile("small.sam"))
+    assert(alignments.filterDuplicateReads().rdd.count() === 20)
+  }
+
+  sparkTest("filter dataset bound duplicate alignments") {
+    val alignments = sc.loadAlignments(testFile("small.sam"))
+    val alignmentsDs = alignments.transformDataset(ds => ds)
+    assert(alignmentsDs.filterDuplicateReads().dataset.count() === 20)
+  }
+
+  sparkTest("filter RDD bound alignments to primary alignments") {
+    val alignments = sc.loadAlignments(testFile("small.sam"))
+    assert(alignments.filterToPrimaryAlignments().rdd.count() === 20)
+  }
+
+  sparkTest("filter dataset bound alignments to primary alignments") {
+    val alignments = sc.loadAlignments(testFile("small.sam"))
+    val alignmentsDs = alignments.transformDataset(ds => ds)
+    assert(alignmentsDs.filterToPrimaryAlignments().dataset.count() === 20)
+  }
+
+  sparkTest("filter RDD bound alignments to record group") {
+    val alignments = sc.loadAlignments(testFile("NA12878.sam"))
+    assert(alignments.filterToRecordGroup("20FUK.1").rdd.count() === 31)
+  }
+
+  sparkTest("filter dataset bound alignments to record group") {
+    val alignments = sc.loadAlignments(testFile("NA12878.sam"))
+    val alignmentsDs = alignments.transformDataset(ds => ds)
+    assert(alignmentsDs.filterToRecordGroup("20FUK.1").dataset.count() === 31)
+  }
+
+  sparkTest("filter RDD bound alignments to record groups") {
+    val alignments = sc.loadAlignments(testFile("NA12878.sam"))
+    assert(alignments.filterToRecordGroups(Seq("20FUK.1", "20FUK.2")).rdd.count() === 62)
+  }
+
+  sparkTest("filter dataset bound alignments to record groups") {
+    val alignments = sc.loadAlignments(testFile("NA12878.sam"))
+    val alignmentsDs = alignments.transformDataset(ds => ds)
+    assert(alignmentsDs.filterToRecordGroups(Seq("20FUK.1", "20FUK.2")).dataset.count() === 62)
+  }
+
+  sparkTest("filter RDD bound alignments to sample") {
+    val alignments = sc.loadAlignments(testFile("NA12878.sam"))
+    assert(alignments.filterToSample("NA12878").rdd.count() === 565)
+    assert(alignments.filterToSample("not a sample").rdd.count() === 0)
+  }
+
+  sparkTest("filter dataset bound alignments to sample") {
+    val alignments = sc.loadAlignments(testFile("NA12878.sam"))
+    val alignmentsDs = alignments.transformDataset(ds => ds)
+    assert(alignmentsDs.filterToSample("NA12878").dataset.count() === 565)
+    assert(alignmentsDs.filterToSample("not a sample").dataset.count() === 0)
+  }
+
+  sparkTest("filter RDD bound alignments to samples") {
+    val alignments = sc.loadAlignments(testFile("NA12878.sam"))
+    assert(alignments.filterToSamples(Seq("NA12878", "not a sample")).rdd.count() === 565)
+    assert(alignments.filterToSamples(Seq("not a sample")).rdd.count() === 0)
+  }
+
+  sparkTest("filter dataset bound alignments to samples") {
+    val alignments = sc.loadAlignments(testFile("NA12878.sam"))
+    val alignmentsDs = alignments.transformDataset(ds => ds)
+    assert(alignmentsDs.filterToSamples(Seq("NA12878", "not a sample")).dataset.count() === 565)
+    assert(alignmentsDs.filterToSamples(Seq("not a sample")).dataset.count() === 0)
   }
 }

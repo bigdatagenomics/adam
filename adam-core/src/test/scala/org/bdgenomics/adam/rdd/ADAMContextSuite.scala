@@ -639,6 +639,13 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(reads.rdd.count === 6)
   }
 
+  sparkTest("load paired fastq as fragments") {
+    val pathR1 = testFile("proper_pairs_1.fq")
+    val pathR2 = testFile("proper_pairs_2.fq")
+    val fragments = sc.loadPairedFastqAsFragments(pathR1, pathR2)
+    assert(fragments.rdd.count === 3)
+  }
+
   sparkTest("load HTSJDK sequence dictionary") {
     val path = testFile("hs37d5.dict")
     val sequences = sc.loadSequenceDictionary(path)

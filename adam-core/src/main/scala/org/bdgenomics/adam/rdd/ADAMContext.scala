@@ -1909,7 +1909,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Load a path name with range binned partitioned Parquet + Avro format into an AlignmentRecordRDD.
+   * Load a path name with range binned partitioned Parquet format into an AlignmentRecordRDD.
    *
    * @note The sequence dictionary is read from an Avro file stored at
    *   pathName/_seqdict.avro and the record group dictionary is read from an
@@ -1920,8 +1920,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   Globs/directories are supported.
    * @param regions Optional list of genomic regions to load.
    * @param optLookbackPartitions Number of partitions to lookback to find beginning of an overlapping
-   *         region when using the filterByOverlappingRegions function on the returned dataset.
-   *         Defaults to one partition.
+   *   region when using the filterByOverlappingRegions function on the returned dataset.
+   *   Defaults to one partition.
    * @return Returns an AlignmentRecordRDD.
    */
   def loadPartitionedParquetAlignments(pathName: String,
@@ -1934,7 +1934,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       reads.sequences,
       reads.recordGroups,
       reads.processingSteps,
-      true,
+      isPartitioned = true,
       Some(partitionBinSize),
       optLookbackPartitions
     )
@@ -2326,14 +2326,14 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Load a path name with range binned partitioned Parquet + Avro format into GenotypeRDD
+   * Load a path name with range binned partitioned Parquet format into a GenotypeRDD.
    *
    * @param pathName The path name to load alignment records from.
    *   Globs/directories are supported.
    * @param regions Optional list of genomic regions to load.
    * @param optLookbackPartitions Number of partitions to lookback to find beginning of an overlapping
-   *         region when using the filterByOverlappingRegions function on the returned dataset.
-   *         Defaults to one partition.
+   *   region when using the filterByOverlappingRegions function on the returned dataset.
+   *   Defaults to one partition.
    * @return Returns a GenotypeRDD.
    */
   def loadPartitionedParquetGenotypes(pathName: String,
@@ -2346,7 +2346,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       genotypes.sequences,
       genotypes.samples,
       genotypes.headerLines,
-      true,
+      isPartitioned = true,
       Some(partitionedBinSize),
       optLookbackPartitions
     )
@@ -2355,9 +2355,9 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Load a path name in Parquet + Avro format into a VariantContextRDD.
+   * Load a path name in VCF or Parquet + Avro format into a VariantContextRDD.
    *
-   * @param pathName The path name to load genotypes from.
+   * @param pathName The path name to load variant context records from.
    *   Globs/directories are supported.
    * @return Returns a VariantContextRDD.
    */
@@ -2374,7 +2374,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   /**
    * Load a path name in Parquet + Avro format into a VariantContextRDD.
    *
-   * @param pathName The path name to load genotypes from.
+   * @param pathName The path name to load variant context records from.
    *   Globs/directories are supported.
    * @return Returns a VariantContextRDD.
    */
@@ -2395,6 +2395,35 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val ds = sqlContext.read.parquet(pathName).as[VariantContextProduct]
 
     new DatasetBoundVariantContextRDD(ds, sd, samples, headers)
+  }
+
+  /**
+   * Load a path name with range binned partitioned Parquet format into a VariantContextRDD.
+   *
+   * @param pathName The path name to load variant context records from.
+   *   Globs/directories are supported.
+   * @param regions Optional list of genomic regions to load.
+   * @param optLookbackPartitions Number of partitions to lookback to find beginning of an overlapping
+   *   region when using the filterByOverlappingRegions function on the returned dataset.
+   *   Defaults to one partition.
+   * @return Returns a VariantContextRDD.
+   */
+  def loadPartitionedParquetVariantContexts(pathName: String,
+                                            regions: Iterable[ReferenceRegion] = Iterable.empty,
+                                            optLookbackPartitions: Option[Int] = Some(1)): VariantContextRDD = {
+
+    val partitionedBinSize = getPartitionBinSize(pathName)
+    val variantContexts = loadParquetVariantContexts(pathName)
+    val variantContextsDatasetBound = DatasetBoundVariantContextRDD(variantContexts.dataset,
+      variantContexts.sequences,
+      variantContexts.samples,
+      variantContexts.headerLines,
+      isPartitioned = true,
+      Some(partitionedBinSize),
+      optLookbackPartitions
+    )
+
+    if (regions.nonEmpty) variantContextsDatasetBound.filterByOverlappingRegions(regions) else variantContextsDatasetBound
   }
 
   /**
@@ -2431,15 +2460,15 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Load a path name with range binned partitioned Parquet + Avro format into an VariantRDD.
+   * Load a path name with range binned partitioned Parquet format into a VariantRDD.
    *
    * @param pathName The path name to load alignment records from.
    *   Globs/directories are supported.
    * @param regions Optional list of genomic regions to load.
    * @param optLookbackPartitions Number of partitions to lookback to find beginning of an overlapping
-   *         region when using the filterByOverlappingRegions function on the returned dataset.
-   *         Defaults to one partition.
-   * @return Returns a VariantRDD
+   *   region when using the filterByOverlappingRegions function on the returned dataset.
+   *   Defaults to one partition.
+   * @return Returns a VariantRDD.
    */
   def loadPartitionedParquetVariants(pathName: String,
                                      regions: Iterable[ReferenceRegion] = Iterable.empty,
@@ -2447,15 +2476,15 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
     val partitionedBinSize = getPartitionBinSize(pathName)
     val variants = loadParquetVariants(pathName)
-    val variantsDatsetBound = DatasetBoundVariantRDD(variants.dataset,
+    val variantsDatasetBound = DatasetBoundVariantRDD(variants.dataset,
       variants.sequences,
       variants.headerLines,
-      true,
+      isPartitioned = true,
       Some(partitionedBinSize),
       optLookbackPartitions
     )
 
-    if (regions.nonEmpty) variantsDatsetBound.filterByOverlappingRegions(regions) else variantsDatsetBound
+    if (regions.nonEmpty) variantsDatasetBound.filterByOverlappingRegions(regions) else variantsDatasetBound
   }
 
   /**
@@ -2524,6 +2553,33 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     // convert records
     val fastqRecordConverter = new FastqRecordConverter
     FragmentRDD.fromRdd(records.map(fastqRecordConverter.convertFragment))
+  }
+
+  /**
+   * Load paired unaligned alignment records grouped by sequencing fragment
+   * from paired FASTQ files into an FragmentRDD.
+   *
+   * Fragments represent all of the reads from a single sequenced fragment as
+   * a single object, which is a useful representation for some tasks.
+   *
+   * @param pathName1 The path name to load the first set of unaligned alignment records from.
+   *   Globs/directories are supported.
+   * @param pathName2 The path name to load the second set of unaligned alignment records from.
+   *   Globs/directories are supported.
+   * @param optRecordGroup The optional record group name to associate to the unaligned alignment
+   *   records. Defaults to None.
+   * @param stringency The validation stringency to use when validating paired FASTQ format.
+   *   Defaults to ValidationStringency.STRICT.
+   * @return Returns a FragmentRDD containing the paired reads grouped by
+   *   sequencing fragment.
+   */
+  def loadPairedFastqAsFragments(
+    pathName1: String,
+    pathName2: String,
+    optRecordGroup: Option[String] = None,
+    stringency: ValidationStringency = ValidationStringency.STRICT): FragmentRDD = LoadPairedFastqFragments.time {
+
+    loadPairedFastq(pathName1, pathName2, optRecordGroup, stringency).toFragments()
   }
 
   /**
@@ -2775,14 +2831,14 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Load a path name with range binned partitioned Parquet + Avro format into a FeatureRDD.
+   * Load a path name with range binned partitioned Parquet format into a FeatureRDD.
    *
    * @param pathName The path name to load alignment records from.
    *   Globs/directories are supported.
    * @param regions Optional list of genomic regions to load.
    * @param optLookbackPartitions Number of partitions to lookback to find beginning of an overlapping
-   *         region when using the filterByOverlappingRegions function on the returned dataset.
-   *         Defaults to one partition.
+   *   region when using the filterByOverlappingRegions function on the returned dataset.
+   *   Defaults to one partition.
    * @return Returns a FeatureRDD.
    */
   def loadPartitionedParquetFeatures(pathName: String,
@@ -2793,7 +2849,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val features = loadParquetFeatures(pathName)
     val featureDatasetBound = DatasetBoundFeatureRDD(features.dataset,
       features.sequences,
-      true,
+      isPartitioned = true,
       Some(partitionedBinSize),
       optLookbackPartitions
     )
@@ -2834,15 +2890,15 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Load a path name with range binned partitioned Parquet + Avro format into a NucleotideContigFragmentRDD.
+   * Load a path name with range binned partitioned Parquet format into a NucleotideContigFragmentRDD.
    *
    * @param pathName The path name to load alignment records from.
    *   Globs/directories are supported.
    * @param regions Optional list of genomic regions to load.
    * @param optLookbackPartitions Number of partitions to lookback to find beginning of an overlapping
-   *         region when using the filterByOverlappingRegions function on the returned dataset.
-   *         Defaults to one partition.
-   * @return Returns a NucleotideContigFragmentRDD
+   *   region when using the filterByOverlappingRegions function on the returned dataset.
+   *   Defaults to one partition.
+   * @return Returns a NucleotideContigFragmentRDD.
    */
   def loadPartitionedParquetContigFragments(pathName: String,
                                             regions: Iterable[ReferenceRegion] = Iterable.empty,
@@ -2852,7 +2908,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val contigs = loadParquetContigFragments(pathName)
     val contigsDatasetBound = DatasetBoundNucleotideContigFragmentRDD(contigs.dataset,
       contigs.sequences,
-      true,
+      isPartitioned = true,
       Some(partitionedBinSize),
       optLookbackPartitions
     )
@@ -3320,5 +3376,4 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       case e: FileNotFoundException => false
     }
   }
-
 }

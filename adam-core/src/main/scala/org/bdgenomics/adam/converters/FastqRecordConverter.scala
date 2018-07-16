@@ -42,7 +42,7 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
 
   private val firstReadSuffix = """[/ +_]1$"""
   private val secondReadSuffix = """[/ +_]2$"""
-  private val illuminaMetadata = """ [12]:[YN]:[02468]+:[0-9]+$"""
+  private val illuminaMetadata = """ [12]:[YN]:[02468]+:[0-9ACTG+]+$"""
   private val firstReadRegex = firstReadSuffix.r
   private val secondReadRegex = secondReadSuffix.r
   private val suffixRegex = "%s|%s|%s".format(firstReadSuffix,
@@ -78,7 +78,7 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
     require(!(setFirstOfPair && setSecondOfPair))
 
     val lines = input.split('\n')
-    require(lines.length == 4,
+    require(lines.length == 4 || (lines.length == 3 && input.endsWith("\n\n")),
       s"Input must have 4 lines (${lines.length.toString} found):\n${input}")
 
     val readName = lines(0).drop(1)
@@ -100,7 +100,11 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
     val readNameNoSuffix = suffixRegex.replaceAllIn(readName, "")
 
     val readSequence = lines(1)
-    val readQualitiesRaw = lines(3)
+    val readQualitiesRaw = if (lines.length == 4) {
+      lines(3)
+    } else {
+      ""
+    }
 
     val readQualities =
       if (stringency == ValidationStringency.STRICT) readQualitiesRaw

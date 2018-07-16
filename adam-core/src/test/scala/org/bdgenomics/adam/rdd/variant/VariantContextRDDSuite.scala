@@ -31,6 +31,7 @@ import org.apache.spark.util.CollectionAccumulator
 import org.bdgenomics.adam.converters.DefaultHeaderLines
 import org.bdgenomics.adam.models.{
   Coverage,
+  ReferenceRegion,
   SequenceDictionary,
   SequenceRecord,
   VariantContext
@@ -324,7 +325,7 @@ class VariantContextRDDSuite extends ADAMFunSuite {
   sparkTest("test metadata") {
     def testMetadata(vRdd: VariantContextRDD) {
       val sequenceRdd = vRdd.addSequence(SequenceRecord("aSequence", 1000L))
-      assert(sequenceRdd.sequences.containsRefName("aSequence"))
+      assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
 
       val headerRdd = vRdd.addHeaderLine(new VCFHeaderLine("ABC", "123"))
       assert(headerRdd.headerLines.exists(_.getKey == "ABC"))
@@ -501,5 +502,28 @@ class VariantContextRDDSuite extends ADAMFunSuite {
       })
 
     checkSave(variants)
+  }
+
+  sparkTest("save and reload from partitioned parquet") {
+    def testMetadata(vcs: VariantContextRDD) {
+      assert(vcs.sequences.containsReferenceName("13"))
+      assert(vcs.samples.isEmpty)
+      assert(vcs.headerLines.exists(_.getKey == "GATKCommandLine"))
+    }
+
+    val variantContexts = sc.loadVcf(testFile("sorted-variants.vcf"))
+    val outputPath = tmpLocation()
+    variantContexts.saveAsPartitionedParquet(outputPath, partitionSize = 1000000)
+    val unfilteredVariantContexts = sc.loadPartitionedParquetVariantContexts(outputPath)
+    testMetadata(unfilteredVariantContexts)
+    assert(unfilteredVariantContexts.rdd.count === 6)
+    assert(unfilteredVariantContexts.dataset.count === 6)
+
+    val regionsVariantContexts = sc.loadPartitionedParquetVariantContexts(outputPath,
+      List(ReferenceRegion("2", 19000L, 21000L),
+        ReferenceRegion("13", 752700L, 752750L)))
+    testMetadata(regionsVariantContexts)
+    assert(regionsVariantContexts.rdd.count === 2)
+    assert(regionsVariantContexts.dataset.count === 2)
   }
 }

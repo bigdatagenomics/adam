@@ -333,7 +333,7 @@ class GenotypeRDDSuite extends ADAMFunSuite {
     val genotypes = sc.loadGenotypes(genotypesPath)
     val variantContexts = genotypes.toVariantContexts
 
-    assert(variantContexts.sequences.containsRefName("1"))
+    assert(variantContexts.sequences.containsReferenceName("1"))
     assert(variantContexts.samples.nonEmpty)
 
     val vcs = variantContexts.rdd.collect
@@ -348,7 +348,7 @@ class GenotypeRDDSuite extends ADAMFunSuite {
   sparkTest("load parquet to sql, save, re-read from avro") {
     def testMetadata(gRdd: GenotypeRDD) {
       val sequenceRdd = gRdd.addSequence(SequenceRecord("aSequence", 1000L))
-      assert(sequenceRdd.sequences.containsRefName("aSequence"))
+      assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
 
       val headerRdd = gRdd.addHeaderLine(new VCFHeaderLine("ABC", "123"))
       assert(headerRdd.headerLines.exists(_.getKey == "ABC"))
@@ -595,5 +595,93 @@ class GenotypeRDDSuite extends ADAMFunSuite {
 
     assert(variantsFromGenotypes.size === directlyLoadedVariants.size)
     variantsFromGenotypes.foreach(v => assert(directlyLoadedVariants(v)))
+  }
+
+  sparkTest("filter RDD bound genotypes to genotype filters passed") {
+    val genotypes = sc.loadGenotypes(testFile("small.vcf"))
+    assert(genotypes.filterToFiltersPassed().rdd.count() === 10)
+  }
+
+  sparkTest("filter dataset bound genotypes to genotype filters passed") {
+    val genotypes = sc.loadGenotypes(testFile("small.vcf"))
+    val genotypesDs = genotypes.transformDataset(ds => ds)
+    assert(genotypesDs.filterToFiltersPassed().dataset.count() === 10)
+  }
+
+  sparkTest("filter RDD bound genotypes by genotype quality") {
+    val genotypes = sc.loadGenotypes(testFile("small.vcf"))
+    assert(genotypes.filterByQuality(60).rdd.count() === 15)
+  }
+
+  sparkTest("filter dataset bound genotypes by genotype quality") {
+    val genotypes = sc.loadGenotypes(testFile("small.vcf"))
+    val genotypesDs = genotypes.transformDataset(ds => ds)
+    assert(genotypesDs.filterByQuality(60).dataset.count() === 15)
+  }
+
+  sparkTest("filter RDD bound genotypes by read depth") {
+    val genotypes = sc.loadGenotypes(testFile("small.vcf"))
+    assert(genotypes.filterByReadDepth(60).rdd.count() === 1)
+  }
+
+  sparkTest("filter dataset bound genotypes by read depth") {
+    val genotypes = sc.loadGenotypes(testFile("small.vcf"))
+    val genotypesDs = genotypes.transformDataset(ds => ds)
+    assert(genotypesDs.filterByReadDepth(60).dataset.count() === 1)
+  }
+
+  sparkTest("filter RDD bound genotypes by alternate read depth") {
+    val genotypes = sc.loadGenotypes(testFile("small.vcf"))
+    assert(genotypes.filterByAlternateReadDepth(60).rdd.count() === 1)
+  }
+
+  sparkTest("filter dataset bound genotypes by alternate read depth") {
+    val genotypes = sc.loadGenotypes(testFile("small.vcf"))
+    val genotypesDs = genotypes.transformDataset(ds => ds)
+    assert(genotypesDs.filterByAlternateReadDepth(60).dataset.count() === 1)
+  }
+
+  sparkTest("filter RDD bound genotypes by reference read depth") {
+    val genotypes = sc.loadGenotypes(testFile("small.vcf"))
+    assert(genotypes.filterByReferenceReadDepth(30).rdd.count() === 2)
+  }
+
+  sparkTest("filter dataset bound genotypes by reference read depth") {
+    val genotypes = sc.loadGenotypes(testFile("small.vcf"))
+    val genotypesDs = genotypes.transformDataset(ds => ds)
+    assert(genotypesDs.filterByReferenceReadDepth(30).dataset.count() === 2)
+  }
+
+  sparkTest("filter RDD bound genotypes by sample") {
+    val genotypes = sc.loadGenotypes(testFile("small.vcf"))
+    assert(genotypes.filterToSample("NA12892").rdd.count() === 6)
+  }
+
+  sparkTest("filter dataset bound genotypes by sample") {
+    val genotypes = sc.loadGenotypes(testFile("small.vcf"))
+    val genotypesDs = genotypes.transformDataset(ds => ds)
+    assert(genotypesDs.filterToSample("NA12892").dataset.count() === 6)
+  }
+
+  sparkTest("filter RDD bound genotypes by samples") {
+    val genotypes = sc.loadGenotypes(testFile("small.vcf"))
+    assert(genotypes.filterToSamples(Seq("NA12892", "NA12891")).rdd.count() === 12)
+  }
+
+  sparkTest("filter dataset bound genotypes by samples") {
+    val genotypes = sc.loadGenotypes(testFile("small.vcf"))
+    val genotypesDs = genotypes.transformDataset(ds => ds)
+    assert(genotypesDs.filterToSamples(Seq("NA12892", "NA12891")).dataset.count() === 12)
+  }
+
+  sparkTest("filter RDD bound no call genotypes") {
+    val genotypes = sc.loadGenotypes(testFile("gvcf_multiallelic/multiallelic.vcf"))
+    assert(genotypes.filterNoCalls().rdd.count() === 3)
+  }
+
+  sparkTest("filter dataset no call genotypes") {
+    val genotypes = sc.loadGenotypes(testFile("gvcf_multiallelic/multiallelic.vcf"))
+    val genotypesDs = genotypes.transformDataset(ds => ds)
+    assert(genotypesDs.filterNoCalls().dataset.count() === 3)
   }
 }

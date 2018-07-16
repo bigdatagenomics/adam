@@ -45,7 +45,11 @@ import org.bdgenomics.adam.sql.{
   Variant => VariantProduct
 }
 import org.bdgenomics.utils.interval.array.{ IntervalArray, IntervalArraySerializer }
-import org.bdgenomics.formats.avro.{ Genotype, Sample }
+import org.bdgenomics.formats.avro.{
+  Genotype,
+  GenotypeAllele,
+  Sample
+}
 import scala.collection.JavaConversions._
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
@@ -164,7 +168,7 @@ case class DatasetBoundGenotypeRDD private[rdd] (
                              pageSize: Int = 1 * 1024 * 1024,
                              compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
                              disableDictionaryEncoding: Boolean = false) {
-    log.warn("Saving directly as Parquet from SQL. Options other than compression codec are ignored.")
+    log.info("Saving directly as Parquet from SQL. Options other than compression codec are ignored.")
     dataset.toDF()
       .write
       .format("parquet")
@@ -189,6 +193,38 @@ case class DatasetBoundGenotypeRDD private[rdd] (
 
   def replaceSamples(newSamples: Iterable[Sample]): GenotypeRDD = {
     copy(samples = newSamples.toSeq)
+  }
+
+  override def filterToFiltersPassed(): GenotypeRDD = {
+    transformDataset(dataset => dataset.filter(dataset.col("variantCallingAnnotations.filtersPassed")))
+  }
+
+  override def filterByQuality(minimumQuality: Double): GenotypeRDD = {
+    transformDataset(dataset => dataset.filter(dataset.col("genotypeQuality") >= minimumQuality))
+  }
+
+  override def filterByReadDepth(minimumReadDepth: Int): GenotypeRDD = {
+    transformDataset(dataset => dataset.filter(dataset.col("readDepth") >= minimumReadDepth))
+  }
+
+  override def filterByAlternateReadDepth(minimumAlternateReadDepth: Int): GenotypeRDD = {
+    transformDataset(dataset => dataset.filter(dataset.col("alternateReadDepth") >= minimumAlternateReadDepth))
+  }
+
+  override def filterByReferenceReadDepth(minimumReferenceReadDepth: Int): GenotypeRDD = {
+    transformDataset(dataset => dataset.filter(dataset.col("referenceReadDepth") >= minimumReferenceReadDepth))
+  }
+
+  override def filterToSample(sampleId: String) = {
+    transformDataset(dataset => dataset.filter(dataset.col("sampleId") === sampleId))
+  }
+
+  override def filterToSamples(sampleIds: Seq[String]) = {
+    transformDataset(dataset => dataset.filter(dataset.col("sampleId") isin (sampleIds: _*)))
+  }
+
+  override def filterNoCalls() = {
+    transformDataset(dataset => dataset.filter("!array_contains(alleles, 'NO_CALL')"))
   }
 }
 
@@ -336,6 +372,84 @@ sealed abstract class GenotypeRDD extends MultisampleAvroGenomicDataset[Genotype
     }
 
     VariantRDD(maybeDedupedVariants, sequences, headerLines)
+  }
+
+  /**
+   * Filter this GenotypeRDD to genotype filters passed (VCF FORMAT field "FT" value PASS).
+   *
+   * @return GenotypeRDD filtered to genotype filters passed.
+   */
+  def filterToFiltersPassed(): GenotypeRDD = {
+    transform(rdd => rdd.filter(g => Option(g.getVariantCallingAnnotations).exists(_.getFiltersPassed)))
+  }
+
+  /**
+   * Filter this GenotypeRDD by quality (VCF FORMAT field "GQ").
+   *
+   * @param minimumQuality Minimum quality to filter by, inclusive.
+   * @return GenotypeRDD filtered by quality.
+   */
+  def filterByQuality(minimumQuality: Double): GenotypeRDD = {
+    transform(rdd => rdd.filter(g => Option(g.getGenotypeQuality).exists(_ >= minimumQuality)))
+  }
+
+  /**
+   * Filter this GenotypeRDD by read depth (VCF FORMAT field "DP").
+   *
+   * @param minimumReadDepth Minimum read depth to filter by, inclusive.
+   * @return GenotypeRDD filtered by read depth.
+   */
+  def filterByReadDepth(minimumReadDepth: Int): GenotypeRDD = {
+    transform(rdd => rdd.filter(g => Option(g.getReadDepth).exists(_ >= minimumReadDepth)))
+  }
+
+  /**
+   * Filter this GenotypeRDD by alternate read depth (VCF FORMAT field "AD").
+   *
+   * @param minimumAlternateReadDepth Minimum alternate read depth to filter by, inclusive.
+   * @return GenotypeRDD filtered by alternate read depth.
+   */
+  def filterByAlternateReadDepth(minimumAlternateReadDepth: Int): GenotypeRDD = {
+    transform(rdd => rdd.filter(g => Option(g.getAlternateReadDepth).exists(_ >= minimumAlternateReadDepth)))
+  }
+
+  /**
+   * Filter this GenotypeRDD by reference read depth (VCF FORMAT field "AD").
+   *
+   * @param minimumReferenceReadDepth Minimum reference read depth to filter by, inclusive.
+   * @return GenotypeRDD filtered by reference read depth.
+   */
+  def filterByReferenceReadDepth(minimumReferenceReadDepth: Int): GenotypeRDD = {
+    transform(rdd => rdd.filter(g => Option(g.getReferenceReadDepth).exists(_ >= minimumReferenceReadDepth)))
+  }
+
+  /**
+   * Filter this GenotypeRDD by sample to those that match the specified sample.
+   *
+   * @param sampleId Sample to filter by.
+   * return GenotypeRDD filtered by sample.
+   */
+  def filterToSample(sampleId: String): GenotypeRDD = {
+    transform(rdd => rdd.filter(g => Option(g.getSampleId).exists(_ == sampleId)))
+  }
+
+  /**
+   * Filter this GenotypeRDD by sample to those that match the specified samples.
+   *
+   * @param sampleIds Sequence of samples to filter by.
+   * return GenotypeRDD filtered by one or more samples.
+   */
+  def filterToSamples(sampleIds: Seq[String]): GenotypeRDD = {
+    transform(rdd => rdd.filter(g => Option(g.getSampleId).exists(sampleIds.contains(_))))
+  }
+
+  /**
+   * Filter genotypes containing NO_CALL alleles from this GenotypeRDD.
+   *
+   * @return GenotypeRDD filtered to remove genotypes containing NO_CALL alleles.
+   */
+  def filterNoCalls(): GenotypeRDD = {
+    transform(rdd => rdd.filter(g => !g.getAlleles.contains(GenotypeAllele.NO_CALL)))
   }
 
   /**

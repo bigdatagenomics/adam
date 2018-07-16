@@ -842,11 +842,11 @@ class FeatureRDDSuite extends ADAMFunSuite {
 @SQ	SN:chr1	LN:249250621
 @SQ	SN:chr2	LN:243199373
      */
-    assert(features.sequences.containsRefName("chr1"))
+    assert(features.sequences.containsReferenceName("chr1"))
     assert(features.sequences.apply("chr1").isDefined)
     assert(features.sequences.apply("chr1").get.length >= 249250621L)
 
-    assert(features.sequences.containsRefName("chr2"))
+    assert(features.sequences.containsReferenceName("chr2"))
     assert(features.sequences.apply("chr2").isDefined)
     assert(features.sequences.apply("chr2").get.length >= 243199373L)
   }
@@ -906,7 +906,7 @@ class FeatureRDDSuite extends ADAMFunSuite {
   sparkTest("load parquet to sql, save, re-read from avro") {
     def testMetadata(fRdd: FeatureRDD) {
       val sequenceRdd = fRdd.addSequence(SequenceRecord("aSequence", 1000L))
-      assert(sequenceRdd.sequences.containsRefName("aSequence"))
+      assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
     }
 
     val inputPath = testFile("small.1.bed")
@@ -933,7 +933,7 @@ class FeatureRDDSuite extends ADAMFunSuite {
   sparkTest("load partitioned parquet to sql, save, re-read from avro") {
     def testMetadata(fRdd: FeatureRDD) {
       val sequenceRdd = fRdd.addSequence(SequenceRecord("aSequence", 1000L))
-      assert(sequenceRdd.sequences.containsRefName("aSequence"))
+      assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
     }
 
     val inputPath = testFile("small.1.bed")
@@ -1149,5 +1149,185 @@ class FeatureRDDSuite extends ADAMFunSuite {
       })
 
     checkSave(variantContexts)
+  }
+
+  sparkTest("filter RDD bound features by feature type") {
+    val features = sc.loadFeatures(testFile("dvl1.200.gff3"))
+    assert(features.filterToFeatureType("gene").rdd.count() === 22)
+  }
+
+  sparkTest("filter dataset bound features by feature type") {
+    val features = sc.loadFeatures(testFile("dvl1.200.gff3"))
+    val featuresDs = features.transformDataset(ds => ds)
+    assert(featuresDs.filterToFeatureType("gene").dataset.count() === 22)
+  }
+
+  sparkTest("filter RDD bound features by feature types") {
+    val features = sc.loadFeatures(testFile("dvl1.200.gff3"))
+    assert(features.filterToFeatureTypes(Seq("gene", "transcript")).rdd.count() === 94)
+  }
+
+  sparkTest("filter dataset bound features by feature types") {
+    val features = sc.loadFeatures(testFile("dvl1.200.gff3"))
+    val featuresDs = features.transformDataset(ds => ds)
+    assert(featuresDs.filterToFeatureTypes(Seq("gene", "transcript")).dataset.count() === 94)
+  }
+
+  sparkTest("filter RDD bound features by gene") {
+    val fb = Feature.newBuilder()
+    val f1 = fb.setContigName("1").setStart(1L).setEnd(101L).setGeneId("DVL1").build();
+    val f2 = fb.setContigName("1").setStart(2L).setEnd(102L).setGeneId("CCDS22.1").build();
+    val f3 = fb.setContigName("1").setStart(3L).setEnd(103L).setGeneId("CCDS22.1").build();
+    val features = FeatureRDD(sc.parallelize(Seq(f1, f2, f3)))
+    assert(features.filterToGene("CCDS22.1").rdd.count() === 2)
+  }
+
+  sparkTest("filter dataset bound features by gene") {
+    val fb = Feature.newBuilder()
+    val f1 = fb.setContigName("1").setStart(1L).setEnd(101L).setGeneId("DVL1").build();
+    val f2 = fb.setContigName("1").setStart(2L).setEnd(102L).setGeneId("CCDS22.1").build();
+    val f3 = fb.setContigName("1").setStart(3L).setEnd(103L).setGeneId("CCDS22.1").build();
+    val features = FeatureRDD(sc.parallelize(Seq(f1, f2, f3)))
+    val featuresDs = features.transformDataset(ds => ds)
+    assert(features.filterToGene("CCDS22.1").rdd.count() === 2)
+  }
+
+  sparkTest("filter RDD bound features by genes") {
+    val fb = Feature.newBuilder()
+    val f1 = fb.setContigName("1").setStart(1L).setEnd(101L).setGeneId("DVL1").build();
+    val f2 = fb.setContigName("1").setStart(2L).setEnd(102L).setGeneId("CCDS22.1").build();
+    val f3 = fb.setContigName("1").setStart(3L).setEnd(103L).setGeneId("CCDS22.2").build();
+    val features = FeatureRDD(sc.parallelize(Seq(f1, f2, f3)))
+    assert(features.filterToGenes(Seq("CCDS22.1", "CCDS22.2")).rdd.count() === 2)
+  }
+
+  sparkTest("filter dataset bound features by genes") {
+    val fb = Feature.newBuilder()
+    val f1 = fb.setContigName("1").setStart(1L).setEnd(101L).setGeneId("DVL1").build();
+    val f2 = fb.setContigName("1").setStart(2L).setEnd(102L).setGeneId("CCDS22.1").build();
+    val f3 = fb.setContigName("1").setStart(3L).setEnd(103L).setGeneId("CCDS22.2").build();
+    val features = FeatureRDD(sc.parallelize(Seq(f1, f2, f3)))
+    val featuresDs = features.transformDataset(ds => ds)
+    assert(features.filterToGenes(Seq("CCDS22.1", "CCDS22.2")).rdd.count() === 2)
+  }
+
+  sparkTest("filter RDD bound features by transcript") {
+    val fb = Feature.newBuilder()
+    val f1 = fb.setContigName("1").setStart(1L).setEnd(101L).setTranscriptId("ENST00000339381").build();
+    val f2 = fb.setContigName("1").setStart(2L).setEnd(102L).setTranscriptId("ENST00000445648").build();
+    val f3 = fb.setContigName("1").setStart(3L).setEnd(103L).setTranscriptId("ENST00000445648").build();
+    val features = FeatureRDD(sc.parallelize(Seq(f1, f2, f3)))
+    assert(features.filterToTranscript("ENST00000445648").rdd.count() === 2)
+  }
+
+  sparkTest("filter dataset bound features by transcript") {
+    val fb = Feature.newBuilder()
+    val f1 = fb.setContigName("1").setStart(1L).setEnd(101L).setTranscriptId("ENST00000339381").build();
+    val f2 = fb.setContigName("1").setStart(2L).setEnd(102L).setTranscriptId("ENST00000445648").build();
+    val f3 = fb.setContigName("1").setStart(3L).setEnd(103L).setTranscriptId("ENST00000445648").build();
+    val features = FeatureRDD(sc.parallelize(Seq(f1, f2, f3)))
+    val featuresDs = features.transformDataset(ds => ds)
+    assert(features.filterToTranscript("ENST00000445648").rdd.count() === 2)
+  }
+
+  sparkTest("filter RDD bound features by transcripts") {
+    val fb = Feature.newBuilder()
+    val f1 = fb.setContigName("1").setStart(1L).setEnd(101L).setTranscriptId("ENST00000339381").build();
+    val f2 = fb.setContigName("1").setStart(2L).setEnd(102L).setTranscriptId("ENST00000445648").build();
+    val f3 = fb.setContigName("1").setStart(3L).setEnd(103L).setTranscriptId("ENST00000445649").build();
+    val features = FeatureRDD(sc.parallelize(Seq(f1, f2, f3)))
+    assert(features.filterToTranscripts(Seq("ENST00000445648", "ENST00000445649")).rdd.count() === 2)
+  }
+
+  sparkTest("filter dataset bound features by transcripts") {
+    val fb = Feature.newBuilder()
+    val f1 = fb.setContigName("1").setStart(1L).setEnd(101L).setTranscriptId("ENST00000339381").build();
+    val f2 = fb.setContigName("1").setStart(2L).setEnd(102L).setTranscriptId("ENST00000445648").build();
+    val f3 = fb.setContigName("1").setStart(3L).setEnd(103L).setTranscriptId("ENST00000445649").build();
+    val features = FeatureRDD(sc.parallelize(Seq(f1, f2, f3)))
+    val featuresDs = features.transformDataset(ds => ds)
+    assert(features.filterToTranscripts(Seq("ENST00000445648", "ENST00000445649")).rdd.count() === 2)
+  }
+
+  sparkTest("filter RDD bound features by exon") {
+    val fb = Feature.newBuilder()
+    val f1 = fb.setContigName("1").setStart(1L).setEnd(101L).setExonId("ENSE00001691126").build();
+    val f2 = fb.setContigName("1").setStart(2L).setEnd(102L).setExonId("ENSE00001779983").build();
+    val f3 = fb.setContigName("1").setStart(3L).setEnd(103L).setExonId("ENSE00001779983").build();
+    val features = FeatureRDD(sc.parallelize(Seq(f1, f2, f3)))
+    assert(features.filterToExon("ENSE00001779983").rdd.count() === 2)
+  }
+
+  sparkTest("filter dataset bound features by exon") {
+    val fb = Feature.newBuilder()
+    val f1 = fb.setContigName("1").setStart(1L).setEnd(101L).setExonId("ENSE00001691126").build();
+    val f2 = fb.setContigName("1").setStart(2L).setEnd(102L).setExonId("ENSE00001779983").build();
+    val f3 = fb.setContigName("1").setStart(3L).setEnd(103L).setExonId("ENSE00001779983").build();
+    val features = FeatureRDD(sc.parallelize(Seq(f1, f2, f3)))
+    val featuresDs = features.transformDataset(ds => ds)
+    assert(features.filterToExon("ENSE00001779983").rdd.count() === 2)
+  }
+
+  sparkTest("filter RDD bound features by exons") {
+    val fb = Feature.newBuilder()
+    val f1 = fb.setContigName("1").setStart(1L).setEnd(101L).setExonId("ENSE00001691126").build();
+    val f2 = fb.setContigName("1").setStart(2L).setEnd(102L).setExonId("ENSE00001779983").build();
+    val f3 = fb.setContigName("1").setStart(3L).setEnd(103L).setExonId("ENSE00001779984").build();
+    val features = FeatureRDD(sc.parallelize(Seq(f1, f2, f3)))
+    assert(features.filterToExons(Seq("ENSE00001779983", "ENSE00001779984")).rdd.count() === 2)
+  }
+
+  sparkTest("filter dataset bound features by exons") {
+    val fb = Feature.newBuilder()
+    val f1 = fb.setContigName("1").setStart(1L).setEnd(101L).setExonId("ENSE00001691126").build();
+    val f2 = fb.setContigName("1").setStart(2L).setEnd(102L).setExonId("ENSE00001779983").build();
+    val f3 = fb.setContigName("1").setStart(3L).setEnd(103L).setExonId("ENSE00001779984").build();
+    val features = FeatureRDD(sc.parallelize(Seq(f1, f2, f3)))
+    val featuresDs = features.transformDataset(ds => ds)
+    assert(features.filterToExons(Seq("ENSE00001779983", "ENSE00001779984")).rdd.count() === 2)
+  }
+
+  sparkTest("filter RDD bound features by score") {
+    val features = sc.loadFeatures(testFile("dvl1.200.bed"))
+    assert(features.filterByScore(10.0d).rdd.count() === 23)
+  }
+
+  sparkTest("filter dataset bound features by score") {
+    val features = sc.loadFeatures(testFile("dvl1.200.bed"))
+    val featuresDs = features.transformDataset(ds => ds)
+    assert(features.filterByScore(10.0d).rdd.count() === 23)
+  }
+
+  sparkTest("filter RDD bound features by parent") {
+    val features = sc.loadFeatures(testFile("dvl1.200.gff3"))
+    assert(features.filterToParent("ENSG00000107404").rdd.count() === 8)
+  }
+
+  sparkTest("filter dataset bound features by parent") {
+    val features = sc.loadFeatures(testFile("dvl1.200.gff3"))
+    val featuresDs = features.transformDataset(ds => ds)
+    assert(features.filterToParent("ENSG00000107404").rdd.count() === 8)
+  }
+
+  sparkTest("filter RDD bound features by parents") {
+    val features = sc.loadFeatures(testFile("dvl1.200.gff3"))
+    assert(features.filterToParents(Seq("ENSG00000107404", "ENSG00000162576")).rdd.count() === 18)
+  }
+
+  sparkTest("filter dataset bound features by parents") {
+    val features = sc.loadFeatures(testFile("dvl1.200.gff3"))
+    val featuresDs = features.transformDataset(ds => ds)
+    assert(features.filterToParents(Seq("ENSG00000107404", "ENSG00000162576")).rdd.count() === 18)
+  }
+
+  sparkTest("filter RDD bound features by attribute") {
+    val features = sc.loadFeatures(testFile("dvl1.200.gff3"))
+    assert(features.filterByAttribute("biotype", "protein_coding").rdd.count() === 68)
+  }
+
+  sparkTest("filter dataset bound features by attribute") {
+    val features = sc.loadFeatures(testFile("dvl1.200.gff3"))
+    val featuresDs = features.transformDataset(ds => ds)
+    assert(features.filterByAttribute("biotype", "protein_coding").rdd.count() === 68)
   }
 }

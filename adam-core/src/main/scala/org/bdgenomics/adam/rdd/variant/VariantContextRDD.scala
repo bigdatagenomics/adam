@@ -50,6 +50,7 @@ import org.bdgenomics.adam.models.{
 }
 import org.bdgenomics.adam.rdd.{
   ADAMSaveAnyArgs,
+  DatasetBoundGenomicDataset,
   GenomicDataset,
   MultisampleGenomicDataset,
   VCFHeaderUtils,
@@ -123,10 +124,14 @@ object VariantContextRDD extends Serializable {
 }
 
 case class DatasetBoundVariantContextRDD private[rdd] (
-    dataset: Dataset[VariantContextProduct],
-    sequences: SequenceDictionary,
-    @transient samples: Seq[Sample],
-    @transient headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines) extends VariantContextRDD {
+  dataset: Dataset[VariantContextProduct],
+  sequences: SequenceDictionary,
+  @transient samples: Seq[Sample],
+  @transient headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines,
+  override val isPartitioned: Boolean = true,
+  override val optPartitionBinSize: Option[Int] = Some(1000000),
+  override val optLookbackPartitions: Option[Int] = Some(1)) extends VariantContextRDD
+    with DatasetBoundGenomicDataset[VariantContext, VariantContextProduct, VariantContextRDD] {
 
   protected lazy val optPartitionMap = None
 
@@ -202,24 +207,24 @@ sealed abstract class VariantContextRDD extends MultisampleGenomicDataset[Varian
       false)
   }
 
-  protected def saveMetadata(filePath: String): Unit = {
+  override protected def saveMetadata(filePath: String): Unit = {
     saveSequences(filePath)
     saveSamples(filePath)
     saveVcfHeaders(filePath)
   }
 
-  def saveAsParquet(filePath: String,
+  def saveAsParquet(pathName: String,
                     blockSize: Int = 128 * 1024 * 1024,
                     pageSize: Int = 1 * 1024 * 1024,
                     compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
                     disableDictionaryEncoding: Boolean = false) {
-    log.warn("Saving directly as Parquet from SQL. Options other than compression codec are ignored.")
+    log.info("Saving directly as Parquet from SQL. Options other than compression codec are ignored.")
     dataset.toDF()
       .write
       .format("parquet")
       .option("spark.sql.parquet.compression.codec", compressCodec.toString.toLowerCase())
-      .save(filePath)
-    saveMetadata(filePath)
+      .save(pathName)
+    saveMetadata(pathName)
   }
 
   def transformDataset(

@@ -53,8 +53,8 @@ class SequenceDictionarySuite extends ADAMFunSuite {
     assert(refseq === "NC_000001.10")
 
     val asd = SequenceDictionary(ssd)
-    assert(asd.containsRefName("1"))
-    assert(!asd.containsRefName("2"))
+    assert(asd.containsReferenceName("1"))
+    assert(!asd.containsReferenceName("2"))
   }
 
   test("merge into existing dictionary") {
@@ -62,7 +62,7 @@ class SequenceDictionarySuite extends ADAMFunSuite {
     val ssd = SAMSequenceDictionaryExtractor.extractDictionary(new File(path))
 
     val asd = SequenceDictionary(ssd)
-    assert(asd.containsRefName("1"))
+    assert(asd.containsReferenceName("1"))
     val chr1 = asd("1").get
 
     val myDict = SequenceDictionary(record(chr1.name, chr1.length, md5 = chr1.md5))
@@ -148,8 +148,8 @@ class SequenceDictionarySuite extends ADAMFunSuite {
     val str0: String = "chr0"
     val str1: java.lang.String = "chr1"
 
-    assert(dict.containsRefName(str0))
-    assert(dict.containsRefName(str1))
+    assert(dict.containsReferenceName(str0))
+    assert(dict.containsReferenceName(str1))
   }
 
   test("Apply on name works correctly for different String types") {
@@ -227,5 +227,50 @@ class SequenceDictionarySuite extends ADAMFunSuite {
     val sd = SequenceDictionary.empty
     assert(sd.records.size === 0)
     assert(sd.isEmpty)
+  }
+
+  test("test filter to reference name") {
+    val sd = new SequenceDictionary(Vector(SequenceRecord("MT", 1000L),
+      SequenceRecord("4", 1000L),
+      SequenceRecord("1", 1000L),
+      SequenceRecord("3", 1000L),
+      SequenceRecord("2", 1000L),
+      SequenceRecord("X", 1000L))).sorted
+
+    val filtered = sd.filterToReferenceName("X")
+    assert(filtered.records.size() === 1)
+    assert(filtered.containsReferenceName("X"))
+    assert(filtered("X").exists(_.name === "X"))
+  }
+
+  test("test filter to reference names") {
+    val sd = new SequenceDictionary(Vector(SequenceRecord("MT", 1000L),
+      SequenceRecord("4", 1000L),
+      SequenceRecord("1", 1000L),
+      SequenceRecord("3", 1000L),
+      SequenceRecord("2", 1000L),
+      SequenceRecord("X", 1000L))).sorted
+
+    val filtered = sd.filterToReferenceNames(Seq("1", "X"))
+    assert(filtered.records.size() === 2)
+    assert(filtered.containsReferenceName("1"))
+    assert(filtered.containsReferenceName("X"))
+    assert(filtered("1").exists(_.name === "1"))
+    assert(filtered("X").exists(_.name === "X"))
+  }
+
+  test("test filter to reference name by function") {
+    val sd = new SequenceDictionary(Vector(SequenceRecord("MT", 1000L),
+      SequenceRecord("4", 1000L),
+      SequenceRecord("1", 1000L),
+      SequenceRecord("3", 1000L),
+      SequenceRecord("2", 1000L),
+      SequenceRecord("HLA-DRB1*16:02:01", 1000L))).sorted
+
+    val filtered = sd.filterToReferenceNames(_.length() == 1)
+    assert(filtered.records.size() == 4)
+    assert(filtered.containsReferenceName("1"))
+    assert(filtered.containsReferenceName("HLA-DRB1*16:02:01") === false)
+    assert(filtered("1").exists(_.name === "1"))
   }
 }

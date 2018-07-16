@@ -37,6 +37,7 @@ import org.bdgenomics.adam.rdd.{
   VCFHeaderUtils,
   VCFSupportingGenomicDataset
 }
+import org.bdgenomics.adam.rich.RichVariant
 import org.bdgenomics.adam.serialization.AvroSerializer
 import org.bdgenomics.adam.sql.{ Variant => VariantProduct }
 import org.bdgenomics.formats.avro.{ Sample, Variant }
@@ -151,7 +152,7 @@ case class DatasetBoundVariantRDD private[rdd] (
                              pageSize: Int = 1 * 1024 * 1024,
                              compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
                              disableDictionaryEncoding: Boolean = false) {
-    log.warn("Saving directly as Parquet from SQL. Options other than compression codec are ignored.")
+    log.info("Saving directly as Parquet from SQL. Options other than compression codec are ignored.")
     dataset.toDF()
       .write
       .format("parquet")
@@ -172,6 +173,46 @@ case class DatasetBoundVariantRDD private[rdd] (
 
   def replaceHeaderLines(newHeaderLines: Seq[VCFHeaderLine]): VariantRDD = {
     copy(headerLines = newHeaderLines)
+  }
+
+  override def filterToFiltersPassed(): VariantRDD = {
+    transformDataset(dataset => dataset.filter(dataset.col("filtersPassed")))
+  }
+
+  override def filterByQuality(minimumQuality: Double): VariantRDD = {
+    transformDataset(dataset => dataset.filter(!dataset.col("splitFromMultiAllelic") && dataset.col("quality") >= minimumQuality))
+  }
+
+  override def filterByReadDepth(minimumReadDepth: Int): VariantRDD = {
+    transformDataset(dataset => dataset.filter(dataset.col("annotation.readDepth") >= minimumReadDepth))
+  }
+
+  override def filterByReferenceReadDepth(minimumReferenceReadDepth: Int): VariantRDD = {
+    transformDataset(dataset => dataset.filter(dataset.col("annotation.referenceReadDepth") >= minimumReferenceReadDepth))
+  }
+
+  override def filterSingleNucleotideVariants(): VariantRDD = {
+    transformDataset(dataset => dataset.filter("LENGTH(referenceAllele) > 1 OR LENGTH(alternateAllele) > 1"))
+  }
+
+  override def filterMultipleNucleotideVariants(): VariantRDD = {
+    transformDataset(dataset => dataset.filter("(LENGTH(referenceAllele) == 1 AND LENGTH(alternateAllele) == 1) OR LENGTH(referenceAllele) != LENGTH(alternateAllele)"))
+  }
+
+  override def filterIndels(): VariantRDD = {
+    transformDataset(dataset => dataset.filter("LENGTH(referenceAllele) == LENGTH(alternateAllele)"))
+  }
+
+  override def filterToSingleNucleotideVariants(): VariantRDD = {
+    transformDataset(dataset => dataset.filter("LENGTH(referenceAllele) == 1 AND LENGTH(alternateAllele) == 1"))
+  }
+
+  override def filterToMultipleNucleotideVariants(): VariantRDD = {
+    transformDataset(dataset => dataset.filter("(LENGTH(referenceAllele) > 1 OR LENGTH(alternateAllele) > 1) AND LENGTH(referenceAllele) == LENGTH(alternateAllele)"))
+  }
+
+  override def filterToIndels(): VariantRDD = {
+    transformDataset(dataset => dataset.filter("LENGTH(referenceAllele) != LENGTH(alternateAllele)"))
   }
 }
 
@@ -261,6 +302,110 @@ sealed abstract class VariantRDD extends AvroGenomicDataset[Variant, VariantProd
       Seq.empty[Sample],
       headerLines,
       optPartitionMap = optPartitionMap)
+  }
+
+  /**
+   * Filter this VariantRDD to filters passed (VCF column 7 "FILTER" value PASS).
+   *
+   * @return VariantRDD filtered to filters passed.
+   */
+  def filterToFiltersPassed(): VariantRDD = {
+    transform(rdd => rdd.filter(_.getFiltersPassed))
+  }
+
+  /**
+   * Filter this VariantRDD by quality (VCF column 6 "QUAL").  Variants split
+   * for multi-allelic sites will also be filtered out.
+   *
+   * @param minimumQuality Minimum quality to filter by, inclusive.
+   * @return VariantRDD filtered by quality.
+   */
+  def filterByQuality(minimumQuality: Double): VariantRDD = {
+    transform(rdd => rdd.filter(v => !(Option(v.getSplitFromMultiAllelic).exists(_ == true)) && Option(v.getQuality).exists(_ >= minimumQuality)))
+  }
+
+  /**
+   * Filter this VariantRDD by total read depth (VCF INFO reserved key AD, Number=R,
+   * split for multi-allelic sites into single integer values for the reference allele
+   * (<code>filterByReferenceReadDepth</code>) and the alternate allele (this method)).
+   *
+   * @param minimumReadDepth Minimum total read depth to filter by, inclusive.
+   * @return VariantRDD filtered by total read depth.
+   */
+  def filterByReadDepth(minimumReadDepth: Int): VariantRDD = {
+    transform(rdd => rdd.filter(v => Option(v.getAnnotation().getReadDepth).exists(_ >= minimumReadDepth)))
+  }
+
+  /**
+   * Filter this VariantRDD by reference total read depth (VCF INFO reserved key AD, Number=R,
+   * split for multi-allelic sites into single integer values for the alternate allele
+   * (<code>filterByReadDepth</code>) and the reference allele (this method)).
+   *
+   * @param minimumReferenceReadDepth Minimum reference total read depth to filter by, inclusive.
+   * @return VariantRDD filtered by reference total read depth.
+   */
+  def filterByReferenceReadDepth(minimumReferenceReadDepth: Int): VariantRDD = {
+    transform(rdd => rdd.filter(v => Option(v.getAnnotation().getReferenceReadDepth).exists(_ >= minimumReferenceReadDepth)))
+  }
+
+  /**
+   * Filter single nucleotide variants (SNPs) from this VariantRDD.
+   *
+   * @return VariantRDD filtered to remove single nucleotide variants (SNPs).
+   */
+  def filterSingleNucleotideVariants() = {
+    transform(rdd => rdd.filter(v => !RichVariant(v).isSingleNucleotideVariant))
+  }
+
+  /**
+   * Filter multiple nucleotide variants (MNPs) from this VariantRDD.
+   *
+   * @return VariantRDD filtered to remove multiple nucleotide variants (MNPs).
+   */
+  def filterMultipleNucleotideVariants() = {
+    transform(rdd => rdd.filter(v => !RichVariant(v).isMultipleNucleotideVariant))
+  }
+
+  /**
+   * Filter insertions and deletions (indels) from this VariantRDD.
+   *
+   * @return VariantRDD filtered to remove insertions and deletions (indels).
+   */
+  def filterIndels() = {
+    transform(rdd => rdd.filter(v => {
+      val rv = RichVariant(v)
+      !rv.isInsertion && !rv.isDeletion
+    }))
+  }
+
+  /**
+   * Filter this VariantRDD to include only single nucleotide variants (SNPs).
+   *
+   * @return VariantRDD filtered to include only single nucleotide variants (SNPs).
+   */
+  def filterToSingleNucleotideVariants() = {
+    transform(rdd => rdd.filter(v => RichVariant(v).isSingleNucleotideVariant))
+  }
+
+  /**
+   * Filter this VariantRDD to include only multiple nucleotide variants (MNPs).
+   *
+   * @return VariantRDD filtered to include only multiple nucleotide variants (MNPs).
+   */
+  def filterToMultipleNucleotideVariants() = {
+    transform(rdd => rdd.filter(v => RichVariant(v).isMultipleNucleotideVariant))
+  }
+
+  /**
+   * Filter this VariantRDD to include only insertions and deletions (indels).
+   *
+   * @return VariantRDD filtered to include only insertions and deletions (indels).
+   */
+  def filterToIndels() = {
+    transform(rdd => rdd.filter(v => {
+      val rv = RichVariant(v)
+      rv.isInsertion || rv.isDeletion
+    }))
   }
 
   /**
