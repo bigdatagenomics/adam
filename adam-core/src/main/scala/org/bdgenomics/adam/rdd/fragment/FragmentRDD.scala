@@ -21,33 +21,17 @@ import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Dataset, SQLContext }
+import org.apache.spark.sql.functions._
 import org.bdgenomics.adam.converters.AlignmentRecordConverter
 import org.bdgenomics.adam.instrumentation.Timers._
-import org.bdgenomics.adam.models.{
-  RecordGroupDictionary,
-  ReferenceRegion,
-  ReferenceRegionSerializer,
-  SequenceDictionary
-}
+import org.bdgenomics.adam.models.{ RecordGroupDictionary, ReferenceRegion, ReferenceRegionSerializer, SequenceDictionary }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.{
-  DatasetBoundGenomicDataset,
-  AvroRecordGroupGenomicDataset,
-  JavaSaveArgs
-}
-import org.bdgenomics.adam.rdd.read.{
-  AlignmentRecordRDD,
-  BinQualities,
-  MarkDuplicates,
-  QualityScoreBin
-}
+import org.bdgenomics.adam.rdd.{ AvroRecordGroupGenomicDataset, DatasetBoundGenomicDataset, JavaSaveArgs }
+import org.bdgenomics.adam.rdd.read._
 import org.bdgenomics.adam.serialization.AvroSerializer
-import org.bdgenomics.adam.sql.{ Fragment => FragmentProduct }
+import org.bdgenomics.adam.sql.{ Fragment => FragmentProduct, AlignmentRecord => AlignmentRecordProduct }
 import org.bdgenomics.formats.avro._
-import org.bdgenomics.utils.interval.array.{
-  IntervalArray,
-  IntervalArraySerializer
-}
+import org.bdgenomics.utils.interval.array.{ IntervalArray, IntervalArraySerializer }
 import org.bdgenomics.utils.misc.Logging
 import scala.collection.JavaConversions._
 import scala.reflect.ClassTag
@@ -229,6 +213,13 @@ case class DatasetBoundFragmentRDD private[rdd] (
   def replaceProcessingSteps(
     newProcessingSteps: Seq[ProcessingStep]): FragmentRDD = {
     copy(processingSteps = newProcessingSteps)
+  }
+
+  override def toReads(): AlignmentRecordRDD = {
+    import dataset.sparkSession.implicits._
+    val df = dataset.select(explode(col("alignments")).as("rec")).select("rec.*")
+    DatasetBoundAlignmentRecordRDD(df.as[AlignmentRecordProduct], sequences,
+      recordGroups, processingSteps)
   }
 }
 

@@ -576,4 +576,16 @@ class FragmentRDDSuite extends ADAMFunSuite {
 
     checkSave(variantContexts)
   }
+
+  sparkTest("dataset and rdd conversion to reads are equivalent") {
+    val fragments = sc.loadFragments(testFile("small.sam"))
+    val fragmentRdd = RDDBoundFragmentRDD(fragments.rdd, fragments.sequences,
+      fragments.recordGroups, fragments.processingSteps, None)
+    val fragmentDataset = DatasetBoundFragmentRDD(fragments.dataset, fragments.sequences,
+      fragments.recordGroups, fragments.processingSteps)
+    val convertedRdd = fragmentRdd.toReads()
+    val convertedDataset = fragmentDataset.toReads()
+
+    assert(convertedRdd.rdd.collect().toSet == convertedDataset.rdd.collect().toSet)
+  }
 }
