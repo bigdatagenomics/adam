@@ -577,19 +577,6 @@ class FragmentRDDSuite extends ADAMFunSuite {
     checkSave(variantContexts)
   }
 
-<<<<<<< HEAD
-  sparkTest("dataset and rdd conversion to reads are equivalent") {
-    val fragments = sc.loadFragments(testFile("small.sam"))
-    val fragmentRdd = RDDBoundFragmentRDD(fragments.rdd, fragments.sequences,
-      fragments.recordGroups, fragments.processingSteps, None)
-    val fragmentDataset = DatasetBoundFragmentRDD(fragments.dataset, fragments.sequences,
-      fragments.recordGroups, fragments.processingSteps)
-    val convertedRdd = fragmentRdd.toReads()
-    val convertedDataset = fragmentDataset.toReads()
-
-    assert(convertedRdd.rdd.collect().toSet == convertedDataset.rdd.collect().toSet)
-  }
-
   sparkTest("paired read names with index sequences in read names can group into fragments") {
     val path1 = testFile("read_names_with_index_sequences_pair1.fq")
     val path2 = testFile("read_names_with_index_sequences_pair2.fq")
@@ -622,5 +609,17 @@ class FragmentRDDSuite extends ADAMFunSuite {
     fragments.rdd.collect().foreach(fragment => {
       assert(fragment.getAlignments.size() == 2)
     })
+  }
+
+  sparkTest("dataset and rdd conversion to reads are equivalent") {
+    val fragments = sc.loadFragments(testFile("small.sam"))
+    val fragmentRdd = RDDBoundFragmentRDD(fragments.rdd, fragments.sequences,
+      fragments.recordGroups, fragments.processingSteps, None)
+    val fragmentDataset = DatasetBoundFragmentRDD(fragments.dataset, fragments.sequences,
+      fragments.recordGroups, fragments.processingSteps)
+    val convertedRdd = fragmentRdd.toReads()
+    val convertedDataset = fragmentDataset.toReads()
+
+    assert(convertedRdd.rdd.collect().toSet == convertedDataset.rdd.collect().toSet)
   }
 }
