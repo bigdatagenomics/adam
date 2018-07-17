@@ -24,14 +24,32 @@ import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.apache.spark.sql.functions._
 import org.bdgenomics.adam.converters.AlignmentRecordConverter
 import org.bdgenomics.adam.instrumentation.Timers._
-import org.bdgenomics.adam.models.{ RecordGroupDictionary, ReferenceRegion, ReferenceRegionSerializer, SequenceDictionary }
+import org.bdgenomics.adam.models.{
+  RecordGroupDictionary,
+  ReferenceRegion,
+  ReferenceRegionSerializer,
+  SequenceDictionary
+}
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.{ AvroRecordGroupGenomicDataset, DatasetBoundGenomicDataset, JavaSaveArgs }
-import org.bdgenomics.adam.rdd.read._
+import org.bdgenomics.adam.rdd.{
+  DatasetBoundGenomicDataset,
+  AvroRecordGroupGenomicDataset,
+  JavaSaveArgs
+}
+import org.bdgenomics.adam.rdd.read.{
+  AlignmentRecordRDD,
+  BinQualities,
+  DatasetBoundAlignmentRecordRDD,
+  MarkDuplicates,
+  QualityScoreBin
+}
 import org.bdgenomics.adam.serialization.AvroSerializer
 import org.bdgenomics.adam.sql.{ Fragment => FragmentProduct, AlignmentRecord => AlignmentRecordProduct }
 import org.bdgenomics.formats.avro._
-import org.bdgenomics.utils.interval.array.{ IntervalArray, IntervalArraySerializer }
+import org.bdgenomics.utils.interval.array.{
+  IntervalArray,
+  IntervalArraySerializer
+}
 import org.bdgenomics.utils.misc.Logging
 import scala.collection.JavaConversions._
 import scala.reflect.ClassTag
@@ -186,7 +204,7 @@ case class DatasetBoundFragmentRDD private[rdd] (
                              pageSize: Int = 1 * 1024 * 1024,
                              compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
                              disableDictionaryEncoding: Boolean = false) {
-    log.info("Saving directly as Parquet from SQL. Options other than compression codec are ignored.")
+    log.warn("Saving directly as Parquet from SQL. Options other than compression codec are ignored.")
     dataset.toDF()
       .write
       .format("parquet")
