@@ -1102,7 +1102,8 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicDataset[A
     maxTargetSize: Int = 3000,
     maxReadsPerTarget: Int = 20000,
     optReferenceFile: Option[ReferenceFile] = None,
-    unclipReads: Boolean = false): AlignmentRecordRDD = RealignIndelsInDriver.time {
+    unclipReads: Boolean = false,
+    discardUnmappedReads: Boolean = true): AlignmentRecordRDD = RealignIndelsInDriver.time {
     replaceRdd(RealignIndels(rdd,
       consensusModel = consensusModel,
       dataIsSorted = isSorted,
@@ -1112,7 +1113,8 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicDataset[A
       maxTargetSize = maxTargetSize,
       maxReadsPerTarget = maxReadsPerTarget,
       optReferenceFile = optReferenceFile,
-      unclipReads = unclipReads))
+      unclipReads = unclipReads,
+      discardUnmappedReads = discardUnmappedReads))
   }
 
   /**

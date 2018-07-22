@@ -49,6 +49,11 @@ class RealignIndelsSuite extends ADAMFunSuite {
     artificialReadsRdd.rdd
   }
 
+  def unmappedReadsRDD: AlignmentRecordRDD = {
+    val path = testFile("unmapped.sam")
+    sc.loadAlignments(path)
+  }
+
   def artificialRealignedReads(cg: ConsensusGenerator = ConsensusGenerator.fromReads,
                                maxCoverage: Int = 3000,
                                optRefFile: Option[ReferenceFile] = None): RDD[AlignmentRecord] = {
@@ -798,5 +803,17 @@ class RealignIndelsSuite extends ADAMFunSuite {
     assert(start === 20L)
     assert(end === 24L)
     assert(cigar.toString === "2S4M2S")
+  }
+
+  sparkTest("unmapped reads filtered from final read result by default") {
+    val mappedReadsCount = unmappedReadsRDD.filterUnalignedReads().rdd.count()
+    val realignedReadsCount = unmappedReadsRDD.realignIndels().rdd.count()
+    assert(mappedReadsCount == realignedReadsCount)
+  }
+
+  sparkTest("unmapped reads included when discard flag is disabled") {
+    val totalReadsCount = unmappedReadsRDD.rdd.count()
+    val realignedReadsCount = unmappedReadsRDD.realignIndels(discardUnmappedReads = false).rdd.count()
+    assert(totalReadsCount == realignedReadsCount)
   }
 }

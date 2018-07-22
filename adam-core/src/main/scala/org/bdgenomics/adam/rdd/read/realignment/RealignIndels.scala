@@ -52,7 +52,8 @@ private[read] object RealignIndels extends Serializable with Logging {
     maxTargetSize: Int = 3000,
     maxReadsPerTarget: Int = 20000,
     optReferenceFile: Option[ReferenceFile] = None,
-    unclipReads: Boolean = false): RDD[AlignmentRecord] = {
+    unclipReads: Boolean = false,
+    discardUnmappedReads: Boolean = true): RDD[AlignmentRecord] = {
     new RealignIndels(
       rdd.context,
       consensusModel = consensusModel,
@@ -63,7 +64,8 @@ private[read] object RealignIndels extends Serializable with Logging {
       maxTargetSize = maxTargetSize,
       maxReadsPerTarget = maxReadsPerTarget,
       optReferenceFile = optReferenceFile,
-      unclipReads = unclipReads
+      unclipReads = unclipReads,
+      discardUnmappedReads = discardUnmappedReads
     ).realignIndels(rdd)
   }
 
@@ -236,7 +238,8 @@ private[read] class RealignIndels(
     val maxTargetSize: Int = 3000,
     val maxReadsPerTarget: Int = 20000,
     @transient val optReferenceFile: Option[ReferenceFile] = None,
-    val unclipReads: Boolean = false) extends Serializable with Logging {
+    val unclipReads: Boolean = false,
+    val discardUnmappedReads: Boolean = false) extends Serializable with Logging {
 
   private val optBcastReferenceFile = optReferenceFile.map(rf => {
     sc.broadcast(rf)
@@ -703,6 +706,7 @@ private[read] class RealignIndels(
    * @return Realigned read.
    */
   def realignIndels(rdd: RDD[AlignmentRecord]): RDD[AlignmentRecord] = {
+    val unmappedReadsRDD = rdd.filter(r => !r.getReadMapped)
     val sortedRdd = if (dataIsSorted) {
       rdd.filter(r => r.getReadMapped)
     } else {
@@ -725,10 +729,18 @@ private[read] class RealignIndels(
     ).toArray
 
     // we should only attempt realignment if the target set isn't empty
+    def appendUnmappedIfConfigured(realigned: RDD[AlignmentRecord]) = {
+      if (discardUnmappedReads) {
+        realigned
+      } else {
+        realigned.union(unmappedReadsRDD)
+      }
+    }
+
     if (targets.isEmpty) {
       val readRdd = richRdd.map(r => r.record)
       richRdd.unpersist()
-      readRdd
+      appendUnmappedIfConfigured(readRdd)
     } else {
       // map reads to targets
       log.info("Grouping reads by target...")
@@ -739,9 +751,10 @@ private[read] class RealignIndels(
 
       // realign target groups
       log.info("Sorting reads by reference in ADAM RDD")
-      readsMappedToTarget.mapPartitionsWithIndex((idx, iter) => {
+      val realigned = readsMappedToTarget.mapPartitionsWithIndex((idx, iter) => {
         iter.flatMap(realignTargetGroup(_, idx))
       }).map(r => r.record)
+      appendUnmappedIfConfigured(realigned)
     }
   }
 }
