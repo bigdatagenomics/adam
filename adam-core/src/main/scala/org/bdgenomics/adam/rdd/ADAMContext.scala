@@ -2556,6 +2556,33 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
+   * Load paired unaligned alignment records grouped by sequencing fragment
+   * from paired FASTQ files into an FragmentRDD.
+   *
+   * Fragments represent all of the reads from a single sequenced fragment as
+   * a single object, which is a useful representation for some tasks.
+   *
+   * @param pathName1 The path name to load the first set of unaligned alignment records from.
+   *   Globs/directories are supported.
+   * @param pathName2 The path name to load the second set of unaligned alignment records from.
+   *   Globs/directories are supported.
+   * @param optRecordGroup The optional record group name to associate to the unaligned alignment
+   *   records. Defaults to None.
+   * @param stringency The validation stringency to use when validating paired FASTQ format.
+   *   Defaults to ValidationStringency.STRICT.
+   * @return Returns a FragmentRDD containing the paired reads grouped by
+   *   sequencing fragment.
+   */
+  def loadPairedFastqAsFragments(
+    pathName1: String,
+    pathName2: String,
+    optRecordGroup: Option[String] = None,
+    stringency: ValidationStringency = ValidationStringency.STRICT): FragmentRDD = LoadPairedFastqFragments.time {
+
+    loadPairedFastq(pathName1, pathName2, optRecordGroup, stringency).toFragments()
+  }
+
+  /**
    * Load features into a FeatureRDD and convert to a CoverageRDD.
    * Coverage is stored in the score field of Feature.
    *

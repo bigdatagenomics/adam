@@ -124,7 +124,7 @@ class CoverageRDDSuite extends ADAMFunSuite {
   sparkTest("correctly saves coverage") {
     def testMetadata(cRdd: CoverageRDD) {
       val sequenceRdd = cRdd.addSequence(SequenceRecord("aSequence", 1000L))
-      assert(sequenceRdd.sequences.containsRefName("aSequence"))
+      assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
     }
 
     val f1 = Feature.newBuilder().setContigName("chr1").setStart(1).setEnd(10).setScore(3.0).build()

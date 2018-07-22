@@ -382,6 +382,14 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     sam.rdd.collect().foreach(r => assert(r.getReadMapped))
   }
 
+  sparkTest("load FASTQ with no bases") {
+    val readsPath = testFile("fastq_nobases.fq")
+    val reads = sc.loadAlignments(readsPath)
+
+    assert(reads.dataset.count === 2)
+    assert(reads.rdd.map(_.getSequence.length).reduce(_ + _) === 0)
+  }
+
   sparkTest("convert malformed FASTQ (no quality scores) => SAM => well-formed FASTQ => SAM") {
     val noqualPath = Thread.currentThread().getContextClassLoader.getResource("fastq_noqual.fq").getFile
     val tempBase = Files.createTempDirectory("noqual").toAbsolutePath.toString
@@ -606,7 +614,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
   sparkTest("load parquet to sql, save, re-read from avro") {
     def testMetadata(arRdd: AlignmentRecordRDD) {
       val sequenceRdd = arRdd.addSequence(SequenceRecord("aSequence", 1000L))
-      assert(sequenceRdd.sequences.containsRefName("aSequence"))
+      assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
 
       val rgRdd = arRdd.addRecordGroup(RecordGroup("test", "aRg"))
       assert(rgRdd.recordGroups("aRg").sample === "test")
@@ -642,7 +650,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
   sparkTest("load from sam, save as partitioned parquet, and re-read from partitioned parquet") {
     def testMetadata(arRdd: AlignmentRecordRDD) {
       val sequenceRdd = arRdd.addSequence(SequenceRecord("aSequence", 1000L))
-      assert(sequenceRdd.sequences.containsRefName("aSequence"))
+      assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
 
       val rgRdd = arRdd.addRecordGroup(RecordGroup("test", "aRg"))
       assert(rgRdd.recordGroups("aRg").sample === "test")

@@ -325,7 +325,7 @@ class VariantContextRDDSuite extends ADAMFunSuite {
   sparkTest("test metadata") {
     def testMetadata(vRdd: VariantContextRDD) {
       val sequenceRdd = vRdd.addSequence(SequenceRecord("aSequence", 1000L))
-      assert(sequenceRdd.sequences.containsRefName("aSequence"))
+      assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
 
       val headerRdd = vRdd.addHeaderLine(new VCFHeaderLine("ABC", "123"))
       assert(headerRdd.headerLines.exists(_.getKey == "ABC"))
@@ -506,7 +506,7 @@ class VariantContextRDDSuite extends ADAMFunSuite {
 
   sparkTest("save and reload from partitioned parquet") {
     def testMetadata(vcs: VariantContextRDD) {
-      assert(vcs.sequences.containsRefName("13"))
+      assert(vcs.sequences.containsReferenceName("13"))
       assert(vcs.samples.isEmpty)
       assert(vcs.headerLines.exists(_.getKey == "GATKCommandLine"))
     }

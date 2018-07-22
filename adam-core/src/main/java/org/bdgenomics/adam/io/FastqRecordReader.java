@@ -246,7 +246,7 @@ abstract class FastqRecordReader extends RecordReader<Void, Text> {
             if (bytesRead > 0 && !checkBuffer(bufferLength, buffer)) {
                 start += bytesRead;
             } else {
-                
+
                 // line starts with @.  Read two more and verify that it starts
                 // with a +:
                 //
@@ -264,7 +264,7 @@ abstract class FastqRecordReader extends RecordReader<Void, Text> {
                 long trackForwardPosition = start + bytesRead;
                 
                 bytesRead = reader.readLine(buffer, (int) Math.min(MAX_LINE_LENGTH, end - start));
-                if (buffer.getBytes()[0] == '@') {
+                if (buffer.getLength() > 0 && buffer.getBytes()[0] == '@') {
                     start = trackForwardPosition;
                     break;
                 } else {

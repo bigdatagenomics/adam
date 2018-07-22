@@ -347,7 +347,7 @@ class FragmentRDDSuite extends ADAMFunSuite {
   sparkTest("load parquet to sql, save, re-read from avro") {
     def testMetadata(fRdd: FragmentRDD) {
       val sequenceRdd = fRdd.addSequence(SequenceRecord("aSequence", 1000L))
-      assert(sequenceRdd.sequences.containsRefName("aSequence"))
+      assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
 
       val rgRdd = fRdd.addRecordGroup(RecordGroup("test", "aRg"))
       assert(rgRdd.recordGroups("aRg").sample === "test")
@@ -577,10 +577,32 @@ class FragmentRDDSuite extends ADAMFunSuite {
     checkSave(variantContexts)
   }
 
-  sparkTest("Paired read names with index sequences in read names can grouped into fragments") {
+  sparkTest("paired read names with index sequences in read names can group into fragments") {
     val path1 = testFile("read_names_with_index_sequences_pair1.fq")
     val path2 = testFile("read_names_with_index_sequences_pair2.fq")
     val fragments = sc.loadPairedFastq(path1, path2).toFragments()
+
+    assert(fragments.rdd.count() == 4)
+
+    fragments.rdd.collect().foreach(fragment => {
+      assert(fragment.getAlignments.size() == 2)
+    })
+  }
+
+  sparkTest("interleaved paired read names with index sequences in read names can group into fragments") {
+    val path = testFile("read_names_with_index_sequences_interleaved.fq")
+    val fragments = sc.loadInterleavedFastq(path).toFragments()
+
+    assert(fragments.rdd.count() == 4)
+
+    fragments.rdd.collect().foreach(fragment => {
+      assert(fragment.getAlignments.size() == 2)
+    })
+  }
+
+  sparkTest("interleaved paired read names with index sequences in read names as fragments") {
+    val path = testFile("read_names_with_index_sequences_interleaved.fq")
+    val fragments = sc.loadInterleavedFastqAsFragments(path)
 
     assert(fragments.rdd.count() == 4)
 

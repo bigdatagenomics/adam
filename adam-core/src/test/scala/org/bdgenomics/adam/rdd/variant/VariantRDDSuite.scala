@@ -359,7 +359,7 @@ class VariantRDDSuite extends ADAMFunSuite {
     val variants = sc.loadVariants(variantsPath)
     val variantContexts = variants.toVariantContexts
 
-    assert(variantContexts.sequences.containsRefName("1"))
+    assert(variantContexts.sequences.containsReferenceName("1"))
     assert(variantContexts.samples.isEmpty)
 
     val vcs = variantContexts.rdd.collect
@@ -374,7 +374,7 @@ class VariantRDDSuite extends ADAMFunSuite {
   sparkTest("load parquet to sql, save, re-read from avro") {
     def testMetadata(vRdd: VariantRDD) {
       val sequenceRdd = vRdd.addSequence(SequenceRecord("aSequence", 1000L))
-      assert(sequenceRdd.sequences.containsRefName("aSequence"))
+      assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
 
       val headerRdd = vRdd.addHeaderLine(new VCFHeaderLine("ABC", "123"))
       assert(headerRdd.headerLines.exists(_.getKey == "ABC"))
