@@ -89,7 +89,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'bdgenomics.workflows'
+project = u'bdgenomics.adam'
 copyright = u'2017 – %i Big Data Genomics' % datetime.now().year
 author = u'Big Data Genomics'
 
@@ -157,8 +157,8 @@ autodoc_member_order = 'bysource'
 html_theme = 'alabaster'
 html_theme_options = {
     "github_banner": True,
-    "github_user": "bdgenomics",
-    "github_repo": "workflows",
+    "github_user": "bigdatagenomics",
+    "github_repo": "adam",
     "caption_font_size": "24px"
 }
 
@@ -274,7 +274,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  (master_doc, 'workflows.tex', u'bdgenomics.workflows Documentation',
+  (master_doc, 'adam.tex', u'bdgenomics.adam Documentation',
    u'Big Data Genomics', 'manual'),
 ]
 
@@ -304,7 +304,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'bdgenomics.workflows', u'bdgenomics.workflows Documentation',
+    (master_doc, 'bdgenomics.adam', u'bdgenomics.adam Documentation',
      [author], 1)
 ]
 
@@ -318,8 +318,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  (master_doc, 'Workflows', u'bdgenomics.workflows Documentation',
-   author, 'Workflows', 'Toil workflows for running Big Data Genomics tools.',
+  (master_doc, 'ADAM', u'bdgenomics.adam Documentation',
+   author, 'ADAM', 'ADAM: An Apache Spark-based genomics analysis platform.',
    'Miscellaneous'),
 ]
 
