@@ -639,22 +639,36 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicDataset[A
   }
 
   /**
+   * Converts boolean sorted state into SortOrder enum.
+   *
+   * @param isSorted Whether the file is sorted or not.
+   * @return Returns coordinate order if sorted, and unsorted otherwise.
+   */
+  private def isSortedToSortOrder(isSorted: Boolean = false): SAMFileHeader.SortOrder = {
+    if (isSorted) {
+      SAMFileHeader.SortOrder.coordinate
+    } else {
+      SAMFileHeader.SortOrder.unsorted
+    }
+  }
+
+  /**
    * Converts an RDD of ADAM read records into SAM records.
    *
    * @return Returns a SAM/BAM formatted RDD of reads, as well as the file header.
    */
   def convertToSam(isSorted: Boolean = false): (RDD[SAMRecordWritable], SAMFileHeader) = ConvertToSAM.time {
+    convertToSam(isSortedToSortOrder(isSorted))
+  }
+
+  def convertToSam(sortOrder: SAMFileHeader.SortOrder): (RDD[SAMRecordWritable], SAMFileHeader) = ConvertToSAM.time {
 
     // create conversion object
     val adamRecordConverter = new AlignmentRecordConverter
 
     // create header and set sort order if needed
     val header = adamRecordConverter.createSAMHeader(sequences, recordGroups)
-    if (isSorted) {
-      header.setSortOrder(SAMFileHeader.SortOrder.coordinate)
-    } else {
-      header.setSortOrder(SAMFileHeader.SortOrder.unsorted)
-    }
+    header.setSortOrder(sortOrder)
 
     // get program records and attach to header
     val pgRecords = processingSteps.map(r => {
@@ -746,12 +760,21 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicDataset[A
     isSorted: Boolean = false,
     deferMerging: Boolean = false,
     disableFastConcat: Boolean = false): Unit = SAMSave.time {
+    saveAsSam(filePath, asType, asSingleFile, isSortedToSortOrder(isSorted), deferMerging, disableFastConcat)
+  }
 
+  def saveAsSam(
+    filePath: String,
+    asType: Option[SAMFormat],
+    asSingleFile: Boolean,
+    sortOrder: SAMFileHeader.SortOrder,
+    deferMerging: Boolean,
+    disableFastConcat: Boolean): Unit = SAMSave.time {
     val fileType = asType.getOrElse(SAMFormat.inferFromFilePath(filePath))
 
     // convert the records
     val (convertRecords: RDD[SAMRecordWritable], header: SAMFileHeader) =
-      convertToSam(isSorted)
+      convertToSam(sortOrder)
 
     // add keys to our records
     val withKey = convertRecords.keyBy(v => new LongWritable(v.get.getAlignmentStart))
@@ -810,7 +833,7 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicDataset[A
       // we'll defer the writing to the cram container stream writer, and will
       // do validation here
 
-      require(isSorted, "To save as CRAM, input must be sorted.")
+      require(sortOrder != SAMFileHeader.SortOrder.unsorted, "To save as CRAM, input must be sorted.")
       require(sequences.records.forall(_.md5.isDefined),
         "To save as CRAM, all sequences must have an attached MD5. See %s".format(
           sequences))
@@ -912,6 +935,17 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicDataset[A
       asType = Option(asType),
       asSingleFile = asSingleFile,
       isSorted = isSorted)
+  }
+
+  /**
+   * Sorts our read data by read name.
+   *
+   * @return Returns a new RDD containing sorted reads.
+   */
+  def sortReadsByReadName(): AlignmentRecordRDD = SortReads.time {
+    log.info("Sorting reads by read name")
+
+    transformDataset(_.orderBy("readName", "readInFragment"))
   }
 
   /**
