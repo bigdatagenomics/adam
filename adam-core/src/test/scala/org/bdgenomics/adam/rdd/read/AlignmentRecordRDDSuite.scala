@@ -19,7 +19,7 @@ package org.bdgenomics.adam.rdd.read
 
 import java.io.File
 import java.nio.file.Files
-import htsjdk.samtools.ValidationStringency
+import htsjdk.samtools.{ SAMFileHeader, ValidationStringency }
 import org.apache.spark.api.java.function.Function2
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Dataset, SQLContext }
@@ -1774,5 +1774,22 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val alignmentsDs = alignments.transformDataset(ds => ds)
     assert(alignmentsDs.filterToSamples(Seq("NA12878", "not a sample")).dataset.count() === 565)
     assert(alignmentsDs.filterToSamples(Seq("not a sample")).dataset.count() === 0)
+  }
+
+  sparkTest("sort by read name") {
+    val unsortedPath = testFile("unsorted.sam")
+    val ardd = sc.loadBam(unsortedPath)
+    val reads = ardd.rdd
+
+    val actualSortedPath = tmpFile("readname_sorted.sam")
+    ardd.sortReadsByReadName()
+      .saveAsSam(actualSortedPath,
+        asType = None,
+        asSingleFile = true,
+        sortOrder = SAMFileHeader.SortOrder.queryname,
+        deferMerging = false,
+        disableFastConcat = false)
+
+    checkFiles(testFile("readname_sorted.sam"), actualSortedPath)
   }
 }
