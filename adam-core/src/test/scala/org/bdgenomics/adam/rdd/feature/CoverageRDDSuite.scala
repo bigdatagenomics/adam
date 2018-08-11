@@ -447,5 +447,45 @@ class CoverageRDDSuite extends ADAMFunSuite {
 
     checkSave(variantContexts)
   }
+
+  sparkTest("copy coverage rdd") {
+    val sd = sc.loadSequenceDictionary(testFile("hg19.genome"))
+    val coverage = sc.loadCoverage(testFile("sample_coverage.bed"), optSequenceDictionary = Some(sd))
+    assert(coverage.sequences.containsReferenceName("chr1"))
+
+    val copy = CoverageRDD.apply(coverage.rdd, coverage.sequences)
+    assert(copy.rdd.count() === coverage.rdd.count())
+    assert(copy.sequences.containsReferenceName("chr1"))
+  }
+
+  sparkTest("copy coverage dataset") {
+    val sd = sc.loadSequenceDictionary(testFile("hg19.genome"))
+    val coverage = sc.loadCoverage(testFile("sample_coverage.bed"), optSequenceDictionary = Some(sd))
+    assert(coverage.sequences.containsReferenceName("chr1"))
+
+    val copy = CoverageRDD.apply(coverage.dataset, coverage.sequences)
+    assert(copy.dataset.count() === coverage.dataset.count())
+    assert(copy.sequences.containsReferenceName("chr1"))
+  }
+
+  sparkTest("copy coverage rdd without sequence dictionary") {
+    val sd = sc.loadSequenceDictionary(testFile("hg19.genome"))
+    val coverage = sc.loadCoverage(testFile("sample_coverage.bed"), optSequenceDictionary = Some(sd))
+    assert(coverage.sequences.containsReferenceName("chr1"))
+
+    val copy = CoverageRDD.apply(coverage.rdd)
+    assert(copy.rdd.count() === coverage.rdd.count())
+    assert(copy.sequences.containsReferenceName("chr1") === false)
+  }
+
+  sparkTest("copy coverage dataset without sequence dictionary") {
+    val sd = sc.loadSequenceDictionary(testFile("hg19.genome"))
+    val coverage = sc.loadCoverage(testFile("sample_coverage.bed"), optSequenceDictionary = Some(sd))
+    assert(coverage.sequences.containsReferenceName("chr1"))
+
+    val copy = CoverageRDD.apply(coverage.dataset)
+    assert(copy.dataset.count() === coverage.dataset.count())
+    assert(copy.sequences.containsReferenceName("chr1") == false)
+  }
 }
 

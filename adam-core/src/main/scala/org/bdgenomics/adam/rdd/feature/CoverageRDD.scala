@@ -64,6 +64,50 @@ private[adam] class CoverageArraySerializer(kryo: Kryo) extends IntervalArraySer
   }
 }
 
+object CoverageRDD {
+
+  /**
+   * A GenomicRDD that wraps a dataset of Coverage data.
+   *
+   * @param ds A Dataset of genomic Coverage features.
+   */
+  def apply(ds: Dataset[Coverage]): CoverageRDD = {
+    new DatasetBoundCoverageRDD(ds, SequenceDictionary.empty)
+  }
+
+  /**
+   * A GenomicRDD that wraps a dataset of Coverage data.
+   *
+   * @param ds A Dataset of genomic Coverage features.
+   * @param sequences The reference genome these data are aligned to.
+   */
+  def apply(ds: Dataset[Coverage],
+            sequences: SequenceDictionary): CoverageRDD = {
+    new DatasetBoundCoverageRDD(ds, sequences)
+  }
+
+  /**
+   * Builds a CoverageRDD with an empty sequence dictionary.
+   *
+   * @param rdd The underlying Coverage RDD to build from.
+   * @return Returns a new CoverageRDD.
+   */
+  def apply(rdd: RDD[Coverage]): CoverageRDD = {
+    new RDDBoundCoverageRDD(rdd, SequenceDictionary.empty, None)
+  }
+
+  /**
+   * Builds a CoverageRDD given a sequence dictionary.
+   *
+   * @param rdd The underlying Coverage RDD to build from.
+   * @param sd The sequence dictionary for this CoverageRDD.
+   * @return Returns a new CoverageRDD.
+   */
+  def apply(rdd: RDD[Coverage], sd: SequenceDictionary): CoverageRDD = {
+    new RDDBoundCoverageRDD(rdd, sd, None)
+  }
+}
+
 case class ParquetUnboundCoverageRDD private[rdd] (
     @transient private val sc: SparkContext,
     private val parquetFilename: String,
