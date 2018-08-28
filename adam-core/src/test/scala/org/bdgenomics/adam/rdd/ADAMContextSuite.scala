@@ -639,10 +639,31 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(reads.rdd.count === 6)
   }
 
+  sparkTest("load paired fastq") {
+    val pathR1 = testFile("proper_pairs_1.fq")
+    val pathR2 = testFile("proper_pairs_2.fq")
+    val reads = sc.loadPairedFastq(pathR1, pathR2)
+    assert(reads.rdd.count === 6)
+  }
+
+  sparkTest("load paired fastq without cache") {
+    val pathR1 = testFile("proper_pairs_1.fq")
+    val pathR2 = testFile("proper_pairs_2.fq")
+    val reads = sc.loadPairedFastq(pathR1, pathR2, persistLevel = None)
+    assert(reads.rdd.count === 6)
+  }
+
   sparkTest("load paired fastq as fragments") {
     val pathR1 = testFile("proper_pairs_1.fq")
     val pathR2 = testFile("proper_pairs_2.fq")
     val fragments = sc.loadPairedFastqAsFragments(pathR1, pathR2)
+    assert(fragments.rdd.count === 3)
+  }
+
+  sparkTest("load paired fastq as fragments without cache") {
+    val pathR1 = testFile("proper_pairs_1.fq")
+    val pathR2 = testFile("proper_pairs_2.fq")
+    val fragments = sc.loadPairedFastqAsFragments(pathR1, pathR2, persistLevel = None)
     assert(fragments.rdd.count === 3)
   }
 
