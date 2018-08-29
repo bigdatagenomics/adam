@@ -39,7 +39,7 @@ fi
 
 set -e
 
-if [ ${SPARK_VERSION} == 2.2.1 ];
+if [ ${SPARK_VERSION} == 2.2.2 ];
 then
     # shouldn't be able to move to spark 2 twice
     set +e
@@ -132,7 +132,7 @@ fi
 
 # run integration tests
 # prebuilt spark distributions are scala 2.11 for spark 2.x
-if [[ ( ${SPARK_VERSION} == 2.2.1 && ${SCALAVER} == 2.11 ) ]];
+if [[ ( ${SPARK_VERSION} == 2.2.2 && ${SCALAVER} == 2.11 ) ]];
 then
 
     # make a temp directory
@@ -200,7 +200,7 @@ then
 	
 	
 	# we only support SparkR on Spark 2.x
-	if [ ${SPARK_VERSION} == 2.2.1 ];
+	if [ ${SPARK_VERSION} == 2.2.2 ];
 	then
 	    
 	    # make a directory to install SparkR into, and set the R user libs path
