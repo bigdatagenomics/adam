@@ -19,7 +19,7 @@
 
 set -e
 
-SOURCE_DIR=$(dirname ${BASH_SOURCE[0]})
+SOURCE_DIR=$(dirname $(readlink -f ${BASH_SOURCE[0]}))
 . ${SOURCE_DIR}/find-adam-home
 
 # Find ADAM cli assembly jar

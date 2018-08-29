@@ -25,7 +25,7 @@ if [[ -z $@ && -n "$ADAM_OPTS" ]]; then
     echo "Run adam-shell instead as adam-shell <spark-args>" 1>&2
 fi
 
-SOURCE_DIR=$(dirname ${BASH_SOURCE[0]})
+SOURCE_DIR=$(dirname $(readlink -f ${BASH_SOURCE[0]}))
 
 ADAM_CLI_JAR=$(${SOURCE_DIR}/find-adam-assembly.sh)
 

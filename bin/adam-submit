@@ -21,7 +21,7 @@
 
 set -e
 
-SOURCE_DIR=$(dirname ${BASH_SOURCE[0]})
+SOURCE_DIR=$(dirname $(readlink -f ${BASH_SOURCE[0]}))
 
 # Split args into Spark and ADAM args
 DD=False  # DD is "double dash"
