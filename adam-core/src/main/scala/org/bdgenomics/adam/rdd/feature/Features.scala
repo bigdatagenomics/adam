@@ -225,4 +225,55 @@ private[feature] object Features {
     }
     "sequence_feature"
   }
+
+  /**
+   * Format the feature score as double floating point values
+   * with "." as missing value.
+   *
+   * @param score Feature score to format.
+   * @return Return the specified feature score formatted as
+   *    double floating point values with "." as missing value.
+   */
+  def formatScore(score: java.lang.Double): String = {
+    Option(score).fold(".")(_.toString)
+  }
+
+  /**
+   * Interpolate the feature score to integer values between 0 and 1000,
+   * with missing value as specified.
+   *
+   * @param score Feature score to interpolate.
+   * @param minimumScore Minimum score, interpolated to 0.
+   * @param maximumScore Maximum score, interpolated to 1000.
+   * @param missingValue Value to use if score is not specified.
+   * @return Return the specified feature score interpolated to integer values
+   *    between 0 and 1000, with missing value as specified.
+   */
+  def interpolateScore(score: java.lang.Double,
+                       minimumScore: Double,
+                       maximumScore: Double,
+                       missingValue: Int): Int = {
+
+    def constrain(v: Double, min: Double, max: Double): Double = {
+      if (v < min) {
+        min
+      } else if (v > max) {
+        max
+      } else {
+        v
+      }
+    }
+
+    def interp(value: Double,
+               sourceMin: Double,
+               sourceMax: Double,
+               targetMin: Double,
+               targetMax: Double): Double = {
+
+      val v = constrain(value, sourceMin, sourceMax)
+      targetMin + (targetMax - targetMin) * ((v - sourceMin) / (sourceMax - sourceMin))
+    }
+
+    Option(score).fold(missingValue)(interp(_, minimumScore, maximumScore, 0, 1000).toInt)
+  }
 }
