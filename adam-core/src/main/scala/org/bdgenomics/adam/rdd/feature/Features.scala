@@ -20,6 +20,7 @@ package org.bdgenomics.adam.rdd.feature
 import org.bdgenomics.formats.avro.{ Dbxref, Feature, OntologyTerm, Strand }
 import scala.collection.JavaConversions._
 import scala.collection.mutable.{ ArrayBuffer, HashMap, MutableList }
+import scala.math.{ max, min }
 
 /**
  * Utility methods on features and related classes.
@@ -270,7 +271,7 @@ private[feature] object Features {
                targetMin: Double,
                targetMax: Double): Double = {
 
-      val v = constrain(value, sourceMin, sourceMax)
+      val v = max(min(sourceMax, value), sourceMin)
       targetMin + (targetMax - targetMin) * ((v - sourceMin) / (sourceMax - sourceMin))
     }
 
