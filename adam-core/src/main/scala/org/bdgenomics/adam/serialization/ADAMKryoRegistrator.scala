@@ -285,6 +285,7 @@ class ADAMKryoRegistrator extends KryoRegistrator with Logging {
       kryo.register(Class.forName("org.apache.spark.sql.execution.datasources.FileFormatWriter$WriteTaskResult"))
       kryo.register(Class.forName("org.apache.spark.sql.execution.datasources.BasicWriteTaskStats"))
       kryo.register(Class.forName("org.apache.spark.sql.execution.datasources.ExecutedWriteSummary"))
+      kryo.register(Class.forName("org.apache.spark.sql.execution.joins.UnsafeHashedRelation"))
     } catch {
       case cnfe: java.lang.ClassNotFoundException => {
         if (log.isDebugEnabled) log.debug("Did not find Spark internal class. This is expected for earlier Spark versions.")

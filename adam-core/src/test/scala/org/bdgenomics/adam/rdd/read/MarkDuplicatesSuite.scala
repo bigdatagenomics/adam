@@ -33,17 +33,24 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
       "machine foo",
       library = Some("library bar"))))
 
-  def createUnmappedRead() = {
+  private def createUnmappedRead(readName: String = UUID.randomUUID().toString,
+                                 primaryAlignment: Boolean = true,
+                                 readInFragment: Int = 0): AlignmentRecord = {
     AlignmentRecord.newBuilder()
       .setReadMapped(false)
+      .setReadName(readName)
       .setSequence("ACGT")
+      .setReadInFragment(readInFragment)
+      .setPrimaryAlignment(primaryAlignment)
+      .setSecondaryAlignment(!primaryAlignment)
       .build()
   }
 
-  def createMappedRead(referenceName: String, start: Long, end: Long,
-                       readName: String = UUID.randomUUID().toString, avgPhredScore: Int = 20,
-                       numClippedBases: Int = 0, isPrimaryAlignment: Boolean = true,
-                       isNegativeStrand: Boolean = false) = {
+  private def createMappedRead(referenceName: String, start: Long, end: Long,
+                               readName: String = UUID.randomUUID().toString, avgPhredScore: Int = 20,
+                               numClippedBases: Int = 0, isPrimaryAlignment: Boolean = true,
+                               isNegativeStrand: Boolean = false,
+                               readInFragment: Int = 0) = {
     assert(avgPhredScore >= 10 && avgPhredScore <= 50)
     val qual = (for (i <- 0 until 100) yield (avgPhredScore + 33).toChar).toString()
     val cigar = if (numClippedBases > 0) "%dS%dM".format(numClippedBases, 100 - numClippedBases) else "100M"
@@ -60,6 +67,7 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
       .setEnd(end)
       .setReadMapped(true)
       .setPrimaryAlignment(isPrimaryAlignment)
+      .setReadInFragment(readInFragment)
       .setReadName(readName)
       .setRecordGroupName("machine foo")
       .setDuplicateRead(false)
@@ -161,6 +169,46 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
     assert(marked.size == unmappedReads.size)
     // Unmapped reads should never be marked duplicates
     assert(marked.forall(p => !p.getDuplicateRead))
+  }
+
+  sparkTest("unmapped secondary alignments") {
+    val unmappedReads = for (i <- 0 until 10) yield createUnmappedRead(primaryAlignment = i < 10)
+    val marked = markDuplicates(unmappedReads: _*)
+    assert(marked.length == unmappedReads.size)
+    // Unmapped reads should never be marked duplicates, *even if they are secondary alignments*
+    assert(marked.forall(p => !p.getDuplicateRead))
+  }
+
+  sparkTest("group count equal zero") {
+    val leftMapped = createMappedRead("1", 42, 142,
+      readInFragment = 0,
+      readName = "rightUnmapped")
+    val rightUnmapped = createUnmappedRead(readName = "rightUnmapped", readInFragment = 1)
+    val marked = markDuplicates(List(leftMapped, rightUnmapped): _*)
+    assert(marked.forall(p => !p.getDuplicateRead))
+  }
+
+  sparkTest("group count greater than zero") {
+    val mappedLeft = for (i <- 0 until 10) yield {
+      createMappedRead("1", 42, 142,
+        readInFragment = 0, readName = "group%d".format(i))
+    }
+
+    val mappedRight = for (i <- 0 until 10) yield {
+      createMappedRead("1", 100 + i, 142 + i,
+        readInFragment = 1, readName = "group%d".format(i))
+    }
+
+    val leftSingle = createMappedRead("1", 42, 142,
+      readInFragment = 0,
+      readName = "rightUnmapped")
+    val rightUnmappedSingle = createUnmappedRead(readName = "rightUnmapped", readInFragment = 1)
+
+    val marked = markDuplicates(mappedLeft ++ mappedRight ++ List(leftSingle, rightUnmappedSingle): _*)
+    assert(marked.size == mappedLeft.size + mappedRight.size + 2)
+    assert(marked.filter(_.getReadName != "rightUnmapped").forall(!_.getDuplicateRead))
+    assert(marked.filter(_.getReadName == "rightUnmapped").filter(_.getReadMapped).forall(_.getDuplicateRead))
+    assert(marked.filter(_.getReadName == "rightUnmapped").filter(!_.getReadMapped).forall(!_.getDuplicateRead))
   }
 
   sparkTest("read pairs") {
