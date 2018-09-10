@@ -511,6 +511,11 @@
         <version>${avro.version}</version>
       </dependency>
       <dependency>
+        <artifactId>commons-codec</artifactId>
+        <groupId>commons-codec</groupId>
+        <version>1.11</version>
+      </dependency>
+      <dependency>
         <groupId>org.apache.parquet</groupId>
         <artifactId>parquet-avro</artifactId>
         <!--
