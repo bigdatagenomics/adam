@@ -213,7 +213,11 @@ case class DatasetBoundFragmentRDD private[rdd] (
 
   override def transformDataset(
     tFn: Dataset[FragmentProduct] => Dataset[FragmentProduct]): FragmentRDD = {
-    copy(dataset = tFn(dataset))
+    replaceDataset(tFn(dataset))
+  }
+
+  def replaceDataset(newDataset: Dataset[FragmentProduct]): FragmentRDD = {
+    copy(dataset = newDataset)
   }
 
   def replaceSequences(
@@ -341,7 +345,7 @@ sealed abstract class FragmentRDD extends AvroRecordGroupGenomicDataset[Fragment
    *   reads are NOT filtered out.
    */
   def markDuplicates(): FragmentRDD = MarkDuplicatesInDriver.time {
-    replaceRdd(MarkDuplicates(this))
+    replaceRdd(MarkDuplicates(this.rdd, this.recordGroups))
   }
 
   /**

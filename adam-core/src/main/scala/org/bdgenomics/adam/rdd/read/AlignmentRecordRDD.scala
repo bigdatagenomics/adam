@@ -263,7 +263,7 @@ case class DatasetBoundAlignmentRecordRDD private[rdd] (
 
   override def transformDataset(
     tFn: Dataset[AlignmentRecordProduct] => Dataset[AlignmentRecordProduct]): AlignmentRecordRDD = {
-    copy(dataset = tFn(dataset))
+    replaceDataset(tFn(dataset))
   }
 
   def replaceSequences(
@@ -274,6 +274,14 @@ case class DatasetBoundAlignmentRecordRDD private[rdd] (
   def replaceRecordGroups(
     newRecordGroups: RecordGroupDictionary): AlignmentRecordRDD = {
     copy(recordGroups = newRecordGroups)
+  }
+
+  def replaceDataset(newDatset: Dataset[AlignmentRecordProduct]): AlignmentRecordRDD = {
+    copy(dataset = newDatset)
+  }
+
+  override def markDuplicates(): AlignmentRecordRDD = {
+    replaceDataset(MarkDuplicates(dataset, this.recordGroups))
   }
 
   def replaceProcessingSteps(
@@ -985,7 +993,7 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicDataset[A
    *   reads are NOT filtered out.
    */
   def markDuplicates(): AlignmentRecordRDD = MarkDuplicatesInDriver.time {
-    replaceRdd(MarkDuplicates(this))
+    replaceRdd(MarkDuplicates(this.rdd, this.recordGroups))
   }
 
   /**
