@@ -54,7 +54,7 @@ test_that("save as bam", {
     bam <- loadAlignments(ac, tmpPath)
     readsDf <- toDF(reads)
     bamDf <- toDF(bam)
-    
+
     expect_equal(count(readsDf), count(bamDf))
 })
 
@@ -100,7 +100,7 @@ test_that("transmute to coverage", {
     reads <- loadAlignments(ac, readsPath)
 
     readsAsCoverage = transmute(reads, function(df) {
-        select(df, df$contigName, df$start, df$end, alias(cast(df$mapq, "double"), "count"))
+        select(df, df$contigName, df$start, df$end, alias(cast(df$mapq, "double"), "count"), alias(cast(df$recordGroupSample, "string"), "optSampleId"))
     }, "CoverageRDD")
 
     expect_true(is(readsAsCoverage, "CoverageRDD"))

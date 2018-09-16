@@ -148,6 +148,8 @@ private[feature] object Features {
         case "Gap"           => f.setGap(entry._2)
         case "Derives_from"  => f.setDerivesFrom(entry._2)
         case "Is_circular"   => f.setCircular(entry._2.toBoolean)
+        // sampleId information
+        case "sampleId"      => f.setSampleId(entry._2)
         case "Alias"         => aliases += entry._2
         case "Note"          => notes += entry._2
         case "Parent"        => parentIds += entry._2
@@ -198,6 +200,7 @@ private[feature] object Features {
     Option(feature.getGeneId).foreach(attrs += Tuple2("gene_id", _))
     Option(feature.getTranscriptId).foreach(attrs += Tuple2("transcript_id", _))
     Option(feature.getExonId).foreach(attrs += Tuple2("exon_id", _))
+    Option(feature.getSampleId).foreach(attrs += Tuple2("sampleId", _))
     for (alias <- feature.getAliases) attrs += Tuple2("Alias", alias)
     for (note <- feature.getNotes) attrs += Tuple2("Note", note)
     for (parentId <- feature.getParentIds) attrs += Tuple2("Parent", parentId)

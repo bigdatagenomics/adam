@@ -27,16 +27,11 @@ import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.{
-  DatasetBoundGenomicDataset,
-  AvroGenomicDataset,
-  JavaSaveArgs,
-  SAMHeaderWriter
-}
+import org.bdgenomics.adam.rdd._
 import org.bdgenomics.adam.serialization.AvroSerializer
 import org.bdgenomics.adam.sql.{ Feature => FeatureProduct }
 import org.bdgenomics.adam.util.FileMerger
-import org.bdgenomics.formats.avro.{ Feature, Strand }
+import org.bdgenomics.formats.avro.{ Sample, Feature, Strand }
 import org.bdgenomics.utils.interval.array.{
   IntervalArray,
   IntervalArraySerializer
@@ -120,8 +115,9 @@ object FeatureRDD {
    * @param sequences The reference genome these data are aligned to.
    */
   def apply(ds: Dataset[FeatureProduct],
-            sequences: SequenceDictionary): FeatureRDD = {
-    new DatasetBoundFeatureRDD(ds, sequences)
+            sequences: SequenceDictionary,
+            samples: Iterable[Sample]): FeatureRDD = {
+    new DatasetBoundFeatureRDD(ds, sequences, samples.toSeq)
   }
 
   /**
@@ -131,7 +127,7 @@ object FeatureRDD {
    * @return Returns a new FeatureRDD.
    */
   def apply(rdd: RDD[Feature]): FeatureRDD = {
-    FeatureRDD(rdd, SequenceDictionary.empty)
+    FeatureRDD(rdd, SequenceDictionary.empty, Iterable.empty[Sample])
   }
 
   /**
@@ -139,10 +135,13 @@ object FeatureRDD {
    *
    * @param rdd The underlying Feature RDD to build from.
    * @param sd The sequence dictionary for this FeatureRDD.
+   * @param samples The samples in this FeatureRDD.
    * @return Returns a new FeatureRDD.
    */
-  def apply(rdd: RDD[Feature], sd: SequenceDictionary): FeatureRDD = {
-    new RDDBoundFeatureRDD(rdd, sd, None)
+  def apply(rdd: RDD[Feature],
+            sd: SequenceDictionary,
+            samples: Iterable[Sample]): FeatureRDD = {
+    new RDDBoundFeatureRDD(rdd, sd, samples.toSeq, None)
   }
 
   /**
@@ -268,7 +267,8 @@ object FeatureRDD {
 case class ParquetUnboundFeatureRDD private[rdd] (
     @transient private val sc: SparkContext,
     private val parquetFilename: String,
-    sequences: SequenceDictionary) extends FeatureRDD {
+    sequences: SequenceDictionary,
+    @transient samples: Seq[Sample]) extends FeatureRDD {
 
   lazy val rdd: RDD[Feature] = {
     sc.loadParquet(parquetFilename)
@@ -282,18 +282,35 @@ case class ParquetUnboundFeatureRDD private[rdd] (
     sqlContext.read.parquet(parquetFilename).as[FeatureProduct]
   }
 
-  def replaceSequences(newSequences: SequenceDictionary): FeatureRDD = {
+  /**
+   * Replaces the sequence dictionary attached to a ParquetUnboundFeatureRDD.
+   *
+   * @param newSequences The new sequence dictionary to attach.
+   * @return Returns a new ParquetUnboundFeatureRDD with the sequences replaced.
+   */
+  override def replaceSequences(newSequences: SequenceDictionary): FeatureRDD = {
     copy(sequences = newSequences)
   }
 
+  /**
+   * Replaces the sample metadata attached to the ParquetUnboundFeatureRDD.
+   *
+   * @param newSamples The new sample metadata to attach.
+   * @return A ParquetUnboundFeatureRDD with new sample metadata.
+   */
+  override def replaceSamples(newSamples: Iterable[Sample]): FeatureRDD = {
+    copy(samples = newSamples.toSeq)
+  }
+
   def toCoverage(): CoverageRDD = {
-    ParquetUnboundCoverageRDD(sc, parquetFilename, sequences)
+    ParquetUnboundCoverageRDD(sc, parquetFilename, sequences, samples)
   }
 }
 
 case class DatasetBoundFeatureRDD private[rdd] (
   dataset: Dataset[FeatureProduct],
   sequences: SequenceDictionary,
+  @transient samples: Seq[Sample],
   override val isPartitioned: Boolean = true,
   override val optPartitionBinSize: Option[Int] = Some(1000000),
   override val optLookbackPartitions: Option[Int] = Some(1)) extends FeatureRDD
@@ -321,16 +338,33 @@ case class DatasetBoundFeatureRDD private[rdd] (
     copy(dataset = tFn(dataset))
   }
 
-  def replaceSequences(newSequences: SequenceDictionary): FeatureRDD = {
+  /**
+   * Replaces the sequence dictionary attached to a DatasetBoundFeatureRDD.
+   *
+   * @param newSequences The new sequence dictionary to attach.
+   * @return Returns a new DatasetBoundFeatureRDD with the sequences replaced.
+   */
+  override def replaceSequences(newSequences: SequenceDictionary): FeatureRDD = {
     copy(sequences = newSequences)
+  }
+
+  /**
+   * Replaces the sample metadata attached to the DatasetBoundFeatureRDD.
+   *
+   * @param newSamples The new sample metadata to attach.
+   * @return A DatasetBoundFeatureRDD with new sample metadata.
+   */
+  override def replaceSamples(newSamples: Iterable[Sample]): FeatureRDD = {
+    copy(samples = newSamples.toSeq)
   }
 
   def toCoverage(): CoverageRDD = {
     import dataset.sqlContext.implicits._
     DatasetBoundCoverageRDD(dataset.toDF
-      .select("contigName", "start", "end", "score")
+      .select("contigName", "start", "end", "score", "sampleId")
       .withColumnRenamed("score", "count")
-      .as[Coverage], sequences)
+      .withColumnRenamed("sampleId", "optSampleId")
+      .as[Coverage], sequences, samples)
   }
 
   override def filterToFeatureType(featureType: String): FeatureRDD = {
@@ -385,6 +419,7 @@ case class DatasetBoundFeatureRDD private[rdd] (
 case class RDDBoundFeatureRDD private[rdd] (
     rdd: RDD[Feature],
     sequences: SequenceDictionary,
+    @transient samples: Seq[Sample],
     optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends FeatureRDD {
 
   /**
@@ -396,17 +431,34 @@ case class RDDBoundFeatureRDD private[rdd] (
     sqlContext.createDataset(rdd.map(FeatureProduct.fromAvro))
   }
 
-  def replaceSequences(newSequences: SequenceDictionary): FeatureRDD = {
+  /**
+   * Replaces the sequence dictionary attached to a RDDBoundFeatureRDD.
+   *
+   * @param newSequences The new sequence dictionary to attach.
+   * @return Returns a new RDDBoundFeatureRDD with the sequences replaced.
+   */
+  override def replaceSequences(newSequences: SequenceDictionary): FeatureRDD = {
     copy(sequences = newSequences)
+  }
+
+  /**
+   * Replaces the sample metadata attached to the RDDBoundFeatureRDD.
+   *
+   * @param newSamples The new sample metadata to attach.
+   * @return A RDDBoundFeatureRDD with new sample metadata.
+   */
+  override def replaceSamples(newSamples: Iterable[Sample]): FeatureRDD = {
+    copy(samples = newSamples.toSeq)
   }
 
   def toCoverage(): CoverageRDD = {
     val coverageRdd = rdd.map(f => Coverage(f))
-    RDDBoundCoverageRDD(coverageRdd, sequences, optPartitionMap)
+    RDDBoundCoverageRDD(coverageRdd, sequences, samples, optPartitionMap)
   }
 }
 
-sealed abstract class FeatureRDD extends AvroGenomicDataset[Feature, FeatureProduct, FeatureRDD] {
+sealed abstract class FeatureRDD extends AvroGenomicDataset[Feature, FeatureProduct, FeatureRDD]
+    with MultisampleGenomicDataset[Feature, FeatureProduct, FeatureRDD] {
 
   protected val productFn = FeatureProduct.fromAvro(_)
   protected val unproductFn = (f: FeatureProduct) => f.toAvro
@@ -418,10 +470,22 @@ sealed abstract class FeatureRDD extends AvroGenomicDataset[Feature, FeatureProd
     IntervalArray(rdd, FeatureArray.apply(_, _))
   }
 
+  /**
+   * Saves metadata for a FeatureRDD, including partition map, sequences, and samples.
+   *
+   * @param pathName The path name to save meta data for this FeatureRDD.
+   */
+  override protected def saveMetadata(pathName: String): Unit = {
+    savePartitionMap(pathName)
+    saveSequences(pathName)
+    saveSamples(pathName)
+  }
+
   def union(rdds: FeatureRDD*): FeatureRDD = {
     val iterableRdds = rdds.toSeq
     FeatureRDD(rdd.context.union(rdd, iterableRdds.map(_.rdd): _*),
-      iterableRdds.map(_.sequences).fold(sequences)(_ ++ _))
+      iterableRdds.map(_.sequences).fold(sequences)(_ ++ _),
+      iterableRdds.map(_.samples).fold(samples)(_ ++ _))
   }
 
   /**
@@ -434,7 +498,7 @@ sealed abstract class FeatureRDD extends AvroGenomicDataset[Feature, FeatureProd
    */
   def transformDataset(
     tFn: Dataset[FeatureProduct] => Dataset[FeatureProduct]): FeatureRDD = {
-    DatasetBoundFeatureRDD(tFn(dataset), sequences)
+    DatasetBoundFeatureRDD(tFn(dataset), sequences, samples)
   }
 
   /**
@@ -619,7 +683,7 @@ sealed abstract class FeatureRDD extends AvroGenomicDataset[Feature, FeatureProd
    */
   protected def replaceRdd(newRdd: RDD[Feature],
                            newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): FeatureRDD = {
-    new RDDBoundFeatureRDD(newRdd, sequences, newPartitionMap)
+    new RDDBoundFeatureRDD(newRdd, sequences, samples, newPartitionMap)
   }
 
   /**
