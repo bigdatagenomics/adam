@@ -311,7 +311,7 @@ case class DatasetBoundFeatureRDD private[rdd] (
   def toCoverage(): CoverageRDD = {
     import dataset.sqlContext.implicits._
     DatasetBoundCoverageRDD(dataset.toDF
-      .select("contigName", "start", "end", "score")
+      .select("contigName", "start", "end", "score", "name")
       .withColumnRenamed("score", "count")
       .as[Coverage], sequences)
   }

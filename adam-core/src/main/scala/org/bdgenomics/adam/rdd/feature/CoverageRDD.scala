@@ -124,7 +124,7 @@ case class ParquetUnboundCoverageRDD private[rdd] (
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
     sqlContext.read.parquet(parquetFilename)
-      .select("contigName", "start", "end", "score")
+      .select("contigName", "start", "end", "score", "name")
       .withColumnRenamed("score", "count")
       .as[Coverage]
   }
@@ -324,7 +324,7 @@ abstract class CoverageRDD extends GenomicDataset[Coverage, Coverage, CoverageRD
       val lastRegion = ReferenceRegion(lastCoverage)
       val (nextCoverage, nextCondensed) =
         if (rr.isAdjacent(lastRegion) && lastCoverage.count == cov.count) {
-          (Coverage(rr.merge(lastRegion), lastCoverage.count), condensed)
+          (Coverage(rr.merge(lastRegion), lastCoverage.count, lastCoverage.name), condensed)
         } else {
           (cov, lastCoverage :: condensed)
         }
@@ -417,12 +417,13 @@ abstract class CoverageRDD extends GenomicDataset[Coverage, Coverage, CoverageRD
           // key coverage by binning start site mod bpPerbin
           // subtract region.start to shift mod to start of ReferenceRegion
           val start = r.start - (r.start % bpPerBin)
-          ReferenceRegion(r.contigName, start, start + bpPerBin)
+          (r.name, ReferenceRegion(r.contigName, start, start + bpPerBin))
         }).mapValues(r => (r.count, 1))
         .reduceByKey(reduceFn)
         .map(r => {
+          // r is a key of (id: string, region: ReferenceRegion), and value of (count: double, int)
           // compute average coverage in bin
-          Coverage(r._1.referenceName, r._1.start, r._1.end, r._2._1 / r._2._2)
+          Coverage(r._1._2.referenceName, r._1._2.start, r._1._2.end, r._2._1 / r._2._2, r._1._1)
         })
       flattened.transform(rdd => newRDD)
     }
@@ -467,7 +468,7 @@ abstract class CoverageRDD extends GenomicDataset[Coverage, Coverage, CoverageRD
   private def flatMapCoverage(rdd: RDD[Coverage]): RDD[Coverage] = {
     rdd.flatMap(r => {
       val positions = r.start until r.end
-      positions.map(n => Coverage(r.contigName, n, n + 1, r.count))
+      positions.map(n => Coverage(r.contigName, n, n + 1, r.count, r.name))
     })
   }
 }

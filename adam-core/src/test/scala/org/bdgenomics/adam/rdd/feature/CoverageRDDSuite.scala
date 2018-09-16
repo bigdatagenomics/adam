@@ -135,6 +135,8 @@ class CoverageRDDSuite extends ADAMFunSuite {
     val coverageRDD: CoverageRDD = featureRDD.toCoverage
     testMetadata(coverageRDD)
 
+    print(coverageRDD.rdd.first)
+
     val outputFile = tmpLocation(".bed")
     coverageRDD.save(outputFile, false, false)
 
@@ -181,6 +183,7 @@ class CoverageRDDSuite extends ADAMFunSuite {
     val selfUnion = coverage.union(coverage)
     assert(selfUnion.rdd.count === 6)
     val coverageDs = coverage.transformDataset(ds => ds) // no-op, forces to dataset
+    print(coverageDs.rdd.first())
     val selfUnionDs = coverageDs.union(coverageDs)
     assert(selfUnionDs.rdd.count === 6)
   }
@@ -200,6 +203,28 @@ class CoverageRDDSuite extends ADAMFunSuite {
     val predicate = region.toPredicate
     val coverage = sc.loadParquetCoverage(outputFile, Some(predicate))
     assert(coverage.rdd.count == 1)
+  }
+
+  sparkTest("can read a bed file with multiple samples to coverage") {
+
+    val f1 = Feature.newBuilder().setContigName("chr1").setStart(1).setEnd(10).setScore(3.0).setName("S1").build()
+    val f2 = Feature.newBuilder().setContigName("chr1").setStart(15).setEnd(20).setScore(2.0).setName("S1").build()
+    val f3 = Feature.newBuilder().setContigName("chr2").setStart(15).setEnd(20).setScore(2.0).setName("S1").build()
+
+    val f4 = Feature.newBuilder().setContigName("chr1").setStart(1).setEnd(10).setScore(2.0).setName("S2").build()
+    val f5 = Feature.newBuilder().setContigName("chr1").setStart(15).setEnd(20).setScore(2.0).setName("S2").build()
+
+    val featureRDD: FeatureRDD = FeatureRDD(sc.parallelize(Seq(f1, f2, f3, f4, f5)))
+    val coverageRDD: CoverageRDD = featureRDD.toCoverage
+
+    val outputFile = tmpLocation(".adam")
+    coverageRDD.save(outputFile, false, false)
+
+    val region = ReferenceRegion("chr1", 1, 9)
+    val predicate = region.toPredicate
+    val coverage = sc.loadParquetCoverage(outputFile, Some(predicate))
+    print(coverage.rdd.collect)
+    assert(coverage.rdd.count == 2)
   }
 
   sparkTest("correctly flatmaps coverage without aggregated bins") {

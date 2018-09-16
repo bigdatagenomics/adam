@@ -40,6 +40,27 @@ class CoverageSuite extends ADAMFunSuite {
     assert(coverageAfterConversion.count == featureToConvert.score)
   }
 
+  sparkTest("Convert to coverage from valid Feature with name") {
+    // create a valid feature
+    val featureToConvert =
+      Feature.newBuilder()
+        .setContigName("chr1")
+        .setStart(1)
+        .setEnd(2)
+        .setScore(100)
+        .setName("coverageName")
+        .build()
+
+    val coverageAfterConversion = Coverage(featureToConvert)
+
+    // all fields should match between the two
+    assert(coverageAfterConversion.start == featureToConvert.start)
+    assert(coverageAfterConversion.end == featureToConvert.end)
+    assert(coverageAfterConversion.contigName == featureToConvert.contigName)
+    assert(coverageAfterConversion.count == featureToConvert.score)
+    assert(coverageAfterConversion.name == Some(featureToConvert.name))
+  }
+
   sparkTest("Convert to coverage from Feature with null/empty contigName fails with correct error") {
     // feature with empty contigname is not valid when converting to Coverage
     val featureWithEmptyContigName =
