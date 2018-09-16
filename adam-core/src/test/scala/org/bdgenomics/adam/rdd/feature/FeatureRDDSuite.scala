@@ -318,6 +318,26 @@ class FeatureRDDSuite extends ADAMFunSuite {
     })
   }
 
+  sparkTest("keeps sample metadata") {
+    val sample1 = Sample.newBuilder()
+      .setName("Sample1")
+      .build()
+
+    val sample2 = Sample.newBuilder()
+      .setName("Sample2")
+      .build()
+
+    val inputPath = testFile("dvl1.200.bed")
+    var f1 = sc.loadBed(inputPath)
+    var f2 = sc.loadBed(inputPath)
+
+    f1 = f1.replaceSamples(Iterable(sample1))
+    f2 = f2.replaceSamples(Iterable(sample2))
+
+    val union = f1.union(f2)
+    assert(union.samples.size === 2)
+  }
+
   sparkTest("round trip BED12 format") {
     val inputPath = testFile("small.1_12.bed")
     val expected = sc.loadBed(inputPath)
@@ -932,7 +952,9 @@ class FeatureRDDSuite extends ADAMFunSuite {
   sparkTest("load parquet to sql, save, re-read from avro") {
     def testMetadata(fRdd: FeatureRDD) {
       val sequenceRdd = fRdd.addSequence(SequenceRecord("aSequence", 1000L))
+      val sampleRdd = fRdd.addSample(Sample.newBuilder().setName("Sample").build())
       assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
+      assert(sampleRdd.samples.map(r => r.getName).contains("Sample"))
     }
 
     val inputPath = testFile("small.1.bed")

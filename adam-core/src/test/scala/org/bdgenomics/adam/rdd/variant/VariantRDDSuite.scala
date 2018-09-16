@@ -389,13 +389,11 @@ class VariantRDDSuite extends ADAMFunSuite {
     assert(rdd.dataset.count === 6)
     assert(rdd.rdd.count === 6)
     rdd.saveAsParquet(outputPath)
-    println(outputPath)
     val rdd2 = sc.loadVariants(outputPath)
     testMetadata(rdd2)
     assert(rdd2.rdd.count === 6)
     assert(rdd2.dataset.count === 6)
     val outputPath2 = tmpLocation()
-    println(outputPath2)
     rdd.transform(rdd => rdd) // no-op but force to rdd
       .saveAsParquet(outputPath2)
     val rdd3 = sc.loadVariants(outputPath2)

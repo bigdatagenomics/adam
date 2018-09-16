@@ -237,7 +237,7 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
     genotypes.rdd.mapPartitionsWithIndex((idx, iter) => {
       iter.map(f => (idx, f))
     }).collect
-    val features = FeatureRDD(sc.parallelize(featureRddBuilder), sd)
+    val features = FeatureRDD(sc.parallelize(featureRddBuilder), sd, Seq.empty)
     val x = features.copartitionByReferenceRegion(genotypes)
     val z = x.rdd.mapPartitionsWithIndex((idx, iter) => {
       if (idx == 0 && iter.size != 6) {

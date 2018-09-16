@@ -154,25 +154,25 @@ object ADAMContext {
   implicit def contigsToCoverageConversionFn(
     gRdd: NucleotideContigFragmentRDD,
     rdd: RDD[Coverage]): CoverageRDD = {
-    new RDDBoundCoverageRDD(rdd, gRdd.sequences, None)
+    new RDDBoundCoverageRDD(rdd, gRdd.sequences, Seq.empty[Sample], None)
   }
 
   implicit def contigsToCoverageDatasetConversionFn(
     gRdd: NucleotideContigFragmentRDD,
     ds: Dataset[Coverage]): CoverageRDD = {
-    new DatasetBoundCoverageRDD(ds, gRdd.sequences)
+    new DatasetBoundCoverageRDD(ds, gRdd.sequences, Seq.empty[Sample])
   }
 
   implicit def contigsToFeaturesConversionFn(
     gRdd: NucleotideContigFragmentRDD,
     rdd: RDD[Feature]): FeatureRDD = {
-    new RDDBoundFeatureRDD(rdd, gRdd.sequences, None)
+    new RDDBoundFeatureRDD(rdd, gRdd.sequences, Seq.empty[Sample], None)
   }
 
   implicit def contigsToFeaturesDatasetConversionFn(
     gRdd: NucleotideContigFragmentRDD,
     ds: Dataset[FeatureProduct]): FeatureRDD = {
-    new DatasetBoundFeatureRDD(ds, gRdd.sequences)
+    new DatasetBoundFeatureRDD(ds, gRdd.sequences, Seq.empty[Sample])
   }
 
   implicit def contigsToFragmentsConversionFn(
@@ -279,13 +279,13 @@ object ADAMContext {
   implicit def coverageToFeaturesConversionFn(
     gRdd: CoverageRDD,
     rdd: RDD[Feature]): FeatureRDD = {
-    new RDDBoundFeatureRDD(rdd, gRdd.sequences, None)
+    new RDDBoundFeatureRDD(rdd, gRdd.sequences, Seq.empty[Sample], None)
   }
 
   implicit def coverageToFeaturesDatasetConversionFn(
     gRdd: CoverageRDD,
     ds: Dataset[FeatureProduct]): FeatureRDD = {
-    new DatasetBoundFeatureRDD(ds, gRdd.sequences)
+    new DatasetBoundFeatureRDD(ds, gRdd.sequences, Seq.empty[Sample])
   }
 
   implicit def coverageToFragmentsConversionFn(
@@ -386,13 +386,13 @@ object ADAMContext {
   implicit def featuresToCoverageConversionFn(
     gRdd: FeatureRDD,
     rdd: RDD[Coverage]): CoverageRDD = {
-    new RDDBoundCoverageRDD(rdd, gRdd.sequences, None)
+    new RDDBoundCoverageRDD(rdd, gRdd.sequences, Seq.empty[Sample], None)
   }
 
   implicit def featuresToCoverageDatasetConversionFn(
     gRdd: FeatureRDD,
     ds: Dataset[Coverage]): CoverageRDD = {
-    new DatasetBoundCoverageRDD(ds, gRdd.sequences)
+    new DatasetBoundCoverageRDD(ds, gRdd.sequences, Seq.empty[Sample])
   }
 
   implicit def featuresToFeaturesConversionFn(gRdd: FeatureRDD,
@@ -499,25 +499,25 @@ object ADAMContext {
   implicit def fragmentsToCoverageConversionFn(
     gRdd: FragmentRDD,
     rdd: RDD[Coverage]): CoverageRDD = {
-    new RDDBoundCoverageRDD(rdd, gRdd.sequences, None)
+    new RDDBoundCoverageRDD(rdd, gRdd.sequences, Seq.empty[Sample], None)
   }
 
   implicit def fragmentsToCoverageDatasetConversionFn(
     gRdd: FragmentRDD,
     ds: Dataset[Coverage]): CoverageRDD = {
-    new DatasetBoundCoverageRDD(ds, gRdd.sequences)
+    new DatasetBoundCoverageRDD(ds, gRdd.sequences, Seq.empty[Sample])
   }
 
   implicit def fragmentsToFeaturesConversionFn(
     gRdd: FragmentRDD,
     rdd: RDD[Feature]): FeatureRDD = {
-    new RDDBoundFeatureRDD(rdd, gRdd.sequences, None)
+    new RDDBoundFeatureRDD(rdd, gRdd.sequences, Seq.empty[Sample], None)
   }
 
   implicit def fragmentsToFeaturesDatasetConversionFn(
     gRdd: FragmentRDD,
     ds: Dataset[FeatureProduct]): FeatureRDD = {
-    new DatasetBoundFeatureRDD(ds, gRdd.sequences)
+    new DatasetBoundFeatureRDD(ds, gRdd.sequences, Seq.empty[Sample])
   }
 
   implicit def fragmentsToFragmentsConversionFn(gRdd: FragmentRDD,
@@ -599,13 +599,13 @@ object ADAMContext {
   implicit def genericToCoverageConversionFn[Y <: GenericGenomicDataset[_, _]](
     gRdd: Y,
     rdd: RDD[Coverage]): CoverageRDD = {
-    new RDDBoundCoverageRDD(rdd, gRdd.sequences, None)
+    new RDDBoundCoverageRDD(rdd, gRdd.sequences, Seq.empty[Sample], None)
   }
 
   implicit def genericToFeatureConversionFn[Y <: GenericGenomicDataset[_, _]](
     gRdd: Y,
     rdd: RDD[Feature]): FeatureRDD = {
-    new RDDBoundFeatureRDD(rdd, gRdd.sequences, None)
+    new RDDBoundFeatureRDD(rdd, gRdd.sequences, Seq.empty[Sample], None)
   }
 
   implicit def genericToFragmentsConversionFn[Y <: GenericGenomicDataset[_, _]](
@@ -672,25 +672,25 @@ object ADAMContext {
   implicit def alignmentRecordsToCoverageConversionFn(
     gRdd: AlignmentRecordRDD,
     rdd: RDD[Coverage]): CoverageRDD = {
-    new RDDBoundCoverageRDD(rdd, gRdd.sequences, None)
+    new RDDBoundCoverageRDD(rdd, gRdd.sequences, Seq.empty[Sample], None)
   }
 
   implicit def alignmentRecordsToCoverageDatasetConversionFn(
     gRdd: AlignmentRecordRDD,
     ds: Dataset[Coverage]): CoverageRDD = {
-    new DatasetBoundCoverageRDD(ds, gRdd.sequences)
+    new DatasetBoundCoverageRDD(ds, gRdd.sequences, Seq.empty[Sample])
   }
 
   implicit def alignmentRecordsToFeaturesConversionFn(
     gRdd: AlignmentRecordRDD,
     rdd: RDD[Feature]): FeatureRDD = {
-    new RDDBoundFeatureRDD(rdd, gRdd.sequences, None)
+    new RDDBoundFeatureRDD(rdd, gRdd.sequences, Seq.empty[Sample], None)
   }
 
   implicit def alignmentRecordsToFeaturesDatasetConversionFn(
     gRdd: AlignmentRecordRDD,
     ds: Dataset[FeatureProduct]): FeatureRDD = {
-    new DatasetBoundFeatureRDD(ds, gRdd.sequences)
+    new DatasetBoundFeatureRDD(ds, gRdd.sequences, Seq.empty[Sample])
   }
 
   implicit def alignmentRecordsToFragmentsConversionFn(
@@ -778,25 +778,25 @@ object ADAMContext {
   implicit def genotypesToCoverageConversionFn(
     gRdd: GenotypeRDD,
     rdd: RDD[Coverage]): CoverageRDD = {
-    new RDDBoundCoverageRDD(rdd, gRdd.sequences, None)
+    new RDDBoundCoverageRDD(rdd, gRdd.sequences, Seq.empty[Sample], None)
   }
 
   implicit def genotypesToCoverageDatasetConversionFn(
     gRdd: GenotypeRDD,
     ds: Dataset[Coverage]): CoverageRDD = {
-    new DatasetBoundCoverageRDD(ds, gRdd.sequences)
+    new DatasetBoundCoverageRDD(ds, gRdd.sequences, Seq.empty[Sample])
   }
 
   implicit def genotypesToFeaturesConversionFn(
     gRdd: GenotypeRDD,
     rdd: RDD[Feature]): FeatureRDD = {
-    new RDDBoundFeatureRDD(rdd, gRdd.sequences, None)
+    new RDDBoundFeatureRDD(rdd, gRdd.sequences, Seq.empty[Sample], None)
   }
 
   implicit def genotypesToFeaturesDatasetConversionFn(
     gRdd: GenotypeRDD,
     ds: Dataset[FeatureProduct]): FeatureRDD = {
-    new DatasetBoundFeatureRDD(ds, gRdd.sequences)
+    new DatasetBoundFeatureRDD(ds, gRdd.sequences, Seq.empty[Sample])
   }
 
   implicit def genotypesToFragmentsConversionFn(
@@ -884,25 +884,25 @@ object ADAMContext {
   implicit def variantsToCoverageConversionFn(
     gRdd: VariantRDD,
     rdd: RDD[Coverage]): CoverageRDD = {
-    new RDDBoundCoverageRDD(rdd, gRdd.sequences, None)
+    new RDDBoundCoverageRDD(rdd, gRdd.sequences, Seq.empty[Sample], None)
   }
 
   implicit def variantsToCoverageDatasetConversionFn(
     gRdd: VariantRDD,
     ds: Dataset[Coverage]): CoverageRDD = {
-    new DatasetBoundCoverageRDD(ds, gRdd.sequences)
+    new DatasetBoundCoverageRDD(ds, gRdd.sequences, Seq.empty[Sample])
   }
 
   implicit def variantsToFeaturesConversionFn(
     gRdd: VariantRDD,
     rdd: RDD[Feature]): FeatureRDD = {
-    new RDDBoundFeatureRDD(rdd, gRdd.sequences, None)
+    new RDDBoundFeatureRDD(rdd, gRdd.sequences, Seq.empty[Sample], None)
   }
 
   implicit def variantsToFeaturesDatasetConversionFn(
     gRdd: VariantRDD,
     ds: Dataset[FeatureProduct]): FeatureRDD = {
-    new DatasetBoundFeatureRDD(ds, gRdd.sequences)
+    new DatasetBoundFeatureRDD(ds, gRdd.sequences, Seq.empty[Sample])
   }
 
   implicit def variantsToFragmentsConversionFn(
@@ -986,13 +986,13 @@ object ADAMContext {
   implicit def variantContextsToCoverageConversionFn(
     gRdd: VariantContextRDD,
     rdd: RDD[Coverage]): CoverageRDD = {
-    new RDDBoundCoverageRDD(rdd, gRdd.sequences, None)
+    new RDDBoundCoverageRDD(rdd, gRdd.sequences, Seq.empty[Sample], None)
   }
 
   implicit def variantContextsToFeaturesConversionFn(
     gRdd: VariantContextRDD,
     rdd: RDD[Feature]): FeatureRDD = {
-    new RDDBoundFeatureRDD(rdd, gRdd.sequences, None)
+    new RDDBoundFeatureRDD(rdd, gRdd.sequences, Seq.empty[Sample], None)
   }
 
   implicit def variantContextsToFragmentsConversionFn(
@@ -2665,13 +2665,15 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     if (optPredicate.isEmpty && !forceRdd) {
       // convert avro to sequence dictionary
       val sd = loadAvroSequenceDictionary(pathName)
+      val samples = loadAvroSamples(pathName)
 
-      new ParquetUnboundCoverageRDD(sc, pathName, sd)
+      new ParquetUnboundCoverageRDD(sc, pathName, sd, samples)
     } else {
       val coverageFields = Projection(FeatureField.contigName,
         FeatureField.start,
         FeatureField.end,
-        FeatureField.score)
+        FeatureField.score,
+        FeatureField.sampleId)
       loadParquetFeatures(pathName,
         optPredicate = optPredicate,
         optProjection = Some(coverageFields))
@@ -2702,7 +2704,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     if (Metrics.isRecording) records.instrument() else records
 
     optSequenceDictionary
-      .fold(FeatureRDD(records))(FeatureRDD(records, _))
+      .fold(FeatureRDD(records))(FeatureRDD(records, _, Seq.empty))
   }
 
   /**
@@ -2728,7 +2730,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     if (Metrics.isRecording) records.instrument() else records
 
     optSequenceDictionary
-      .fold(FeatureRDD(records))(FeatureRDD(records, _))
+      .fold(FeatureRDD(records))(FeatureRDD(records, _, Seq.empty))
   }
 
   /**
@@ -2754,7 +2756,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     if (Metrics.isRecording) records.instrument() else records
 
     optSequenceDictionary
-      .fold(FeatureRDD(records))(FeatureRDD(records, _))
+      .fold(FeatureRDD(records))(FeatureRDD(records, _, Seq.empty))
   }
 
   /**
@@ -2780,7 +2782,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     if (Metrics.isRecording) records.instrument() else records
 
     optSequenceDictionary
-      .fold(FeatureRDD(records))(FeatureRDD(records, _))
+      .fold(FeatureRDD(records))(FeatureRDD(records, _, Seq.empty))
   }
 
   /**
@@ -2805,7 +2807,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       parsedLines.flatMap(_._2))
 
     if (Metrics.isRecording) records.instrument() else records
-    FeatureRDD(records, seqDict)
+    FeatureRDD(records, seqDict, Seq.empty)
   }
 
   /**
@@ -2825,16 +2827,17 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     optProjection: Option[Schema] = None): FeatureRDD = {
 
     val sd = loadAvroSequenceDictionary(pathName)
+    val samples = loadAvroSamples(pathName)
 
     (optPredicate, optProjection) match {
       case (None, None) => {
-        ParquetUnboundFeatureRDD(sc, pathName, sd)
+        ParquetUnboundFeatureRDD(sc, pathName, sd, samples)
       }
       case (_, _) => {
         // load from disk
         val rdd = loadParquet[Feature](pathName, optPredicate, optProjection)
 
-        new RDDBoundFeatureRDD(rdd, sd, optPartitionMap = extractPartitionMap(pathName))
+        new RDDBoundFeatureRDD(rdd, sd, samples, optPartitionMap = extractPartitionMap(pathName))
       }
     }
   }
@@ -2858,6 +2861,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val features = loadParquetFeatures(pathName)
     val featureDatasetBound = DatasetBoundFeatureRDD(features.dataset,
       features.sequences,
+      features.samples,
       isPartitioned = true,
       Some(partitionedBinSize),
       optLookbackPartitions

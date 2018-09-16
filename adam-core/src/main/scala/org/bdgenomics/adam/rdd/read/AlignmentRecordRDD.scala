@@ -348,11 +348,11 @@ case class RDDBoundAlignmentRecordRDD private[rdd] (
         readMapped
       }).flatMap(r => {
         val positions: List[Long] = List.range(r.getStart, r.getEnd)
-        positions.map(n => (ReferencePosition(r.getContigName, n), 1))
+        positions.map(n => ((r.getRecordGroupSample, ReferencePosition(r.getContigName, n)), 1))
       }).reduceByKey(_ + _)
-        .map(r => Coverage(r._1, r._2.toDouble))
+        .map(r => Coverage(r._1._2, r._2.toDouble, Option(r._1._1)))
 
-    RDDBoundCoverageRDD(covCounts, sequences, None)
+    RDDBoundCoverageRDD(covCounts, sequences, recordGroups.toSamples, None)
   }
 
   def replaceSequences(
@@ -371,7 +371,7 @@ case class RDDBoundAlignmentRecordRDD private[rdd] (
   }
 }
 
-private case class AlignmentWindow(contigName: String, start: Long, end: Long) {
+private case class AlignmentWindow(contigName: String, start: Long, end: Long, sampleId: String) {
 }
 
 sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicDataset[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordRDD] {
@@ -483,7 +483,8 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicDataset[A
     import dataset.sqlContext.implicits._
     val covCounts = dataset.toDF
       .where($"readMapped")
-      .select($"contigName", $"start", $"end")
+      .select($"contigName", $"start", $"end", $"recordGroupSample")
+      .withColumnRenamed("recordGroupSample", "sampleId")
       .as[AlignmentWindow]
       .flatMap(w => {
         val width = (w.end - w.start).toInt
@@ -493,17 +494,18 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicDataset[A
         while (idx < width) {
           val lastPos = pos
           pos += 1L
-          buffer(idx) = Coverage(w.contigName, lastPos, pos, 1.0)
+          buffer(idx) = Coverage(w.contigName, lastPos, pos, 1.0, Option(w.sampleId))
           idx += 1
         }
         buffer
       }).toDF
-      .groupBy("contigName", "start", "end")
+      .withColumnRenamed("sampleId", "optSampleId")
+      .groupBy("contigName", "start", "end", "optSampleId")
       .sum("count")
       .withColumnRenamed("sum(count)", "count")
       .as[Coverage]
 
-    DatasetBoundCoverageRDD(covCounts, sequences)
+    DatasetBoundCoverageRDD(covCounts, sequences, recordGroups.toSamples)
   }
 
   /**

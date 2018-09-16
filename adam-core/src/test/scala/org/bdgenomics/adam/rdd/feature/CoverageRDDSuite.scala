@@ -124,7 +124,9 @@ class CoverageRDDSuite extends ADAMFunSuite {
   sparkTest("correctly saves coverage") {
     def testMetadata(cRdd: CoverageRDD) {
       val sequenceRdd = cRdd.addSequence(SequenceRecord("aSequence", 1000L))
+      val sampleRdd = cRdd.addSample(Sample.newBuilder().setName("Sample").build())
       assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
+      assert(sampleRdd.samples.map(r => r.getName).contains("Sample"))
     }
 
     val f1 = Feature.newBuilder().setContigName("chr1").setStart(1).setEnd(10).setScore(3.0).build()
@@ -202,6 +204,45 @@ class CoverageRDDSuite extends ADAMFunSuite {
     assert(coverage.rdd.count == 1)
   }
 
+  sparkTest("keeps sample metadata") {
+    val cov = generateCoverage(20)
+
+    val sample1 = Sample.newBuilder()
+      .setName("Sample1")
+      .build()
+
+    val sample2 = Sample.newBuilder()
+      .setName("Sample2")
+      .build()
+
+    val c1 = RDDBoundCoverageRDD(sc.parallelize(cov.toSeq).repartition(1), sd, Seq(sample1), None)
+    val c2 = RDDBoundCoverageRDD(sc.parallelize(cov.toSeq).repartition(1), sd, Seq(sample2), None)
+
+    val union = c1.union(c2)
+    assert(union.samples.size === 2)
+  }
+
+  sparkTest("can read a bed file with multiple samples to coverage") {
+
+    val f1 = Feature.newBuilder().setContigName("chr1").setStart(1).setEnd(10).setScore(3.0).setSampleId("S1").build()
+    val f2 = Feature.newBuilder().setContigName("chr1").setStart(15).setEnd(20).setScore(2.0).setSampleId("S1").build()
+    val f3 = Feature.newBuilder().setContigName("chr2").setStart(15).setEnd(20).setScore(2.0).setSampleId("S1").build()
+
+    val f4 = Feature.newBuilder().setContigName("chr1").setStart(1).setEnd(10).setScore(2.0).setSampleId("S2").build()
+    val f5 = Feature.newBuilder().setContigName("chr1").setStart(15).setEnd(20).setScore(2.0).setSampleId("S2").build()
+
+    val featureRDD: FeatureRDD = FeatureRDD(sc.parallelize(Seq(f1, f2, f3, f4, f5)))
+    val coverageRDD: CoverageRDD = featureRDD.toCoverage
+
+    val outputFile = tmpLocation(".adam")
+    coverageRDD.save(outputFile, false, false)
+
+    val region = ReferenceRegion("chr1", 1, 9)
+    val predicate = region.toPredicate
+    val coverage = sc.loadParquetCoverage(outputFile, Some(predicate))
+    assert(coverage.rdd.count == 2)
+  }
+
   sparkTest("correctly flatmaps coverage without aggregated bins") {
     val f1 = Feature.newBuilder().setContigName("chr1").setStart(1).setEnd(5).setScore(1.0).build()
     val f2 = Feature.newBuilder().setContigName("chr1").setStart(5).setEnd(7).setScore(3.0).build()
@@ -232,7 +273,7 @@ class CoverageRDDSuite extends ADAMFunSuite {
 
   sparkTest("collapses coverage records in one partition") {
     val cov = generateCoverage(20)
-    val coverage = RDDBoundCoverageRDD(sc.parallelize(cov.toSeq).repartition(1), sd, None)
+    val coverage = RDDBoundCoverageRDD(sc.parallelize(cov.toSeq).repartition(1), sd, Seq.empty, None)
     val collapsed = coverage.collapse
 
     assert(coverage.rdd.count == 20)
@@ -241,7 +282,7 @@ class CoverageRDDSuite extends ADAMFunSuite {
 
   sparkTest("approximately collapses coverage records in multiple partitions") {
     val cov = generateCoverage(20)
-    val coverage = RDDBoundCoverageRDD(sc.parallelize(cov), sd, None)
+    val coverage = RDDBoundCoverageRDD(sc.parallelize(cov), sd, Seq.empty, None)
     val collapsed = coverage.collapse
 
     assert(collapsed.rdd.count == 8)
@@ -453,7 +494,7 @@ class CoverageRDDSuite extends ADAMFunSuite {
     val coverage = sc.loadCoverage(testFile("sample_coverage.bed"), optSequenceDictionary = Some(sd))
     assert(coverage.sequences.containsReferenceName("chr1"))
 
-    val copy = CoverageRDD.apply(coverage.rdd, coverage.sequences)
+    val copy = CoverageRDD.apply(coverage.rdd, coverage.sequences, Seq.empty)
     assert(copy.rdd.count() === coverage.rdd.count())
     assert(copy.sequences.containsReferenceName("chr1"))
   }
@@ -463,7 +504,7 @@ class CoverageRDDSuite extends ADAMFunSuite {
     val coverage = sc.loadCoverage(testFile("sample_coverage.bed"), optSequenceDictionary = Some(sd))
     assert(coverage.sequences.containsReferenceName("chr1"))
 
-    val copy = CoverageRDD.apply(coverage.dataset, coverage.sequences)
+    val copy = CoverageRDD.apply(coverage.dataset, coverage.sequences, coverage.samples)
     assert(copy.dataset.count() === coverage.dataset.count())
     assert(copy.sequences.containsReferenceName("chr1"))
   }

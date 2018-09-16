@@ -31,10 +31,11 @@ private[adam] object Coverage {
    *
    * @param region ReferenceRegion in which Coverage spans
    * @param count Coverage count for each base pair in region
+   * @param optSampleId Option of sampleId for this Coverage record
    * @return Coverage spanning the specified ReferenceRegion
    */
-  def apply(region: ReferenceRegion, count: Double): Coverage = {
-    Coverage(region.referenceName, region.start, region.end, count)
+  def apply(region: ReferenceRegion, count: Double, optSampleId: Option[String]): Coverage = {
+    Coverage(region.referenceName, region.start, region.end, count, optSampleId)
   }
 
   /**
@@ -54,7 +55,8 @@ private[adam] object Coverage {
     Coverage(feature.getContigName,
       feature.getStart,
       feature.getEnd,
-      feature.getScore)
+      feature.getScore,
+      Option(feature.getSampleId))
   }
 
   /**
@@ -79,9 +81,10 @@ private[adam] object Coverage {
  *   observed.
  * @param end The end coordinate of the region where this coverage value was
  *   observed.
+ * @param optSampleId Option of sampleId for this Coverage record
  * @param count The average coverage across this region.
  */
-case class Coverage(contigName: String, start: Long, end: Long, count: Double) {
+case class Coverage(contigName: String, start: Long, end: Long, count: Double, optSampleId: Option[String] = None) {
 
   /**
    * Converts Coverage to Feature, setting Coverage count in the score attribute.
@@ -89,19 +92,25 @@ case class Coverage(contigName: String, start: Long, end: Long, count: Double) {
    * @return Feature built from Coverage
    */
   def toFeature: Feature = {
-    Feature.newBuilder()
+    val featureBuilder = Feature.newBuilder()
       .setContigName(contigName)
       .setStart(start)
       .setEnd(end)
       .setScore(count)
-      .build()
-  }
 
+    // set name, if applicable
+    if (optSampleId.isDefined) {
+      featureBuilder.setSampleId(optSampleId.get)
+    }
+
+    featureBuilder.build()
+  }
   /**
    * Converts Coverage to a Feature case class, for use with Spark SQL.
    */
   def toSqlFeature: FeatureProduct = {
     new FeatureProduct(featureId = None,
+      sampleId = optSampleId,
       name = None,
       source = None,
       featureType = None,
