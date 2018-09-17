@@ -289,10 +289,15 @@ abstract class CoverageRDD extends GenomicDataset[Coverage, Coverage, CoverageRD
   def collapse(): CoverageRDD = {
     val newRDD: RDD[Coverage] = rdd
       .mapPartitions(iter => {
-        if (iter.hasNext) {
-          val first = iter.next
-          collapse(iter, first, List.empty)
-        } else iter
+        // must sort values to iteratively collapse coverage
+        val sortedIter = iter.toList
+          .sortBy(r => (r.contigName, r.start))
+          .toIterator
+        if (sortedIter.hasNext) {
+          val first = sortedIter.next
+          println(first)
+          collapse(sortedIter, first, List.empty)
+        } else sortedIter
       })
 
     transform(rdd => newRDD)

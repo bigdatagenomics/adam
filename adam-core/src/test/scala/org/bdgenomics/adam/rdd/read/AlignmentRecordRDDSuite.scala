@@ -228,6 +228,23 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     testCoverage(coverageDs)
   }
 
+  sparkTest("computes coverage with multiple samples") {
+    // glob in 2 files with different samples
+    // testFile cannot read complex globs, so we have to parse the parent path
+    val relativePath = new File(testFile("NA12878.1_854950_855150.sam")).getParentFile.getPath
+    val inputPath = relativePath + "/{NA12878.1_854950_855150,bqsr1}.sam"
+
+    val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
+
+    def countByName(coverage: CoverageRDD, name: String): Long = {
+      coverage.rdd.filter(r => r.name == Some(name)).count
+    }
+
+    val coverageRdd = reads.toCoverage()
+    assert(countByName(coverageRdd, "NA12878") == 677) // number of coverage when just NA12878 is computed
+    assert(countByName(coverageRdd, "HG00096") == 39000) // number of coverage when just HG00096 is computed
+  }
+
   sparkTest("merges adjacent records with equal coverage values") {
     val inputPath = testFile("artificial.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)

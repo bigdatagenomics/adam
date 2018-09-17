@@ -135,7 +135,8 @@ class AlignmentRecordRDDTest(SparkTestCase):
         readsAsCoverage = reads.transmute(lambda x: x.select(x.contigName,
                                                              x.start,
                                                              x.end,
-                                                             x.mapq.cast(DoubleType()).alias("count")),
+                                                             x.mapq.cast(DoubleType()).alias("count"),
+                                                             x.recordGroupSample.alias("name")),
                                           CoverageRDD)
 
         assert(isinstance(readsAsCoverage, CoverageRDD))
@@ -150,9 +151,13 @@ class AlignmentRecordRDDTest(SparkTestCase):
         reads = ac.loadAlignments(readsPath)
 
         coverage = reads.toCoverage()
-        self.assertEquals(coverage.toDF().count(), 42)
+        # no reads are overlapping, so collapsed count should just be the number of reads
+        # collapsed
+        self.assertEquals(coverage.toDF().count(), 5)
 
-        coverage = reads.toCoverage(collapse = False)
+        # 5 reads: contig 3 has 8 bp, chr2 (2 strands) has 20bp, contig 4 has 8bp, contig 1 has 10 bp
+        # 8 + 20 + 8 + 10 = 46
+        coverage = reads.re.toCoverage(collapse = False)
         self.assertEquals(coverage.toDF().count(), 46)
 
 
