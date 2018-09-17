@@ -157,7 +157,7 @@ class AlignmentRecordRDDTest(SparkTestCase):
 
         # 5 reads: contig 3 has 8 bp, chr2 (2 strands) has 20bp, contig 4 has 8bp, contig 1 has 10 bp
         # 8 + 20 + 8 + 10 = 46
-        coverage = reads.re.toCoverage(collapse = False)
+        coverage = reads.toCoverage(collapse = False)
         self.assertEquals(coverage.toDF().count(), 46)
 
 
