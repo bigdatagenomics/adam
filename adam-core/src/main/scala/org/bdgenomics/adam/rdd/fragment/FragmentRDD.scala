@@ -220,6 +220,10 @@ case class DatasetBoundFragmentRDD private[rdd] (
     copy(dataset = newDataset)
   }
 
+  override def markDuplicates(): FragmentRDD = {
+    replaceDataset(MarkDuplicates(dataset, this.recordGroups))
+  }
+
   def replaceSequences(
     newSequences: SequenceDictionary): FragmentRDD = {
     copy(sequences = newSequences)
