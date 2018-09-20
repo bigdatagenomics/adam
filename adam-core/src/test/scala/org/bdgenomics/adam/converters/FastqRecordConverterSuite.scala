@@ -130,7 +130,7 @@ class FastqRecordConverterSuite extends FunSuite with PrivateMethodTester {
   test("testing FastqRecordConverter.convertFragment with valid input") {
     val input = (null, new Text("@read\nATCGA\n+\nabcde\n@read\nTCGAT\n+\n12345"))
     val fragment = converter.convertFragment(input)
-    assert(fragment.getReadName == "read")
+    assert(fragment.getName == "read")
 
     // more detailed testing
     val align1 = fragment.getAlignments.get(0)
@@ -151,7 +151,7 @@ class FastqRecordConverterSuite extends FunSuite with PrivateMethodTester {
   test("testing FastqRecordConverter.convertFragment with another valid input having /1, /2 suffixes") {
     val input = (null, new Text("@read/1\nATCGA\n+\nabcde\n@read/2\nTCGAT\n+\n12345"))
     val fragment = converter.convertFragment(input)
-    assert(fragment.getReadName == "read")
+    assert(fragment.getName == "read")
 
     // more detailed testing
     val align1 = fragment.getAlignments.get(0)

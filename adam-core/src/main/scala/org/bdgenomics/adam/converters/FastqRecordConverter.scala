@@ -253,7 +253,7 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
 
     // build and return record
     Fragment.newBuilder
-      .setReadName(firstReadName)
+      .setName(firstReadName)
       .setAlignments(alignments)
       .build
   }
