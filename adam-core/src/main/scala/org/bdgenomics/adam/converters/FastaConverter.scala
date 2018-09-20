@@ -26,6 +26,9 @@ import scala.collection.mutable
  */
 private[adam] object FastaConverter {
 
+  // nucleotide + amino acid + ambiguity codes covers a-z
+  private val fastaRegex = "^[a-zA-Z]+$".r
+
   /**
    * Case class that describes a line in FASTA that begins with a ">".
    *
@@ -109,8 +112,13 @@ private[adam] object FastaConverter {
   def apply(
     rdd: RDD[(Long, String)],
     maximumLength: Long = 10000L): RDD[NucleotideContigFragment] = {
+
+    def isFasta(line: String): Boolean = {
+      line.startsWith(">") || fastaRegex.pattern.matcher(line).matches()
+    }
+
     val filtered = rdd.map(kv => (kv._1, kv._2.trim()))
-      .filter((kv: (Long, String)) => !kv._2.startsWith(";"))
+      .filter((kv: (Long, String)) => isFasta(kv._2))
 
     val descriptionLines: Map[Long, FastaDescriptionLine] = getDescriptionLines(filtered)
     val indexToContigDescription = rdd.context.broadcast(descriptionLines)
