@@ -253,6 +253,12 @@ class FeatureRDDSuite extends ADAMFunSuite {
     })
   }
 
+  sparkTest("ignore FASTA sequence in GFF3 file") {
+    val inputPath = testFile("ctg123.fasta.gff3")
+    val features = sc.loadGff3(inputPath)
+    assert(features.rdd.count() === 12)
+  }
+
   sparkTest("save BED as GTF format") {
     val inputPath = testFile("dvl1.200.bed")
     val features = sc.loadBed(inputPath)

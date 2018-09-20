@@ -706,6 +706,11 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
     assert(fragments3.rdd.count === 2)
   }
 
+  sparkTest("load fasta sequences from GFF3 file") {
+    val sequences = sc.loadFasta(testFile("ctg123.fasta.gff3"))
+    assert(sequences.rdd.count() === 4)
+  }
+
   sparkTest("transform contigs to coverage rdd") {
     val contigs = sc.loadFasta(testFile("HLA_DQB1_05_01_01_02.fa"), 1000L)
 
