@@ -91,7 +91,18 @@ class WritableSerializer[T <: Writable] extends Serializer[T] {
 }
 
 class ADAMKryoRegistrator extends KryoRegistrator with Logging {
+
   override def registerClasses(kryo: Kryo) {
+
+    def registerByName(kryo: Kryo, name: String) {
+      try {
+        kryo.register(Class.forName(name))
+      } catch {
+        case cnfe: java.lang.ClassNotFoundException => {
+          debug("Could not register class %s by name".format(name))
+        }
+      }
+    }
 
     // Register Avro classes using fully qualified class names
     // Sort alphabetically and add blank lines between packages
@@ -113,7 +124,7 @@ class ADAMKryoRegistrator extends KryoRegistrator with Logging {
     kryo.register(classOf[htsjdk.variant.vcf.VCFHeaderLine])
     kryo.register(classOf[htsjdk.variant.vcf.VCFHeaderLineCount])
     kryo.register(classOf[htsjdk.variant.vcf.VCFHeaderLineType])
-    kryo.register(Class.forName("htsjdk.variant.vcf.VCFCompoundHeaderLine$SupportedHeaderLineType"))
+    registerByName(kryo, "htsjdk.variant.vcf.VCFCompoundHeaderLine$SupportedHeaderLineType")
 
     // java.lang
     kryo.register(classOf[java.lang.Class[_]])
@@ -126,21 +137,21 @@ class ADAMKryoRegistrator extends KryoRegistrator with Logging {
     kryo.register(classOf[java.util.HashSet[_]])
 
     // org.apache.avro
-    kryo.register(Class.forName("org.apache.avro.Schema$RecordSchema"))
-    kryo.register(Class.forName("org.apache.avro.Schema$Field"))
-    kryo.register(Class.forName("org.apache.avro.Schema$Field$Order"))
-    kryo.register(Class.forName("org.apache.avro.Schema$UnionSchema"))
-    kryo.register(Class.forName("org.apache.avro.Schema$Type"))
-    kryo.register(Class.forName("org.apache.avro.Schema$LockableArrayList"))
-    kryo.register(Class.forName("org.apache.avro.Schema$BooleanSchema"))
-    kryo.register(Class.forName("org.apache.avro.Schema$NullSchema"))
-    kryo.register(Class.forName("org.apache.avro.Schema$StringSchema"))
-    kryo.register(Class.forName("org.apache.avro.Schema$IntSchema"))
-    kryo.register(Class.forName("org.apache.avro.Schema$FloatSchema"))
-    kryo.register(Class.forName("org.apache.avro.Schema$EnumSchema"))
-    kryo.register(Class.forName("org.apache.avro.Schema$Name"))
-    kryo.register(Class.forName("org.apache.avro.Schema$LongSchema"))
-    kryo.register(Class.forName("org.apache.avro.generic.GenericData$Array"))
+    registerByName(kryo, "org.apache.avro.Schema$RecordSchema")
+    registerByName(kryo, "org.apache.avro.Schema$Field")
+    registerByName(kryo, "org.apache.avro.Schema$Field$Order")
+    registerByName(kryo, "org.apache.avro.Schema$UnionSchema")
+    registerByName(kryo, "org.apache.avro.Schema$Type")
+    registerByName(kryo, "org.apache.avro.Schema$LockableArrayList")
+    registerByName(kryo, "org.apache.avro.Schema$BooleanSchema")
+    registerByName(kryo, "org.apache.avro.Schema$NullSchema")
+    registerByName(kryo, "org.apache.avro.Schema$StringSchema")
+    registerByName(kryo, "org.apache.avro.Schema$IntSchema")
+    registerByName(kryo, "org.apache.avro.Schema$FloatSchema")
+    registerByName(kryo, "org.apache.avro.Schema$EnumSchema")
+    registerByName(kryo, "org.apache.avro.Schema$Name")
+    registerByName(kryo, "org.apache.avro.Schema$LongSchema")
+    registerByName(kryo, "org.apache.avro.generic.GenericData$Array")
 
     // org.apache.hadoop.conf
     kryo.register(classOf[org.apache.hadoop.conf.Configuration],
@@ -215,7 +226,7 @@ class ADAMKryoRegistrator extends KryoRegistrator with Logging {
     kryo.register(classOf[org.bdgenomics.adam.rdd.read.realignment.TargetSet],
       new org.bdgenomics.adam.rdd.read.realignment.TargetSetSerializer)
 
-    // org.bdgenomics.adam.rdd.read.recalibration.
+    // org.bdgenomics.adam.rdd.read.recalibration
     kryo.register(classOf[org.bdgenomics.adam.rdd.read.recalibration.CovariateKey])
     kryo.register(classOf[org.bdgenomics.adam.rdd.read.recalibration.CycleCovariate])
     kryo.register(classOf[org.bdgenomics.adam.rdd.read.recalibration.DinucCovariate])
@@ -279,24 +290,23 @@ class ADAMKryoRegistrator extends KryoRegistrator with Logging {
     kryo.register(classOf[org.codehaus.jackson.node.BooleanNode])
     kryo.register(classOf[org.codehaus.jackson.node.TextNode])
 
-    // org.apache.spark
-    try {
-      kryo.register(Class.forName("org.apache.spark.internal.io.FileCommitProtocol$TaskCommitMessage"))
-      kryo.register(Class.forName("org.apache.spark.sql.execution.datasources.FileFormatWriter$WriteTaskResult"))
-      kryo.register(Class.forName("org.apache.spark.sql.execution.datasources.BasicWriteTaskStats"))
-      kryo.register(Class.forName("org.apache.spark.sql.execution.datasources.ExecutedWriteSummary"))
-    } catch {
-      case cnfe: java.lang.ClassNotFoundException => {
-        debug("Did not find Spark internal class. This is expected for earlier Spark versions.")
-      }
-    }
+    // org.apache.spark.internal
+    registerByName(kryo, "org.apache.spark.internal.io.FileCommitProtocol$TaskCommitMessage")
+
+    // org.apache.spark.catalyst
     kryo.register(classOf[org.apache.spark.sql.catalyst.expressions.UnsafeRow])
-    kryo.register(Class.forName("org.apache.spark.sql.types.BooleanType$"))
-    kryo.register(Class.forName("org.apache.spark.sql.types.DoubleType$"))
-    kryo.register(Class.forName("org.apache.spark.sql.types.FloatType$"))
-    kryo.register(Class.forName("org.apache.spark.sql.types.IntegerType$"))
-    kryo.register(Class.forName("org.apache.spark.sql.types.LongType$"))
-    kryo.register(Class.forName("org.apache.spark.sql.types.StringType$"))
+
+    // org.apache.spark.sql
+    registerByName(kryo, "org.apache.spark.sql.execution.datasources.FileFormatWriter$WriteTaskResult")
+    registerByName(kryo, "org.apache.spark.sql.execution.datasources.BasicWriteTaskStats")
+    registerByName(kryo, "org.apache.spark.sql.execution.datasources.ExecutedWriteSummary")
+    registerByName(kryo, "org.apache.spark.sql.execution.datasources.WriteTaskResult")
+    registerByName(kryo, "org.apache.spark.sql.types.BooleanType$")
+    registerByName(kryo, "org.apache.spark.sql.types.DoubleType$")
+    registerByName(kryo, "org.apache.spark.sql.types.FloatType$")
+    registerByName(kryo, "org.apache.spark.sql.types.IntegerType$")
+    registerByName(kryo, "org.apache.spark.sql.types.LongType$")
+    registerByName(kryo, "org.apache.spark.sql.types.StringType$")
     kryo.register(classOf[org.apache.spark.sql.types.ArrayType])
     kryo.register(classOf[org.apache.spark.sql.types.MapType])
     kryo.register(classOf[org.apache.spark.sql.types.Metadata])
@@ -344,26 +354,26 @@ class ADAMKryoRegistrator extends KryoRegistrator with Logging {
     kryo.register(classOf[scala.Array[Long]])
     kryo.register(classOf[scala.Array[String]])
     kryo.register(classOf[scala.Array[Option[_]]])
-    kryo.register(Class.forName("scala.Tuple2$mcCC$sp"))
+    registerByName(kryo, "scala.Tuple2$mcCC$sp")
 
     // scala.collection
-    kryo.register(Class.forName("scala.collection.Iterator$$anon$11"))
-    kryo.register(Class.forName("scala.collection.Iterator$$anonfun$toStream$1"))
+    registerByName(kryo, "scala.collection.Iterator$$anon$11")
+    registerByName(kryo, "scala.collection.Iterator$$anonfun$toStream$1")
 
     // scala.collection.convert
-    kryo.register(Class.forName("scala.collection.convert.Wrappers$"))
+    registerByName(kryo, "scala.collection.convert.Wrappers$")
 
     // scala.collection.immutable
     kryo.register(classOf[scala.collection.immutable.::[_]])
     kryo.register(classOf[scala.collection.immutable.Range])
-    kryo.register(Class.forName("scala.collection.immutable.Stream$Cons"))
-    kryo.register(Class.forName("scala.collection.immutable.Stream$Empty$"))
-    kryo.register(Class.forName("scala.collection.immutable.Set$EmptySet$"))
+    registerByName(kryo, "scala.collection.immutable.Stream$Cons")
+    registerByName(kryo, "scala.collection.immutable.Stream$Empty$")
+    registerByName(kryo, "scala.collection.immutable.Set$EmptySet$")
 
     // scala.collection.mutable
     kryo.register(classOf[scala.collection.mutable.ArrayBuffer[_]])
     kryo.register(classOf[scala.collection.mutable.ListBuffer[_]])
-    kryo.register(Class.forName("scala.collection.mutable.ListBuffer$$anon$1"))
+    registerByName(kryo, "scala.collection.mutable.ListBuffer$$anon$1")
     kryo.register(classOf[scala.collection.mutable.WrappedArray.ofInt])
     kryo.register(classOf[scala.collection.mutable.WrappedArray.ofLong])
     kryo.register(classOf[scala.collection.mutable.WrappedArray.ofByte])
@@ -373,6 +383,9 @@ class ADAMKryoRegistrator extends KryoRegistrator with Logging {
     // scala.math
     kryo.register(scala.math.Numeric.LongIsIntegral.getClass)
 
+    // scala.reflect
+    registerByName(kryo, "scala.reflect.ClassTag$GenericClassTag")
+
     // This seems to be necessary when serializing a RangePartitioner, which writes out a ClassTag:
     //
     //  https://github.com/apache/spark/blob/v1.5.2/core/src/main/scala/org/apache/spark/Partitioner.scala#L220
@@ -380,10 +393,10 @@ class ADAMKryoRegistrator extends KryoRegistrator with Logging {
     // See also:
     //
     //   https://mail-archives.apache.org/mod_mbox/spark-user/201504.mbox/%3CCAC95X6JgXQ3neXF6otj6a+F_MwJ9jbj9P-Ssw3Oqkf518_eT1w@mail.gmail.com%3E
-    kryo.register(Class.forName("scala.reflect.ClassTag$$anon$1"))
+    registerByName(kryo, "scala.reflect.ClassTag$$anon$1")
 
     // needed for manifests
-    kryo.register(Class.forName("scala.reflect.ManifestFactory$ClassTypeManifest"))
+    registerByName(kryo, "scala.reflect.ManifestFactory$ClassTypeManifest")
 
     // Added to Spark in 1.6.0; needed here for Spark < 1.6.0.
     kryo.register(classOf[Array[Tuple1[Any]]])

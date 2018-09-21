@@ -174,9 +174,9 @@ class GenotypeDatasetSuite extends ADAMFunSuite {
     val targetsPath = testFile("small.1.bed")
 
     val genotypes = sc.loadGenotypes(genotypesPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Genotype]) => rdd.repartition(1))
     val targets = sc.loadFeatures(targetsPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Feature]) => rdd.repartition(1))
 
     val jRdd = genotypes.shuffleRegionJoin(targets)
     val jRdd0 = genotypes.shuffleRegionJoin(targets, optPartitions = Some(4), 0L)
@@ -203,9 +203,9 @@ class GenotypeDatasetSuite extends ADAMFunSuite {
     val targetsPath = testFile("small.1.bed")
 
     val genotypes = sc.loadGenotypes(genotypesPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Genotype]) => rdd.repartition(1))
     val targets = sc.loadFeatures(targetsPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Feature]) => rdd.repartition(1))
 
     val jRdd = genotypes.rightOuterShuffleRegionJoin(targets)
     val jRdd0 = genotypes.rightOuterShuffleRegionJoin(targets, optPartitions = Some(4), 0L)
@@ -228,9 +228,9 @@ class GenotypeDatasetSuite extends ADAMFunSuite {
     val targetsPath = testFile("small.1.bed")
 
     val genotypes = sc.loadGenotypes(genotypesPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Genotype]) => rdd.repartition(1))
     val targets = sc.loadFeatures(targetsPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Feature]) => rdd.repartition(1))
 
     val jRdd = genotypes.leftOuterShuffleRegionJoin(targets)
     val jRdd0 = genotypes.leftOuterShuffleRegionJoin(targets, optPartitions = Some(4), 0L)
@@ -253,9 +253,9 @@ class GenotypeDatasetSuite extends ADAMFunSuite {
     val targetsPath = testFile("small.1.bed")
 
     val genotypes = sc.loadGenotypes(genotypesPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Genotype]) => rdd.repartition(1))
     val targets = sc.loadFeatures(targetsPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Feature]) => rdd.repartition(1))
 
     val jRdd = genotypes.fullOuterShuffleRegionJoin(targets)
     val jRdd0 = genotypes.fullOuterShuffleRegionJoin(targets, optPartitions = Some(4), 0L)
@@ -282,9 +282,9 @@ class GenotypeDatasetSuite extends ADAMFunSuite {
     val targetsPath = testFile("small.1.bed")
 
     val genotypes = sc.loadGenotypes(genotypesPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Genotype]) => rdd.repartition(1))
     val targets = sc.loadFeatures(targetsPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Feature]) => rdd.repartition(1))
 
     val jRdd = genotypes.shuffleRegionJoinAndGroupByLeft(targets)
     val jRdd0 = genotypes.shuffleRegionJoinAndGroupByLeft(targets, optPartitions = Some(4), 0L)
@@ -307,9 +307,9 @@ class GenotypeDatasetSuite extends ADAMFunSuite {
     val targetsPath = testFile("small.1.bed")
 
     val genotypes = sc.loadGenotypes(genotypesPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Genotype]) => rdd.repartition(1))
     val targets = sc.loadFeatures(targetsPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Feature]) => rdd.repartition(1))
 
     val jRdd = genotypes.rightOuterShuffleRegionJoinAndGroupByLeft(targets)
     val jRdd0 = genotypes.rightOuterShuffleRegionJoinAndGroupByLeft(targets, optPartitions = Some(4), 0L)
@@ -379,7 +379,7 @@ class GenotypeDatasetSuite extends ADAMFunSuite {
     assert(rdd2.rdd.count === 18)
     assert(rdd2.dataset.count === 18)
     val outputPath2 = tmpLocation()
-    rdd.transform(rdd => rdd) // no-op but force to rdd
+    rdd.transform((rdd: RDD[Genotype]) => rdd) // no-op but force to rdd
       .saveAsParquet(outputPath2)
     val rdd3 = sc.loadGenotypes(outputPath2)
     assert(rdd3.rdd.count === 18)

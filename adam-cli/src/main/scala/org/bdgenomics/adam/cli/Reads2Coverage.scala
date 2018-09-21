@@ -18,11 +18,13 @@
 package org.bdgenomics.adam.cli
 
 import org.apache.spark.SparkContext
+import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.cli.FileSystemUtils._
 import org.bdgenomics.adam.projections.AlignmentRecordField._
 import org.bdgenomics.adam.projections.Projection
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.read.AlignmentRecordDataset
+import org.bdgenomics.formats.avro.AlignmentRecord
 import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
@@ -82,9 +84,9 @@ class Reads2Coverage(protected val args: Reads2CoverageArgs) extends BDGSparkCom
     val readsRdd: AlignmentRecordDataset = sc.loadAlignments(args.inputPath)
 
     val finalReads = if (args.onlyNegativeStrands && !args.onlyPositiveStrands) {
-      readsRdd.transform(rdd => rdd.filter(_.getReadNegativeStrand))
+      readsRdd.transform((rdd: RDD[AlignmentRecord]) => rdd.filter(_.getReadNegativeStrand))
     } else if (!args.onlyNegativeStrands && args.onlyPositiveStrands) {
-      readsRdd.transform(rdd => rdd.filter(!_.getReadNegativeStrand))
+      readsRdd.transform((rdd: RDD[AlignmentRecord]) => rdd.filter(!_.getReadNegativeStrand))
     } else {
       readsRdd
     }

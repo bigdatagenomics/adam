@@ -21,20 +21,21 @@
     <avro.version>1.8.2</avro.version>
     <scala.version>2.11.12</scala.version>
     <scala.version.prefix>2.11</scala.version.prefix>
-    <spark.version>2.3.3</spark.version>
-    <parquet.version>1.8.3</parquet.version>
+    <spark.version>2.4.3</spark.version>
+    <parquet.version>1.10.1</parquet.version>
     <!-- Edit the following line to configure the Hadoop (HDFS) version. -->
     <hadoop.version>2.7.5</hadoop.version>
     <hadoop-bam.version>7.9.2</hadoop-bam.version>
     <slf4j.version>1.7.25</slf4j.version>
     <bdg-formats.version>0.12.0</bdg-formats.version>
-    <bdg-utils.version>0.2.15-SNAPSHOT</bdg-utils.version>
+    <bdg-utils.version>0.2.15</bdg-utils.version>
     <grizzled-slf4j.version>1.3.3</grizzled-slf4j.version>
     <htsjdk.version>2.18.2</htsjdk.version>
     <scoverage.plugin.version>1.1.1</scoverage.plugin.version>
   </properties>
 
   <modules>
+    <module>adam-shade</module>
     <module>adam-codegen</module>
     <module>adam-core</module>
     <module>adam-apis</module>
@@ -285,7 +286,6 @@
           <useZincServer>true</useZincServer>
           <args>
             <arg>-unchecked</arg>
-            <arg>-optimise</arg>
             <arg>-deprecation</arg>
           </args>
           <jvmArgs>
@@ -508,22 +508,7 @@
       <dependency>
         <groupId>org.apache.parquet</groupId>
         <artifactId>parquet-avro</artifactId>
-        <!--
-            IMPORTANT NOTE
-            ==============
-            Spark 2.2.0 bumps to Parquet 1.8.2, but keeps Avro at 1.7.3. This
-            causes an issue when using parquet-avro 1.8.2, which relies on a
-            method that is new in Avro 1.8.x. The recommended workaround is to
-            pin parquet-avro to 1.8.1, instead of 1.8.2, as described in the
-            Spark 2.2.0 release notes.
-        -->
-        <version>1.8.1</version>
-        <exclusions>
-          <exclusion>
-            <groupId>org.apache.parquet</groupId>
-            <artifactId>*</artifactId>
-          </exclusion>
-        </exclusions>
+        <version>${parquet.version}</version>
       </dependency>
       <dependency>
         <groupId>org.seqdoop</groupId>

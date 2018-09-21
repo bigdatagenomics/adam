@@ -19,10 +19,12 @@ package org.bdgenomics.adam.cli
 
 import htsjdk.samtools.ValidationStringency
 import org.apache.spark.SparkContext
+import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.cli.FileSystemUtils._
 import org.bdgenomics.adam.projections.{ AlignmentRecordField, Projection }
 import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.formats.avro.AlignmentRecord
 import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
@@ -81,7 +83,7 @@ class ADAM2Fastq(val args: ADAM2FastqArgs) extends BDGSparkCommand[ADAM2FastqArg
 
     if (args.repartition != -1) {
       info("Repartitioning reads to to '%d' partitions".format(args.repartition))
-      reads = reads.transform(_.repartition(args.repartition))
+      reads = reads.transform((rdd: RDD[AlignmentRecord]) => rdd.repartition(args.repartition))
     }
 
     reads.saveAsFastq(

@@ -539,7 +539,7 @@ sealed abstract class FeatureDataset extends AvroGenomicDataset[Feature, Feature
    * @return FeatureDataset filtered by the specified feature type.
    */
   def filterToFeatureType(featureType: String): FeatureDataset = {
-    transform(rdd => rdd.filter(f => Option(f.getFeatureType).exists(_.equals(featureType))))
+    transform((rdd: RDD[Feature]) => rdd.filter(f => Option(f.getFeatureType).exists(_.equals(featureType))))
   }
 
   /**
@@ -559,7 +559,7 @@ sealed abstract class FeatureDataset extends AvroGenomicDataset[Feature, Feature
    * @return FeatureDataset filtered by the specified feature types.
    */
   def filterToFeatureTypes(featureTypes: Seq[String]): FeatureDataset = {
-    transform(rdd => rdd.filter(f => Option(f.getFeatureType).exists(featureTypes.contains(_))))
+    transform((rdd: RDD[Feature]) => rdd.filter(f => Option(f.getFeatureType).exists(featureTypes.contains(_))))
   }
 
   /**
@@ -569,7 +569,7 @@ sealed abstract class FeatureDataset extends AvroGenomicDataset[Feature, Feature
    * @return FeatureDataset filtered by the specified gene.
    */
   def filterToGene(geneId: String): FeatureDataset = {
-    transform(rdd => rdd.filter(f => Option(f.getGeneId).exists(_.equals(geneId))))
+    transform((rdd: RDD[Feature]) => rdd.filter(f => Option(f.getGeneId).exists(_.equals(geneId))))
   }
 
   /**
@@ -589,7 +589,7 @@ sealed abstract class FeatureDataset extends AvroGenomicDataset[Feature, Feature
    * @return FeatureDataset filtered by the specified genes.
    */
   def filterToGenes(geneIds: Seq[String]): FeatureDataset = {
-    transform(rdd => rdd.filter(f => Option(f.getGeneId).exists(geneIds.contains(_))))
+    transform((rdd: RDD[Feature]) => rdd.filter(f => Option(f.getGeneId).exists(geneIds.contains(_))))
   }
 
   /**
@@ -599,7 +599,7 @@ sealed abstract class FeatureDataset extends AvroGenomicDataset[Feature, Feature
    * @return FeatureDataset filtered by the specified transcript.
    */
   def filterToTranscript(transcriptId: String): FeatureDataset = {
-    transform(rdd => rdd.filter(f => Option(f.getTranscriptId).exists(_.equals(transcriptId))))
+    transform((rdd: RDD[Feature]) => rdd.filter(f => Option(f.getTranscriptId).exists(_.equals(transcriptId))))
   }
 
   /**
@@ -619,7 +619,7 @@ sealed abstract class FeatureDataset extends AvroGenomicDataset[Feature, Feature
    * @return FeatureDataset filtered by the specified transcripts.
    */
   def filterToTranscripts(transcriptIds: Seq[String]): FeatureDataset = {
-    transform(rdd => rdd.filter(f => Option(f.getTranscriptId).exists(transcriptIds.contains(_))))
+    transform((rdd: RDD[Feature]) => rdd.filter(f => Option(f.getTranscriptId).exists(transcriptIds.contains(_))))
   }
 
   /**
@@ -629,7 +629,7 @@ sealed abstract class FeatureDataset extends AvroGenomicDataset[Feature, Feature
    * @return FeatureDataset filtered by the specified exon.
    */
   def filterToExon(exonId: String): FeatureDataset = {
-    transform(rdd => rdd.filter(f => Option(f.getExonId).exists(_.equals(exonId))))
+    transform((rdd: RDD[Feature]) => rdd.filter(f => Option(f.getExonId).exists(_.equals(exonId))))
   }
 
   /**
@@ -649,7 +649,7 @@ sealed abstract class FeatureDataset extends AvroGenomicDataset[Feature, Feature
    * @return FeatureDataset filtered by the specified exons.
    */
   def filterToExons(exonIds: Seq[String]): FeatureDataset = {
-    transform(rdd => rdd.filter(f => Option(f.getExonId).exists(exonIds.contains(_))))
+    transform((rdd: RDD[Feature]) => rdd.filter(f => Option(f.getExonId).exists(exonIds.contains(_))))
   }
 
   /**
@@ -659,7 +659,7 @@ sealed abstract class FeatureDataset extends AvroGenomicDataset[Feature, Feature
    * @return FeatureDataset filtered by the specified minimum score.
    */
   def filterByScore(minimumScore: Double): FeatureDataset = {
-    transform(rdd => rdd.filter(f => Option(f.getScore).exists(_ >= minimumScore)))
+    transform((rdd: RDD[Feature]) => rdd.filter(f => Option(f.getScore).exists(_ >= minimumScore)))
   }
 
   /**
@@ -669,7 +669,7 @@ sealed abstract class FeatureDataset extends AvroGenomicDataset[Feature, Feature
    * @return FeatureDataset filtered by the specified parent.
    */
   def filterToParent(parentId: String): FeatureDataset = {
-    transform(rdd => rdd.filter(f => Option(f.getParentIds).exists(_.contains(parentId))))
+    transform((rdd: RDD[Feature]) => rdd.filter(f => Option(f.getParentIds).exists(_.contains(parentId))))
   }
 
   /**
@@ -689,7 +689,7 @@ sealed abstract class FeatureDataset extends AvroGenomicDataset[Feature, Feature
    * @return FeatureDataset filtered by the specified parents.
    */
   def filterToParents(parentIds: Seq[String]): FeatureDataset = {
-    transform(rdd => rdd.filter(f => Option(f.getParentIds).exists(!Collections.disjoint(_, parentIds))))
+    transform((rdd: RDD[Feature]) => rdd.filter(f => Option(f.getParentIds).exists(!Collections.disjoint(_, parentIds))))
   }
 
   /**
@@ -700,7 +700,7 @@ sealed abstract class FeatureDataset extends AvroGenomicDataset[Feature, Feature
    * @return FeatureDataset filtered by the specified attribute.
    */
   def filterByAttribute(key: String, value: String): FeatureDataset = {
-    transform(rdd => rdd.filter(f => Option(f.getAttributes.get(key)).exists(_.equals(value))))
+    transform((rdd: RDD[Feature]) => rdd.filter(f => Option(f.getAttributes.get(key)).exists(_.equals(value))))
   }
 
   /**

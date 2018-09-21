@@ -203,7 +203,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
   sparkTest("coverage does not fail on unmapped reads") {
     val inputPath = testFile("unmapped.sam")
     val reads: AlignmentRecordDataset = sc.loadAlignments(inputPath)
-      .transform(rdd => {
+      .transform((rdd: RDD[AlignmentRecord]) => {
         rdd.filter(!_.getReadMapped)
       })
 
@@ -252,7 +252,8 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
     val reads: AlignmentRecordDataset = sc.loadAlignments(inputPath)
 
     // repartition reads to 1 partition to achieve maximal merging of coverage
-    val coverage: CoverageDataset = reads.transform(_.repartition(1))
+    val coverage: CoverageDataset = reads
+      .transform((rdd: RDD[AlignmentRecord]) => rdd.repartition(1))
       .toCoverage()
       .sort()
       .collapse()
@@ -694,7 +695,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
     assert(rdd2.rdd.count === 20)
     assert(rdd2.dataset.count === 20)
     val outputPath2 = tmpLocation()
-    rdd.transform(rdd => rdd) // no-op but force to rdd
+    rdd.transform((rdd: RDD[AlignmentRecord]) => rdd) // no-op but force to rdd
       .saveAsParquet(outputPath2)
     val rdd3 = sc.loadAlignments(outputPath2)
     assert(rdd3.rdd.count === 20)
@@ -1178,9 +1179,9 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
     val targetsPath = testFile("small.1.bed")
 
     val reads = sc.loadAlignments(readsPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[AlignmentRecord]) => rdd.repartition(1))
     val targets = sc.loadFeatures(targetsPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Feature]) => rdd.repartition(1))
 
     val jRdd = reads.shuffleRegionJoin(targets)
     val jRdd0 = reads.shuffleRegionJoin(targets, optPartitions = Some(4), 0L)
@@ -1206,10 +1207,10 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
     val targetsPath = testFile("small.1.bed")
 
     val reads = sc.loadAlignments(readsPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[AlignmentRecord]) => rdd.repartition(1))
 
     val targets = sc.loadFeatures(targetsPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Feature]) => rdd.repartition(1))
 
     val jRdd = reads.shuffleRegionJoin(targets, flankSize = 20000000L)
     val jRdd0 = reads.shuffleRegionJoin(targets, optPartitions = Some(4), flankSize = 20000000L)
@@ -1227,9 +1228,9 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
     val targetsPath = testFile("small.1.bed")
 
     val reads = sc.loadAlignments(readsPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[AlignmentRecord]) => rdd.repartition(1))
     val targets = sc.loadFeatures(targetsPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Feature]) => rdd.repartition(1))
 
     val jRdd = reads.rightOuterShuffleRegionJoin(targets)
     val jRdd0 = reads.rightOuterShuffleRegionJoin(targets, optPartitions = Some(4), 0L)
@@ -1253,9 +1254,9 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
     val targetsPath = testFile("small.1.bed")
 
     val reads = sc.loadAlignments(readsPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[AlignmentRecord]) => rdd.repartition(1))
     val targets = sc.loadFeatures(targetsPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Feature]) => rdd.repartition(1))
 
     val jRdd = reads.leftOuterShuffleRegionJoin(targets)
     val jRdd0 = reads.leftOuterShuffleRegionJoin(targets, optPartitions = Some(4), 0L)
@@ -1279,9 +1280,9 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
     val targetsPath = testFile("small.1.bed")
 
     val reads = sc.loadAlignments(readsPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[AlignmentRecord]) => rdd.repartition(1))
     val targets = sc.loadFeatures(targetsPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Feature]) => rdd.repartition(1))
 
     val jRdd = reads.fullOuterShuffleRegionJoin(targets)
     val jRdd0 = reads.fullOuterShuffleRegionJoin(targets, optPartitions = Some(4), 0L)
@@ -1309,9 +1310,9 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
     val targetsPath = testFile("small.1.bed")
 
     val reads = sc.loadAlignments(readsPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[AlignmentRecord]) => rdd.repartition(1))
     val targets = sc.loadFeatures(targetsPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Feature]) => rdd.repartition(1))
 
     val jRdd = reads.shuffleRegionJoinAndGroupByLeft(targets)
     val jRdd0 = reads.shuffleRegionJoinAndGroupByLeft(targets, optPartitions = Some(4), 0L)
@@ -1335,9 +1336,9 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
     val targetsPath = testFile("small.1.bed")
 
     val reads = sc.loadAlignments(readsPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[AlignmentRecord]) => rdd.repartition(1))
     val targets = sc.loadFeatures(targetsPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Feature]) => rdd.repartition(1))
 
     val jRdd = reads.rightOuterShuffleRegionJoinAndGroupByLeft(targets)
     val jRdd0 = reads.rightOuterShuffleRegionJoinAndGroupByLeft(targets, optPartitions = Some(4), 0L)
@@ -1598,6 +1599,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
       val tempPath = tmpLocation(".adam")
       variants.saveAsParquet(tempPath)
 
+      System.out.println("loading " + tempPath + " as parquet into RDD...");
       assert(sc.loadVariants(tempPath).rdd.count === 20)
     }
 

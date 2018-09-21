@@ -171,7 +171,7 @@ class View(val args: ViewArgs) extends BDGSparkCommand[ViewArgs] {
     checkWriteablePath(args.outputPath, sc.hadoopConfiguration)
 
     val reads = sc.loadAlignments(args.inputPath)
-      .transform(applyFilters(_))
+      .transform((rdd: RDD[AlignmentRecord]) => applyFilters(rdd))
 
     if (args.outputPath != null) {
       reads.save(args)

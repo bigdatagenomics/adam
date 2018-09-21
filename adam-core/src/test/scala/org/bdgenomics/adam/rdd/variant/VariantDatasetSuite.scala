@@ -195,9 +195,9 @@ class VariantDatasetSuite extends ADAMFunSuite {
     val targetsPath = testFile("small.1.bed")
 
     val variants = sc.loadVariants(variantsPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Variant]) => rdd.repartition(1))
     val targets = sc.loadFeatures(targetsPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Feature]) => rdd.repartition(1))
 
     val jRdd = variants.shuffleRegionJoin(targets)
     val jRdd0 = variants.shuffleRegionJoin(targets, optPartitions = Some(4), 0L)
@@ -224,9 +224,9 @@ class VariantDatasetSuite extends ADAMFunSuite {
     val targetsPath = testFile("small.1.bed")
 
     val variants = sc.loadVariants(variantsPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Variant]) => rdd.repartition(1))
     val targets = sc.loadFeatures(targetsPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Feature]) => rdd.repartition(1))
 
     val jRdd = variants.rightOuterShuffleRegionJoin(targets)
     val jRdd0 = variants.rightOuterShuffleRegionJoin(targets, optPartitions = Some(4), 0L)
@@ -249,9 +249,9 @@ class VariantDatasetSuite extends ADAMFunSuite {
     val targetsPath = testFile("small.1.bed")
 
     val variants = sc.loadVariants(variantsPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Variant]) => rdd.repartition(1))
     val targets = sc.loadFeatures(targetsPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Feature]) => rdd.repartition(1))
 
     val jRdd = variants.leftOuterShuffleRegionJoin(targets)
     val jRdd0 = variants.leftOuterShuffleRegionJoin(targets, optPartitions = Some(4), 0L)
@@ -274,9 +274,9 @@ class VariantDatasetSuite extends ADAMFunSuite {
     val targetsPath = testFile("small.1.bed")
 
     val variants = sc.loadVariants(variantsPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Variant]) => rdd.repartition(1))
     val targets = sc.loadFeatures(targetsPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Feature]) => rdd.repartition(1))
 
     val jRdd = variants.fullOuterShuffleRegionJoin(targets)
     val jRdd0 = variants.fullOuterShuffleRegionJoin(targets, optPartitions = Some(4), 0L)
@@ -303,9 +303,9 @@ class VariantDatasetSuite extends ADAMFunSuite {
     val targetsPath = testFile("small.1.bed")
 
     val variants = sc.loadVariants(variantsPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Variant]) => rdd.repartition(1))
     val targets = sc.loadFeatures(targetsPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Feature]) => rdd.repartition(1))
 
     val jRdd = variants.shuffleRegionJoinAndGroupByLeft(targets)
     val jRdd0 = variants.shuffleRegionJoinAndGroupByLeft(targets, optPartitions = Some(4), 0L)
@@ -328,9 +328,9 @@ class VariantDatasetSuite extends ADAMFunSuite {
     val targetsPath = testFile("small.1.bed")
 
     val variants = sc.loadVariants(variantsPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Variant]) => rdd.repartition(1))
     val targets = sc.loadFeatures(targetsPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Feature]) => rdd.repartition(1))
 
     val jRdd = variants.rightOuterShuffleRegionJoinAndGroupByLeft(targets)
     val jRdd0 = variants.rightOuterShuffleRegionJoinAndGroupByLeft(targets, optPartitions = Some(4), 0L)
@@ -395,7 +395,7 @@ class VariantDatasetSuite extends ADAMFunSuite {
     assert(rdd2.rdd.count === 6)
     assert(rdd2.dataset.count === 6)
     val outputPath2 = tmpLocation()
-    rdd.transform(rdd => rdd) // no-op but force to rdd
+    rdd.transform((rdd: RDD[Variant]) => rdd) // no-op but force to rdd
       .saveAsParquet(outputPath2)
     val rdd3 = sc.loadVariants(outputPath2)
     assert(rdd3.rdd.count === 6)

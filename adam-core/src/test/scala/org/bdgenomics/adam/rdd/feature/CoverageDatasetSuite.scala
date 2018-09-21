@@ -170,7 +170,7 @@ class CoverageDatasetSuite extends ADAMFunSuite {
 
     // go to rdd and save as parquet
     val outputFile3 = tmpLocation(".adam")
-    coverageDs.transform(rdd => rdd).save(outputFile3, false, false)
+    coverageDs.transform((rdd: RDD[Coverage]) => rdd).save(outputFile3, false, false)
     val coverage3 = sc.loadCoverage(outputFile3)
     assert(coverage3.rdd.count == 3)
     assert(coverage3.dataset.count == 3)

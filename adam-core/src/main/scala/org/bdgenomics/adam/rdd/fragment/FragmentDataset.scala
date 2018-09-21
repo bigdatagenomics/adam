@@ -50,7 +50,6 @@ import org.bdgenomics.utils.interval.array.{
   IntervalArray,
   IntervalArraySerializer
 }
-import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
@@ -368,7 +367,7 @@ sealed abstract class FragmentDataset extends AvroReadGroupGenomicDataset[Fragme
    * @return Fragments whose quality scores are binned.
    */
   def binQualityScores(bins: java.util.List[QualityScoreBin]): FragmentDataset = {
-    binQualityScores(asScalaBuffer(bins))
+    binQualityScores(bins.asScala)
   }
 
   /**
@@ -397,6 +396,7 @@ sealed abstract class FragmentDataset extends AvroReadGroupGenomicDataset[Fragme
    */
   protected def getReferenceRegions(elem: Fragment): Seq[ReferenceRegion] = {
     elem.getAlignments
+      .asScala
       .flatMap(r => ReferenceRegion.opt(r))
       .toSeq
   }

@@ -62,7 +62,6 @@ import org.bdgenomics.utils.interval.array.{
   IntervalArraySerializer
 }
 import org.seqdoop.hadoop_bam._
-import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 import scala.language.implicitConversions
 import scala.math.{ abs, min }
@@ -689,7 +688,7 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
     val pgRecords = processingSteps.map(r => {
       AlignmentRecordDataset.processingStepToSam(r)
     })
-    header.setProgramRecords(pgRecords)
+    header.setProgramRecords(pgRecords.asJava)
 
     // broadcast for efficiency
     val hdrBcast = rdd.context.broadcast(SAMFileHeaderWritable(header))
@@ -810,7 +809,7 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
       val ssd = header.getSequenceDictionary
       binaryCodec.writeInt(ssd.size())
       ssd.getSequences
-        .toList
+        .asScala
         .foreach(r => {
           binaryCodec.writeString(r.getSequenceName(), true, true)
           binaryCodec.writeInt(r.getSequenceLength())
@@ -1686,7 +1685,7 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
    * @return Reads whose quality scores are binned.
    */
   def binQualityScores(bins: java.util.List[QualityScoreBin]): AlignmentRecordDataset = {
-    binQualityScores(asScalaBuffer(bins))
+    binQualityScores(bins.asScala)
   }
 
   /**
@@ -1711,7 +1710,7 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
    *   INDELs left normalized.
    */
   def leftNormalizeIndels(): AlignmentRecordDataset = {
-    transform(rdd => {
+    transform((rdd: RDD[AlignmentRecord]) => {
       rdd.map(r => {
         if (!r.getReadMapped || r.getCigar == null) {
           r
@@ -1739,7 +1738,7 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
    * @return AlignmentRecordDataset filtered by mapping quality.
    */
   def filterByMappingQuality(minimumMappingQuality: Int): AlignmentRecordDataset = {
-    transform(rdd => rdd.filter(g => Option(g.getMappingQuality).exists(_ >= minimumMappingQuality)))
+    transform((rdd: RDD[AlignmentRecord]) => rdd.filter(g => Option(g.getMappingQuality).exists(_ >= minimumMappingQuality)))
   }
 
   /**
@@ -1748,7 +1747,7 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
    * @return AlignmentRecordDataset filtered to remove unaligned reads.
    */
   def filterUnalignedReads(): AlignmentRecordDataset = {
-    transform(rdd => rdd.filter(_.getReadMapped))
+    transform((rdd: RDD[AlignmentRecord]) => rdd.filter(_.getReadMapped))
   }
 
   /**
@@ -1757,7 +1756,7 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
    * @return AlignmentRecordDataset filtered to remove unpaired reads.
    */
   def filterUnpairedReads(): AlignmentRecordDataset = {
-    transform(rdd => rdd.filter(_.getReadPaired))
+    transform((rdd: RDD[AlignmentRecord]) => rdd.filter(_.getReadPaired))
   }
 
   /**
@@ -1766,7 +1765,7 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
    * @return AlignmentRecordDataset filtered to remove duplicate reads.
    */
   def filterDuplicateReads(): AlignmentRecordDataset = {
-    transform(rdd => rdd.filter(!_.getDuplicateRead))
+    transform((rdd: RDD[AlignmentRecord]) => rdd.filter(!_.getDuplicateRead))
   }
 
   /**
@@ -1775,7 +1774,7 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
    * @return AlignmentRecordDataset filtered to include only primary alignments.
    */
   def filterToPrimaryAlignments(): AlignmentRecordDataset = {
-    transform(rdd => rdd.filter(_.getPrimaryAlignment))
+    transform((rdd: RDD[AlignmentRecord]) => rdd.filter(_.getPrimaryAlignment))
   }
 
   /**
@@ -1785,7 +1784,7 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
    * @return AlignmentRecordDataset filtered by read group.
    */
   def filterToReadGroup(readGroupId: String): AlignmentRecordDataset = {
-    transform(rdd => rdd.filter(g => Option(g.getReadGroupId).exists(_ == readGroupId)))
+    transform((rdd: RDD[AlignmentRecord]) => rdd.filter(g => Option(g.getReadGroupId).exists(_ == readGroupId)))
   }
 
   /**
@@ -1795,7 +1794,7 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
    * @return AlignmentRecordDataset filtered by one or more read groups.
    */
   def filterToReadGroups(readGroupIds: java.util.List[String]): AlignmentRecordDataset = {
-    filterToReadGroups(asScalaBuffer(readGroupIds))
+    filterToReadGroups(readGroupIds.asScala)
   }
 
   /**
@@ -1805,7 +1804,7 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
    * @return AlignmentRecordDataset filtered by one or more read groups.
    */
   def filterToReadGroups(readGroupIds: Seq[String]): AlignmentRecordDataset = {
-    transform(rdd => rdd.filter(g => Option(g.getReadGroupId).exists(readGroupIds.contains(_))))
+    transform((rdd: RDD[AlignmentRecord]) => rdd.filter(g => Option(g.getReadGroupId).exists(readGroupIds.contains(_))))
   }
 
   /**
@@ -1815,7 +1814,7 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
    * @return AlignmentRecordDataset filtered by the specified sample.
    */
   def filterToSample(readGroupSampleId: String): AlignmentRecordDataset = {
-    transform(rdd => rdd.filter(g => Option(g.getReadGroupSampleId).exists(_ == readGroupSampleId)))
+    transform((rdd: RDD[AlignmentRecord]) => rdd.filter(g => Option(g.getReadGroupSampleId).exists(_ == readGroupSampleId)))
   }
 
   /**
@@ -1825,7 +1824,7 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
    * @return AlignmentRecordDataset filtered by the specified samples.
    */
   def filterToSamples(readGroupSampleIds: java.util.List[String]): AlignmentRecordDataset = {
-    filterToSamples(asScalaBuffer(readGroupSampleIds))
+    filterToSamples(readGroupSampleIds.asScala)
   }
 
   /**
@@ -1835,6 +1834,6 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
    * @return AlignmentRecordDataset filtered by the specified samples.
    */
   def filterToSamples(readGroupSampleIds: Seq[String]): AlignmentRecordDataset = {
-    transform(rdd => rdd.filter(g => Option(g.getReadGroupSampleId).exists(readGroupSampleIds.contains(_))))
+    transform((rdd: RDD[AlignmentRecord]) => rdd.filter(g => Option(g.getReadGroupSampleId).exists(readGroupSampleIds.contains(_))))
   }
 }

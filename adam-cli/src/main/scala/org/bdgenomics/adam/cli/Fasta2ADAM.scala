@@ -19,8 +19,10 @@ package org.bdgenomics.adam.cli
 
 import grizzled.slf4j.Logging
 import org.apache.spark.SparkContext
+import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.cli.FileSystemUtils._
 import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.formats.avro.NucleotideContigFragment
 import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
@@ -63,7 +65,7 @@ class Fasta2ADAM(protected val args: Fasta2ADAMArgs) extends BDGSparkCommand[Fas
 
     info("Writing records to disk.")
     val finalFasta = if (args.partitions > 0) {
-      adamFasta.transform(_.repartition(args.partitions))
+      adamFasta.transform((rdd: RDD[NucleotideContigFragment]) => rdd.repartition(args.partitions))
     } else {
       adamFasta
     }

@@ -909,7 +909,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
 
       // run a map partitions with index and discard all items that fall
       // outside of their own partition's region bound
-      newRdd.transform(_.mapPartitionsWithIndex(filterPartition))
+      newRdd.transform((rdd: RDD[X]) => rdd.mapPartitionsWithIndex(filterPartition))
     }
   }
 
@@ -3339,15 +3339,15 @@ trait DatasetBoundGenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] 
   val optLookbackPartitions: Option[Int]
 
   override def cache(): V = {
-    transformDataset(_.cache())
+    transformDataset((ds: Dataset[U]) => ds.cache())
   }
 
   override def persist(sl: StorageLevel): V = {
-    transformDataset(_.persist(sl))
+    transformDataset((ds: Dataset[U]) => ds.persist(sl))
   }
 
   override def unpersist(): V = {
-    transformDataset(_.unpersist())
+    transformDataset((ds: Dataset[U]) => ds.unpersist())
   }
 
   private def referenceRegionsToDatasetQueryString(regions: Iterable[ReferenceRegion]): String = {
