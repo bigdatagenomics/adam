@@ -227,7 +227,7 @@ class VariantContextDatasetSuite extends ADAMFunSuite {
     implicit val uFormatter = new VCFOutFormatter(sc.hadoopConfiguration)
 
     val pipedRdd: VariantContextDataset = rdd.pipe[VariantContext, VariantContextProduct, VariantContextDataset, VCFInFormatter](Seq("tee", "/dev/null"))
-      .transform(_.cache())
+      .cache()
     val newRecords = pipedRdd.rdd.count
     assert(records === newRecords)
     assert(pipedRdd.rdd.flatMap(_.genotypes).count === 18)
@@ -242,7 +242,7 @@ class VariantContextDatasetSuite extends ADAMFunSuite {
     implicit val uFormatter = new VCFOutFormatter(sc.hadoopConfiguration)
 
     val pipedRdd: VariantContextDataset = rdd.pipe[VariantContext, VariantContextProduct, VariantContextDataset, VCFInFormatter](Seq("tee", "/dev/null"))
-      .transform(_.cache())
+      .cache()
     val newRecords = pipedRdd.rdd.count
     assert(records === newRecords)
     assert(pipedRdd.rdd.flatMap(_.genotypes).count === 18)
@@ -359,11 +359,12 @@ class VariantContextDatasetSuite extends ADAMFunSuite {
     val smallVcf = testFile("bqsr1.vcf")
     val rdd: VariantContextDataset = sc.loadVcf(smallVcf)
     val outputPath = tmpFile("bqsr1.vcf.bgz")
-    rdd.transform(_.repartition(4)).saveAsVcf(outputPath,
-      asSingleFile = false,
-      deferMerging = false,
-      disableFastConcat = false,
-      stringency = ValidationStringency.STRICT)
+    rdd.transform((rdd: RDD[VariantContext]) => rdd.repartition(4))
+      .saveAsVcf(outputPath,
+        asSingleFile = false,
+        deferMerging = false,
+        disableFastConcat = false,
+        stringency = ValidationStringency.STRICT)
 
     assert(sc.loadVcf(outputPath).rdd.count === 681)
   }

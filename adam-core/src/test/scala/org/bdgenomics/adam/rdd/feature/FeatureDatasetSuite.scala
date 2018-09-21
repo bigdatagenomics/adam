@@ -709,10 +709,10 @@ class FeatureDatasetSuite extends ADAMFunSuite {
     val targetsPath = testFile("small.1.bed")
 
     val features = sc.loadFeatures(featuresPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Feature]) => rdd.repartition(1))
       .replaceSequences(sd)
     val targets = sc.loadFeatures(targetsPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Feature]) => rdd.repartition(1))
 
     val jRdd = features.shuffleRegionJoin(targets)
     val jRdd0 = features.shuffleRegionJoin(targets, optPartitions = Some(4), 0L)
@@ -739,10 +739,10 @@ class FeatureDatasetSuite extends ADAMFunSuite {
     val targetsPath = testFile("small.1.bed")
 
     val features = sc.loadFeatures(featuresPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Feature]) => rdd.repartition(1))
       .replaceSequences(sd)
     val targets = sc.loadFeatures(targetsPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Feature]) => rdd.repartition(1))
 
     val jRdd = features.rightOuterShuffleRegionJoin(targets)
     val jRdd0 = features.rightOuterShuffleRegionJoin(targets, optPartitions = Some(4), 0L)
@@ -765,10 +765,10 @@ class FeatureDatasetSuite extends ADAMFunSuite {
     val targetsPath = testFile("small.1.bed")
 
     val features = sc.loadFeatures(featuresPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Feature]) => rdd.repartition(1))
       .replaceSequences(sd)
     val targets = sc.loadFeatures(targetsPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Feature]) => rdd.repartition(1))
 
     val jRdd = features.leftOuterShuffleRegionJoin(targets)
     val jRdd0 = features.leftOuterShuffleRegionJoin(targets, optPartitions = Some(4), 0L)
@@ -791,10 +791,10 @@ class FeatureDatasetSuite extends ADAMFunSuite {
     val targetsPath = testFile("small.1.bed")
 
     val features = sc.loadFeatures(featuresPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Feature]) => rdd.repartition(1))
       .replaceSequences(sd)
     val targets = sc.loadFeatures(targetsPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Feature]) => rdd.repartition(1))
 
     val jRdd = features.fullOuterShuffleRegionJoin(targets)
     val jRdd0 = features.fullOuterShuffleRegionJoin(targets, optPartitions = Some(4), 0L)
@@ -821,10 +821,10 @@ class FeatureDatasetSuite extends ADAMFunSuite {
     val targetsPath = testFile("small.1.bed")
 
     val features = sc.loadFeatures(featuresPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Feature]) => rdd.repartition(1))
       .replaceSequences(sd)
     val targets = sc.loadFeatures(targetsPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Feature]) => rdd.repartition(1))
 
     val jRdd = features.shuffleRegionJoinAndGroupByLeft(targets)
     val jRdd0 = features.shuffleRegionJoinAndGroupByLeft(targets, optPartitions = Some(4), 0L)
@@ -847,10 +847,10 @@ class FeatureDatasetSuite extends ADAMFunSuite {
     val targetsPath = testFile("small.1.bed")
 
     val features = sc.loadFeatures(featuresPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Feature]) => rdd.repartition(1))
       .replaceSequences(sd)
     val targets = sc.loadFeatures(targetsPath)
-      .transform(_.repartition(1))
+      .transform((rdd: RDD[Feature]) => rdd.repartition(1))
 
     val jRdd = features.rightOuterShuffleRegionJoinAndGroupByLeft(targets)
     val jRdd0 = features.rightOuterShuffleRegionJoinAndGroupByLeft(targets, optPartitions = Some(4), 0L)
@@ -972,7 +972,7 @@ class FeatureDatasetSuite extends ADAMFunSuite {
     assert(rdd2.rdd.count === 4)
     assert(rdd2.dataset.count === 4)
     val outputPath2 = tmpLocation()
-    rdd.transform(rdd => rdd) // no-op but force to rdd
+    rdd.transform((rdd: RDD[Feature]) => rdd) // no-op but force to rdd
       .saveAsParquet(outputPath2)
     val rdd3 = sc.loadFeatures(outputPath2)
     assert(rdd3.rdd.count === 4)
@@ -995,7 +995,7 @@ class FeatureDatasetSuite extends ADAMFunSuite {
     val rdd2 = sc.loadPartitionedParquetFeatures(outputPath)
     testMetadata(rdd2)
     val outputPath2 = tmpLocation()
-    rdd.transform(rdd => rdd) // no-op but force to rdd
+    rdd.transform((rdd: RDD[Feature]) => rdd) // no-op but force to rdd
       .saveAsPartitionedParquet(outputPath2)
     val rdd3 = sc.loadPartitionedParquetFeatures(outputPath2)
     assert(rdd3.rdd.count === 4)

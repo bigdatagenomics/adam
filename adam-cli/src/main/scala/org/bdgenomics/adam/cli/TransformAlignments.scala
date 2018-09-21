@@ -25,6 +25,7 @@ import htsjdk.samtools.ValidationStringency
 import org.apache.parquet.filter2.predicate.FilterApi
 import org.apache.parquet.filter2.predicate.Operators.BooleanColumn
 import org.apache.spark.SparkContext
+import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.algorithms.consensus._
 import org.bdgenomics.adam.cli.FileSystemUtils._
@@ -36,7 +37,7 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.ADAMSaveAnyArgs
 import org.bdgenomics.adam.rdd.read.{ AlignmentRecordDataset, QualityScoreBin }
 import org.bdgenomics.adam.rich.RichVariant
-import org.bdgenomics.formats.avro.ProcessingStep
+import org.bdgenomics.formats.avro.{ AlignmentRecord, ProcessingStep }
 import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
@@ -168,37 +169,37 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
   }
 
   /**
-   * @param rdd An RDD of reads.
+   * @param ds A genomic dataset of reads.
    * @return If the repartition argument is set, repartitions the input dataset
    *   to the number of partitions requested by the user. Forces a shuffle using
    *   a hash partitioner.
    */
-  private def maybeRepartition(rdd: AlignmentRecordDataset): AlignmentRecordDataset = {
+  private def maybeRepartition(ds: AlignmentRecordDataset): AlignmentRecordDataset = {
     if (args.repartition != -1) {
       info("Repartitioning reads to to '%d' partitions".format(args.repartition))
-      rdd.transform(_.repartition(args.repartition))
+      ds.transform((rdd: RDD[AlignmentRecord]) => rdd.repartition(args.repartition))
     } else {
-      rdd
+      ds
     }
   }
 
   /**
-   * @param rdd The RDD of reads that was the output of [[maybeRepartition]].
+   * @param ds The genomic dataset of reads that was the output of [[maybeRepartition]].
    * @return If the user has provided the `-mark_duplicates` flag, returns a RDD
    *   where reads have been marked as duplicates if they appear to be from
    *   duplicated fragments. Else, returns the input RDD.
    */
-  private def maybeDedupe(rdd: AlignmentRecordDataset): AlignmentRecordDataset = {
+  private def maybeDedupe(ds: AlignmentRecordDataset): AlignmentRecordDataset = {
     if (args.markDuplicates) {
       info("Marking duplicates")
-      rdd.markDuplicates()
+      ds.markDuplicates()
     } else {
-      rdd
+      ds
     }
   }
 
   /**
-   * @param rdd The RDD of reads that was output by [[maybeDedupe]].
+   * @param ds The genomic dataset of reads that was output by [[maybeDedupe]].
    * @param sl The requested storage level for caching, if requested.
    *   Realignment is a two pass algorithm (generate targets, then realign), so
    *   we allow users to request caching with the -cache flag.
@@ -209,7 +210,7 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
    *   -realign_indels is not set, we return the input RDD.
    */
   private def maybeRealign(sc: SparkContext,
-                           rdd: AlignmentRecordDataset,
+                           ds: AlignmentRecordDataset,
                            sl: StorageLevel): AlignmentRecordDataset = {
     if (args.locallyRealign) {
 
@@ -217,13 +218,13 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
 
       // has the user asked us to cache the rdd before multi-pass stages?
       if (args.cache) {
-        rdd.rdd.persist(sl)
+        ds.rdd.persist(sl)
       }
 
       // fold and get the consensus model for this realignment run
       val consensusGenerator = Option(args.knownIndelsFile)
         .fold(ConsensusGenerator.fromReads)(file => {
-          ConsensusGenerator.fromKnownIndels(rdd.rdd.context.loadVariants(file))
+          ConsensusGenerator.fromKnownIndels(ds.rdd.context.loadVariants(file))
         })
 
       // optionally load a reference
@@ -233,7 +234,7 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
       })
 
       // run realignment
-      val realignmentRdd = rdd.realignIndels(
+      val realignmentDs = ds.realignIndels(
         consensusGenerator,
         isSorted = false,
         maxIndelSize = args.maxIndelSize,
@@ -248,17 +249,17 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
       // unpersist our input, if persisting was requested
       // we don't reference said rdd again, so unpersisting is ok
       if (args.cache) {
-        rdd.rdd.unpersist()
+        ds.rdd.unpersist()
       }
 
-      realignmentRdd
+      realignmentDs
     } else {
-      rdd
+      ds
     }
   }
 
   /**
-   * @param rdd The RDD of reads that was output by [[maybeRealign]].
+   * @param ds The genomic dataset of reads that was output by [[maybeRealign]].
    * @param sl The requested storage level for caching, if requested.
    *   BQSR is a two pass algorithm (generate table, then recalibrate), so
    *   we allow users to request caching with the -cache flag.
@@ -268,7 +269,7 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
    *   known variation when recalibrating. If BQSR has not been requested,
    *   we return the input RDD.
    */
-  private def maybeRecalibrate(rdd: AlignmentRecordDataset,
+  private def maybeRecalibrate(ds: AlignmentRecordDataset,
                                sl: StorageLevel): AlignmentRecordDataset = {
     if (args.recalibrateBaseQualities) {
 
@@ -282,13 +283,13 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
       }
 
       // create the known sites file, if one is available
-      val knownSnps: SnpTable = createKnownSnpsTable(rdd.rdd.context)
+      val knownSnps: SnpTable = createKnownSnpsTable(ds.rdd.context)
       val broadcastedSnps = BroadcastingKnownSnps.time {
-        rdd.rdd.context.broadcast(knownSnps)
+        ds.rdd.context.broadcast(knownSnps)
       }
 
       // run bqsr
-      val bqsredRdd = rdd.recalibrateBaseQualities(
+      val bqsredDs = ds.recalibrateBaseQualities(
         broadcastedSnps,
         args.minAcceptableQuality,
         optSl,
@@ -296,41 +297,41 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
         optSamplingSeed = Option(args.samplingSeed).filter(_ != 0L)
       )
 
-      bqsredRdd
+      bqsredDs
     } else {
-      rdd
+      ds
     }
   }
 
   /**
-   * @param rdd The RDD of reads that was output by [[maybeRecalibrate]].
+   * @param ds The genomic dataset of reads that was output by [[maybeRecalibrate]].
    * @return If -coalesce is set, coalesces the RDD to the number of paritions
    *   requested. Forces a shuffle if the number of partitions requested is
    *   smaller than the current number of partitions, or if the -force_shuffle
    *   flag is set. If -coalesce was not requested, returns the input RDD.
    */
-  private def maybeCoalesce(rdd: AlignmentRecordDataset): AlignmentRecordDataset = {
+  private def maybeCoalesce(ds: AlignmentRecordDataset): AlignmentRecordDataset = {
     if (args.coalesce != -1) {
       info("Coalescing the number of partitions to '%d'".format(args.coalesce))
-      if (args.coalesce > rdd.rdd.partitions.length || args.forceShuffle) {
-        rdd.transform(_.coalesce(args.coalesce, shuffle = true))
+      if (args.coalesce > ds.rdd.partitions.length || args.forceShuffle) {
+        ds.transform((rdd: RDD[AlignmentRecord]) => rdd.coalesce(args.coalesce, shuffle = true))
       } else {
-        rdd.transform(_.coalesce(args.coalesce, shuffle = false))
+        ds.transform((rdd: RDD[AlignmentRecord]) => rdd.coalesce(args.coalesce, shuffle = false))
       }
     } else {
-      rdd
+      ds
     }
   }
 
   /**
-   * @param rdd The RDD of reads that was output by [[maybeCoalesce]].
+   * @param ds The genomic dataset of reads that was output by [[maybeCoalesce]].
    * @param sl The requested storage level for caching, if requested.
    * @return If -sortReads was set, returns the sorted reads. If
    *   -sort_lexicographically is additionally set, sorts lexicographically,
    *   instead of by contig index. If no sorting was requested, returns
    *   the input RDD.
    */
-  private def maybeSort(rdd: AlignmentRecordDataset,
+  private def maybeSort(ds: AlignmentRecordDataset,
                         sl: StorageLevel): AlignmentRecordDataset = {
     if (args.sortReads) {
 
@@ -338,31 +339,31 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
       // 1. sample to create partitioner
       // 2. repartition and sort within partitions
       if (args.cache) {
-        rdd.rdd.persist(sl)
+        ds.rdd.persist(sl)
       }
 
       info("Sorting reads")
 
       // are we sorting lexicographically or using legacy SAM sort order?
-      val sortedRdd = if (args.sortLexicographically) {
-        rdd.sortReadsByReferencePosition()
+      val sortedDs = if (args.sortLexicographically) {
+        ds.sortReadsByReferencePosition()
       } else {
-        rdd.sortReadsByReferencePositionAndIndex()
+        ds.sortReadsByReferencePositionAndIndex()
       }
 
       // unpersist the cached rdd, if caching was requested
       if (args.cache) {
-        rdd.rdd.unpersist()
+        ds.rdd.unpersist()
       }
 
-      sortedRdd
+      sortedDs
     } else {
-      rdd
+      ds
     }
   }
 
   /**
-   * @param rdd The RDD of reads that was output by [[maybeSort]].
+   * @param ds The genomic dataset of reads that was output by [[maybeSort]].
    * @param stringencyOpt An optional validation stringency.
    * @return If -add_md_tags is set, recomputes the MD tags for the reads
    *   provided. If some reads have tags, -md_tag_overwrite controls whether
@@ -370,24 +371,24 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
    *   return the input RDD.
    */
   private def maybeMdTag(sc: SparkContext,
-                         rdd: AlignmentRecordDataset,
+                         ds: AlignmentRecordDataset,
                          stringencyOpt: Option[ValidationStringency]): AlignmentRecordDataset = {
     if (args.mdTagsReferenceFile != null) {
       info(s"Adding MDTags to reads based on reference file ${args.mdTagsReferenceFile}")
       val referenceFile = sc.loadReferenceFile(args.mdTagsReferenceFile,
         maximumLength = args.mdTagsFragmentSize)
-      rdd.computeMismatchingPositions(
+      ds.computeMismatchingPositions(
         referenceFile,
         overwriteExistingTags = args.mdTagsOverwrite,
         validationStringency = stringencyOpt.getOrElse(ValidationStringency.STRICT))
     } else {
-      rdd
+      ds
     }
   }
 
-  def apply(rdd: AlignmentRecordDataset): AlignmentRecordDataset = {
+  def apply(ds: AlignmentRecordDataset): AlignmentRecordDataset = {
 
-    val sc = rdd.rdd.context
+    val sc = ds.rdd.context
     val sl = StorageLevel.fromString(args.storageLevel)
 
     val stringencyOpt = Option(args.stringency).map(ValidationStringency.valueOf(_))
@@ -397,28 +398,28 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
     }
 
     // first repartition if needed
-    val initialRdd = maybeRepartition(rdd)
+    val initialDs = maybeRepartition(ds)
 
     // then bin, if desired
-    val binnedRdd = maybeBin(rdd)
+    val binnedDs = maybeBin(initialDs)
 
     // then, mark duplicates, if desired
-    val maybeDedupedRdd = maybeDedupe(binnedRdd)
+    val maybeDedupedDs = maybeDedupe(binnedDs)
 
     // once we've deduped our reads, maybe realign them
-    val maybeRealignedRdd = maybeRealign(sc, maybeDedupedRdd, sl)
+    val maybeRealignedDs = maybeRealign(sc, maybeDedupedDs, sl)
 
     // run BQSR
-    val maybeRecalibratedRdd = maybeRecalibrate(maybeRealignedRdd, sl)
+    val maybeRecalibratedDs = maybeRecalibrate(maybeRealignedDs, sl)
 
     // does the user want us to coalesce before saving?
-    val finalPreprocessedRdd = maybeCoalesce(maybeRecalibratedRdd)
+    val finalPreprocessedDs = maybeCoalesce(maybeRecalibratedDs)
 
     // NOTE: For now, sorting needs to be the last transform
-    val maybeSortedRdd = maybeSort(finalPreprocessedRdd, sl)
+    val maybeSortedDs = maybeSort(finalPreprocessedDs, sl)
 
     // recompute md tags, if requested, and return
-    maybeMdTag(sc, maybeSortedRdd, stringencyOpt)
+    maybeMdTag(sc, maybeSortedDs, stringencyOpt)
   }
 
   def forceNonParquet(): Boolean = {
@@ -465,7 +466,7 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
       )
     }
 
-    val loadedRdd: AlignmentRecordDataset =
+    val loadedDs: AlignmentRecordDataset =
       if (args.forceLoadBam) {
         if (args.regionPredicate != null) {
           val loci = ReferenceRegion.fromString(args.regionPredicate)
@@ -517,8 +518,8 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
         }
       }
 
-    val aRdd: AlignmentRecordDataset = if (args.disableProcessingStep) {
-      loadedRdd
+    val aDs: AlignmentRecordDataset = if (args.disableProcessingStep) {
+      loadedDs
     } else {
       // add program info
       val about = new About()
@@ -534,13 +535,13 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
         .setVersion(version)
         .setCommandLine(args.command)
         .build
-      loadedRdd.addProcessingStep(processingStep)
+      loadedDs.addProcessingStep(processingStep)
     }
 
-    val rdd = aRdd.rdd
-    val sd = aRdd.sequences
-    val rgd = aRdd.readGroups
-    val pgs = aRdd.processingSteps
+    val rdd = aDs.rdd
+    val sd = aDs.sequences
+    val rgd = aDs.readGroups
+    val pgs = aDs.processingSteps
 
     // Optionally load a second RDD and concatenate it with the first.
     // Paired-FASTQ loading is avoided here because that wouldn't make sense
@@ -566,10 +567,10 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
     })
 
     // make a new aligned read rdd, that merges the two RDDs together
-    val newRdd = AlignmentRecordDataset(mergedRdd, mergedSd, mergedRgd, mergedPgs)
+    val newDs = AlignmentRecordDataset(mergedRdd, mergedSd, mergedRgd, mergedPgs)
 
     // run our transformation
-    val outputRdd = this.apply(newRdd)
+    val outputDs = this.apply(newDs)
 
     // if we are sorting, we must strip the indices from the sequence dictionary
     // and sort the sequence dictionary
@@ -587,12 +588,12 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
     }
 
     if (args.partitionByStartPos) {
-      if (outputRdd.sequences.isEmpty) {
+      if (outputDs.sequences.isEmpty) {
         warn("This dataset is not aligned and therefore will not benefit from being saved as a partitioned dataset")
       }
-      outputRdd.saveAsPartitionedParquet(args.outputPath, partitionSize = args.partitionedBinSize)
+      outputDs.saveAsPartitionedParquet(args.outputPath, partitionSize = args.partitionedBinSize)
     } else {
-      outputRdd.save(args,
+      outputDs.save(args,
         isSorted = args.sortReads || args.sortLexicographically)
     }
   }

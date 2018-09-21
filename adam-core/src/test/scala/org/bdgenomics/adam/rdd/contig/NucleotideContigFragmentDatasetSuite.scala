@@ -138,7 +138,7 @@ class NucleotideContigFragmentDatasetSuite extends ADAMFunSuite {
 
     // save using rdd path
     val output2 = tmpFile("ctg.adam")
-    val rddBound = fragments2.transform(rdd => rdd)
+    val rddBound = fragments2.transform((rdd: RDD[NucleotideContigFragment]) => rdd)
     testMetadata(rddBound)
     rddBound.saveAsParquet(output2)
     val fragments3 = sc.loadContigFragments(output2)
@@ -169,7 +169,7 @@ class NucleotideContigFragmentDatasetSuite extends ADAMFunSuite {
 
     // save using rdd path
     val output2 = tmpFile("ctg.adam")
-    val rddBound = fragments2.transform(rdd => rdd)
+    val rddBound = fragments2.transform((rdd: RDD[NucleotideContigFragment]) => rdd)
     testMetadata(rddBound)
     rddBound.saveAsPartitionedParquet(output2)
     val fragments3 = sc.loadPartitionedParquetContigFragments(output2)
@@ -416,7 +416,7 @@ class NucleotideContigFragmentDatasetSuite extends ADAMFunSuite {
 
     val outputDir = Files.createTempDir()
     val outputFastaFile = outputDir.getAbsolutePath + "/test.fa"
-    rdd.transform(_.coalesce(1)).saveAsFasta(outputFastaFile)
+    rdd.transform((rdd: RDD[NucleotideContigFragment]) => rdd.coalesce(1)).saveAsFasta(outputFastaFile)
     val fastaLines = scala.io.Source.fromFile(new File(outputFastaFile + "/part-00000")).getLines().toSeq
 
     assert(fastaLines.length === 2)
@@ -439,7 +439,7 @@ class NucleotideContigFragmentDatasetSuite extends ADAMFunSuite {
 
     val outputDir = Files.createTempDir()
     val outputFastaFile = outputDir.getAbsolutePath + "/test.fa"
-    rdd.transform(_.coalesce(1)).saveAsFasta(outputFastaFile)
+    rdd.transform((rdd: RDD[NucleotideContigFragment]) => rdd.coalesce(1)).saveAsFasta(outputFastaFile)
     val fastaLines = scala.io.Source.fromFile(new File(outputFastaFile + "/part-00000")).getLines().toSeq
 
     assert(fastaLines.length === 2)
@@ -463,7 +463,7 @@ class NucleotideContigFragmentDatasetSuite extends ADAMFunSuite {
 
     val outputDir = Files.createTempDir()
     val outputFastaFile = outputDir.getAbsolutePath + "/test.fa"
-    rdd.transform(_.coalesce(1)).saveAsFasta(outputFastaFile)
+    rdd.transform((rdd: RDD[NucleotideContigFragment]) => rdd.coalesce(1)).saveAsFasta(outputFastaFile)
     val fastaLines = scala.io.Source.fromFile(new File(outputFastaFile + "/part-00000")).getLines().toSeq
 
     assert(fastaLines.length === 2)
@@ -487,7 +487,7 @@ class NucleotideContigFragmentDatasetSuite extends ADAMFunSuite {
 
     val outputDir = Files.createTempDir()
     val outputFastaFile = outputDir.getAbsolutePath + "/test.fa"
-    rdd.transform(_.coalesce(1)).saveAsFasta(outputFastaFile)
+    rdd.transform((rdd: RDD[NucleotideContigFragment]) => rdd.coalesce(1)).saveAsFasta(outputFastaFile)
     val fastaLines = scala.io.Source.fromFile(new File(outputFastaFile + "/part-00000")).getLines().toSeq
 
     assert(fastaLines.length === 2)
@@ -518,11 +518,11 @@ class NucleotideContigFragmentDatasetSuite extends ADAMFunSuite {
     }
 
     val outputFastaFile = tmpFile("test.fa")
-    rdd.transform(_.coalesce(1)).saveAsFasta(outputFastaFile)
+    rdd.transform((rdd: RDD[NucleotideContigFragment]) => rdd.coalesce(1)).saveAsFasta(outputFastaFile)
     validate(outputFastaFile)
 
     val outputFastaFile2 = tmpFile("test2.fa")
-    rdd.transform(_.coalesce(1)).saveAsFasta(outputFastaFile2)
+    rdd.transform((rdd: RDD[NucleotideContigFragment]) => rdd.coalesce(1)).saveAsFasta(outputFastaFile2)
     validate(outputFastaFile2)
   }
 
@@ -554,7 +554,7 @@ class NucleotideContigFragmentDatasetSuite extends ADAMFunSuite {
 
     val outputDir = Files.createTempDir()
     val outputFastaFile = outputDir.getAbsolutePath + "/test.fa"
-    rdd.transform(_.coalesce(1)).saveAsFasta(outputFastaFile)
+    rdd.transform((rdd: RDD[NucleotideContigFragment]) => rdd.coalesce(1)).saveAsFasta(outputFastaFile)
     val fastaLines = scala.io.Source.fromFile(new File(outputFastaFile + "/part-00000")).getLines().toSeq
 
     assert(fastaLines.length === 6)
@@ -599,7 +599,7 @@ class NucleotideContigFragmentDatasetSuite extends ADAMFunSuite {
 
     val outputDir = Files.createTempDir()
     val outputFastaFile = outputDir.getAbsolutePath + "/test.fa"
-    rdd.transform(_.coalesce(1)).saveAsFasta(outputFastaFile)
+    rdd.transform((rdd: RDD[NucleotideContigFragment]) => rdd.coalesce(1)).saveAsFasta(outputFastaFile)
     val fastaLines = scala.io.Source.fromFile(new File(outputFastaFile + "/part-00000")).getLines().toSeq
 
     assert(fastaLines.length === 6)

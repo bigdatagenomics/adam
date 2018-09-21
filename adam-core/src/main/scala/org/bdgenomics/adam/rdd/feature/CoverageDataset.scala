@@ -474,7 +474,7 @@ abstract class CoverageDataset
    * @return CoverageDataset of flattened Coverage records.
    */
   def flatten(): CoverageDataset = {
-    transform(rdd => flatMapCoverage(rdd))
+    transform((rdd: RDD[Coverage]) => flatMapCoverage(rdd))
   }
 
   /**

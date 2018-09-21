@@ -19,8 +19,10 @@ package org.bdgenomics.adam.cli
 
 import grizzled.slf4j.Logging
 import org.apache.spark.SparkContext
+import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.cli.FileSystemUtils._
 import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.formats.avro.NucleotideContigFragment
 import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
@@ -63,9 +65,9 @@ class ADAM2Fasta(val args: ADAM2FastaArgs) extends BDGSparkCommand[ADAM2FastaArg
 
     val cc = if (args.coalesce > 0) {
       if (args.coalesce > contigs.rdd.partitions.length || args.forceShuffle) {
-        contigs.transform(_.coalesce(args.coalesce, shuffle = true))
+        contigs.transform((rdd: RDD[NucleotideContigFragment]) => rdd.coalesce(args.coalesce, shuffle = true))
       } else {
-        contigs.transform(_.coalesce(args.coalesce, shuffle = false))
+        contigs.transform((rdd: RDD[NucleotideContigFragment]) => rdd.coalesce(args.coalesce, shuffle = false))
       }
     } else {
       contigs

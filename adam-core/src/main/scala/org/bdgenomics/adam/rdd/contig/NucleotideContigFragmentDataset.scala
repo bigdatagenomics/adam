@@ -45,7 +45,6 @@ import org.bdgenomics.utils.interval.array.{
   IntervalArray,
   IntervalArraySerializer
 }
-import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 import scala.math.max
 import scala.reflect.ClassTag
@@ -321,7 +320,7 @@ sealed abstract class NucleotideContigFragmentDataset extends AvroGenomicDataset
       if (isFragment(record)) {
         sb.append(s" fragment ${record.getIndex + 1} of ${record.getFragments}")
       }
-      for (line <- Splitter.fixedLength(lineWidth).split(record.getSequence)) {
+      for (line <- Splitter.fixedLength(lineWidth).split(record.getSequence).asScala) {
         sb.append("\n")
         sb.append(line)
       }
@@ -428,7 +427,7 @@ sealed abstract class NucleotideContigFragmentDataset extends AvroGenomicDataset
    * @return JavaRDD[(ReferenceRegion, String)] of region -> sequence pairs.
    */
   def extractRegions(regions: java.util.List[ReferenceRegion]): JavaRDD[(ReferenceRegion, String)] = {
-    extractRegions(asScalaBuffer(regions)).toJavaRDD()
+    extractRegions(regions.asScala).toJavaRDD()
   }
 
   /**

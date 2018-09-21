@@ -17,8 +17,10 @@
  */
 package org.bdgenomics.adam.util
 
+import org.apache.spark.rdd.RDD
 import org.apache.hadoop.fs.{ FileSystem, Path }
 import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.formats.avro.AlignmentRecord
 import org.seqdoop.hadoop_bam.CRAMInputFormat
 
 class ParallelFileMergerSuite extends ADAMFunSuite {
@@ -150,7 +152,7 @@ class ParallelFileMergerSuite extends ADAMFunSuite {
     val reads = sc.loadAlignments(testFile("unmapped.sam"))
     val outPath = tmpFile("out.sam")
 
-    reads.transform(_.repartition(4))
+    reads.transform((rdd: RDD[AlignmentRecord]) => rdd.repartition(4))
       .saveAsSam(outPath, asSingleFile = true, deferMerging = true)
 
     val fs = FileSystem.get(sc.hadoopConfiguration)
@@ -174,7 +176,7 @@ class ParallelFileMergerSuite extends ADAMFunSuite {
     val reads = sc.loadAlignments(testFile("unmapped.sam"))
     val outPath = tmpFile("out.bam")
 
-    reads.transform(_.repartition(4))
+    reads.transform((rdd: RDD[AlignmentRecord]) => rdd.repartition(4))
       .saveAsSam(outPath, asSingleFile = true, deferMerging = true)
 
     val fs = FileSystem.get(sc.hadoopConfiguration)
@@ -201,7 +203,7 @@ class ParallelFileMergerSuite extends ADAMFunSuite {
     val reads = sc.loadAlignments(testFile("artificial.cram"))
     val outPath = tmpFile("out.cram")
 
-    reads.transform(_.repartition(4))
+    reads.transform((rdd: RDD[AlignmentRecord]) => rdd.repartition(4))
       .saveAsSam(outPath, isSorted = true, asSingleFile = true, deferMerging = true)
 
     val fs = FileSystem.get(sc.hadoopConfiguration)

@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.adam.rdd.read
 
+import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.rdd.fragment.FragmentDataset
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Fragment }
 import scala.collection.JavaConversions._
@@ -121,7 +122,7 @@ private[rdd] object BinQualities extends Serializable {
   def apply(reads: AlignmentRecordDataset,
             bins: Seq[QualityScoreBin]): AlignmentRecordDataset = {
 
-    reads.transform(rdd => {
+    reads.transform((rdd: RDD[AlignmentRecord]) => {
       rdd.map(binRead(_, bins))
     })
   }
@@ -137,7 +138,7 @@ private[rdd] object BinQualities extends Serializable {
   def apply(fragments: FragmentDataset,
             bins: Seq[QualityScoreBin]): FragmentDataset = {
 
-    fragments.transform(rdd => {
+    fragments.transform((rdd: RDD[Fragment]) => {
       rdd.map(binFragment(_, bins))
     })
   }

@@ -313,7 +313,7 @@ sealed abstract class VariantDataset extends AvroGenomicDataset[Variant, Variant
    * @return VariantDataset filtered to filters passed.
    */
   def filterToFiltersPassed(): VariantDataset = {
-    transform(rdd => rdd.filter(_.getFiltersPassed))
+    transform((rdd: RDD[Variant]) => rdd.filter(_.getFiltersPassed))
   }
 
   /**
@@ -324,7 +324,7 @@ sealed abstract class VariantDataset extends AvroGenomicDataset[Variant, Variant
    * @return VariantDataset filtered by quality.
    */
   def filterByQuality(minimumQuality: Double): VariantDataset = {
-    transform(rdd => rdd.filter(v => !(Option(v.getSplitFromMultiAllelic).exists(_ == true)) && Option(v.getQuality).exists(_ >= minimumQuality)))
+    transform((rdd: RDD[Variant]) => rdd.filter(v => !(Option(v.getSplitFromMultiAllelic).exists(_ == true)) && Option(v.getQuality).exists(_ >= minimumQuality)))
   }
 
   /**
@@ -336,7 +336,7 @@ sealed abstract class VariantDataset extends AvroGenomicDataset[Variant, Variant
    * @return VariantDataset filtered by total read depth.
    */
   def filterByReadDepth(minimumReadDepth: Int): VariantDataset = {
-    transform(rdd => rdd.filter(v => Option(v.getAnnotation().getReadDepth).exists(_ >= minimumReadDepth)))
+    transform((rdd: RDD[Variant]) => rdd.filter(v => Option(v.getAnnotation().getReadDepth).exists(_ >= minimumReadDepth)))
   }
 
   /**
@@ -348,7 +348,7 @@ sealed abstract class VariantDataset extends AvroGenomicDataset[Variant, Variant
    * @return VariantDataset filtered by reference total read depth.
    */
   def filterByReferenceReadDepth(minimumReferenceReadDepth: Int): VariantDataset = {
-    transform(rdd => rdd.filter(v => Option(v.getAnnotation().getReferenceReadDepth).exists(_ >= minimumReferenceReadDepth)))
+    transform((rdd: RDD[Variant]) => rdd.filter(v => Option(v.getAnnotation().getReferenceReadDepth).exists(_ >= minimumReferenceReadDepth)))
   }
 
   /**
@@ -357,7 +357,7 @@ sealed abstract class VariantDataset extends AvroGenomicDataset[Variant, Variant
    * @return VariantDataset filtered to remove single nucleotide variants (SNPs).
    */
   def filterSingleNucleotideVariants() = {
-    transform(rdd => rdd.filter(v => !RichVariant(v).isSingleNucleotideVariant))
+    transform((rdd: RDD[Variant]) => rdd.filter(v => !RichVariant(v).isSingleNucleotideVariant))
   }
 
   /**
@@ -366,7 +366,7 @@ sealed abstract class VariantDataset extends AvroGenomicDataset[Variant, Variant
    * @return VariantDataset filtered to remove multiple nucleotide variants (MNPs).
    */
   def filterMultipleNucleotideVariants() = {
-    transform(rdd => rdd.filter(v => !RichVariant(v).isMultipleNucleotideVariant))
+    transform((rdd: RDD[Variant]) => rdd.filter(v => !RichVariant(v).isMultipleNucleotideVariant))
   }
 
   /**
@@ -375,7 +375,7 @@ sealed abstract class VariantDataset extends AvroGenomicDataset[Variant, Variant
    * @return VariantDataset filtered to remove insertions and deletions (indels).
    */
   def filterIndels() = {
-    transform(rdd => rdd.filter(v => {
+    transform((rdd: RDD[Variant]) => rdd.filter(v => {
       val rv = RichVariant(v)
       !rv.isInsertion && !rv.isDeletion
     }))
@@ -387,7 +387,7 @@ sealed abstract class VariantDataset extends AvroGenomicDataset[Variant, Variant
    * @return VariantDataset filtered to include only single nucleotide variants (SNPs).
    */
   def filterToSingleNucleotideVariants() = {
-    transform(rdd => rdd.filter(v => RichVariant(v).isSingleNucleotideVariant))
+    transform((rdd: RDD[Variant]) => rdd.filter(v => RichVariant(v).isSingleNucleotideVariant))
   }
 
   /**
@@ -396,7 +396,7 @@ sealed abstract class VariantDataset extends AvroGenomicDataset[Variant, Variant
    * @return VariantDataset filtered to include only multiple nucleotide variants (MNPs).
    */
   def filterToMultipleNucleotideVariants() = {
-    transform(rdd => rdd.filter(v => RichVariant(v).isMultipleNucleotideVariant))
+    transform((rdd: RDD[Variant]) => rdd.filter(v => RichVariant(v).isMultipleNucleotideVariant))
   }
 
   /**
@@ -405,7 +405,7 @@ sealed abstract class VariantDataset extends AvroGenomicDataset[Variant, Variant
    * @return VariantDataset filtered to include only insertions and deletions (indels).
    */
   def filterToIndels() = {
-    transform(rdd => rdd.filter(v => {
+    transform((rdd: RDD[Variant]) => rdd.filter(v => {
       val rv = RichVariant(v)
       rv.isInsertion || rv.isDeletion
     }))

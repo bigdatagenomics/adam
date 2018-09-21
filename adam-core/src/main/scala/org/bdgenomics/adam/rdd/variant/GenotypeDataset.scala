@@ -410,7 +410,7 @@ sealed abstract class GenotypeDataset extends MultisampleAvroGenomicDataset[Geno
       val variantCopy = Variant.newBuilder(variant).setAnnotation(annotationCopy).build()
       Genotype.newBuilder(g).setVariant(variantCopy).build()
     }
-    transform(rdd => rdd.map(copyEnd))
+    transform((rdd: RDD[Genotype]) => rdd.map(copyEnd))
   }
 
   /**
@@ -419,7 +419,7 @@ sealed abstract class GenotypeDataset extends MultisampleAvroGenomicDataset[Geno
    * @return GenotypeDataset filtered to genotype filters passed.
    */
   def filterToFiltersPassed(): GenotypeDataset = {
-    transform(rdd => rdd.filter(g => Option(g.getVariantCallingAnnotations).exists(_.getFiltersPassed)))
+    transform((rdd: RDD[Genotype]) => rdd.filter(g => Option(g.getVariantCallingAnnotations).exists(_.getFiltersPassed)))
   }
 
   /**
@@ -429,7 +429,7 @@ sealed abstract class GenotypeDataset extends MultisampleAvroGenomicDataset[Geno
    * @return GenotypeDataset filtered by quality.
    */
   def filterByQuality(minimumQuality: Double): GenotypeDataset = {
-    transform(rdd => rdd.filter(g => Option(g.getGenotypeQuality).exists(_ >= minimumQuality)))
+    transform((rdd: RDD[Genotype]) => rdd.filter(g => Option(g.getGenotypeQuality).exists(_ >= minimumQuality)))
   }
 
   /**
@@ -439,7 +439,7 @@ sealed abstract class GenotypeDataset extends MultisampleAvroGenomicDataset[Geno
    * @return GenotypeDataset filtered by read depth.
    */
   def filterByReadDepth(minimumReadDepth: Int): GenotypeDataset = {
-    transform(rdd => rdd.filter(g => Option(g.getReadDepth).exists(_ >= minimumReadDepth)))
+    transform((rdd: RDD[Genotype]) => rdd.filter(g => Option(g.getReadDepth).exists(_ >= minimumReadDepth)))
   }
 
   /**
@@ -449,7 +449,7 @@ sealed abstract class GenotypeDataset extends MultisampleAvroGenomicDataset[Geno
    * @return GenotypeDataset filtered by alternate read depth.
    */
   def filterByAlternateReadDepth(minimumAlternateReadDepth: Int): GenotypeDataset = {
-    transform(rdd => rdd.filter(g => Option(g.getAlternateReadDepth).exists(_ >= minimumAlternateReadDepth)))
+    transform((rdd: RDD[Genotype]) => rdd.filter(g => Option(g.getAlternateReadDepth).exists(_ >= minimumAlternateReadDepth)))
   }
 
   /**
@@ -459,7 +459,7 @@ sealed abstract class GenotypeDataset extends MultisampleAvroGenomicDataset[Geno
    * @return GenotypeDataset filtered by reference read depth.
    */
   def filterByReferenceReadDepth(minimumReferenceReadDepth: Int): GenotypeDataset = {
-    transform(rdd => rdd.filter(g => Option(g.getReferenceReadDepth).exists(_ >= minimumReferenceReadDepth)))
+    transform((rdd: RDD[Genotype]) => rdd.filter(g => Option(g.getReferenceReadDepth).exists(_ >= minimumReferenceReadDepth)))
   }
 
   /**
@@ -469,7 +469,7 @@ sealed abstract class GenotypeDataset extends MultisampleAvroGenomicDataset[Geno
    * return GenotypeDataset filtered by sample.
    */
   def filterToSample(sampleId: String): GenotypeDataset = {
-    transform(rdd => rdd.filter(g => Option(g.getSampleId).exists(_ == sampleId)))
+    transform((rdd: RDD[Genotype]) => rdd.filter(g => Option(g.getSampleId).exists(_ == sampleId)))
   }
 
   /**
@@ -489,7 +489,7 @@ sealed abstract class GenotypeDataset extends MultisampleAvroGenomicDataset[Geno
    * return GenotypeDataset filtered by one or more samples.
    */
   def filterToSamples(sampleIds: Seq[String]): GenotypeDataset = {
-    transform(rdd => rdd.filter(g => Option(g.getSampleId).exists(sampleIds.contains(_))))
+    transform((rdd: RDD[Genotype]) => rdd.filter(g => Option(g.getSampleId).exists(sampleIds.contains(_))))
   }
 
   /**
@@ -498,7 +498,7 @@ sealed abstract class GenotypeDataset extends MultisampleAvroGenomicDataset[Geno
    * @return GenotypeDataset filtered to remove genotypes containing NO_CALL alleles.
    */
   def filterNoCalls(): GenotypeDataset = {
-    transform(rdd => rdd.filter(g => !g.getAlleles.contains(GenotypeAllele.NO_CALL)))
+    transform((rdd: RDD[Genotype]) => rdd.filter(g => !g.getAlleles.contains(GenotypeAllele.NO_CALL)))
   }
 
   /**

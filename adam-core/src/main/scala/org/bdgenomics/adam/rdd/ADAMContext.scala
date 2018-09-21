@@ -3338,7 +3338,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       // check to see if the input files are all queryname sorted
       if (filesAreQueryGrouped(pathName)) {
         info(s"Loading $pathName as queryname sorted BAM/CRAM/SAM and converting to Fragments.")
-        loadBam(pathName, stringency).transform(RepairPartitions(_))
+        loadBam(pathName, stringency)
+          .transform((rdd: RDD[AlignmentRecord]) => RepairPartitions(rdd))
           .querynameSortedToFragments
       } else {
         info(s"Loading $pathName as BAM/CRAM/SAM and converting to Fragments.")
