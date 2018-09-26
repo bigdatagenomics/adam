@@ -21,7 +21,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
 import org.apache.spark.sql.expressions.Window
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Fragment }
-import org.apache.spark.sql.functions.{ countDistinct, first, row_number, sum, when }
+import org.apache.spark.sql.functions.{ countDistinct, first, rank, row_number, sum, when }
 import org.bdgenomics.adam.models.RecordGroupDictionary
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.fragment.{ DatasetBoundFragmentRDD, FragmentRDD, RDDBoundFragmentRDD }
@@ -29,6 +29,8 @@ import org.bdgenomics.adam.sql.{ AlignmentRecord => AlignmentRecordProduct, Frag
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Fragment, Strand }
 import org.bdgenomics.utils.misc.Logging
 import htsjdk.samtools.{ Cigar, CigarElement, CigarOperator, TextCigarCodec }
+import org.apache.spark.SparkContext
+import org.apache.spark.sql.types.StructField
 
 import scala.collection.JavaConversions._
 
@@ -61,7 +63,7 @@ private[rdd] object MarkDuplicates extends Serializable with Logging {
   /**
    * Identifies and marks fragments as duplicates
    *
-   * @param fragments collection of fragments to mark duplicates on
+   * @param fragments collection of fragments to mark duplicates within
    * @param recordGroupDictionary mapping from record group name to library
    * @param dummy type erasure work-around
    * @return RDD of fragments identical to input RDD `fragments` but with alignment records (reads)
@@ -92,150 +94,112 @@ private[rdd] object MarkDuplicates extends Serializable with Logging {
     checkRecordGroups(recordGroupDictionary)
 
     val libDf = libraryDf(recordGroupDictionary, alignmentRecords.sparkSession)
-    val fragmentsDf = groupReadsByFragment(alignmentRecords)
-      .join(libDf, "recordGroupName")
 
-    // DataFrame containing all identified duplicates
-    val duplicatesDf = findDuplicates(fragmentsDf)
+    val fragmentsDf = addFragmentInfo(alignmentRecords)
+      .join(libDf, Seq("recordGroupName"), "left")
 
-    // mark the identified duplicates in the original Dataset and convert Spark SQL DataFrame back to RDD
-    updateDuplicates(alignmentRecords, duplicatesDf)
+    val withGroupCountDf = calculateGroupCounts(fragmentsDf)
+
+    identifyDuplicateAlignments(withGroupCountDf)
       .as[AlignmentRecordProduct]
   }
 
   /**
-   * Identifies duplicate reads within fragments contained in `fragments` and updates their duplicate
-   * field accordingly.
+   * Adds fragment related information to the a Dataset of alignment records. This includes
+   * the fivePrimePosition of the read, the fragment's score, and the reference positions of the
+   * read1 and read2 alignment records in the fragment.
    *
-   * @param fragments Dataset of fragments containing potentially duplicate reads
-   * @param recordGroups Mapping from record group name to library
-   * @param dummy type erasure work-around
-   * @return Dataset of fragments containing alignment records (reads) having been marked
-   *         as duplicate according to the duplicate marking algorithm.
+   * @param alignmentRecords Dataset of alignment records to add fragment information to
+   * @return DataFrame identical but with the additional columns:
+   *         "fivePrimePosition", "score",
+   *         "read1contigName", "read1fivePrimePosition", "read1strand",
+   *         "read2contigName", "read2fivePrimePosition", "read2strand"
    */
-  def apply(fragments: Dataset[FragmentProduct],
-            recordGroups: RecordGroupDictionary)(implicit dummy: DummyImplicit): Dataset[FragmentProduct] = {
-    import fragments.sparkSession.implicits._
-
-    // convert fragments to DataFrame with reference positions and scores
-    val fragmentDf = fragments
-      .map(toFragmentProduct(_, recordGroups))
-      .toDF(
-        "library", "recordGroupName", "readName",
-        "read1contigName", "read1fivePrimePosition", "read1strand",
-        "read2contigName", "read2fivePrimePosition", "read2strand",
-        "score")
-
-    // find the duplicates (top scoring fragments after grouping by left and right position)
-    val duplicatesDf = findDuplicates(fragmentDf)
-
-    // update the field within the reads to reflect the identified duplicate reads
-    updateDuplicateFragments(fragments, duplicatesDf)
-  }
-
-  /**
-   * Groups alignment records (reads) by fragment while finding the reference positions and
-   * scores of each mapped read in each fragment.
-   *
-   * @param alignmentRecords Dataset of alignment records
-   * @return DataFrame with rows representing fragments made by grouping together the alignment
-   *         records by record group name and read name.
-   */
-  private def groupReadsByFragment(alignmentRecords: Dataset[AlignmentRecordProduct]): DataFrame = {
+  private def addFragmentInfo(alignmentRecords: Dataset[AlignmentRecordProduct]): DataFrame = {
     import alignmentRecords.sqlContext.implicits._
 
-    // Find the 5' position of all alignment records
-    val df = alignmentRecords
+    val fragmentWindow = Window.partitionBy('recordGroupName, 'readName)
+
+    alignmentRecords
       .withColumn("fivePrimePosition",
         fivePrimePositionUDF('readMapped, 'readNegativeStrand, 'cigar, 'start, 'end))
 
-    // Group all fragments, finding read 1 & 2 reference positions and scores
-    df
-      .groupBy("recordGroupName", "readName")
-      .agg(
+      // Fragment score
+      .withColumn("score",
+        sum(when('readMapped and 'primaryAlignment, scoreReadUDF('qual)))
+          over fragmentWindow)
 
-        // Read 1 reference position (contig name)
+      // Read 1 reference position (contig name)
+      .withColumn("read1contigName",
         first(when('primaryAlignment and 'readInFragment === 0,
           when('readMapped, 'contigName).otherwise('sequence)),
-          ignoreNulls = true)
-          as 'read1contigName,
+          ignoreNulls = true) over fragmentWindow)
 
-        // Read 1 reference position (5' position)
+      // Read 1 reference position (5' position)
+      .withColumn("read1fivePrimePosition",
         first(when('primaryAlignment and 'readInFragment === 0,
           when('readMapped, 'fivePrimePosition).otherwise(0L)),
-          ignoreNulls = true)
-          as 'read1fivePrimePosition,
+          ignoreNulls = true) over fragmentWindow)
 
-        // Read 1 reference position (strand)
+      // Read 1 reference position (strand)
+      .withColumn("read1strand",
         first(when('primaryAlignment and 'readInFragment === 0,
           when('readMapped,
             when('readNegativeStrand, Strand.REVERSE.toString).otherwise(Strand.FORWARD.toString))
             .otherwise(Strand.INDEPENDENT.toString)),
-          ignoreNulls = true)
-          as 'read1strand,
+          ignoreNulls = true) over fragmentWindow)
 
-        // Read 2 reference position (contig name)
+      // Read 2 reference position (contig name)
+      .withColumn("read2contigName",
         first(when('primaryAlignment and 'readInFragment === 1,
           when('readMapped, 'contigName).otherwise('sequence)),
-          ignoreNulls = true)
-          as 'read2contigName,
+          ignoreNulls = true) over fragmentWindow)
 
-        // Read 2 reference position (5' position)
+      // Read 2 reference position (5' position)
+      .withColumn("read2fivePrimePosition",
         first(when('primaryAlignment and 'readInFragment === 1,
           when('readMapped, 'fivePrimePosition).otherwise(0L)),
-          ignoreNulls = true)
-          as 'read2fivePrimePosition,
+          ignoreNulls = true) over fragmentWindow)
 
-        // Read 2 reference position (strand)
+      // Read 2 reference position (strand)
+      .withColumn("read2strand",
         first(when('primaryAlignment and 'readInFragment === 1,
           when('readMapped,
             when('readNegativeStrand, Strand.REVERSE.toString).otherwise(Strand.FORWARD.toString))
             .otherwise(Strand.INDEPENDENT.toString)),
-          ignoreNulls = true)
-          as 'read2strand,
-
-        // Fragment score
-        sum(when('readMapped and 'primaryAlignment, scoreReadUDF('qual))) as 'score)
+          ignoreNulls = true) over fragmentWindow)
   }
 
   /**
-   * Identifies duplicates among a collection of fragments. Duplicates are those fragments which are not the
-   * highest scoring fragment among those with the same left and right reference positions or those with unmapped
-   * right position and group count is equal to zero.
+   * Identifies duplicate alignment records
    *
-   * @param fragmentDf A DataFrame representing genomic fragments with the following schema:
-   *                   "library", "recordGroupName", "readName", "score",
-   *                   "read1contigName", "read1fivePrimePosition", "read1strand",
-   *                   "read2contigName", "read2fivePrimePosition", "read2strand"
-   * @return A DataFrame with the following schema "recordGroupName", "readName", "duplicateFragment"
-   *         indicating all of the fragments which have duplicate reads in them in the "duplicateFragment"
-   *         column, which contains booleans.
+   * @param alignmentDf DataFrame of alignment records
+   * @return DataFrame of alignment records identical to that passed in but with
+   *         duplicated marked in the "duplicateRead" column
    */
-  private def findDuplicates(fragmentDf: DataFrame): DataFrame = {
-    import fragmentDf.sparkSession.implicits._
+  private def identifyDuplicateAlignments(alignmentDf: DataFrame): DataFrame = {
+    import alignmentDf.sparkSession.implicits._
 
-    val filteredDf = fragmentDf
-      .filter('read1contigName.isNotNull and 'read1fivePrimePosition.isNotNull and 'read1strand.isNotNull)
-
-    // this DataFrame has an extra column "groupCount" which is the number of distinct
-    // right reference positions for fragments grouped by left reference position
-    val withGroupCount = calculateGroupCounts(filteredDf)
-
-    // Window into fragments grouped by left and right reference positions
     val positionWindow = Window.partitionBy(
       'library,
       'read1contigName, 'read1fivePrimePosition, 'read1strand,
       'read2contigName, 'read2fivePrimePosition, 'read2strand)
       .orderBy('score.desc)
 
-    // duplicates are those fragments which are not the highest scoring fragment among those with the same
-    // left and right reference positions or those with unmapped right position and group count is equal to zero
-    val duplicatesDf = withGroupCount.withColumn("duplicateFragment",
-      row_number.over(positionWindow) =!= 1
-        or ('read2contigName.isNull and 'read2fivePrimePosition.isNull and 'read2strand.isNull and 'groupCount > 0))
-
-    // result is just the relation between fragment and duplicate status
-    duplicatesDf.select("recordGroupName", "readName", "duplicateFragment")
+    alignmentDf
+      .withColumn("topScoringFragment",
+        functions.rank.over(positionWindow) === 1
+          and 'readName === first('readName).over(positionWindow)
+          and 'recordGroupName === first('recordGroupName).over(positionWindow))
+      .withColumn("duplicateFragment",
+        !'topScoringFragment
+          or ('read2contigName.isNull and 'read2fivePrimePosition.isNull and 'read2strand.isNull and 'groupCount > 0))
+      .withColumn("duplicateRead",
+        'read1contigName.isNotNull and 'read1fivePrimePosition.isNotNull and 'read1strand.isNotNull
+          and
+          'readMapped and (!'primaryAlignment or 'duplicateFragment))
+      .drop("topScoringFragment")
+      .drop("duplicateFragment")
   }
 
   /**
@@ -251,7 +215,7 @@ private[rdd] object MarkDuplicates extends Serializable with Logging {
     // count number of distinct right-positions for each left-position
     val groupCountDf = countRightGroups(fragmentDf)
 
-    // join the group count info into the original dataframe (saving null reference positions
+    // join the group count info into the original DataFrame (saving null reference positions
     fragmentDf.join(groupCountDf,
       (fragmentDf("library") === groupCountDf("library").alias("library_alias") or
         (fragmentDf("library").isNull and groupCountDf("library").isNull)) and
@@ -281,114 +245,135 @@ private[rdd] object MarkDuplicates extends Serializable with Logging {
   }
 
   /**
-   * Marks each alignment record in the Dataset `alignmentRecords` as a duplicate based on duplicate information
-   * from a DataFrame specifying which fragments found in the collection of alignment records are duplicates.
-   * Each read will be marked as a duplicate if it is a primary alignments and part of a duplicate fragment
-   * or if it is a mapped read but not a primary alignment.
+   * Identifies duplicate reads within fragments contained in `fragments` and updates their duplicate
+   * field accordingly.
    *
-   * Unmapped reads will not be marked as duplicate.
-   * @param alignmentRecords Dataset of AlignmentRecords
-   * @param duplicatesDf DataFrame containing information about each
-   * @return A DataFrame with the same schema as `alignmentRecords`  but with reads having
-   *         been marked as duplicates in the "duplicateRead" column in accordance with `duplicatesDf`
-   *         DataFrame which was provided.
+   * @param fragments Dataset of fragments containing potentially duplicate reads
+   * @param recordGroups Mapping from record group name to library
+   * @param dummy type erasure work-around
+   * @return Dataset of fragments containing alignment records (reads) having been marked
+   *         as duplicate according to the duplicate marking algorithm.
    */
-  private def updateDuplicates(alignmentRecords: Dataset[AlignmentRecordProduct], duplicatesDf: DataFrame): DataFrame = {
-    import alignmentRecords.sparkSession.implicits._
-    addDuplicateFragmentInfo(alignmentRecords, duplicatesDf)
-      .withColumn("duplicateRead",
-        'duplicateFragment.isNotNull and 'readMapped and ('duplicateFragment or !'primaryAlignment))
-      .drop("duplicateFragment") // drop the temporary column for marking duplicate fragments
+  def apply(fragments: Dataset[FragmentProduct],
+            recordGroups: RecordGroupDictionary)(implicit dummy: DummyImplicit): Dataset[FragmentProduct] = {
+    import fragments.sparkSession.implicits._
+
+    val fragmentDf = addFragmentInfo(fragments, recordGroups)
+    val withGroupCountDf = calculateGroupCounts(fragmentDf)
+    val markedFragmentsDs = identifyDuplicateFragments(withGroupCountDf)
+
+    // update the field within the reads to reflect the identified duplicate reads
+    updateDuplicateAlignments(markedFragmentsDs)
   }
 
   /**
-   * Adds information about which fragments are duplicates given in `duplicatesDf` to a Dataset of alignment records
+   * Adds the following fields into the fragment schema to use in the duplicate marking algorithm:
+   * "library", "recordGroupName",
+   * "read1contigName", "read1fivePrimePosition", "read1strand",
+   * "read2contigName", "read2fivePrimePosition", "read2strand",
+   * "score"
    *
-   * @param alignmentRecords Dataset of alignment records to add duplicate fragment info to
-   * @param duplicatesDf DataFrame with columns "recordGroupName", "readName" and "duplicateFragment" indicating
-   *                     for each fragment (identified by "record
-   * @return A new DataFrame identical to `alignmentRecords` but with an extra boolean column "duplicateFragment"
-   *         indicating for each alignment record whether or not it is part of a duplicate fragment
+   * @param fragmentDs Dataset of Fragments
+   * @param recordGroups mapping from record group name to library
+   * @return DataFrame containing all the same fragments in the input Dataset but
+   *         with the extra fields specified above
    */
-  private def addDuplicateFragmentInfo(alignmentRecords: Dataset[AlignmentRecordProduct],
-                                       duplicatesDf: DataFrame): DataFrame = {
-    import alignmentRecords.sparkSession.implicits._
-    alignmentRecords.join(duplicatesDf, Seq("readName", "recordGroupName"), "left")
+  private def addFragmentInfo(fragmentDs: Dataset[FragmentProduct], recordGroups: RecordGroupDictionary): DataFrame = {
+    import fragmentDs.sparkSession.implicits._
+
+    def toFragmentProduct(fragment: FragmentProduct, recordGroups: RecordGroupDictionary) = {
+      val bucket = SingleReadBucket(fragment.toAvro)
+      val position = ReferencePositionPair(bucket)
+
+      val recordGroupName: Option[String] = bucket.allReads.headOption.flatMap(
+        _.getRecordGroupName match {
+          case null         => None
+          case name: String => Some(name)
+        })
+      val library: Option[String] = recordGroupName.flatMap(name => if (name == null) None else recordGroups(name).library)
+
+      // reference positions of each read in the fragment
+      val read1refPos = position.read1refPos
+      val read2refPos = position.read2refPos
+
+      // tuple that will be turned into a row in the DataFrame
+      (fragment.readName, fragment.instrument, fragment.runId, fragment.fragmentSize, fragment.alignments,
+        library, recordGroupName,
+        read1refPos.map(_.referenceName), read1refPos.map(_.pos), read1refPos.map(_.strand.toString),
+        read2refPos.map(_.referenceName), read2refPos.map(_.pos), read2refPos.map(_.strand.toString),
+        scoreBucket(bucket))
+    }
+
+    fragmentDs.map(toFragmentProduct(_, recordGroups))
+      .toDF("readName", "instrument", "runId", "fragmentSize", "alignments",
+        "library", "recordGroupName",
+        "read1contigName", "read1fivePrimePosition", "read1strand",
+        "read2contigName", "read2fivePrimePosition", "read2strand",
+        "score")
   }
 
   /**
    * Case class which merely extends the Fragment Schema by a single column "duplicateFragment" so that
    * a DataFrame with fragments having been marked as duplicates can be cast back into a Dataset
    */
-  private case class FragmentDuplicateSchema(readName: Option[String] = None,
-                                             instrument: Option[String] = None,
-                                             runId: Option[String] = None,
-                                             fragmentSize: Option[Int] = None,
-                                             duplicateFragment: Option[Boolean] = None,
-                                             alignments: Seq[AlignmentRecordProduct] = Seq())
+  private case class FragmentDuplicateProduct(readName: Option[String] = None,
+                                              instrument: Option[String] = None,
+                                              runId: Option[String] = None,
+                                              fragmentSize: Option[Int] = None,
+                                              duplicateFragment: Option[Boolean] = None,
+                                              alignments: Seq[AlignmentRecordProduct] = Seq())
+
+  /**
+   * Identifies duplicate fragments.
+   *
+   * @param fragmentDf DataFrame of fragments to identify as duplciate. This should contain a score and library
+   *                   for each fragment as well as the reference positions of read 1 and 2.
+   * @return Dataset of Fragments having been marked as duplicate in the "duplicateFragment" field of the schema
+   */
+  private def identifyDuplicateFragments(fragmentDf: DataFrame): Dataset[FragmentDuplicateProduct] = {
+    import fragmentDf.sparkSession.implicits._
+
+    val positionWindow = Window.partitionBy(
+      'library,
+      'read1contigName, 'read1fivePrimePosition, 'read1strand,
+      'read2contigName, 'read2fivePrimePosition, 'read2strand)
+      .orderBy('score.desc)
+
+    fragmentDf
+      .withColumn("topScoringFragment",
+        functions.rank.over(positionWindow) === 1
+          and 'readName === first('readName).over(positionWindow)
+          and 'recordGroupName === first('recordGroupName).over(positionWindow))
+      .withColumn("duplicateFragment",
+        !'topScoringFragment
+          or ('read2contigName.isNull and 'read2fivePrimePosition.isNull and 'read2strand.isNull and 'groupCount > 0))
+      .as[FragmentDuplicateProduct]
+  }
 
   /**
    * Updates the "duplicateRead" field of the alignment records (read) contained within each
-   * fragment of `fragments` to reflect the duplicates identified within `duplicatesDf`
+   * fragment of `fragments` to reflect the duplicate fragments
    *
    * @param fragments Dataset of fragments to mark as duplicates
-   * @param duplicatesDf DataFrame containing the IDs of all duplicates
-   * @return Dataset identical to input Dataset `fragments` but with alignments within each
-   *         fragment having been marked as duplciates according to `duplciatesDf`
+   * @return Dataset identical to input Dataset `fragments` but with alignment records within each
+   *         fragment having been marked as duplicates according to the duplicateFragment field of each fragment
    */
-  private def updateDuplicateFragments(fragments: Dataset[FragmentProduct],
-                                       duplicatesDf: DataFrame): Dataset[FragmentProduct] = {
+  private def updateDuplicateAlignments(fragments: Dataset[FragmentDuplicateProduct]): Dataset[FragmentProduct] = {
+    import fragments.sparkSession.implicits._
 
     def isDuplicate(readMapped: Option[Boolean], duplicateFragment: Option[Boolean],
                     primaryAlignment: Option[Boolean]): Boolean = {
       readMapped.getOrElse(false) && (duplicateFragment.getOrElse(false) || !primaryAlignment.getOrElse(false))
     }
 
-    def toMarkedFragment(fragment: FragmentDuplicateSchema): FragmentProduct = {
-      FragmentProduct(
-        fragment.readName,
-        fragment.instrument,
-        fragment.runId,
-        fragment.fragmentSize,
-        fragment.alignments.map(alignment => {
-          val alignmentRecord = alignment.toAvro
-          val isdup = isDuplicate(alignment.readMapped, fragment.duplicateFragment, alignment.primaryAlignment)
-          alignmentRecord.setDuplicateRead(isdup)
-          AlignmentRecordProduct.fromAvro(alignmentRecord)
-        }))
-    }
-
-    import fragments.sparkSession.implicits._
-    fragments.join(duplicatesDf, Seq("readName"), "left")
-      .as[FragmentDuplicateSchema]
-      .map(toMarkedFragment)
-  }
-
-  /**
-   * Converts a fragment to a tuple suitable for use as a row in a DataFrame with schema `FragmentProduct`
-   *
-   * @param fragment The fragment to convert into a tuple
-   * @param recordGroups Dictionary mapping record group name to library
-   * @return Tuple containing library, record group name, read name, score, and left and right reference positions.
-   *         For the fragment. The left and right reference positions are given by the reference name, five prime
-   *         position and strand of the first and second read in the fragment, respectively.
-   */
-  private def toFragmentProduct(fragment: FragmentProduct, recordGroups: RecordGroupDictionary) = {
-    val bucket = SingleReadBucket(fragment.toAvro)
-    val position = ReferencePositionPair(bucket)
-
-    val recordGroupName: Option[String] = bucket.allReads.headOption.flatMap(r => Some(r.getRecordGroupName))
-    val library: Option[String] = recordGroupName.flatMap(name => if (name == null) None else recordGroups(name).library)
-
-    // reference positions of each read in the fragment
-    val read1refPos = position.read1refPos
-    val read2refPos = position.read2refPos
-
-    // tuple that will be turned into a row in the DataFrame
-    (library, recordGroupName, fragment.readName,
-      read1refPos.map(_.referenceName), read1refPos.map(_.pos), read1refPos.map(_.strand.toString),
-      read2refPos.map(_.referenceName), read2refPos.map(_.pos), read2refPos.map(_.strand.toString),
-      scoreBucket(bucket))
+    fragments.map(fragment => FragmentProduct(
+      fragment.readName, fragment.instrument, fragment.runId, fragment.fragmentSize,
+      fragment.alignments.map(alignment => {
+        val alignmentRecord = alignment.toAvro
+        val isdup = isDuplicate(alignment.readMapped, fragment.duplicateFragment, alignment.primaryAlignment)
+        alignmentRecord.setDuplicateRead(isdup)
+        AlignmentRecordProduct.fromAvro(alignmentRecord)
+      })))
   }
 
   /* User defined aggregate function for calculating the "score" of a fragment */
