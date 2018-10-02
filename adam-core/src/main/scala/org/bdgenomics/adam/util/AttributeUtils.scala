@@ -126,18 +126,15 @@ object AttributeUtils {
 
   private def typedStringToValue(tagType: TagType.Value, valueStr: String): Any = {
     tagType match {
-      case TagType.Character                    => valueStr(0)
-      case TagType.Integer                      => Integer.valueOf(valueStr)
-      case TagType.Float                        => java.lang.Float.valueOf(valueStr)
-      case TagType.String                       => valueStr
-      case TagType.ByteSequence                 => valueStr.map(c => java.lang.Byte.valueOf("" + c))
-      case TagType.NumericByteSequence          => valueStr.split(",").map(c => java.lang.Byte.valueOf("" + c))
-      case TagType.NumericShortSequence         => valueStr.split(",").map(c => java.lang.Short.valueOf("" + c))
-      case TagType.NumericIntSequence           => valueStr.split(",").map(c => java.lang.Integer.valueOf("" + c))
-      case TagType.NumericUnsignedByteSequence  => valueStr.split(",").map(c => java.lang.Byte.valueOf("" + c))
-      case TagType.NumericUnsignedShortSequence => valueStr.split(",").map(c => java.lang.Short.valueOf("" + c))
-      case TagType.NumericUnsignedIntSequence   => valueStr.split(",").map(c => java.lang.Integer.valueOf("" + c))
-      case TagType.NumericFloatSequence         => valueStr.split(",").map(c => java.lang.Float.valueOf("" + c))
+      case TagType.Character => valueStr(0)
+      case TagType.Integer => Integer.valueOf(valueStr)
+      case TagType.Float => java.lang.Float.valueOf(valueStr)
+      case TagType.String => valueStr
+      case TagType.ByteSequence => valueStr.map(c => java.lang.Byte.valueOf("" + c))
+      case TagType.NumericByteSequence | TagType.NumericUnsignedByteSequence => valueStr.split(",").map(_.toByte)
+      case TagType.NumericShortSequence | TagType.NumericUnsignedShortSequence => valueStr.split(",").map(_.toShort)
+      case TagType.NumericIntSequence | TagType.NumericUnsignedIntSequence => valueStr.split(",").map(_.toInt)
+      case TagType.NumericFloatSequence => valueStr.split(",").map(_.toFloat)
     }
   }
 }
