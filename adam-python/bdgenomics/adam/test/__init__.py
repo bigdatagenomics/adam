@@ -48,7 +48,7 @@ class SparkTestCase(unittest.TestCase):
         f2 = open(file2)
 
         try:
-            self.assertEquals(f1.read(), f2.read())
+            self.assertEqual(f1.read(), f2.read())
         finally:
             f1.close()
             f2.close()

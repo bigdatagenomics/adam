@@ -194,49 +194,56 @@ then
 
     for python in ${pythons[*]}
     do
-	uuid=$(uuidgen)
-	conda create -q -n adam-build-${uuid} python=2.7 anaconda
-	source activate adam-build-${uuid}
-	
-	
-	# we only support SparkR on Spark 2.x
-	if [ ${SPARK_VERSION} == 2.2.2 ];
-	then
-	    
-	    # make a directory to install SparkR into, and set the R user libs path
-	    export R_LIBS_USER=${SPARK_HOME}/local_R_libs
-	    mkdir -p ${R_LIBS_USER}
-	    R CMD INSTALL \
-	      -l ${R_LIBS_USER} \
-	      ${SPARK_HOME}/R/lib/SparkR/
-	    
-	    export SPARKR_SUBMIT_ARGS="--jars ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} --driver-class-path ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} sparkr-shell"
-	    
-            # we can run the python build, now that we have a spark executable
-	    # -DskipTests appears to skip the python/r tests?
-	    mvn -U \
-		-P python,r,distribution \
-		package \
-		-Dsuites=select.no.suites\* \
-		-Dhadoop.version=${HADOOP_VERSION} \
-		-Dspark.version=${SPARK_VERSION}
+    	uuid=$(uuidgen)
+    	conda create -q -n adam-build-${uuid} python=${python} anaconda
+    	source activate adam-build-${uuid}
+    	
+    	
+    	# we only support SparkR on Spark 2.x
+    	if [ ${SPARK_VERSION} == 2.2.2 ];
+    	then
+    	    
+    	    # make a directory to install SparkR into, and set the R user libs path
+    	    export R_LIBS_USER=${SPARK_HOME}/local_R_libs
+    	    mkdir -p ${R_LIBS_USER}
+    	    R CMD INSTALL \
+    	      -l ${R_LIBS_USER} \
+    	      ${SPARK_HOME}/R/lib/SparkR/
+    	    
+    	    export SPARKR_SUBMIT_ARGS="--jars ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} --driver-class-path ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} sparkr-shell"
+    	    
+                # we can run the python build, now that we have a spark executable
+    	    # -DskipTests appears to skip the python/r tests?
+    	    mvn -U \
+    		-P python,r,distribution \
+    		package \
+    		-Dsuites=select.no.suites\* \
+    		-Dhadoop.version=${HADOOP_VERSION} \
+    		-Dspark.version=${SPARK_VERSION}
 
-	    # make sure that the distribution package contains an egg
-	    # if no assembly jar is found, this will exit with code 1 and fail the build
-	    tar tzvf adam-distribution/target/adam-distribution*-bin.tar.gz | \
-		grep bdgenomics.adam | \
-		grep egg
-	fi
-	
-	# run pyadam test
-	./bin/pyadam < scripts/jenkins-test-pyadam.py
-	
-	# deactivate and remove the conda env
-	source deactivate
-	conda remove -n adam-build-${uuid} --all
+    	    # make sure that the distribution package contains an egg
+    	    # if no assembly jar is found, this will exit with code 1 and fail the build
+    	    tar tzvf adam-distribution/target/adam-distribution*-bin.tar.gz | \
+    		grep bdgenomics.adam | \
+    		grep egg
+    	fi
+    	
+    	# run pyadam test
+    	./bin/pyadam < scripts/jenkins-test-pyadam.py
+    	
+    	# deactivate and remove the conda env
+    	source deactivate
+    	conda remove -n adam-build-${uuid} --all
 
-	# copy python targets back
-	cp -r adam-python/target ${PROJECT_ROOT}/adam-python/
+    	# copy python targets back
+    	cp -r adam-python/target ${PROJECT_ROOT}/adam-python/
+
+    	# clean after each python version
+      pushd adam-python
+      make clean
+    	make clean_sdist
+      popd
+
     done
 	
     # define filenames
