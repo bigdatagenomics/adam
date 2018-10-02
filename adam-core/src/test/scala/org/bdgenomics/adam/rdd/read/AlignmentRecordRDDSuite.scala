@@ -57,7 +57,7 @@ import org.bdgenomics.adam.sql.{
   Variant => VariantProduct,
   VariantContext => VariantContextProduct
 }
-import org.bdgenomics.adam.util.{ ADAMFunSuite, ManualRegionPartitioner }
+import org.bdgenomics.adam.util.{ ADAMFunSuite, AttributeUtils, ManualRegionPartitioner }
 import org.bdgenomics.formats.avro._
 import org.seqdoop.hadoop_bam.{ CRAMInputFormat, SAMFormat }
 import scala.collection.JavaConversions._
@@ -473,6 +473,27 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
         assert(readA.getQual === readB.getQual)
         assert(readA.getReadName === readB.getReadName)
     }
+  }
+
+  sparkTest("writing a small file with tags should produce the expected result") {
+    val samPath = testFile("tag.sam")
+    val ardd = sc.loadBam(samPath)
+
+    val newSamPath = tmpFile("tag.sam")
+    ardd.saveAsSam(newSamPath,
+      asSingleFile = true)
+
+    val brdd = sc.loadBam(newSamPath)
+
+    assert(ardd.rdd.count === brdd.rdd.count)
+    val aRecord = ardd.rdd.first
+    val bRecord = brdd.rdd.first
+    val aAttrs = AttributeUtils.parseAttributes(aRecord.getAttributes)
+    val bAttrs = AttributeUtils.parseAttributes(aRecord.getAttributes)
+    assert(aAttrs.length === 10)
+    assert(bAttrs.length === 10)
+    val bAttrsSet = bAttrs.map(_.tag).toSet
+    assert(aAttrs.forall(attr => bAttrsSet.contains(attr.tag)))
   }
 
   sparkTest("writing a small sorted file as SAM should produce the expected result") {
