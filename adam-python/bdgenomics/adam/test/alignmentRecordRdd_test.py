@@ -172,7 +172,7 @@ class AlignmentRecordRDDTest(SparkTestCase):
         readsPath = self.resourceFile("indexed_bams/sorted.bam")
         ac = ADAMContext(self.ss)
 
-        querys = [ReferenceRegion("chr2", 100L, 101L), ReferenceRegion("3", 10L, 17L)]
+        querys = [ReferenceRegion("chr2", 100, 101), ReferenceRegion("3", 10, 17)]
 
         reads = ac.loadIndexedBam(readsPath, querys)
 
@@ -186,7 +186,7 @@ class AlignmentRecordRDDTest(SparkTestCase):
 
         reads = ac.loadAlignments(readsPath)
 
-        query = ReferenceRegion("chr2", 1L, 400L)
+        query = ReferenceRegion("chr2", 1, 400)
 
         filtered = reads.filterByOverlappingRegion(query)
         self.assertEquals(filtered.toDF().count(), 1)
@@ -199,8 +199,8 @@ class AlignmentRecordRDDTest(SparkTestCase):
 
         reads = ac.loadAlignments(readsPath)
 
-        querys = [ReferenceRegion("chr2", 1L, 400L),
-                    ReferenceRegion("3", 1L, 100L)]
+        querys = [ReferenceRegion("chr2", 1, 400),
+                    ReferenceRegion("3", 1, 100)]
 
         filtered = reads.filterByOverlappingRegions(querys)
         self.assertEquals(filtered.toDF().count(), 2)
