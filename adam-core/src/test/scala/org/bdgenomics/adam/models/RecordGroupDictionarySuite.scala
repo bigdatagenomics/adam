@@ -91,4 +91,20 @@ class RecordGroupDictionarySuite extends FunSuite {
     val mergedRgd = rgd ++ rgd
     assert(rgd === mergedRgd)
   }
+
+  test("round trip a record with all attributes set") {
+    val rg = new SAMReadGroupRecord("RG1")
+    rg.setSample("S1")
+    rg.setLibrary("L1")
+    rg.setPlatformUnit("PU1")
+    rg.setPlatform("ILLUMINA")
+    rg.setFlowOrder("ACGT")
+    rg.setKeySequence("AATT")
+    rg.setSequencingCenter("BDG")
+    rg.setDescription("TEST")
+    rg.setPredictedMedianInsertSize(100)
+    val arg = RecordGroup(rg)
+    val htsjdkRg = arg.toSAMReadGroupRecord()
+    assert(rg.equivalent(htsjdkRg))
+  }
 }
