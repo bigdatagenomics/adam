@@ -44,7 +44,7 @@ help:
 
 # This Makefile uses bash features like printf and <()
 SHELL=bash
-python=python2.7
+python=python
 pip=pip
 tests=bdgenomics
 extras=
