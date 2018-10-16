@@ -343,6 +343,26 @@ class FeatureRDDSuite extends ADAMFunSuite {
     checkFiles(inputPath, outputPath)
   }
 
+  sparkTest("save to UCSC BED format") {
+    val inputPath = testFile("dvl1.200.bed")
+    val expected = sc.loadBed(inputPath)
+    val outputPath = tempLocation(".bed")
+    expected.saveAsUcscBed(outputPath,
+      asSingleFile = true,
+      minimumScore = 0.0,
+      maximumScore = 200.0)
+
+    val lines = sc.textFile(outputPath)
+    val bedCols = lines.first.split("\t")
+    assert(bedCols.size === 6)
+    assert(bedCols(0) === "1")
+    assert(bedCols(1) === "1331345")
+    assert(bedCols(2) === "1331536")
+    assert(bedCols(3) === "106624")
+    assert(bedCols(4) === "67")
+    assert(bedCols(5) === "+")
+  }
+
   sparkTest("save IntervalList as GTF format") {
     val inputPath = testFile("SeqCap_EZ_Exome_v3.hg19.interval_list")
     val features = sc.loadIntervalList(inputPath)
