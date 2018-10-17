@@ -202,6 +202,19 @@ class VariantContextRDDSuite extends ADAMFunSuite {
     assert(genotype.getVariantCallingAnnotations.getAttributes.get("float") === "Infinity")
   }
 
+  sparkTest("support VCFs with `nan` instead of `NaN` float values") {
+    val path = testFile("nan_float_values.vcf")
+    val vcs = sc.loadVcf(path, ValidationStringency.LENIENT)
+    val variant = vcs.toVariants().rdd.filter(_.getStart == 14396L).first()
+    assert(variant.getAnnotation.getAlleleFrequency.isNaN)
+    assert(variant.getAnnotation.getAttributes.get("BaseQRankSum") === "NaN")
+    assert(variant.getAnnotation.getAttributes.get("ClippingRankSum") === "NaN")
+
+    val genotype = vcs.toGenotypes().rdd.filter(_.getStart == 14396L).first()
+    assert(genotype.getVariantCallingAnnotations.getRmsMapQ.isNaN)
+    assert(genotype.getVariantCallingAnnotations.getAttributes.get("float") === "NaN")
+  }
+
   sparkTest("don't lose any variants when piping as VCF") {
     val smallVcf = testFile("small.vcf")
     val rdd: VariantContextRDD = sc.loadVcf(smallVcf)
