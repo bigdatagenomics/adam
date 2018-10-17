@@ -33,9 +33,9 @@ class CoverageRDDTest(SparkTestCase):
         coverage = reads.toCoverage()
         tmpPath = self.tmpFile() + ".coverage.adam"
         coverage.save(tmpPath,
-                              asSingleFile=True,
+                            asSingleFile=True,
                             disableFastConcat=True)
-    	assert(os.listdir(tmpPath) != [])
+        assert(os.listdir(tmpPath) != [])
 
 
     def test_collapse(self):
