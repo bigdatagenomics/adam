@@ -1307,6 +1307,8 @@ class VariantContextConverter(
         Float.PositiveInfinity
       } else if (o == "-Inf") {
         Float.NegativeInfinity
+      } else if (o == "nan") {
+        Float.NaN
       } else {
         o.toFloat
       }

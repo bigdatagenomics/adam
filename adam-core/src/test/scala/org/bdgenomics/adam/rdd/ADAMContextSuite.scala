@@ -497,7 +497,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(vcs.sequences.size === 31)
 
     val variants = vcs.toVariants
-    assert(variants.rdd.count === 782)
+    assert(variants.rdd.count === 778)
   }
 
   sparkTest("load vcf from a directory") {
