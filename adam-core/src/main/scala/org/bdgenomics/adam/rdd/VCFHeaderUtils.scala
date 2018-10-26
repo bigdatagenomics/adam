@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.adam.rdd
 
+import java.io.File
 import htsjdk.samtools.util.BlockCompressedOutputStream
 import htsjdk.variant.variantcontext.writer.{
   Options,
@@ -73,7 +74,7 @@ private[rdd] object VCFHeaderUtils {
     val os = if (isCompressed) {
       // BGZF stream requires java.io.File
       // we can't get one in hadoop land, so it is OK to provide a null file
-      new BlockCompressedOutputStream(fos, null)
+      new BlockCompressedOutputStream(fos, null.asInstanceOf[File])
     } else {
       fos
     }

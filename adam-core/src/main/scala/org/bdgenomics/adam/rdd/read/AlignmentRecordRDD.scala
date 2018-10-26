@@ -20,7 +20,7 @@ package org.bdgenomics.adam.rdd.read
 import htsjdk.samtools._
 import htsjdk.samtools.cram.ref.ReferenceSource
 import htsjdk.samtools.util.{ BinaryCodec, BlockCompressedOutputStream }
-import java.io.{ OutputStream, StringWriter, Writer }
+import java.io.{ File, OutputStream, StringWriter, Writer }
 import java.net.URI
 import java.nio.file.Paths
 import org.apache.hadoop.fs.Path
@@ -798,7 +798,7 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicDataset[A
         .asInstanceOf[OutputStream]
 
       // create htsjdk specific streams for writing the bam header
-      val compressedOut: OutputStream = new BlockCompressedOutputStream(os, null)
+      val compressedOut: OutputStream = new BlockCompressedOutputStream(os, null.asInstanceOf[File])
       val binaryCodec = new BinaryCodec(compressedOut)
 
       // write a bam header - cribbed from Hadoop-BAM
