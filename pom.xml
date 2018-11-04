@@ -18,11 +18,11 @@
 
   <properties>
     <java.version>1.8</java.version>
-    <avro.version>1.8.1</avro.version>
+    <avro.version>1.8.2</avro.version>
     <scala.version>2.11.12</scala.version>
     <scala.version.prefix>2.11</scala.version.prefix>
-    <spark.version>2.3.0</spark.version>
-    <parquet.version>1.8.2</parquet.version>
+    <spark.version>2.3.2</spark.version>
+    <parquet.version>1.8.3</parquet.version>
     <!-- Edit the following line to configure the Hadoop (HDFS) version. -->
     <hadoop.version>2.7.3</hadoop.version>
     <hadoop-bam.version>7.9.2</hadoop-bam.version>
