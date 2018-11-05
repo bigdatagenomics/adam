@@ -142,7 +142,7 @@ class ADAMMain @Inject() (commandGroups: List[CommandGroup]) extends Logging {
 }
 
 class ADAMModule extends AbstractModule with ScalaModule {
-  def configure() {
+  override def configure() {
     bind[List[CommandGroup]].toInstance(ADAMMain.defaultCommandGroups)
   }
 }
