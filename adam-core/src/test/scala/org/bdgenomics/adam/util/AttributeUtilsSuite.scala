@@ -41,15 +41,24 @@ class AttributeUtilsSuite extends FunSuite {
   }
 
   test("parseTags works with NumericSequence tagType") {
-    val tags = parseAttributes("jM:B:c,-1\tjI:B:i,-1,1")
+    val tags = parseAttributes("zz:B:c,-1,1\tzy:B:s,-1,1\tzx:B:i,-1,1\tzw:B:f,-1.0,1.0")
 
-    assert(tags.length === 2)
-    assert(tags(0).tag === "jM")
+    assert(tags.length === 4)
+    assert(tags(0).tag === "zz")
     assert(tags(0).tagType === TagType.NumericByteSequence)
-    assert(tags(0).value.asInstanceOf[Array[Number]].sameElements(Array(-1)))
-    assert(tags(1).tag === "jI")
-    assert(tags(1).tagType === TagType.NumericIntSequence)
-    assert(tags(1).value.asInstanceOf[Array[Number]].sameElements(Array(-1, 1)))
+    assert(tags(0).value.asInstanceOf[Array[Byte]].sameElements(Array(-1, 1).map(_.toByte)))
+
+    assert(tags(1).tag === "zy")
+    assert(tags(1).tagType === TagType.NumericShortSequence)
+    assert(tags(1).value.asInstanceOf[Array[Short]].sameElements(Array(-1, 1).map(_.toShort)))
+
+    assert(tags(2).tag === "zx")
+    assert(tags(2).tagType === TagType.NumericIntSequence)
+    assert(tags(2).value.asInstanceOf[Array[Int]].sameElements(Array(-1, 1)))
+
+    assert(tags(3).tag === "zw")
+    assert(tags(3).tagType === TagType.NumericFloatSequence)
+    assert(tags(3).value.asInstanceOf[Array[Float]].sameElements(Array(-1.0f, 1.0f)))
   }
 
   test("empty string is parsed as zero tagStrings") {
