@@ -83,7 +83,7 @@ class AlignmentRecordRDDTest(SparkTestCase):
 
         bamReads = ac.loadAlignments(tmpPath)
 
-        self.assertEquals(bamReads._jvmRdd.jrdd().count(),
+        self.assertEqual(bamReads._jvmRdd.jrdd().count(),
                           reads._jvmRdd.jrdd().count())
 
 
@@ -95,7 +95,7 @@ class AlignmentRecordRDDTest(SparkTestCase):
         reads = ac.loadAlignments(testFile)
         kmers = reads.countKmers(6)
 
-        self.assertEquals(kmers.count(), 1040)
+        self.assertEqual(kmers.count(), 1040)
 
 
     def test_pipe_as_sam(self):
@@ -110,7 +110,7 @@ class AlignmentRecordRDDTest(SparkTestCase):
                               "org.bdgenomics.adam.rdd.read.AnySAMOutFormatter",
                               "org.bdgenomics.adam.api.java.AlignmentRecordsToAlignmentRecordsConverter")
 
-        self.assertEquals(reads.toDF().count(), pipedRdd.toDF().count())
+        self.assertEqual(reads.toDF().count(), pipedRdd.toDF().count())
 
 
     def test_transform(self):
@@ -122,7 +122,7 @@ class AlignmentRecordRDDTest(SparkTestCase):
 
         transformedReads = reads.transform(lambda x: x.filter(x.contigName == "1"))
 
-        self.assertEquals(transformedReads.toDF().count(), 1)
+        self.assertEqual(transformedReads.toDF().count(), 1)
 
 
     def test_transmute_to_coverage(self):
@@ -139,7 +139,7 @@ class AlignmentRecordRDDTest(SparkTestCase):
                                           CoverageRDD)
 
         assert(isinstance(readsAsCoverage, CoverageRDD))
-        self.assertEquals(readsAsCoverage.toDF().count(), 5)
+        self.assertEqual(readsAsCoverage.toDF().count(), 5)
 
 
     def test_to_coverage(self):
@@ -150,10 +150,10 @@ class AlignmentRecordRDDTest(SparkTestCase):
         reads = ac.loadAlignments(readsPath)
 
         coverage = reads.toCoverage()
-        self.assertEquals(coverage.toDF().count(), 42)
+        self.assertEqual(coverage.toDF().count(), 42)
 
         coverage = reads.toCoverage(collapse = False)
-        self.assertEquals(coverage.toDF().count(), 46)
+        self.assertEqual(coverage.toDF().count(), 46)
 
 
     def test_to_fragments(self):
@@ -164,7 +164,7 @@ class AlignmentRecordRDDTest(SparkTestCase):
         reads = ac.loadAlignments(readsPath)
 
         fragments = reads.toFragments()
-        self.assertEquals(fragments.toDF().count(), 5)
+        self.assertEqual(fragments.toDF().count(), 5)
 
 
     def test_load_indexed_bam(self):
@@ -172,11 +172,11 @@ class AlignmentRecordRDDTest(SparkTestCase):
         readsPath = self.resourceFile("indexed_bams/sorted.bam")
         ac = ADAMContext(self.ss)
 
-        querys = [ReferenceRegion("chr2", 100L, 101L), ReferenceRegion("3", 10L, 17L)]
+        querys = [ReferenceRegion("chr2", 100, 101), ReferenceRegion("3", 10, 17)]
 
         reads = ac.loadIndexedBam(readsPath, querys)
 
-        self.assertEquals(reads.toDF().count(), 2)
+        self.assertEqual(reads.toDF().count(), 2)
 
 
     def test_filterByOverlappingRegion(self):
@@ -186,10 +186,10 @@ class AlignmentRecordRDDTest(SparkTestCase):
 
         reads = ac.loadAlignments(readsPath)
 
-        query = ReferenceRegion("chr2", 1L, 400L)
+        query = ReferenceRegion("chr2", 1, 400)
 
         filtered = reads.filterByOverlappingRegion(query)
-        self.assertEquals(filtered.toDF().count(), 1)
+        self.assertEqual(filtered.toDF().count(), 1)
 
 
     def test_filterByOverlappingRegions(self):
@@ -199,11 +199,11 @@ class AlignmentRecordRDDTest(SparkTestCase):
 
         reads = ac.loadAlignments(readsPath)
 
-        querys = [ReferenceRegion("chr2", 1L, 400L),
-                    ReferenceRegion("3", 1L, 100L)]
+        querys = [ReferenceRegion("chr2", 1, 400),
+                    ReferenceRegion("3", 1, 100)]
 
         filtered = reads.filterByOverlappingRegions(querys)
-        self.assertEquals(filtered.toDF().count(), 2)
+        self.assertEqual(filtered.toDF().count(), 2)
 
 
     def test_caching(self):
@@ -215,11 +215,11 @@ class AlignmentRecordRDDTest(SparkTestCase):
 
         cachedReads = reads.cache()
         cached = self.sc._jsc.getPersistentRDDs()
-        self.assertEquals(cached.isEmpty(), False)
+        self.assertEqual(cached.isEmpty(), False)
 
         cachedReads.unpersist()
         cached = self.sc._jsc.getPersistentRDDs()
-        self.assertEquals(cached.isEmpty(), True)
+        self.assertEqual(cached.isEmpty(), True)
 
 
     def test_persisting(self):
@@ -231,11 +231,11 @@ class AlignmentRecordRDDTest(SparkTestCase):
 
         persistedReads = reads.persist(StorageLevel.DISK_ONLY)
         cached = self.sc._jsc.getPersistentRDDs()
-        self.assertEquals(cached.isEmpty(), False)
+        self.assertEqual(cached.isEmpty(), False)
 
         persistedReads.unpersist()
         cached = self.sc._jsc.getPersistentRDDs()
-        self.assertEquals(cached.isEmpty(), True)
+        self.assertEqual(cached.isEmpty(), True)
 
 
     def test_broadcast_inner_join(self):
@@ -250,7 +250,7 @@ class AlignmentRecordRDDTest(SparkTestCase):
 
         jRdd = reads.broadcastRegionJoin(targets)
 
-        self.assertEquals(jRdd.toDF().count(), 5)
+        self.assertEqual(jRdd.toDF().count(), 5)
 
 
     def test_broadcast_right_outer_join(self):
@@ -265,7 +265,7 @@ class AlignmentRecordRDDTest(SparkTestCase):
 
         jRdd = reads.rightOuterBroadcastRegionJoin(targets)
 
-        self.assertEquals(jRdd.toDF().count(), 6)
+        self.assertEqual(jRdd.toDF().count(), 6)
 
 
     def test_shuffle_inner_join(self):
@@ -280,7 +280,7 @@ class AlignmentRecordRDDTest(SparkTestCase):
 
         jRdd = reads.shuffleRegionJoin(targets)
 
-        self.assertEquals(jRdd.toDF().count(), 5)
+        self.assertEqual(jRdd.toDF().count(), 5)
 
 
     def test_shuffle_right_outer_join(self):
@@ -295,7 +295,7 @@ class AlignmentRecordRDDTest(SparkTestCase):
 
         jRdd = reads.rightOuterShuffleRegionJoin(targets)
 
-        self.assertEquals(jRdd.toDF().count(), 6)
+        self.assertEqual(jRdd.toDF().count(), 6)
 
 
     def test_shuffle_left_outer_join(self):
@@ -310,7 +310,7 @@ class AlignmentRecordRDDTest(SparkTestCase):
 
         jRdd = reads.leftOuterShuffleRegionJoin(targets)
 
-        self.assertEquals(jRdd.toDF().count(), 20)
+        self.assertEqual(jRdd.toDF().count(), 20)
 
 
     def test_shuffle_full_outer_join(self):
@@ -325,7 +325,7 @@ class AlignmentRecordRDDTest(SparkTestCase):
 
         jRdd = reads.fullOuterShuffleRegionJoin(targets)
 
-        self.assertEquals(jRdd.toDF().count(), 21)
+        self.assertEqual(jRdd.toDF().count(), 21)
 
 
     def test_shuffle_inner_join_groupBy_left(self):
@@ -340,7 +340,7 @@ class AlignmentRecordRDDTest(SparkTestCase):
 
         jRdd = reads.shuffleRegionJoinAndGroupByLeft(targets)
 
-        self.assertEquals(jRdd.toDF().count(), 5)
+        self.assertEqual(jRdd.toDF().count(), 5)
 
 
     def test_shuffle_right_outer_join_groupBy_left(self):
@@ -355,4 +355,4 @@ class AlignmentRecordRDDTest(SparkTestCase):
 
         jRdd = reads.rightOuterShuffleRegionJoinAndGroupByLeft(targets)
 
-        self.assertEquals(jRdd.toDF().count(), 21)
+        self.assertEqual(jRdd.toDF().count(), 21)

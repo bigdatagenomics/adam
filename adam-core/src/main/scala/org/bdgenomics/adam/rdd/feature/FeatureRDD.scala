@@ -202,12 +202,29 @@ object FeatureRDD {
    * @return Returns the feature as a single line BED string.
    */
   private[rdd] def toBed(feature: Feature): String = {
+    toBed(feature, None, None, None)
+  }
+
+  /**
+   * @param feature Feature to write in BED format.
+   * @return Returns the feature as a single line BED string.
+   */
+  private[rdd] def toBed(feature: Feature,
+                         minimumScore: Option[Double],
+                         maximumScore: Option[Double],
+                         missingValue: Option[Int]): String = {
+
     val chrom = feature.getContigName
     val start = feature.getStart
     val end = feature.getEnd
     val name = Features.nameOf(feature)
-    val score = Option(feature.getScore).getOrElse(".")
     val strand = Features.asString(feature.getStrand)
+
+    val score = if (minimumScore.isDefined && maximumScore.isDefined && missingValue.isDefined) {
+      Features.interpolateScore(feature.getScore, minimumScore.get, maximumScore.get, missingValue.get)
+    } else {
+      Features.formatScore(feature.getScore)
+    }
 
     if (!feature.getAttributes.containsKey("thickStart") &&
       !feature.getAttributes.containsKey("itemRgb") &&
@@ -661,7 +678,35 @@ sealed abstract class FeatureRDD extends AvroGenomicDataset[Feature, FeatureProd
   }
 
   /**
-   * Save this FeatureRDD in BED format.
+   * Save this FeatureRDD in UCSC BED format, where score is formatted as
+   * integer values between 0 and 1000, with missing value as specified.
+   *
+   * @param fileName The path to save BED formatted text file(s) to.
+   * @param asSingleFile By default (false), writes file to disk as shards with
+   *   one shard per partition. If true, we save the file to disk as a single
+   *   file by merging the shards.
+   * @param disableFastConcat If asSingleFile is true, disables the use of the
+   *   parallel file merging engine.
+   * @param minimumScore Minimum score, interpolated to 0.
+   * @param maximumScore Maximum score, interpolated to 1000.
+   * @param missingValue Value to use if score is not specified. Defaults to 0.
+   */
+  def saveAsUcscBed(fileName: String,
+                    asSingleFile: Boolean = false,
+                    disableFastConcat: Boolean = false,
+                    minimumScore: Double,
+                    maximumScore: Double,
+                    missingValue: Int = 0) = {
+
+    writeTextRdd(rdd.map(FeatureRDD.toBed(_, Some(minimumScore), Some(maximumScore), Some(missingValue))),
+      fileName,
+      asSingleFile,
+      disableFastConcat)
+  }
+
+  /**
+   * Save this FeatureRDD in bedtools2 BED format, where score is formatted
+   * as double floating point values with missing values.
    *
    * @param fileName The path to save BED formatted text file(s) to.
    * @param asSingleFile By default (false), writes file to disk as shards with
@@ -673,6 +718,7 @@ sealed abstract class FeatureRDD extends AvroGenomicDataset[Feature, FeatureProd
   def saveAsBed(fileName: String,
                 asSingleFile: Boolean = false,
                 disableFastConcat: Boolean = false) = {
+
     writeTextRdd(rdd.map(FeatureRDD.toBed),
       fileName,
       asSingleFile,

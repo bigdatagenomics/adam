@@ -304,7 +304,7 @@ case class RecordGroup(
     description.foreach(rgr.setDescription)
     runDateEpoch.foreach(e => rgr.setRunDate(new Date(e)))
     flowOrder.foreach(rgr.setFlowOrder)
-    keySequence.foreach(rgr.setFlowOrder)
+    keySequence.foreach(rgr.setKeySequence)
     library.foreach(rgr.setLibrary)
     predictedMedianInsertSize.foreach(is => {
       // force implicit conversion

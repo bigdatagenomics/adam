@@ -149,7 +149,7 @@ private[adam] class IndelRealignmentTargetSerializer extends Serializer[IndelRea
 
 private[adam] class IndelRealignmentTarget(
     val variation: Option[ReferenceRegion],
-    val readRange: ReferenceRegion) extends Logging {
+    val readRange: ReferenceRegion) extends Logging with Serializable {
 
   assert(variation.map(r => r.referenceName).forall(_ == readRange.referenceName))
 

@@ -154,8 +154,15 @@ private[rdd] object GFF3Parser {
  */
 private[rdd] class GFF3Parser extends FeatureParser {
 
+  // nucleotide + amino acid + ambiguity codes covers a-z
+  private val fastaRegex = "^[a-zA-Z]+$".r
+
   def isHeader(line: String): Boolean = {
-    line.startsWith("#") || line.isEmpty
+    line.isEmpty || line.startsWith("#") || line.startsWith(">")
+  }
+
+  def isFasta(line: String): Boolean = {
+    fastaRegex.pattern.matcher(line).matches()
   }
 
   override def parse(line: String,
@@ -170,6 +177,11 @@ private[rdd] class GFF3Parser extends FeatureParser {
 
     // check for invalid lines
     if (fields.length < 8 || fields.length > 9) {
+
+      // skip FASTA-formatted sequence
+      if (isFasta(line)) {
+        return None
+      }
       throwWarnOrNone("Invalid GFF3 line: %s", line, stringency)
     }
     val (seqid, source, featureType, start, end, score, strand, phase) =

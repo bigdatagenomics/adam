@@ -253,6 +253,12 @@ class FeatureRDDSuite extends ADAMFunSuite {
     })
   }
 
+  sparkTest("ignore FASTA sequence in GFF3 file") {
+    val inputPath = testFile("ctg123.fasta.gff3")
+    val features = sc.loadGff3(inputPath)
+    assert(features.rdd.count() === 12)
+  }
+
   sparkTest("save BED as GTF format") {
     val inputPath = testFile("dvl1.200.bed")
     val features = sc.loadBed(inputPath)
@@ -341,6 +347,26 @@ class FeatureRDDSuite extends ADAMFunSuite {
     })
 
     checkFiles(inputPath, outputPath)
+  }
+
+  sparkTest("save to UCSC BED format") {
+    val inputPath = testFile("dvl1.200.bed")
+    val expected = sc.loadBed(inputPath)
+    val outputPath = tempLocation(".bed")
+    expected.saveAsUcscBed(outputPath,
+      asSingleFile = true,
+      minimumScore = 0.0,
+      maximumScore = 200.0)
+
+    val lines = sc.textFile(outputPath)
+    val bedCols = lines.first.split("\t")
+    assert(bedCols.size === 6)
+    assert(bedCols(0) === "1")
+    assert(bedCols(1) === "1331345")
+    assert(bedCols(2) === "1331536")
+    assert(bedCols(3) === "106624")
+    assert(bedCols(4) === "67")
+    assert(bedCols(5) === "+")
   }
 
   sparkTest("save IntervalList as GTF format") {
@@ -842,11 +868,11 @@ class FeatureRDDSuite extends ADAMFunSuite {
 @SQ	SN:chr1	LN:249250621
 @SQ	SN:chr2	LN:243199373
      */
-    assert(features.sequences.containsRefName("chr1"))
+    assert(features.sequences.containsReferenceName("chr1"))
     assert(features.sequences.apply("chr1").isDefined)
     assert(features.sequences.apply("chr1").get.length >= 249250621L)
 
-    assert(features.sequences.containsRefName("chr2"))
+    assert(features.sequences.containsReferenceName("chr2"))
     assert(features.sequences.apply("chr2").isDefined)
     assert(features.sequences.apply("chr2").get.length >= 243199373L)
   }
@@ -906,7 +932,7 @@ class FeatureRDDSuite extends ADAMFunSuite {
   sparkTest("load parquet to sql, save, re-read from avro") {
     def testMetadata(fRdd: FeatureRDD) {
       val sequenceRdd = fRdd.addSequence(SequenceRecord("aSequence", 1000L))
-      assert(sequenceRdd.sequences.containsRefName("aSequence"))
+      assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
     }
 
     val inputPath = testFile("small.1.bed")
@@ -933,7 +959,7 @@ class FeatureRDDSuite extends ADAMFunSuite {
   sparkTest("load partitioned parquet to sql, save, re-read from avro") {
     def testMetadata(fRdd: FeatureRDD) {
       val sequenceRdd = fRdd.addSequence(SequenceRecord("aSequence", 1000L))
-      assert(sequenceRdd.sequences.containsRefName("aSequence"))
+      assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
     }
 
     val inputPath = testFile("small.1.bed")

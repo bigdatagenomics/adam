@@ -114,7 +114,7 @@
                 <argument>org.bdgenomics.formats.avro.Variant</argument>
                 <argument>org.bdgenomics.formats.avro.VariantAnnotation</argument>
                 <argument>org.bdgenomics.formats.avro.VariantCallingAnnotations</argument>
-                <argument>adam-core/target/generated-sources/src/main/scala/org/bdgenomics/adam/sql/Schemas.scala</argument>
+                <argument>${project.basedir}/target/generated-sources/src/main/scala/org/bdgenomics/adam/sql/Schemas.scala</argument>
               </arguments>
               <classpathScope>compile</classpathScope>
             </configuration>
@@ -146,7 +146,7 @@
                 <argument>org.bdgenomics.formats.avro.Variant</argument>
                 <argument>org.bdgenomics.formats.avro.VariantAnnotation</argument>
                 <argument>org.bdgenomics.formats.avro.VariantCallingAnnotations</argument>
-                <argument>adam-core/target/generated-sources/src/main/scala/org/bdgenomics/adam/projections/Enums.scala</argument>
+                <argument>${project.basedir}/target/generated-sources/src/main/scala/org/bdgenomics/adam/projections/Enums.scala</argument>
               </arguments>
               <classpathScope>compile</classpathScope>
             </configuration>

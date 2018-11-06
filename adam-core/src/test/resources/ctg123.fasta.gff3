@@ -1,0 +1,45 @@
+##gff-version 3.2.1
+##sequence-region ctg123 1 1497228
+ctg123	.	gene	1000	9000	.	+	.	ID=gene00001;Name=EDEN
+ctg123	.	TF_binding_site	1000	1012	.	+	.	ID=tfbs00001;Parent=gene00001
+ctg123	.	mRNA	1050	9000	.	+	.	ID=mRNA00001;Parent=gene00001;Name=EDEN.1
+ctg123	.	five_prime_UTR	1050	1200	.	+	.	Parent=mRNA00001
+ctg123	.	CDS	1201	1500	.	+	0	ID=cds00001;Parent=mRNA00001
+ctg123	.	CDS	3000	3902	.	+	0	ID=cds00001;Parent=mRNA00001
+ctg123	.	CDS	5000	5500	.	+	0	ID=cds00001;Parent=mRNA00001
+ctg123	.	CDS	7000	7600	.	+	0	ID=cds00001;Parent=mRNA00001
+ctg123	.	three_prime_UTR	7601	9000	.	+	.	Parent=mRNA00001
+ctg123	.	cDNA_match	1050	1500	5.8e-42	+	.	ID=match00001;Target=cdna0123+12+462
+ctg123	.	cDNA_match	5000	5500	8.1e-43	+	.	ID=match00001;Target=cdna0123+463+963
+ctg123	.	cDNA_match	7000	9000	1.4e-40	+	.	ID=match00001;Target=cdna0123+964+2964
+##FASTA
+>ctg123
+cttctgggcgtacccgattctcggagaacttgccgcaccattccgccttg
+tgttcattgctgcctgcatgttcattgtctacctcggctacgtgtggcta
+tctttcctcggtgccctcgtgcacggagtcgagaaaccaaagaacaaaaa
+aagaaattaaaatatttattttgctgtggtttttgatgtgtgttttttat
+aatgatttttgatgtgaccaattgtacttttcctttaaatgaaatgtaat
+cttaaatgtatttccgacgaattcgaggcctgaaaagtgtgacgccattc
+gtatttgatttgggtttactatcgaataatgagaattttcaggcttaggc
+ttaggcttaggcttaggcttaggcttaggcttaggcttaggcttaggctt
+aggcttaggcttaggcttaggcttaggcttaggcttaggcttaggcttag
+aatctagctagctatccgaaattcgaggcctgaaaagtgtgacgccattc
+>cnda0123
+ttcaagtgctcagtcaatgtgattcacagtatgtcaccaaatattttggc
+agctttctcaagggatcaaaattatggatcattatggaatacctcggtgg
+aggctcagcgctcgatttaactaaaagtggaaagctggacgaaagtcata
+tcgctgtgattcttcgcgaaattttgaaaggtctcgagtatctgcatagt
+gaaagaaaaatccacagagatattaaaggagccaacgttttgttggaccg
+tcaaacagcggctgtaaaaatttgtgattatggttaaagg
+>aa0123
+mapgsvtsdispsststagssrspesekpgpshggvppggpshsslpvgr
+rhppvlrmvlealqageqrrgtsvaaiklyilhkyptvdvlrfkyllkqa
+latgmrrgllarplnskarg
+>prot0123
+MAPGSVTSDISPSSTSTAGSSRSPESEKPGPSHGGVPPGGPSHSSLPVGR
+RHPPVLRMVLEALQAGEQRRGTSVAAIKLYILHKYPTVDVLRFKYLLKQA
+LATGMRRGLLARPLNSKARGATGSFKLVPKHKKKIQPRKMAPATAPRRAG
+EAKGKGPKKPSEAKEDPPNVGKVKKAAKRPAKVQKPPPKPGAATEKARKQ
+GGAAKDTRAQSGEARKVPPKPDKAMRAPSSAGGLSRKAKAKGSRSSQGDA
+EAYRKTKAESKSSKPTASKVKNGAASPTKKKVVAKAKAPKAGQGPNTKAA
+APAKGSGSKVVPAHLSRKTEAPKGPRKAGLPIKASSSKVSSQRAEA

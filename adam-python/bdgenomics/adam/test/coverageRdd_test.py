@@ -33,9 +33,9 @@ class CoverageRDDTest(SparkTestCase):
         coverage = reads.toCoverage()
         tmpPath = self.tmpFile() + ".coverage.adam"
         coverage.save(tmpPath,
-                              asSingleFile=True,
+                            asSingleFile=True,
                             disableFastConcat=True)
-    	assert(os.listdir(tmpPath) != [])
+        assert(os.listdir(tmpPath) != [])
 
 
     def test_collapse(self):
@@ -45,7 +45,7 @@ class CoverageRDDTest(SparkTestCase):
         reads = ac.loadAlignments(testFile)
         coverage = reads.toCoverage()
         collapsed = coverage.collapse()
-        self.assertEquals(collapsed.toDF().count(), coverage.toDF().count())
+        self.assertEqual(collapsed.toDF().count(), coverage.toDF().count())
 
     def test_toFeatures(self):
         testFile = self.resourceFile("sorted.sam")
@@ -56,7 +56,7 @@ class CoverageRDDTest(SparkTestCase):
         features = coverage.toFeatures()
 
         assert(isinstance(features, FeatureRDD))
-        self.assertEquals(features.toDF().count(), coverage.toDF().count())
+        self.assertEqual(features.toDF().count(), coverage.toDF().count())
 
     def test_aggregatedCoverage(self):
         testFile = self.resourceFile("small.sam")
@@ -65,7 +65,7 @@ class CoverageRDDTest(SparkTestCase):
         reads = ac.loadAlignments(testFile)
         coverage = reads.toCoverage()
         collapsed = coverage.aggregatedCoverage(10)
-        self.assertEquals(collapsed.toDF().count(), 166)
+        self.assertEqual(collapsed.toDF().count(), 166)
 
     def test_flatten(self):
         testFile = self.resourceFile("small.sam")
@@ -74,4 +74,4 @@ class CoverageRDDTest(SparkTestCase):
         reads = ac.loadAlignments(testFile)
         coverage = reads.toCoverage()
         flattened = coverage.flatten()
-        self.assertEquals(flattened.toDF().count(), 1500)
+        self.assertEqual(flattened.toDF().count(), 1500)

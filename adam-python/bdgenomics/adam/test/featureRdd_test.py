@@ -36,7 +36,7 @@ class FeatureRDDTest(SparkTestCase):
 
         savedFeatures = ac.loadFeatures(testFile)
 
-        self.assertEquals(features._jvmRdd.jrdd().count(),
+        self.assertEqual(features._jvmRdd.jrdd().count(),
                           savedFeatures._jvmRdd.jrdd().count())
 
 
@@ -52,7 +52,7 @@ class FeatureRDDTest(SparkTestCase):
 
         savedFeatures = ac.loadFeatures(testFile)
 
-        self.assertEquals(features._jvmRdd.jrdd().count(),
+        self.assertEqual(features._jvmRdd.jrdd().count(),
                           savedFeatures._jvmRdd.jrdd().count())
 
 
@@ -68,7 +68,7 @@ class FeatureRDDTest(SparkTestCase):
 
         savedFeatures = ac.loadFeatures(testFile)
 
-        self.assertEquals(features._jvmRdd.jrdd().count(),
+        self.assertEqual(features._jvmRdd.jrdd().count(),
                           savedFeatures._jvmRdd.jrdd().count())
 
 
@@ -84,7 +84,7 @@ class FeatureRDDTest(SparkTestCase):
 
         savedFeatures = ac.loadFeatures(testFile)
 
-        self.assertEquals(features._jvmRdd.jrdd().count(),
+        self.assertEqual(features._jvmRdd.jrdd().count(),
                           savedFeatures._jvmRdd.jrdd().count())
 
 
@@ -97,4 +97,4 @@ class FeatureRDDTest(SparkTestCase):
 
         transformedFeatures = features.transform(lambda x: x.filter(x.start < 12613))
 
-        self.assertEquals(transformedFeatures.toDF().count(), 6)
+        self.assertEqual(transformedFeatures.toDF().count(), 6)

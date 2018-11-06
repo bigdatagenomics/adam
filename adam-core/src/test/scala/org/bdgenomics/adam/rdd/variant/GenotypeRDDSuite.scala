@@ -17,7 +17,10 @@
  */
 package org.bdgenomics.adam.rdd.variant
 
+import com.google.common.io.Files
+import htsjdk.samtools.ValidationStringency
 import htsjdk.variant.vcf.VCFHeaderLine
+import java.io.File
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.bdgenomics.adam.converters.VariantContextConverter
@@ -99,6 +102,8 @@ object GenotypeRDDSuite extends Serializable {
 }
 
 class GenotypeRDDSuite extends ADAMFunSuite {
+
+  val tempDir = Files.createTempDir()
 
   sparkTest("union two genotype rdds together") {
     val genotype1 = sc.loadGenotypes(testFile("gvcf_dir/gvcf_multiallelic.g.vcf"))
@@ -333,7 +338,7 @@ class GenotypeRDDSuite extends ADAMFunSuite {
     val genotypes = sc.loadGenotypes(genotypesPath)
     val variantContexts = genotypes.toVariantContexts
 
-    assert(variantContexts.sequences.containsRefName("1"))
+    assert(variantContexts.sequences.containsReferenceName("1"))
     assert(variantContexts.samples.nonEmpty)
 
     val vcs = variantContexts.rdd.collect
@@ -348,7 +353,7 @@ class GenotypeRDDSuite extends ADAMFunSuite {
   sparkTest("load parquet to sql, save, re-read from avro") {
     def testMetadata(gRdd: GenotypeRDD) {
       val sequenceRdd = gRdd.addSequence(SequenceRecord("aSequence", 1000L))
-      assert(sequenceRdd.sequences.containsRefName("aSequence"))
+      assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
 
       val headerRdd = gRdd.addHeaderLine(new VCFHeaderLine("ABC", "123"))
       assert(headerRdd.headerLines.exists(_.getKey == "ABC"))
@@ -683,5 +688,97 @@ class GenotypeRDDSuite extends ADAMFunSuite {
     val genotypes = sc.loadGenotypes(testFile("gvcf_multiallelic/multiallelic.vcf"))
     val genotypesDs = genotypes.transformDataset(ds => ds)
     assert(genotypesDs.filterNoCalls().dataset.count() === 3)
+  }
+
+  sparkTest("round trip gVCF END attribute without nested variant annotations rdd bound") {
+    val genotypes = sc.loadGenotypes(testFile("gvcf_multiallelic/multiallelic.vcf"))
+    val first = genotypes.sort.rdd.collect.head
+    assert(first.end === 16157602L)
+    assert(first.variant.end === 16157602L)
+    assert(first.variant.annotation === null)
+
+    val path = new File(tempDir, "test.gvcf.vcf")
+    genotypes.copyVariantEndToAttribute.toVariantContexts.saveAsVcf(path.getAbsolutePath,
+      asSingleFile = true,
+      deferMerging = false,
+      disableFastConcat = false,
+      ValidationStringency.SILENT)
+
+    val vcfGenotypes = sc.loadGenotypes("%s/test.gvcf.vcf".format(tempDir))
+    val firstVcfGenotype = vcfGenotypes.sort.rdd.collect.head
+    assert(firstVcfGenotype.end === 16157602L)
+    // variant end copied to END attribute before writing, so this is correct
+    assert(firstVcfGenotype.variant.end === 16157602L)
+    // ...but annotations are not populated on read
+    assert(firstVcfGenotype.variant.annotation === null)
+  }
+
+  sparkTest("round trip gVCF END attribute without nested variant annotations dataset bound") {
+    val genotypes = sc.loadGenotypes(testFile("gvcf_multiallelic/multiallelic.vcf"))
+    val first = genotypes.sort.dataset.first
+    assert(first.end === Some(16157602L))
+    assert(first.variant.get.end === Some(16157602L))
+    assert(first.variant.get.annotation.isEmpty)
+
+    val path = new File(tempDir, "test.gvcf.vcf")
+    genotypes.copyVariantEndToAttribute.toVariantContexts.saveAsVcf(path.getAbsolutePath,
+      asSingleFile = true,
+      deferMerging = false,
+      disableFastConcat = false,
+      ValidationStringency.SILENT)
+
+    val vcfGenotypes = sc.loadGenotypes("%s/test.gvcf.vcf".format(tempDir))
+    val firstVcfGenotype = vcfGenotypes.sort.dataset.first
+    assert(firstVcfGenotype.end === Some(16157602L))
+    // variant end copied to END attribute before writing, so this is correct
+    assert(firstVcfGenotype.variant.get.end === Some(16157602L))
+    // ...but annotations are not populated on read
+    assert(first.variant.get.annotation.isEmpty)
+  }
+
+  sparkTest("round trip gVCF END attribute with nested variant annotations rdd bound") {
+    VariantContextConverter.setNestAnnotationInGenotypesProperty(sc.hadoopConfiguration, true)
+
+    val genotypes = sc.loadGenotypes(testFile("gvcf_multiallelic/multiallelic.vcf"))
+    val first = genotypes.sort.rdd.collect.head
+    assert(first.end === 16157602L)
+    assert(first.variant.end === 16157602L)
+    assert(first.variant.annotation.attributes.get("END") === "16157602")
+
+    val path = new File(tempDir, "test.gvcf.vcf")
+    genotypes.toVariantContexts.saveAsVcf(path.getAbsolutePath,
+      asSingleFile = true,
+      deferMerging = false,
+      disableFastConcat = false,
+      ValidationStringency.SILENT)
+
+    val vcfGenotypes = sc.loadGenotypes("%s/test.gvcf.vcf".format(tempDir))
+    val firstVcfGenotype = vcfGenotypes.sort.rdd.collect.head
+    assert(firstVcfGenotype.end === 16157602L)
+    assert(firstVcfGenotype.variant.end === 16157602L)
+    assert(firstVcfGenotype.variant.annotation.attributes.get("END") === "16157602")
+  }
+
+  sparkTest("round trip gVCF END attribute with nested variant annotations dataset bound") {
+    VariantContextConverter.setNestAnnotationInGenotypesProperty(sc.hadoopConfiguration, true)
+
+    val genotypes = sc.loadGenotypes(testFile("gvcf_multiallelic/multiallelic.vcf"))
+    val first = genotypes.sort.dataset.first
+    assert(first.end === Some(16157602L))
+    assert(first.variant.get.end === Some(16157602L))
+    assert(first.variant.get.annotation.get.attributes.get("END") === Some("16157602"))
+
+    val path = new File(tempDir, "test.gvcf.vcf")
+    genotypes.toVariantContexts.saveAsVcf(path.getAbsolutePath,
+      asSingleFile = true,
+      deferMerging = false,
+      disableFastConcat = false,
+      ValidationStringency.SILENT)
+
+    val vcfGenotypes = sc.loadGenotypes("%s/test.gvcf.vcf".format(tempDir))
+    val firstVcfGenotype = vcfGenotypes.sort.dataset.first
+    assert(firstVcfGenotype.end === Some(16157602L))
+    assert(firstVcfGenotype.variant.get.end === Some(16157602L))
+    assert(firstVcfGenotype.variant.get.annotation.get.attributes.get("END") === Some("16157602"))
   }
 }

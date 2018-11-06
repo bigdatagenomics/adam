@@ -42,8 +42,8 @@ class ADAMContextTest(SparkTestCase):
         ac = ADAMContext(self.ss)
 
         reads = ac.loadIndexedBam(testFile,
-                                  [ReferenceRegion("chr2", 100L, 101L),
-                                   ReferenceRegion("3", 10L, 17L)])
+                                  [ReferenceRegion("chr2", 100, 101),
+                                   ReferenceRegion("3", 10, 17)])
 
         self.assertEqual(reads.toDF().count(), 2)
         

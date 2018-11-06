@@ -51,7 +51,7 @@ class GenotypeRDDTest(SparkTestCase):
 
         savedGenotypes = ac.loadGenotypes(testFile)
 
-        self.assertEquals(genotypes._jvmRdd.jrdd().count(),
+        self.assertEqual(genotypes._jvmRdd.jrdd().count(),
                           savedGenotypes._jvmRdd.jrdd().count())
 
         
@@ -250,7 +250,8 @@ class GenotypeRDDTest(SparkTestCase):
 
         transformedGenotypes = genotypes.transform(lambda x: x.filter(x.contigName == '1'))
 
-        self.assertEquals(transformedGenotypes.toDF().count(), 9)
+        self.assertEqual(transformedGenotypes.toDF().count(), 9)
+
 
         
     def test_to_variants(self):
@@ -261,9 +262,9 @@ class GenotypeRDDTest(SparkTestCase):
 
         variants = genotypes.toVariants()
 
-        self.assertEquals(variants.toDF().count(), 18)
+        self.assertEqual(variants.toDF().count(), 18)
 
         variants = genotypes.toVariants(dedupe=True)
 
-        self.assertEquals(variants.toDF().count(), 6)
-        
+        self.assertEqual(variants.toDF().count(), 6)
+

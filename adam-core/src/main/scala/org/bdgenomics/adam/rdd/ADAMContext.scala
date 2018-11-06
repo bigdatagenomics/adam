@@ -43,6 +43,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.rdd.MetricsContext._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Dataset, SparkSession, SQLContext }
+import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.converters._
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.io._
@@ -2018,6 +2019,9 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   Globs/directories are supported.
    * @param optRecordGroup The optional record group name to associate to the unaligned alignment
    *   records. Defaults to None.
+   * @param persistLevel An optional persistance level to set. If this level is
+   *   set, then reads will be cached (at the given persistance) level as part of
+   *   validation. Defaults to StorageLevel.MEMORY_ONLY.
    * @param stringency The validation stringency to use when validating paired FASTQ format.
    *   Defaults to ValidationStringency.STRICT.
    * @return Returns an unaligned AlignmentRecordRDD.
@@ -2026,6 +2030,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     pathName1: String,
     pathName2: String,
     optRecordGroup: Option[String] = None,
+    persistLevel: Option[StorageLevel] = Some(StorageLevel.MEMORY_ONLY),
     stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordRDD = LoadPairedFastq.time {
 
     val reads1 = loadUnpairedFastq(
@@ -2043,8 +2048,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
     stringency match {
       case ValidationStringency.STRICT | ValidationStringency.LENIENT =>
-        val count1 = reads1.rdd.cache.count
-        val count2 = reads2.rdd.cache.count
+        val count1 = persistLevel.fold(reads1.rdd.count)(reads1.rdd.persist(_).count)
+        val count2 = persistLevel.fold(reads2.rdd.count)(reads2.rdd.persist(_).count)
 
         if (count1 != count2) {
           val msg = s"Fastq 1 ($pathName1) has $count1 reads, fastq 2 ($pathName2) has $count2 reads"
@@ -2553,6 +2558,37 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     // convert records
     val fastqRecordConverter = new FastqRecordConverter
     FragmentRDD.fromRdd(records.map(fastqRecordConverter.convertFragment))
+  }
+
+  /**
+   * Load paired unaligned alignment records grouped by sequencing fragment
+   * from paired FASTQ files into an FragmentRDD.
+   *
+   * Fragments represent all of the reads from a single sequenced fragment as
+   * a single object, which is a useful representation for some tasks.
+   *
+   * @param pathName1 The path name to load the first set of unaligned alignment records from.
+   *   Globs/directories are supported.
+   * @param pathName2 The path name to load the second set of unaligned alignment records from.
+   *   Globs/directories are supported.
+   * @param optRecordGroup The optional record group name to associate to the unaligned alignment
+   *   records. Defaults to None.
+   * @param persistLevel An optional persistance level to set. If this level is
+   *   set, then reads will be cached (at the given persistance) level as part of
+   *   validation. Defaults to StorageLevel.MEMORY_ONLY.
+   * @param stringency The validation stringency to use when validating paired FASTQ format.
+   *   Defaults to ValidationStringency.STRICT.
+   * @return Returns a FragmentRDD containing the paired reads grouped by
+   *   sequencing fragment.
+   */
+  def loadPairedFastqAsFragments(
+    pathName1: String,
+    pathName2: String,
+    optRecordGroup: Option[String] = None,
+    persistLevel: Option[StorageLevel] = Some(StorageLevel.MEMORY_ONLY),
+    stringency: ValidationStringency = ValidationStringency.STRICT): FragmentRDD = LoadPairedFastqFragments.time {
+
+    loadPairedFastq(pathName1, pathName2, optRecordGroup, persistLevel, stringency).toFragments()
   }
 
   /**

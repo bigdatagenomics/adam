@@ -114,7 +114,7 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
   sparkTest("round trip a ncf to parquet") {
     def testMetadata(fRdd: NucleotideContigFragmentRDD) {
       val sequenceRdd = fRdd.addSequence(SequenceRecord("aSequence", 1000L))
-      assert(sequenceRdd.sequences.containsRefName("aSequence"))
+      assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
     }
 
     val fragments1 = sc.loadFasta(testFile("HLA_DQB1_05_01_01_02.fa"), 1000L)
@@ -145,7 +145,7 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
   sparkTest("round trip a ncf to partitioned parquet") {
     def testMetadata(fRdd: NucleotideContigFragmentRDD) {
       val sequenceRdd = fRdd.addSequence(SequenceRecord("aSequence", 1000L))
-      assert(sequenceRdd.sequences.containsRefName("aSequence"))
+      assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
     }
 
     val fragments1 = sc.loadFasta(testFile("HLA_DQB1_05_01_01_02.fa"), 1000L)
@@ -197,10 +197,10 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
 
     val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(ctg0, ctg1)))
 
-    assert(rdd.sequences.containsRefName("chr0"))
+    assert(rdd.sequences.containsReferenceName("chr0"))
     val chr0 = rdd.sequences("chr0").get
     assert(chr0.length === 1000L)
-    assert(rdd.sequences.containsRefName("chr1"))
+    assert(rdd.sequences.containsReferenceName("chr1"))
     val chr1 = rdd.sequences("chr1").get
     assert(chr1.length === 900L)
   }
@@ -704,6 +704,11 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
     val fragments3 = sc.loadContigFragments(output,
       optPredicate = Some(ReferenceRegion("HLA-DQB1*05:01:01:02", 500L, 1500L).toPredicate))
     assert(fragments3.rdd.count === 2)
+  }
+
+  sparkTest("load fasta sequences from GFF3 file") {
+    val sequences = sc.loadFasta(testFile("ctg123.fasta.gff3"))
+    assert(sequences.rdd.count() === 4)
   }
 
   sparkTest("transform contigs to coverage rdd") {

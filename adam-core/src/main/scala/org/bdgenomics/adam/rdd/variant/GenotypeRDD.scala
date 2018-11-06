@@ -42,13 +42,16 @@ import org.bdgenomics.adam.rich.RichVariant
 import org.bdgenomics.adam.serialization.AvroSerializer
 import org.bdgenomics.adam.sql.{
   Genotype => GenotypeProduct,
-  Variant => VariantProduct
+  Variant => VariantProduct,
+  VariantAnnotation => VariantAnnotationProduct
 }
 import org.bdgenomics.utils.interval.array.{ IntervalArray, IntervalArraySerializer }
 import org.bdgenomics.formats.avro.{
   Genotype,
   GenotypeAllele,
-  Sample
+  Sample,
+  Variant,
+  VariantAnnotation
 }
 import scala.collection.JavaConversions._
 import scala.reflect.ClassTag
@@ -193,6 +196,20 @@ case class DatasetBoundGenotypeRDD private[rdd] (
 
   def replaceSamples(newSamples: Iterable[Sample]): GenotypeRDD = {
     copy(samples = newSamples.toSeq)
+  }
+
+  override def copyVariantEndToAttribute(): GenotypeRDD = {
+    def copyEnd(g: GenotypeProduct): GenotypeProduct = {
+      val variant = g.variant.getOrElse(VariantProduct())
+      val annotation = variant.annotation.getOrElse(VariantAnnotationProduct())
+      val attributes = annotation.attributes + ("END" -> g.end.toString)
+      val annotationCopy = annotation.copy(attributes = attributes)
+      val variantCopy = variant.copy(annotation = Some(annotationCopy))
+      g.copy(variant = Some(variantCopy))
+    }
+    val sqlContext = SQLContext.getOrCreate(rdd.context)
+    import sqlContext.implicits._
+    transformDataset(dataset => dataset.map(copyEnd))
   }
 
   override def filterToFiltersPassed(): GenotypeRDD = {
@@ -372,6 +389,25 @@ sealed abstract class GenotypeRDD extends MultisampleAvroGenomicDataset[Genotype
     }
 
     VariantRDD(maybeDedupedVariants, sequences, headerLines)
+  }
+
+  /**
+   * Copy variant end to a variant attribute (VCF INFO field "END").
+   *
+   * @return GenotypeRDD with variant end copied to a variant attribute.
+   */
+  def copyVariantEndToAttribute(): GenotypeRDD = {
+    def copyEnd(g: Genotype): Genotype = {
+      val variant = Option(g.variant).getOrElse(new Variant())
+      val annotation = Option(variant.annotation).getOrElse(new VariantAnnotation())
+      val attributes = new java.util.HashMap[String, String]()
+      Option(annotation.attributes).map(attributes.putAll(_))
+      attributes.put("END", g.end.toString)
+      val annotationCopy = VariantAnnotation.newBuilder(annotation).setAttributes(attributes).build()
+      val variantCopy = Variant.newBuilder(variant).setAnnotation(annotationCopy).build()
+      Genotype.newBuilder(g).setVariant(variantCopy).build()
+    }
+    transform(rdd => rdd.map(copyEnd))
   }
 
   /**

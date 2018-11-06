@@ -36,7 +36,7 @@ class VariantRDDTest(SparkTestCase):
 
         savedVariants = ac.loadVariants(testFile)
 
-        self.assertEquals(variants._jvmRdd.jrdd().count(),
+        self.assertEqual(variants._jvmRdd.jrdd().count(),
                           savedVariants._jvmRdd.jrdd().count())
 
 
@@ -49,4 +49,4 @@ class VariantRDDTest(SparkTestCase):
 
         transformedVariants = variants.transform(lambda x: x.filter(x.start < 19190))
 
-        self.assertEquals(transformedVariants.toDF().count(), 3)
+        self.assertEqual(transformedVariants.toDF().count(), 3)
