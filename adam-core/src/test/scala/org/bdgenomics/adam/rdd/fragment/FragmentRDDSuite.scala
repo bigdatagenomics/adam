@@ -588,4 +588,26 @@ class FragmentRDDSuite extends ADAMFunSuite {
       assert(fragment.getAlignments.size() == 2)
     })
   }
+
+  sparkTest("interleaved paired read names with index sequences in read names can group into fragments") {
+    val path = testFile("read_names_with_index_sequences_interleaved.fq")
+    val fragments = sc.loadInterleavedFastq(path).toFragments()
+
+    assert(fragments.rdd.count() == 4)
+
+    fragments.rdd.collect().foreach(fragment => {
+      assert(fragment.getAlignments.size() == 2)
+    })
+  }
+
+  sparkTest("interleaved paired read names with index sequences in read names as fragments") {
+    val path = testFile("read_names_with_index_sequences_interleaved.fq")
+    val fragments = sc.loadInterleavedFastqAsFragments(path)
+
+    assert(fragments.rdd.count() == 4)
+
+    fragments.rdd.collect().foreach(fragment => {
+      assert(fragment.getAlignments.size() == 2)
+    })
+  }
 }
