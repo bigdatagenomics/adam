@@ -45,6 +45,7 @@ needs_sphinx = '1.5.6'
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
     'sphinx.ext.doctest',
     'sphinx.ext.todo',
     'sphinx.ext.coverage',
@@ -52,6 +53,11 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.mathjax',
 ]
+
+extlinks = {
+    'issue': ('https://github.com/bigdatagenomics/adam/issues/%s', '#'),
+    'pr': ('https://github.com/bigdatagenomics/adam/pull/%s', 'PR #'),
+}
 
 intersphinx_mapping = {
     'python': ('https://docs.python.org/2', None),
@@ -73,6 +79,7 @@ def skip(app, what, name, obj, skip, options):
 def setup(app):
     app.connect('autodoc-skip-member', skip)
 
+autosummary_generate = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

@@ -15,6 +15,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+r"""
+===========
+adamContext
+===========
+.. currentmodule:: bdgenomics.adam.adamContext
+.. autosummary::
+   :toctree: _generate/
+
+   ADAMContext
+"""
 
 from bdgenomics.adam.rdd import AlignmentRecordRDD, \
     CoverageRDD, \
@@ -35,10 +45,9 @@ class ADAMContext(object):
 
     def __init__(self, ss):
         """
-        Initializes an ADAMContext using a SparkContext.
+        Initializes an ADAMContext using a SparkSession.
 
-        :param pyspark.context.SparkContext sc: The currently active
-        SparkContext.
+        :param ss: The currently active pyspark.context.SparkContext.
         """
 
         self._sc = ss.sparkContext
@@ -56,9 +65,9 @@ class ADAMContext(object):
         * .fa/.fasta as FASTA format,
         * .fq/.fastq as FASTQ format, and
         * .ifq as interleaved FASTQ format.
-        
+
         If none of these match, fall back to Parquet + Avro.
-        
+
         For FASTA, FASTQ, and interleaved FASTQ formats, compressed files are supported
         through compression codecs configured in Hadoop, which by default include .gz and .bz2,
         but can include more.
@@ -100,13 +109,13 @@ class ADAMContext(object):
 
         # translate reference regions into jvm types
         javaRrs = [rr._toJava(self._jvm) for rr in viewRegions]
-        
+
         adamRdd = self.__jac.loadIndexedBam(filePath,
                                             javaRrs,
                                             _toJava(stringency, self._jvm))
 
         return AlignmentRecordRDD(adamRdd, self._sc)
-    
+
 
     def loadCoverage(self, filePath,
                      stringency=STRICT):
@@ -137,7 +146,7 @@ class ADAMContext(object):
                                           _toJava(stringency, self._jvm))
 
         return CoverageRDD(adamRdd, self._sc)
-        
+
 
     def loadContigFragments(self, filePath):
         """

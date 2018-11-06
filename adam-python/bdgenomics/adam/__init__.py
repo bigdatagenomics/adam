@@ -15,3 +15,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+r"""
+=======================
+bdgenomics.adam Package
+=======================
+.. currentmodule:: bdgenomics.adam
+
+ADAM's Python API wraps the ADAMContext and GenomicRDD APIs so they can be used from PySpark.
+The Python API is feature complete relative to ADAM's Java API.
+
+.. automodule:: bdgenomics.adam.adamContext
+.. automodule:: bdgenomics.adam.models
+.. automodule:: bdgenomics.adam.rdd
+.. automodule:: bdgenomics.adam.stringency
+
+"""

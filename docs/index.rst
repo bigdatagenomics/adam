@@ -102,6 +102,7 @@ For more, please see our `awesome list of applications <https://github.com/bigda
    api/genomicRdd
    api/joins
    api/pipes
+   api/python
 
 .. toctree::
    :caption: Building Downstream Applications

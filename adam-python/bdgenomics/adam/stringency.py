@@ -15,16 +15,36 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+r"""
+==========
+stringency
+==========
+.. currentmodule:: bdgenomics.adam.stringency
+.. autosummary::
+   :toctree: _generate/
 
+   STRICT
+   LENIENT
+   SILENT
+"""
 
 STRICT = 2
+"""
+    htsjdk.samtools.ValidationStringency.STRICT
+"""
 LENIENT = 1
+"""
+    htsjdk.samtools.ValidationStringency.LENIENT
+"""
 SILENT = 0
+"""
+    htsjdk.samtools.ValidationStringency.SILENT
+"""
 
 def _toJava(stringency, jvm):
     """
     Converts to an HTSJDK ValidationStringency enum.
-    
+
     Should not be called from user code.
 
     :param bdgenomics.adam.stringency stringency: The desired stringency level.
