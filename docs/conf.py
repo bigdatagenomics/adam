@@ -16,7 +16,19 @@ import os
 import inspect
 import re
 import imp
+import mock
 from datetime import datetime
+
+# These lines added to enable Sphinx to work without installing.
+MOCK_MODULES = [
+    "py4j",
+    "py4j.java_gateway",
+    "py4j.protocol"
+]
+
+for mod_name in MOCK_MODULES:
+    sys.modules[mod_name] = mock.Mock()
+
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
