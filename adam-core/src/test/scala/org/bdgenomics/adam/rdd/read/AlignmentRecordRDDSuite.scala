@@ -24,6 +24,7 @@ import org.apache.spark.api.java.function.Function2
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.bdgenomics.adam.converters.DefaultHeaderLines
+import org.bdgenomics.adam.io.FastqRecordReader
 import org.bdgenomics.adam.models.{
   Coverage,
   RecordGroup,
@@ -380,6 +381,20 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val sam = sc.loadAlignments(filePath)
 
     sam.rdd.collect().foreach(r => assert(r.getReadMapped))
+  }
+
+  sparkTest("load long FASTQ reads") {
+    val readsPath = testFile("combined_2018-05-18.9900-10050.fastq")
+    FastqRecordReader.setMaxReadLength(sc.hadoopConfiguration, 10050)
+    val reads = sc.loadAlignments(readsPath)
+
+    val readLengths = reads.rdd.map(_.getSequence.length)
+      .countByValue
+
+    assert(readLengths.size === 8)
+    Seq(10038, 9987, 10010, 9935, 10016, 10042, 9906, 10044).foreach(i => {
+      assert(readLengths(i) === 1L)
+    })
   }
 
   sparkTest("load FASTQ with no bases") {

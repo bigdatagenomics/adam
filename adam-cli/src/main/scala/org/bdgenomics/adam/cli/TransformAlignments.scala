@@ -24,6 +24,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.algorithms.consensus._
 import org.bdgenomics.adam.instrumentation.Timers._
+import org.bdgenomics.adam.io.FastqRecordReader
 import org.bdgenomics.adam.models.{ ReferenceRegion, SnpTable }
 import org.bdgenomics.adam.projections.{ AlignmentRecordField, Filter }
 import org.bdgenomics.adam.rdd.ADAMContext._
@@ -139,6 +140,8 @@ class TransformAlignmentsArgs extends Args4jBase with ADAMSaveAnyArgs with Parqu
   var partitionByStartPos: Boolean = false
   @Args4jOption(required = false, name = "-partition_bin_size", usage = "Partition bin size used in Hive-style partitioning. Defaults to 1Mbp (1,000,000) base pairs).")
   var partitionedBinSize = 1000000
+  @Args4jOption(required = false, name = "-max_read_length", usage = "Maximum FASTQ read length, defaults to 10,000 base pairs (bp).")
+  var maxReadLength: Int = 0
 
   var command: String = null
 }
@@ -384,6 +387,10 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
     val sl = StorageLevel.fromString(args.storageLevel)
 
     val stringencyOpt = Option(args.stringency).map(ValidationStringency.valueOf(_))
+
+    if (args.maxReadLength > 0) {
+      FastqRecordReader.setMaxReadLength(sc.hadoopConfiguration, args.maxReadLength)
+    }
 
     // first repartition if needed
     val initialRdd = maybeRepartition(rdd)

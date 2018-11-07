@@ -42,7 +42,7 @@ import org.apache.hadoop.util.LineReader;
  * a single Text output. This is then fed into the FastqConverter, which
  * converts the single Text instance into two AlignmentRecords.
  */
-abstract class FastqRecordReader extends RecordReader<Void, Text> {
+public abstract class FastqRecordReader extends RecordReader<Void, Text> {
     /*
      * fastq format:
      * <fastq>  :=  <block>+
@@ -60,6 +60,24 @@ abstract class FastqRecordReader extends RecordReader<Void, Text> {
      * application.  We'll see if someone complains in other applications.
      */
 
+    /** Default maximum read length, <code>10,000</code> bp. */
+    public static final int DEFAULT_MAX_READ_LENGTH = 10000;
+
+    /** Maximum read length property name. */
+    public static final String MAX_READ_LENGTH_PROPERTY = "org.bdgenomics.adam.io.FastqRecordReader.MAX_READ_LENGTH";
+
+
+    /**
+     * Set the maximum read length property to <code>maxReadLength</code>.
+     *
+     * @param conf configuration
+     * @param maxReadLength maximum read length, in base pairs (bp)
+     */
+    public static void setMaxReadLength(final Configuration conf,
+					final int maxReadLength) {
+	conf.setInt(MAX_READ_LENGTH_PROPERTY, maxReadLength);
+    }
+	
     /**
      * First valid data index in the stream.
      */
@@ -104,7 +122,7 @@ abstract class FastqRecordReader extends RecordReader<Void, Text> {
     /**
      * Maximum length for a read string.
      */
-    private static final int MAX_LINE_LENGTH = 10000;
+    private int maxLineLength;
 
     /**
      * True if the underlying data is splittable.
@@ -135,6 +153,8 @@ abstract class FastqRecordReader extends RecordReader<Void, Text> {
      */
     protected FastqRecordReader(final Configuration conf,
                                 final FileSplit split) throws IOException {
+	maxLineLength = conf.getInt(MAX_READ_LENGTH_PROPERTY, DEFAULT_MAX_READ_LENGTH);
+
         file = split.getPath();
         start = split.getStart();
         end = start + split.getLength();
@@ -241,7 +261,7 @@ abstract class FastqRecordReader extends RecordReader<Void, Text> {
         
         int bytesRead = 0;
         do {
-            bytesRead = reader.readLine(buffer, (int) Math.min(MAX_LINE_LENGTH, end - start));
+            bytesRead = reader.readLine(buffer, (int) Math.min(maxLineLength, end - start));
             int bufferLength = buffer.getLength();
             if (bytesRead > 0 && !checkBuffer(bufferLength, buffer)) {
                 start += bytesRead;
@@ -263,7 +283,7 @@ abstract class FastqRecordReader extends RecordReader<Void, Text> {
                 // and thus, the second read is the delimiter and we can break
                 long trackForwardPosition = start + bytesRead;
                 
-                bytesRead = reader.readLine(buffer, (int) Math.min(MAX_LINE_LENGTH, end - start));
+                bytesRead = reader.readLine(buffer, (int) Math.min(maxLineLength, end - start));
                 if (buffer.getLength() > 0 && buffer.getBytes()[0] == '@') {
                     start = trackForwardPosition;
                     break;
@@ -271,7 +291,7 @@ abstract class FastqRecordReader extends RecordReader<Void, Text> {
                     trackForwardPosition += bytesRead;
                 }
 
-                bytesRead = reader.readLine(buffer, (int) Math.min(MAX_LINE_LENGTH, end - start));
+                bytesRead = reader.readLine(buffer, (int) Math.min(maxLineLength, end - start));
                 trackForwardPosition += bytesRead;
                 if (bytesRead > 0 && buffer.getLength() > 0 && buffer.getBytes()[0] == '+') {
                     break; // all good!
@@ -422,7 +442,7 @@ abstract class FastqRecordReader extends RecordReader<Void, Text> {
      */
     private int appendLineInto(final Text dest, final boolean eofOk) throws EOFException, IOException {
         Text buf = new Text();
-        int bytesRead = lineReader.readLine(buf, (int) Math.min(MAX_LINE_LENGTH, end - start));
+        int bytesRead = lineReader.readLine(buf, (int) Math.min(maxLineLength, end - start));
 
         // ok, so first, split/unsplit, compressed/uncompressed notwithstanding,
         // there are three cases we can run into:
