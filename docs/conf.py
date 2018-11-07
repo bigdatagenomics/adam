@@ -21,7 +21,7 @@ from datetime import datetime
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-sys.path.insert(0, os.path.abspath('../src'))
+sys.path.insert(0, os.path.abspath('../adam-python'))
 
 def real_dir_name(p, n=1):
     p = os.path.realpath(p)
@@ -45,6 +45,7 @@ needs_sphinx = '1.5.6'
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
     'sphinx.ext.doctest',
     'sphinx.ext.todo',
     'sphinx.ext.coverage',
@@ -52,6 +53,11 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.mathjax',
 ]
+
+extlinks = {
+    'issue': ('https://github.com/bigdatagenomics/adam/issues/%s', '#'),
+    'pr': ('https://github.com/bigdatagenomics/adam/pull/%s', 'PR #'),
+}
 
 intersphinx_mapping = {
     'python': ('https://docs.python.org/2', None),
@@ -73,6 +79,7 @@ def skip(app, what, name, obj, skip, options):
 def setup(app):
     app.connect('autodoc-skip-member', skip)
 
+autosummary_generate = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -154,12 +161,9 @@ autodoc_member_order = 'bysource'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'alabaster'
+html_theme = 'sphinx_rtd_theme'
 html_theme_options = {
-    "github_banner": True,
-    "github_user": "bigdatagenomics",
-    "github_repo": "adam",
-    "caption_font_size": "24px"
+    'collapse_navigation': True,
 }
 
 # Theme options are theme-specific and customize the look and feel of a theme

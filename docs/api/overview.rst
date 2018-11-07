@@ -51,10 +51,11 @@ ADAM's Python API wraps the `ADAMContext <adamContext.html>`__ and
 `GenomicRDD <genomicRdd.html>`__ APIs so they can be used from PySpark. The
 Python API is feature complete relative to ADAM's Java API.
 
+`Read more about the Python API. <python.html>`__
+
 The ADAM R API
 --------------
 
 ADAM's R API wraps the `ADAMContext <adamContext.html>`__ and
 `GenomicRDD <genomicRdd.html>`__ APIs so they can be used from SparkR. The
 R API is feature complete relative to ADAM's Java API.
-

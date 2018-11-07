@@ -15,8 +15,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+r"""
+======
+models
+======
+.. currentmodule:: bdgenomics.adam.models
+.. autosummary::
+   :toctree: _generate/
+
+   ReferenceRegion
+"""
 
 class ReferenceRegion:
+    """
+    Represents a contiguous region of the reference genome.
+    """
 
     def __init__(self, referenceName, start, end):
         """
