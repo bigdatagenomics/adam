@@ -23,7 +23,10 @@ from datetime import datetime
 MOCK_MODULES = [
     "py4j",
     "py4j.java_gateway",
-    "py4j.protocol"
+    "py4j.protocol",
+    "pyspark",
+    "pyspark.rdd",
+    "pyspark.sql"
 ]
 
 for mod_name in MOCK_MODULES:
