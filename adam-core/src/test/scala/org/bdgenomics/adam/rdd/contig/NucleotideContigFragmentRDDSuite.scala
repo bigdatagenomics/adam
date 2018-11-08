@@ -64,7 +64,7 @@ object NucleotideContigFragmentRDDSuite extends Serializable {
 
   def fragFn(ncf: NucleotideContigFragment): Fragment = {
     Fragment.newBuilder
-      .setReadName(ncf.getContigName)
+      .setName(ncf.getContigName)
       .build
   }
 

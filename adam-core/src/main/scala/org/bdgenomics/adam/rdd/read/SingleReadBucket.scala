@@ -142,20 +142,20 @@ private[adam] case class SingleReadBucket(
 
     // start building fragment
     val builder = Fragment.newBuilder()
-      .setReadName(unionReads.head.getReadName)
+      .setName(unionReads.head.getReadName)
       .setAlignments(seqAsJavaList(allReads.toSeq))
 
     // is an insert size defined for this fragment?
     primaryMapped.headOption
       .foreach(r => {
         Option(r.getInferredInsertSize).foreach(is => {
-          builder.setFragmentSize(is.toInt)
+          builder.setInsertSize(is.toInt)
         })
       })
 
     // set record group name, if known
     Option(unionReads.head.getRecordGroupName)
-      .foreach(n => builder.setRunId(n))
+      .foreach(n => builder.setRecordGroupName(n))
 
     builder.build()
   }

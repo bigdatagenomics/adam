@@ -124,7 +124,7 @@ object AlignmentRecordRDDSuite extends Serializable {
 
   def fragFn(r: AlignmentRecord): Fragment = {
     Fragment.newBuilder
-      .setReadName(r.getReadName)
+      .setName(r.getReadName)
       .build
   }
 

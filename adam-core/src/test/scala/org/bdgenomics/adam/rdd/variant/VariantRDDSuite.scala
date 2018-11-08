@@ -70,7 +70,7 @@ object VariantRDDSuite extends Serializable {
 
   def fragFn(v: Variant): Fragment = {
     Fragment.newBuilder
-      .setReadName(v.getContigName)
+      .setName(v.getContigName)
       .build
   }
 

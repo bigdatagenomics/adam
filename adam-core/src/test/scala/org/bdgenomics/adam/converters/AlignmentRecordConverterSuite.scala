@@ -270,7 +270,7 @@ class AlignmentRecordConverterSuite extends FunSuite {
         .build())
 
     val fragment = Fragment.newBuilder()
-      .setReadName("testRead")
+      .setName("testRead")
       .setAlignments(seqAsJavaList(alignments))
       .build()
 
@@ -307,7 +307,7 @@ class AlignmentRecordConverterSuite extends FunSuite {
       .setQual("?????*****")
       .build())
     val fragment = Fragment.newBuilder()
-      .setReadName("testRead")
+      .setName("testRead")
       .setAlignments(seqAsJavaList(alignments))
       .build()
 

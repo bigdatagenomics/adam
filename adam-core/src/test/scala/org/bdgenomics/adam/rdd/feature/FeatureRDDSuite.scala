@@ -59,7 +59,7 @@ object FeatureRDDSuite extends Serializable {
 
   def fragFn(f: Feature): Fragment = {
     Fragment.newBuilder
-      .setReadName(f.getContigName)
+      .setName(f.getContigName)
       .build
   }
 

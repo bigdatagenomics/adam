@@ -39,7 +39,7 @@ class SingleReadBucketSuite extends FunSuite {
     val srb = SingleReadBucket(unmapped = reads)
     val fragment = srb.toFragment
     assert(fragment.getAlignments.size === 2)
-    assert(fragment.getReadName === "myRead")
+    assert(fragment.getName === "myRead")
   }
 
   test("convert proper pair to fragment") {
@@ -74,8 +74,8 @@ class SingleReadBucketSuite extends FunSuite {
       .build())
     val srb = SingleReadBucket(primaryMapped = reads)
     val fragment = srb.toFragment
-    assert(fragment.getFragmentSize === 8)
-    assert(fragment.getReadName === "myRead")
+    assert(fragment.getInsertSize === 8)
+    assert(fragment.getName === "myRead")
     assert(fragment.getAlignments.size === 2)
   }
 
@@ -125,8 +125,8 @@ class SingleReadBucketSuite extends FunSuite {
       .build())
     val srb = SingleReadBucket(primaryMapped = reads, secondaryMapped = chimera)
     val fragment = srb.toFragment
-    assert(fragment.getFragmentSize === null)
-    assert(fragment.getReadName === "myRead")
+    assert(fragment.getInsertSize === null)
+    assert(fragment.getName === "myRead")
     assert(fragment.getAlignments.size === 3)
   }
 }

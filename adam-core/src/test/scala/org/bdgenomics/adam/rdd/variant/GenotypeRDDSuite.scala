@@ -66,7 +66,7 @@ object GenotypeRDDSuite extends Serializable {
 
   def fragFn(g: Genotype): Fragment = {
     Fragment.newBuilder
-      .setReadName(g.getContigName)
+      .setName(g.getContigName)
       .build
   }
 

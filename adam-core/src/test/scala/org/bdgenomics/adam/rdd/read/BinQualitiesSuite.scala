@@ -177,14 +177,14 @@ class BinQualitiesSuite extends ADAMFunSuite {
     testQuals(newRead.getQual)
 
     val fragment = Fragment.newBuilder
-      .setReadName("testFragment")
+      .setName("testFragment")
       .setAlignments(List(read))
       .build
 
     val newFragment = BinQualities.binFragment(fragment, bins)
 
     assert(newFragment.getAlignments.size === 1)
-    assert(newFragment.getReadName === "testFragment")
+    assert(newFragment.getName === "testFragment")
 
     testQuals(newFragment.getAlignments.head.getQual)
   }

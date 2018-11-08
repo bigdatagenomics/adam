@@ -67,7 +67,7 @@ object CoverageRDDSuite extends Serializable {
 
   def fragFn(cov: Coverage): Fragment = {
     Fragment.newBuilder
-      .setReadName(cov.contigName)
+      .setName(cov.contigName)
       .build
   }
 
