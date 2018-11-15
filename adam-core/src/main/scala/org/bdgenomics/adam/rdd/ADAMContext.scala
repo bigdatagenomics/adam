@@ -166,7 +166,7 @@ object ADAMContext {
   implicit def contigsToFeaturesConversionFn(
     gDataset: NucleotideContigFragmentDataset,
     rdd: RDD[Feature]): FeatureDataset = {
-    new RDDBoundFeatureDataset(rdd, gDataset.sequences, None, Seq.empty[Sample])
+    new RDDBoundFeatureDataset(rdd, gDataset.sequences, Seq.empty[Sample], None)
   }
 
   implicit def contigsToFeaturesDatasetConversionFn(
@@ -797,7 +797,6 @@ object ADAMContext {
     gDataset: GenotypeDataset,
     ds: Dataset[FeatureProduct]): FeatureDataset = {
     new DatasetBoundFeatureDataset(ds, gDataset.sequences, Seq.empty[Sample])
->>>>>>> e467d382... Complete refactoring GenomicRDD to GenomicDataset.
   }
 
   implicit def genotypesToFragmentsConversionFn(

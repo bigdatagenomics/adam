@@ -1226,7 +1226,7 @@ class FeatureDatasetSuite extends ADAMFunSuite {
     val f1 = fb.setContigName("1").setStart(1L).setEnd(101L).setGeneId("DVL1").build();
     val f2 = fb.setContigName("1").setStart(2L).setEnd(102L).setGeneId("CCDS22.1").build();
     val f3 = fb.setContigName("1").setStart(3L).setEnd(103L).setGeneId("CCDS22.1").build();
-    val features = FeatureRDD(sc.parallelize(Seq(f1, f2, f3)))
+    val features = FeatureDataset(sc.parallelize(Seq(f1, f2, f3)))
     assert(features.filterToGene("CCDS22.1").rdd.count() === 2)
   }
 
@@ -1235,7 +1235,7 @@ class FeatureDatasetSuite extends ADAMFunSuite {
     val f1 = fb.setContigName("1").setStart(1L).setEnd(101L).setGeneId("DVL1").build();
     val f2 = fb.setContigName("1").setStart(2L).setEnd(102L).setGeneId("CCDS22.1").build();
     val f3 = fb.setContigName("1").setStart(3L).setEnd(103L).setGeneId("CCDS22.1").build();
-    val features = FeatureRDD(sc.parallelize(Seq(f1, f2, f3)))
+    val features = FeatureDataset(sc.parallelize(Seq(f1, f2, f3)))
     val featuresDs = features.transformDataset(ds => ds)
     assert(features.filterToGene("CCDS22.1").rdd.count() === 2)
   }
@@ -1245,7 +1245,7 @@ class FeatureDatasetSuite extends ADAMFunSuite {
     val f1 = fb.setContigName("1").setStart(1L).setEnd(101L).setGeneId("DVL1").build();
     val f2 = fb.setContigName("1").setStart(2L).setEnd(102L).setGeneId("CCDS22.1").build();
     val f3 = fb.setContigName("1").setStart(3L).setEnd(103L).setGeneId("CCDS22.2").build();
-    val features = FeatureRDD(sc.parallelize(Seq(f1, f2, f3)))
+    val features = FeatureDataset(sc.parallelize(Seq(f1, f2, f3)))
     assert(features.filterToGenes(Seq("CCDS22.1", "CCDS22.2")).rdd.count() === 2)
   }
 
@@ -1254,7 +1254,7 @@ class FeatureDatasetSuite extends ADAMFunSuite {
     val f1 = fb.setContigName("1").setStart(1L).setEnd(101L).setGeneId("DVL1").build();
     val f2 = fb.setContigName("1").setStart(2L).setEnd(102L).setGeneId("CCDS22.1").build();
     val f3 = fb.setContigName("1").setStart(3L).setEnd(103L).setGeneId("CCDS22.2").build();
-    val features = FeatureRDD(sc.parallelize(Seq(f1, f2, f3)))
+    val features = FeatureDataset(sc.parallelize(Seq(f1, f2, f3)))
     val featuresDs = features.transformDataset(ds => ds)
     assert(features.filterToGenes(Seq("CCDS22.1", "CCDS22.2")).rdd.count() === 2)
   }
@@ -1264,7 +1264,7 @@ class FeatureDatasetSuite extends ADAMFunSuite {
     val f1 = fb.setContigName("1").setStart(1L).setEnd(101L).setTranscriptId("ENST00000339381").build();
     val f2 = fb.setContigName("1").setStart(2L).setEnd(102L).setTranscriptId("ENST00000445648").build();
     val f3 = fb.setContigName("1").setStart(3L).setEnd(103L).setTranscriptId("ENST00000445648").build();
-    val features = FeatureRDD(sc.parallelize(Seq(f1, f2, f3)))
+    val features = FeatureDataset(sc.parallelize(Seq(f1, f2, f3)))
     assert(features.filterToTranscript("ENST00000445648").rdd.count() === 2)
   }
 
@@ -1273,7 +1273,7 @@ class FeatureDatasetSuite extends ADAMFunSuite {
     val f1 = fb.setContigName("1").setStart(1L).setEnd(101L).setTranscriptId("ENST00000339381").build();
     val f2 = fb.setContigName("1").setStart(2L).setEnd(102L).setTranscriptId("ENST00000445648").build();
     val f3 = fb.setContigName("1").setStart(3L).setEnd(103L).setTranscriptId("ENST00000445648").build();
-    val features = FeatureRDD(sc.parallelize(Seq(f1, f2, f3)))
+    val features = FeatureDataset(sc.parallelize(Seq(f1, f2, f3)))
     val featuresDs = features.transformDataset(ds => ds)
     assert(features.filterToTranscript("ENST00000445648").rdd.count() === 2)
   }
@@ -1283,7 +1283,7 @@ class FeatureDatasetSuite extends ADAMFunSuite {
     val f1 = fb.setContigName("1").setStart(1L).setEnd(101L).setTranscriptId("ENST00000339381").build();
     val f2 = fb.setContigName("1").setStart(2L).setEnd(102L).setTranscriptId("ENST00000445648").build();
     val f3 = fb.setContigName("1").setStart(3L).setEnd(103L).setTranscriptId("ENST00000445649").build();
-    val features = FeatureRDD(sc.parallelize(Seq(f1, f2, f3)))
+    val features = FeatureDataset(sc.parallelize(Seq(f1, f2, f3)))
     assert(features.filterToTranscripts(Seq("ENST00000445648", "ENST00000445649")).rdd.count() === 2)
   }
 
@@ -1292,7 +1292,7 @@ class FeatureDatasetSuite extends ADAMFunSuite {
     val f1 = fb.setContigName("1").setStart(1L).setEnd(101L).setTranscriptId("ENST00000339381").build();
     val f2 = fb.setContigName("1").setStart(2L).setEnd(102L).setTranscriptId("ENST00000445648").build();
     val f3 = fb.setContigName("1").setStart(3L).setEnd(103L).setTranscriptId("ENST00000445649").build();
-    val features = FeatureRDD(sc.parallelize(Seq(f1, f2, f3)))
+    val features = FeatureDataset(sc.parallelize(Seq(f1, f2, f3)))
     val featuresDs = features.transformDataset(ds => ds)
     assert(features.filterToTranscripts(Seq("ENST00000445648", "ENST00000445649")).rdd.count() === 2)
   }
@@ -1302,7 +1302,7 @@ class FeatureDatasetSuite extends ADAMFunSuite {
     val f1 = fb.setContigName("1").setStart(1L).setEnd(101L).setExonId("ENSE00001691126").build();
     val f2 = fb.setContigName("1").setStart(2L).setEnd(102L).setExonId("ENSE00001779983").build();
     val f3 = fb.setContigName("1").setStart(3L).setEnd(103L).setExonId("ENSE00001779983").build();
-    val features = FeatureRDD(sc.parallelize(Seq(f1, f2, f3)))
+    val features = FeatureDataset(sc.parallelize(Seq(f1, f2, f3)))
     assert(features.filterToExon("ENSE00001779983").rdd.count() === 2)
   }
 
@@ -1311,7 +1311,7 @@ class FeatureDatasetSuite extends ADAMFunSuite {
     val f1 = fb.setContigName("1").setStart(1L).setEnd(101L).setExonId("ENSE00001691126").build();
     val f2 = fb.setContigName("1").setStart(2L).setEnd(102L).setExonId("ENSE00001779983").build();
     val f3 = fb.setContigName("1").setStart(3L).setEnd(103L).setExonId("ENSE00001779983").build();
-    val features = FeatureRDD(sc.parallelize(Seq(f1, f2, f3)))
+    val features = FeatureDataset(sc.parallelize(Seq(f1, f2, f3)))
     val featuresDs = features.transformDataset(ds => ds)
     assert(features.filterToExon("ENSE00001779983").rdd.count() === 2)
   }
@@ -1321,7 +1321,7 @@ class FeatureDatasetSuite extends ADAMFunSuite {
     val f1 = fb.setContigName("1").setStart(1L).setEnd(101L).setExonId("ENSE00001691126").build();
     val f2 = fb.setContigName("1").setStart(2L).setEnd(102L).setExonId("ENSE00001779983").build();
     val f3 = fb.setContigName("1").setStart(3L).setEnd(103L).setExonId("ENSE00001779984").build();
-    val features = FeatureRDD(sc.parallelize(Seq(f1, f2, f3)))
+    val features = FeatureDataset(sc.parallelize(Seq(f1, f2, f3)))
     assert(features.filterToExons(Seq("ENSE00001779983", "ENSE00001779984")).rdd.count() === 2)
   }
 
@@ -1330,7 +1330,7 @@ class FeatureDatasetSuite extends ADAMFunSuite {
     val f1 = fb.setContigName("1").setStart(1L).setEnd(101L).setExonId("ENSE00001691126").build();
     val f2 = fb.setContigName("1").setStart(2L).setEnd(102L).setExonId("ENSE00001779983").build();
     val f3 = fb.setContigName("1").setStart(3L).setEnd(103L).setExonId("ENSE00001779984").build();
-    val features = FeatureRDD(sc.parallelize(Seq(f1, f2, f3)))
+    val features = FeatureDataset(sc.parallelize(Seq(f1, f2, f3)))
     val featuresDs = features.transformDataset(ds => ds)
     assert(features.filterToExons(Seq("ENSE00001779983", "ENSE00001779984")).rdd.count() === 2)
   }

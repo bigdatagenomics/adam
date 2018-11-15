@@ -281,39 +281,39 @@ case class DatasetBoundAlignmentRecordDataset private[rdd] (
     copy(processingSteps = newProcessingSteps)
   }
 
-  override def filterByMapq(minimumMapq: Int): AlignmentRecordRDD = {
+  override def filterByMapq(minimumMapq: Int): AlignmentRecordDataset = {
     transformDataset(dataset => dataset.filter(dataset.col("mapq") >= minimumMapq))
   }
 
-  override def filterUnalignedReads(): AlignmentRecordRDD = {
+  override def filterUnalignedReads(): AlignmentRecordDataset = {
     transformDataset(dataset => dataset.filter(dataset.col("readMapped")))
   }
 
-  override def filterUnpairedReads(): AlignmentRecordRDD = {
+  override def filterUnpairedReads(): AlignmentRecordDataset = {
     transformDataset(dataset => dataset.filter(dataset.col("readPaired")))
   }
 
-  override def filterDuplicateReads(): AlignmentRecordRDD = {
+  override def filterDuplicateReads(): AlignmentRecordDataset = {
     transformDataset(dataset => dataset.filter(!dataset.col("duplicateRead")))
   }
 
-  override def filterToPrimaryAlignments(): AlignmentRecordRDD = {
+  override def filterToPrimaryAlignments(): AlignmentRecordDataset = {
     transformDataset(dataset => dataset.filter(dataset.col("primaryAlignment")))
   }
 
-  override def filterToRecordGroup(recordGroupName: String): AlignmentRecordRDD = {
+  override def filterToRecordGroup(recordGroupName: String): AlignmentRecordDataset = {
     transformDataset(dataset => dataset.filter(dataset.col("recordGroupName") === recordGroupName))
   }
 
-  override def filterToRecordGroups(recordGroupNames: Seq[String]): AlignmentRecordRDD = {
+  override def filterToRecordGroups(recordGroupNames: Seq[String]): AlignmentRecordDataset = {
     transformDataset(dataset => dataset.filter(dataset.col("recordGroupName") isin (recordGroupNames: _*)))
   }
 
-  override def filterToSample(recordGroupSample: String): AlignmentRecordRDD = {
+  override def filterToSample(recordGroupSample: String): AlignmentRecordDataset = {
     transformDataset(dataset => dataset.filter(dataset.col("recordGroupSample") === recordGroupSample))
   }
 
-  override def filterToSamples(recordGroupSamples: Seq[String]): AlignmentRecordRDD = {
+  override def filterToSamples(recordGroupSamples: Seq[String]): AlignmentRecordDataset = {
     transformDataset(dataset => dataset.filter(dataset.col("recordGroupSample") isin (recordGroupSamples: _*)))
   }
 }
@@ -944,7 +944,7 @@ sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDatas
    *
    * @return Returns a new RDD containing sorted reads.
    */
-  def sortReadsByReadName(): AlignmentRecordRDD = SortReads.time {
+  def sortReadsByReadName(): AlignmentRecordDataset = SortReads.time {
     log.info("Sorting reads by read name")
 
     transformDataset(_.orderBy("readName", "readInFragment"))
@@ -1601,88 +1601,88 @@ sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDatas
   }
 
   /**
-   * Filter this AlignmentRecordRDD by mapping quality.
+   * Filter this AlignmentRecordDataset by mapping quality.
    *
    * @param minimumMapq Minimum mapping quality to filter by, inclusive.
-   * @return AlignmentRecordRDD filtered by mapping quality.
+   * @return AlignmentRecordDataset filtered by mapping quality.
    */
-  def filterByMapq(minimumMapq: Int): AlignmentRecordRDD = {
+  def filterByMapq(minimumMapq: Int): AlignmentRecordDataset = {
     transform(rdd => rdd.filter(g => Option(g.getMapq).exists(_ >= minimumMapq)))
   }
 
   /**
-   * Filter unaligned reads from this AlignmentRecordRDD.
+   * Filter unaligned reads from this AlignmentRecordDataset.
    *
-   * @return AlignmentRecordRDD filtered to remove unaligned reads.
+   * @return AlignmentRecordDataset filtered to remove unaligned reads.
    */
-  def filterUnalignedReads(): AlignmentRecordRDD = {
+  def filterUnalignedReads(): AlignmentRecordDataset = {
     transform(rdd => rdd.filter(_.getReadMapped))
   }
 
   /**
-   * Filter unpaired reads from this AlignmentRecordRDD.
+   * Filter unpaired reads from this AlignmentRecordDataset.
    *
-   * @return AlignmentRecordRDD filtered to remove unpaired reads.
+   * @return AlignmentRecordDataset filtered to remove unpaired reads.
    */
-  def filterUnpairedReads(): AlignmentRecordRDD = {
+  def filterUnpairedReads(): AlignmentRecordDataset = {
     transform(rdd => rdd.filter(_.getReadPaired))
   }
 
   /**
-   * Filter duplicate reads from this AlignmentRecordRDD.
+   * Filter duplicate reads from this AlignmentRecordDataset.
    *
-   * @return AlignmentRecordRDD filtered to remove duplicate reads.
+   * @return AlignmentRecordDataset filtered to remove duplicate reads.
    */
-  def filterDuplicateReads(): AlignmentRecordRDD = {
+  def filterDuplicateReads(): AlignmentRecordDataset = {
     transform(rdd => rdd.filter(!_.getDuplicateRead))
   }
 
   /**
-   * Filter this AlignmentRecordRDD to include only primary alignments.
+   * Filter this AlignmentRecordDataset to include only primary alignments.
    *
-   * @return AlignmentRecordRDD filtered to include only primary alignments.
+   * @return AlignmentRecordDataset filtered to include only primary alignments.
    */
-  def filterToPrimaryAlignments(): AlignmentRecordRDD = {
+  def filterToPrimaryAlignments(): AlignmentRecordDataset = {
     transform(rdd => rdd.filter(_.getPrimaryAlignment))
   }
 
   /**
-   * Filter this AlignmentRecordRDD by record group to those that match the specified record group.
+   * Filter this AlignmentRecordDataset by record group to those that match the specified record group.
    *
    * @param recordGroupName Record group to filter by.
-   * @return AlignmentRecordRDD filtered by record group.
+   * @return AlignmentRecordDataset filtered by record group.
    */
-  def filterToRecordGroup(recordGroupName: String): AlignmentRecordRDD = {
+  def filterToRecordGroup(recordGroupName: String): AlignmentRecordDataset = {
     transform(rdd => rdd.filter(g => Option(g.getRecordGroupName).exists(_ == recordGroupName)))
   }
 
   /**
-   * Filter this AlignmentRecordRDD by record group to those that match the specified record groups.
+   * Filter this AlignmentRecordDataset by record group to those that match the specified record groups.
    *
    * @param recordGroupNames Sequence of record groups to filter by.
-   * @return AlignmentRecordRDD filtered by one or more record groups.
+   * @return AlignmentRecordDataset filtered by one or more record groups.
    */
-  def filterToRecordGroups(recordGroupNames: Seq[String]): AlignmentRecordRDD = {
+  def filterToRecordGroups(recordGroupNames: Seq[String]): AlignmentRecordDataset = {
     transform(rdd => rdd.filter(g => Option(g.getRecordGroupName).exists(recordGroupNames.contains(_))))
   }
 
   /**
-   * Filter this AlignmentRecordRDD by sample to those that match the specified sample.
+   * Filter this AlignmentRecordDataset by sample to those that match the specified sample.
    *
    * @param recordGroupSample Sample to filter by.
-   * @return AlignmentRecordRDD filtered by the specified sample.
+   * @return AlignmentRecordDataset filtered by the specified sample.
    */
-  def filterToSample(recordGroupSample: String): AlignmentRecordRDD = {
+  def filterToSample(recordGroupSample: String): AlignmentRecordDataset = {
     transform(rdd => rdd.filter(g => Option(g.getRecordGroupSample).exists(_ == recordGroupSample)))
   }
 
   /**
-   * Filter this AlignmentRecordRDD by sample to those that match the specified samples.
+   * Filter this AlignmentRecordDataset by sample to those that match the specified samples.
    *
    * @param recordGroupSamples Sequence of samples to filter by.
-   * @return AlignmentRecordRDD filtered by the specified samples.
+   * @return AlignmentRecordDataset filtered by the specified samples.
    */
-  def filterToSamples(recordGroupSamples: Seq[String]): AlignmentRecordRDD = {
+  def filterToSamples(recordGroupSamples: Seq[String]): AlignmentRecordDataset = {
     transform(rdd => rdd.filter(g => Option(g.getRecordGroupSample).exists(recordGroupSamples.contains(_))))
   }
 }

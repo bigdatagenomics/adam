@@ -3100,7 +3100,7 @@ sealed abstract class GenericGenomicDataset[T, U <: Product] extends GenomicData
 
   @transient val uTag: TypeTag[U]
 
-  def saveAsParquet(filePath: String,
+  def saveAsParquet(pathName: String,
                     blockSize: Int = 128 * 1024 * 1024,
                     pageSize: Int = 1 * 1024 * 1024,
                     compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
@@ -3110,7 +3110,7 @@ sealed abstract class GenericGenomicDataset[T, U <: Product] extends GenomicData
       .write
       .format("parquet")
       .option("spark.sql.parquet.compression.codec", compressCodec.toString.toLowerCase())
-      .save(filePath)
+      .save(pathName)
   }
 
   protected def buildTree(
@@ -3748,10 +3748,10 @@ private[rdd] trait VCFSupportingGenomicDataset[T, U <: Product, V <: VCFSupporti
 abstract class MultisampleAvroGenomicDataset[T <% IndexedRecord: Manifest, U <: Product, V <: MultisampleAvroGenomicDataset[T, U, V]] extends AvroGenomicDataset[T, U, V]
     with MultisampleGenomicDataset[T, U, V] {
 
-  override protected def saveMetadata(filePath: String): Unit = {
-    savePartitionMap(filePath)
-    saveSequences(filePath)
-    saveSamples(filePath)
+  override protected def saveMetadata(pathName: String): Unit = {
+    savePartitionMap(pathName)
+    saveSequences(pathName)
+    saveSamples(pathName)
   }
 }
 
@@ -3816,9 +3816,9 @@ abstract class AvroGenomicDataset[T <% IndexedRecord: Manifest, U <: Product, V 
    * Save the partition map to disk. This is done by adding the partition
    * map to the schema.
    *
-   * @param filePath The filepath where we will save the partition map.
+   * @param pathName The filepath where we will save the partition map.
    */
-  protected def savePartitionMap(filePath: String): Unit = {
+  protected def savePartitionMap(pathName: String): Unit = {
     if (isSorted) {
       // converting using json4s
       val jsonString = "partitionMap" -> optPartitionMap.get.toSeq.map(f =>
@@ -3835,7 +3835,7 @@ abstract class AvroGenomicDataset[T <% IndexedRecord: Manifest, U <: Product, V 
       val schema = Contig.SCHEMA$
       schema.addProp("partitionMap", compact(render(jsonString)).asInstanceOf[Any])
 
-      saveAvro("%s/_partitionMap.avro".format(filePath),
+      saveAvro("%s/_partitionMap.avro".format(pathName),
         rdd.context,
         schema,
         sequences.toAvro)
@@ -3848,17 +3848,17 @@ abstract class AvroGenomicDataset[T <% IndexedRecord: Manifest, U <: Product, V 
    * Writes any necessary metadata to disk. If not overridden, writes the
    * sequence dictionary to disk as Avro.
    *
-   * @param filePath The filepath to the file where we will save the Metadata.
+   * @param pathName The filepath to the file where we will save the Metadata.
    */
-  override protected def saveMetadata(filePath: String): Unit = {
-    savePartitionMap(filePath)
-    saveSequences(filePath)
+  override protected def saveMetadata(pathName: String): Unit = {
+    savePartitionMap(pathName)
+    saveSequences(pathName)
   }
 
   /**
    * Saves this genomic dataset to disk as a Parquet file.
    *
-   * @param filePath Path to save the file at.
+   * @param pathName Path to save the file at.
    * @param blockSize Size per block.
    * @param pageSize Size per page.
    * @param compressCodec Name of the compression codec to use.
@@ -3866,7 +3866,7 @@ abstract class AvroGenomicDataset[T <% IndexedRecord: Manifest, U <: Product, V 
    *   Default is false.
    */
   def saveAsParquet(
-    filePath: String,
+    pathName: String,
     blockSize: Int = 128 * 1024 * 1024,
     pageSize: Int = 1 * 1024 * 1024,
     compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
@@ -3882,7 +3882,7 @@ abstract class AvroGenomicDataset[T <% IndexedRecord: Manifest, U <: Product, V 
   /**
    * Saves this genomic dataset to disk as a Parquet file.
    *
-   * @param pathName The path to save the file to.
+   * @param pathName Path to save the file at.
    * @param blockSize The size in bytes of blocks to write.
    * @param pageSize The size in bytes of pages to write.
    * @param compressCodec The compression codec to apply to pages.
@@ -3906,25 +3906,26 @@ abstract class AvroGenomicDataset[T <% IndexedRecord: Manifest, U <: Product, V 
   /**
    * Saves this genomic dataset to disk as a Parquet file.
    *
-   * @param filePath Path to save the file at.
+   * @param pathName Path to save the file at.
    */
-  def saveAsParquet(filePath: java.lang.String) {
-    saveAsParquet(new JavaSaveArgs(filePath))
+  def saveAsParquet(pathName: java.lang.String) {
+    saveAsParquet(new JavaSaveArgs(pathName))
   }
 
   /**
    * Save partition size into the partitioned Parquet flag file.
    *
-   * @param filePath Path to save the file at.
+   * @param pathName Path to save the file at.
    * @param partitionSize Partition bin size, in base pairs, used in Hive-style partitioning.
    */
-  private def writePartitionedParquetFlag(filePath: String, partitionSize: Int): Unit = {
-    val path = new Path(filePath, "_partitionedByStartPos")
+  private def writePartitionedParquetFlag(pathName: String, partitionSize: Int): Unit = {
+    val path = new Path(pathName, "_partitionedByStartPos")
     val fs: FileSystem = path.getFileSystem(rdd.context.hadoopConfiguration)
     val f = fs.create(path)
     f.writeInt(partitionSize)
     f.close()
   }
+}
 
 private[rdd] class InstrumentedADAMAvroParquetOutputFormat extends InstrumentedOutputFormat[Void, IndexedRecord] {
   override def outputFormatClass(): Class[_ <: NewOutputFormat[Void, IndexedRecord]] = classOf[AvroParquetOutputFormat[IndexedRecord]]

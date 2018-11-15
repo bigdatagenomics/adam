@@ -114,7 +114,7 @@ object FeatureDataset {
    * @param ds A Dataset of genomic Features.
    */
   def apply(ds: Dataset[FeatureProduct]): FeatureDataset = {
-    new DatasetBoundFeatureDataset(ds, SequenceDictionary.empty)
+    new DatasetBoundFeatureDataset(ds, SequenceDictionary.empty, Seq.empty[Sample])
   }
 
   /**
@@ -352,51 +352,51 @@ case class DatasetBoundFeatureDataset private[rdd] (
       .as[Coverage], sequences, samples)
   }
 
-  override def filterToFeatureType(featureType: String): FeatureRDD = {
+  override def filterToFeatureType(featureType: String): FeatureDataset = {
     transformDataset(dataset => dataset.filter(dataset.col("featureType").eqNullSafe(featureType)))
   }
 
-  override def filterToFeatureTypes(featureTypes: Seq[String]): FeatureRDD = {
+  override def filterToFeatureTypes(featureTypes: Seq[String]): FeatureDataset = {
     transformDataset(dataset => dataset.filter(dataset.col("featureType") isin (featureTypes: _*)))
   }
 
-  override def filterToGene(geneId: String): FeatureRDD = {
+  override def filterToGene(geneId: String): FeatureDataset = {
     transformDataset(dataset => dataset.filter(dataset.col("geneId").eqNullSafe(geneId)))
   }
 
-  override def filterToGenes(geneIds: Seq[String]): FeatureRDD = {
+  override def filterToGenes(geneIds: Seq[String]): FeatureDataset = {
     transformDataset(dataset => dataset.filter(dataset.col("geneId") isin (geneIds: _*)))
   }
 
-  override def filterToTranscript(transcriptId: String): FeatureRDD = {
+  override def filterToTranscript(transcriptId: String): FeatureDataset = {
     transformDataset(dataset => dataset.filter(dataset.col("transcriptId").eqNullSafe(transcriptId)))
   }
 
-  override def filterToTranscripts(transcriptIds: Seq[String]): FeatureRDD = {
+  override def filterToTranscripts(transcriptIds: Seq[String]): FeatureDataset = {
     transformDataset(dataset => dataset.filter(dataset.col("transcriptId") isin (transcriptIds: _*)))
   }
 
-  override def filterToExon(exonId: String): FeatureRDD = {
+  override def filterToExon(exonId: String): FeatureDataset = {
     transformDataset(dataset => dataset.filter(dataset.col("exonId").eqNullSafe(exonId)))
   }
 
-  override def filterToExons(exonIds: Seq[String]): FeatureRDD = {
+  override def filterToExons(exonIds: Seq[String]): FeatureDataset = {
     transformDataset(dataset => dataset.filter(dataset.col("exonId") isin (exonIds: _*)))
   }
 
-  override def filterByScore(minimumScore: Double): FeatureRDD = {
+  override def filterByScore(minimumScore: Double): FeatureDataset = {
     transformDataset(dataset => dataset.filter(dataset.col("score").geq(minimumScore)))
   }
 
-  override def filterToParent(parentId: String): FeatureRDD = {
+  override def filterToParent(parentId: String): FeatureDataset = {
     transformDataset(dataset => dataset.filter(dataset.col("parentIds").contains(parentId)))
   }
 
-  override def filterToParents(parentIds: Seq[String]): FeatureRDD = {
+  override def filterToParents(parentIds: Seq[String]): FeatureDataset = {
     transformDataset(dataset => dataset.filter(dataset.col("parentIds") isin (parentIds: _*)))
   }
 
-  override def filterByAttribute(key: String, value: String): FeatureRDD = {
+  override def filterByAttribute(key: String, value: String): FeatureDataset = {
     transformDataset(dataset => dataset.filter(dataset.col("attributes").getItem(key).eqNullSafe(value)))
   }
 }
@@ -530,123 +530,123 @@ sealed abstract class FeatureDataset extends AvroGenomicDataset[Feature, Feature
   def toCoverage(): CoverageDataset
 
   /**
-   * Filter this FeatureRDD by feature type to those that match the specified feature type.
+   * Filter this FeatureDataset by feature type to those that match the specified feature type.
    *
    * @param featureType Feature type to filter by.
-   * @return FeatureRDD filtered by the specified feature type.
+   * @return FeatureDataset filtered by the specified feature type.
    */
-  def filterToFeatureType(featureType: String): FeatureRDD = {
+  def filterToFeatureType(featureType: String): FeatureDataset = {
     transform(rdd => rdd.filter(f => Option(f.getFeatureType).exists(_.equals(featureType))))
   }
 
   /**
-   * Filter this FeatureRDD by feature type to those that match the specified feature types.
+   * Filter this FeatureDataset by feature type to those that match the specified feature types.
    *
    * @param featureType Sequence of feature types to filter by.
-   * @return FeatureRDD filtered by the specified feature types.
+   * @return FeatureDataset filtered by the specified feature types.
    */
-  def filterToFeatureTypes(featureTypes: Seq[String]): FeatureRDD = {
+  def filterToFeatureTypes(featureTypes: Seq[String]): FeatureDataset = {
     transform(rdd => rdd.filter(f => Option(f.getFeatureType).exists(featureTypes.contains(_))))
   }
 
   /**
-   * Filter this FeatureRDD by gene to those that match the specified gene.
+   * Filter this FeatureDataset by gene to those that match the specified gene.
    *
    * @param geneId Gene to filter by.
-   * @return FeatureRDD filtered by the specified gene.
+   * @return FeatureDataset filtered by the specified gene.
    */
-  def filterToGene(geneId: String): FeatureRDD = {
+  def filterToGene(geneId: String): FeatureDataset = {
     transform(rdd => rdd.filter(f => Option(f.getGeneId).exists(_.equals(geneId))))
   }
 
   /**
-   * Filter this FeatureRDD by gene to those that match the specified genes.
+   * Filter this FeatureDataset by gene to those that match the specified genes.
    *
    * @param geneIds Sequence of genes to filter by.
-   * @return FeatureRDD filtered by the specified genes.
+   * @return FeatureDataset filtered by the specified genes.
    */
-  def filterToGenes(geneIds: Seq[String]): FeatureRDD = {
+  def filterToGenes(geneIds: Seq[String]): FeatureDataset = {
     transform(rdd => rdd.filter(f => Option(f.getGeneId).exists(geneIds.contains(_))))
   }
 
   /**
-   * Filter this FeatureRDD by transcript to those that match the specified transcript.
+   * Filter this FeatureDataset by transcript to those that match the specified transcript.
    *
    * @param transcriptId Transcript to filter by.
-   * @return FeatureRDD filtered by the specified transcript.
+   * @return FeatureDataset filtered by the specified transcript.
    */
-  def filterToTranscript(transcriptId: String): FeatureRDD = {
+  def filterToTranscript(transcriptId: String): FeatureDataset = {
     transform(rdd => rdd.filter(f => Option(f.getTranscriptId).exists(_.equals(transcriptId))))
   }
 
   /**
-   * Filter this FeatureRDD by transcript to those that match the specified transcripts.
+   * Filter this FeatureDataset by transcript to those that match the specified transcripts.
    *
    * @param transcriptIds Sequence of transcripts to filter by.
-   * @return FeatureRDD filtered by the specified transcripts.
+   * @return FeatureDataset filtered by the specified transcripts.
    */
-  def filterToTranscripts(transcriptIds: Seq[String]): FeatureRDD = {
+  def filterToTranscripts(transcriptIds: Seq[String]): FeatureDataset = {
     transform(rdd => rdd.filter(f => Option(f.getTranscriptId).exists(transcriptIds.contains(_))))
   }
 
   /**
-   * Filter this FeatureRDD by exon to those that match the specified exon.
+   * Filter this FeatureDataset by exon to those that match the specified exon.
    *
    * @param exonId Exon to filter by.
-   * @return FeatureRDD filtered by the specified exon.
+   * @return FeatureDataset filtered by the specified exon.
    */
-  def filterToExon(exonId: String): FeatureRDD = {
+  def filterToExon(exonId: String): FeatureDataset = {
     transform(rdd => rdd.filter(f => Option(f.getExonId).exists(_.equals(exonId))))
   }
 
   /**
-   * Filter this FeatureRDD by exon to those that match the specified exons.
+   * Filter this FeatureDataset by exon to those that match the specified exons.
    *
    * @param exonIds Sequence of exons to filter by.
-   * @return FeatureRDD filtered by the specified exons.
+   * @return FeatureDataset filtered by the specified exons.
    */
-  def filterToExons(exonIds: Seq[String]): FeatureRDD = {
+  def filterToExons(exonIds: Seq[String]): FeatureDataset = {
     transform(rdd => rdd.filter(f => Option(f.getExonId).exists(exonIds.contains(_))))
   }
 
   /**
-   * Filter this FeatureRDD by score.
+   * Filter this FeatureDataset by score.
    *
    * @param minimumScore Minimum score to filter by, inclusive.
-   * @return FeatureRDD filtered by the specified minimum score.
+   * @return FeatureDataset filtered by the specified minimum score.
    */
-  def filterByScore(minimumScore: Double): FeatureRDD = {
+  def filterByScore(minimumScore: Double): FeatureDataset = {
     transform(rdd => rdd.filter(f => Option(f.getScore).exists(_ >= minimumScore)))
   }
 
   /**
-   * Filter this FeatureRDD by parent to those that match the specified parent.
+   * Filter this FeatureDataset by parent to those that match the specified parent.
    *
    * @param parentId Parent to filter by.
-   * @return FeatureRDD filtered by the specified parent.
+   * @return FeatureDataset filtered by the specified parent.
    */
-  def filterToParent(parentId: String): FeatureRDD = {
+  def filterToParent(parentId: String): FeatureDataset = {
     transform(rdd => rdd.filter(f => Option(f.getParentIds).exists(_.contains(parentId))))
   }
 
   /**
-   * Filter this FeatureRDD by parent to those that match the specified parents.
+   * Filter this FeatureDataset by parent to those that match the specified parents.
    *
    * @param parentIds Sequence of parents to filter by.
-   * @return FeatureRDD filtered by the specified parents.
+   * @return FeatureDataset filtered by the specified parents.
    */
-  def filterToParents(parentIds: Seq[String]): FeatureRDD = {
+  def filterToParents(parentIds: Seq[String]): FeatureDataset = {
     transform(rdd => rdd.filter(f => Option(f.getParentIds).exists(!Collections.disjoint(_, parentIds))))
   }
 
   /**
-   * Filter this FeatureRDD by attribute to those that match the specified attribute key and value.
+   * Filter this FeatureDataset by attribute to those that match the specified attribute key and value.
    *
    * @param key Attribute key to filter by.
    * @param value Attribute value to filter by.
-   * @return FeatureRDD filtered by the specified attribute.
+   * @return FeatureDataset filtered by the specified attribute.
    */
-  def filterByAttribute(key: String, value: String): FeatureRDD = {
+  def filterByAttribute(key: String, value: String): FeatureDataset = {
     transform(rdd => rdd.filter(f => Option(f.getAttributes.get(key)).exists(_.equals(value))))
   }
 

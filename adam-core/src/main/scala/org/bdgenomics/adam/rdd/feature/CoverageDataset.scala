@@ -119,10 +119,10 @@ object CoverageDataset {
 }
 
 case class ParquetUnboundCoverageDataset private[rdd] (
-  @transient private val sc: SparkContext,
-  private val parquetFilename: String,
-  sequences: SequenceDictionary) extends CoverageDataset {
-  @transient samples: Seq[Sample]) extends CoverageDataset {
+    @transient private val sc: SparkContext,
+    private val parquetFilename: String,
+    sequences: SequenceDictionary,
+    @transient samples: Seq[Sample]) extends CoverageDataset {
 
   lazy val rdd: RDD[Coverage] = {
     sc.loadParquetCoverage(parquetFilename,
@@ -175,7 +175,7 @@ case class DatasetBoundCoverageDataset private[rdd] (
   }
 
   override def replaceSequences(newSequences: SequenceDictionary): CoverageDataset = {
-    DatasetBoundFeatureDataset(dataset.map(_.toSqlFeature), sequences)
+    copy(sequences = newSequences)
   }
 
   override def replaceSamples(newSamples: Iterable[Sample]): CoverageDataset = {

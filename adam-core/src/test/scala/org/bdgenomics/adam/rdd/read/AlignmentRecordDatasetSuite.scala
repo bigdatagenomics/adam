@@ -235,9 +235,9 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
     val relativePath = new File(testFile("NA12878.1_854950_855150.sam")).getParentFile.getPath
     val inputPath = relativePath + "/{NA12878.1_854950_855150,bqsr1}.sam"
 
-    val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
+    val reads: AlignmentRecordDataset = sc.loadAlignments(inputPath)
 
-    def countBySampleId(coverage: CoverageRDD, sampleId: String): Long = {
+    def countBySampleId(coverage: CoverageDataset, sampleId: String): Long = {
       coverage.rdd.filter(r => r.optSampleId == Some(sampleId)).count
     }
 

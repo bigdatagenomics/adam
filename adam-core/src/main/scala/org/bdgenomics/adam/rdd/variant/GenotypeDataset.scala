@@ -198,7 +198,7 @@ case class DatasetBoundGenotypeDataset private[rdd] (
     copy(samples = newSamples.toSeq)
   }
 
-  override def copyVariantEndToAttribute(): GenotypeRDD = {
+  override def copyVariantEndToAttribute(): GenotypeDataset = {
     def copyEnd(g: GenotypeProduct): GenotypeProduct = {
       val variant = g.variant.getOrElse(VariantProduct())
       val annotation = variant.annotation.getOrElse(VariantAnnotationProduct())
@@ -212,23 +212,23 @@ case class DatasetBoundGenotypeDataset private[rdd] (
     transformDataset(dataset => dataset.map(copyEnd))
   }
 
-  override def filterToFiltersPassed(): GenotypeRDD = {
+  override def filterToFiltersPassed(): GenotypeDataset = {
     transformDataset(dataset => dataset.filter(dataset.col("variantCallingAnnotations.filtersPassed")))
   }
 
-  override def filterByQuality(minimumQuality: Double): GenotypeRDD = {
+  override def filterByQuality(minimumQuality: Double): GenotypeDataset = {
     transformDataset(dataset => dataset.filter(dataset.col("genotypeQuality") >= minimumQuality))
   }
 
-  override def filterByReadDepth(minimumReadDepth: Int): GenotypeRDD = {
+  override def filterByReadDepth(minimumReadDepth: Int): GenotypeDataset = {
     transformDataset(dataset => dataset.filter(dataset.col("readDepth") >= minimumReadDepth))
   }
 
-  override def filterByAlternateReadDepth(minimumAlternateReadDepth: Int): GenotypeRDD = {
+  override def filterByAlternateReadDepth(minimumAlternateReadDepth: Int): GenotypeDataset = {
     transformDataset(dataset => dataset.filter(dataset.col("alternateReadDepth") >= minimumAlternateReadDepth))
   }
 
-  override def filterByReferenceReadDepth(minimumReferenceReadDepth: Int): GenotypeRDD = {
+  override def filterByReferenceReadDepth(minimumReferenceReadDepth: Int): GenotypeDataset = {
     transformDataset(dataset => dataset.filter(dataset.col("referenceReadDepth") >= minimumReferenceReadDepth))
   }
 
@@ -394,9 +394,9 @@ sealed abstract class GenotypeDataset extends MultisampleAvroGenomicDataset[Geno
   /**
    * Copy variant end to a variant attribute (VCF INFO field "END").
    *
-   * @return GenotypeRDD with variant end copied to a variant attribute.
+   * @return GenotypeDataset with variant end copied to a variant attribute.
    */
-  def copyVariantEndToAttribute(): GenotypeRDD = {
+  def copyVariantEndToAttribute(): GenotypeDataset = {
     def copyEnd(g: Genotype): Genotype = {
       val variant = Option(g.variant).getOrElse(new Variant())
       val annotation = Option(variant.annotation).getOrElse(new VariantAnnotation())
@@ -411,80 +411,80 @@ sealed abstract class GenotypeDataset extends MultisampleAvroGenomicDataset[Geno
   }
 
   /**
-   * Filter this GenotypeRDD to genotype filters passed (VCF FORMAT field "FT" value PASS).
+   * Filter this GenotypeDataset to genotype filters passed (VCF FORMAT field "FT" value PASS).
    *
-   * @return GenotypeRDD filtered to genotype filters passed.
+   * @return GenotypeDataset filtered to genotype filters passed.
    */
-  def filterToFiltersPassed(): GenotypeRDD = {
+  def filterToFiltersPassed(): GenotypeDataset = {
     transform(rdd => rdd.filter(g => Option(g.getVariantCallingAnnotations).exists(_.getFiltersPassed)))
   }
 
   /**
-   * Filter this GenotypeRDD by quality (VCF FORMAT field "GQ").
+   * Filter this GenotypeDataset by quality (VCF FORMAT field "GQ").
    *
    * @param minimumQuality Minimum quality to filter by, inclusive.
-   * @return GenotypeRDD filtered by quality.
+   * @return GenotypeDataset filtered by quality.
    */
-  def filterByQuality(minimumQuality: Double): GenotypeRDD = {
+  def filterByQuality(minimumQuality: Double): GenotypeDataset = {
     transform(rdd => rdd.filter(g => Option(g.getGenotypeQuality).exists(_ >= minimumQuality)))
   }
 
   /**
-   * Filter this GenotypeRDD by read depth (VCF FORMAT field "DP").
+   * Filter this GenotypeDataset by read depth (VCF FORMAT field "DP").
    *
    * @param minimumReadDepth Minimum read depth to filter by, inclusive.
-   * @return GenotypeRDD filtered by read depth.
+   * @return GenotypeDataset filtered by read depth.
    */
-  def filterByReadDepth(minimumReadDepth: Int): GenotypeRDD = {
+  def filterByReadDepth(minimumReadDepth: Int): GenotypeDataset = {
     transform(rdd => rdd.filter(g => Option(g.getReadDepth).exists(_ >= minimumReadDepth)))
   }
 
   /**
-   * Filter this GenotypeRDD by alternate read depth (VCF FORMAT field "AD").
+   * Filter this GenotypeDataset by alternate read depth (VCF FORMAT field "AD").
    *
    * @param minimumAlternateReadDepth Minimum alternate read depth to filter by, inclusive.
-   * @return GenotypeRDD filtered by alternate read depth.
+   * @return GenotypeDataset filtered by alternate read depth.
    */
-  def filterByAlternateReadDepth(minimumAlternateReadDepth: Int): GenotypeRDD = {
+  def filterByAlternateReadDepth(minimumAlternateReadDepth: Int): GenotypeDataset = {
     transform(rdd => rdd.filter(g => Option(g.getAlternateReadDepth).exists(_ >= minimumAlternateReadDepth)))
   }
 
   /**
-   * Filter this GenotypeRDD by reference read depth (VCF FORMAT field "AD").
+   * Filter this GenotypeDataset by reference read depth (VCF FORMAT field "AD").
    *
    * @param minimumReferenceReadDepth Minimum reference read depth to filter by, inclusive.
-   * @return GenotypeRDD filtered by reference read depth.
+   * @return GenotypeDataset filtered by reference read depth.
    */
-  def filterByReferenceReadDepth(minimumReferenceReadDepth: Int): GenotypeRDD = {
+  def filterByReferenceReadDepth(minimumReferenceReadDepth: Int): GenotypeDataset = {
     transform(rdd => rdd.filter(g => Option(g.getReferenceReadDepth).exists(_ >= minimumReferenceReadDepth)))
   }
 
   /**
-   * Filter this GenotypeRDD by sample to those that match the specified sample.
+   * Filter this GenotypeDataset by sample to those that match the specified sample.
    *
    * @param sampleId Sample to filter by.
-   * return GenotypeRDD filtered by sample.
+   * return GenotypeDataset filtered by sample.
    */
-  def filterToSample(sampleId: String): GenotypeRDD = {
+  def filterToSample(sampleId: String): GenotypeDataset = {
     transform(rdd => rdd.filter(g => Option(g.getSampleId).exists(_ == sampleId)))
   }
 
   /**
-   * Filter this GenotypeRDD by sample to those that match the specified samples.
+   * Filter this GenotypeDataset by sample to those that match the specified samples.
    *
    * @param sampleIds Sequence of samples to filter by.
-   * return GenotypeRDD filtered by one or more samples.
+   * return GenotypeDataset filtered by one or more samples.
    */
-  def filterToSamples(sampleIds: Seq[String]): GenotypeRDD = {
+  def filterToSamples(sampleIds: Seq[String]): GenotypeDataset = {
     transform(rdd => rdd.filter(g => Option(g.getSampleId).exists(sampleIds.contains(_))))
   }
 
   /**
-   * Filter genotypes containing NO_CALL alleles from this GenotypeRDD.
+   * Filter genotypes containing NO_CALL alleles from this GenotypeDataset.
    *
-   * @return GenotypeRDD filtered to remove genotypes containing NO_CALL alleles.
+   * @return GenotypeDataset filtered to remove genotypes containing NO_CALL alleles.
    */
-  def filterNoCalls(): GenotypeRDD = {
+  def filterNoCalls(): GenotypeDataset = {
     transform(rdd => rdd.filter(g => !g.getAlleles.contains(GenotypeAllele.NO_CALL)))
   }
 
