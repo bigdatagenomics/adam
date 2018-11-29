@@ -124,7 +124,7 @@ ADAM supports SparkR, for Spark 2.1.0 and onwards. To build and test
 
 .. code:: bash
 
-    mvn -Pr package
+    mvn -P r package
 
 This will enable the ``adam-r`` module as part of the ADAM build. This
 module uses Maven to invoke the ``R`` executable to build the
@@ -137,9 +137,21 @@ module uses Maven to invoke the ``R`` executable to build the
     R -e "install.packages('roxygen2', repos='http://cran.rstudio.com/')"
     R -e "install.packages('devtools', repos='http://cran.rstudio.com/')"
 
+Installation of ``devtools`` may require ``libgit2`` as a dependency.
+
+.. code:: bash
+
+    apt-get install libgit2-dev
+
 The build also requires you to have the ``SparkR`` package installed,
-and the ADAM JARs must be built and provided to ``SparkR``. This can be
-done with the following bash commands:
+where ``v2.x.x`` should match your Spark version.
+
+.. code:: bash
+
+   R -e "devtools::install_github('apache/spark@v2.x.x', subdir='R/pkg')"
+
+The ADAM JARs can then be provided to ``SparkR`` with the following bash
+commands:
 
 .. code:: bash
 
