@@ -169,7 +169,7 @@ object AlignmentRecordDataset extends Serializable {
   }
 
   /**
-   * Builds an AlignmentRecordDataset without a partition map.
+   * Builds an AlignmentRecordDataset without a partition map from an RDD.
    *
    * @param rdd The underlying AlignmentRecord RDD.
    * @param sequences The sequence dictionary for the genomic dataset.
@@ -187,6 +187,14 @@ object AlignmentRecordDataset extends Serializable {
       None)
   }
 
+  /**
+   * Builds an AlignmentRecordDataset without a partition map from a Dataset.
+   *
+   * @param ds The underlying AlignmentRecord Dataset.
+   * @param sequences The sequence dictionary for the genomic dataset.
+   * @param recordGroups The record group dictionary for the genomic dataset.
+   * @return A new AlignmentRecordDataset.
+   */
   def apply(ds: Dataset[AlignmentRecordProduct],
             sequences: SequenceDictionary,
             recordGroups: RecordGroupDictionary,

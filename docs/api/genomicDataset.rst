@@ -1,5 +1,5 @@
-Working with genomic data using GenomicRDDs
--------------------------------------------
+Working with genomic data using GenomicDatasets
+-----------------------------------------------
 
 As described in the section on using the
 `ADAMContext <adamContext.html>`__, ADAM loads genomic data into a
@@ -120,7 +120,7 @@ substantial speedups for certain queries.
 To resolve this, we added an ``adam-codegen`` package that generates
 Spark SQL compatible classes representing the ADAM schemas. These
 classes are available in the ``org.bdgenomics.adam.sql`` package. All
-Avro-backed GenomicRDDs now support translation to Datasets via the
+Avro-backed GenomicDatasets now support translation to Datasets via the
 ``dataset`` field, and transformation via the Spark SQL APIs through the
 ``transformDataset`` method. As an optimization, we lazily choose either
 the RDD or Dataset API depending on the calculation being performed. For
