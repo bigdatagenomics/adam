@@ -11,10 +11,6 @@
   <artifactId>adam-assembly-spark2_2.11</artifactId>
   <packaging>jar</packaging>
   <name>ADAM_${scala.version.prefix}: Assembly</name>
-  <properties>
-    <timestamp>${maven.build.timestamp}</timestamp>
-    <maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
-  </properties>
   <build>
     <plugins>
       <plugin>
