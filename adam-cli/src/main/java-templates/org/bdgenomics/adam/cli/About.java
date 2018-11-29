@@ -22,7 +22,7 @@ package org.bdgenomics.adam.cli;
  */
 public final class About {
     private static final String ARTIFACT_ID = "${project.artifactId}";
-    private static final String BUILD_TIMESTAMP = "${timestamp}";
+    private static final String BUILD_TIMESTAMP = "${build-helper-maven-plugin.build.timestamp}";
     private static final String COMMIT = "${git.commit.id}";
     private static final String HADOOP_VERSION = "${hadoop.version}";
     private static final String SCALA_VERSION = "${scala.version}";
