@@ -962,6 +962,9 @@ setMethod("recalibrateBaseQualities",
 #'   are only finalized if the log-odds threshold is exceeded.
 #' @param maxTargetSize The maximum width of a single target region for
 #'   realignment.
+#' @param maxReadsPerTarget Maximum number of reads per target.
+#' @param unclipReads If true, unclips reads prior to realignment. Else,
+#    omits clipped bases during realignment.
 #' @param knownIndels A genomic dataset of previously called INDEL variants.
 #' @return Returns a genomic dataset of mapped reads which have been realigned.
 #'
@@ -972,8 +975,8 @@ setMethod("realignIndels",
           signature(ardd = "AlignmentRecordDataset"),
           function(ardd, isSorted = FALSE, maxIndelSize = 500,
                    maxConsensusNumber = 30, lodThreshold = 5.0,
-                   maxTargetSize = 3000,
-                   knownIndels = NA) {
+                   maxTargetSize = 3000, maxReadsPerTarget = 20000,
+                   unclipReads = FALSE, knownIndels = NA) {
 
               if (is.na(knownIndels)) {
                   consensusModel <- sparkR.callJStatic("org.bdgenomics.adam.algorithms.consensus.ConsensusGenerator",
@@ -984,7 +987,9 @@ setMethod("realignIndels",
                                                         maxIndelSize,
                                                         maxConsensusNumber,
                                                         lodThreshold,
-                                                        maxTargetSize))
+                                                        maxTargetSize,
+                                                        maxReadsPerTarget,
+                                                        unclipReads))
 
               } else {
                   consensusModel <- sparkR.callJStatic("org.bdgenomics.adam.algorithms.consensus.ConsensusGenerator",
@@ -995,7 +1000,9 @@ setMethod("realignIndels",
                                                         maxIndelSize,
                                                         maxConsensusNumber,
                                                         lodThreshold,
-                                                        maxTargetSize))
+                                                        maxTargetSize,
+                                                        maxReadsPerTarget,
+                                                        unclipReads))
               }
           })
 
