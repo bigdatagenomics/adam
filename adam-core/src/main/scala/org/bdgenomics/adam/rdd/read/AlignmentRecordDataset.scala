@@ -1085,40 +1085,30 @@ sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDatas
   }
 
   /**
-   * Realigns indels using a consensus-based heuristic.
+   * (Java-specific) Realigns indels using a consensus-based heuristic with
+   * default parameters.
    *
-   * Java friendly variant.
-   *
-   * @param consensusModel The model to use for generating consensus sequences
-   *   to realign against.
-   * @param isSorted If the input data is sorted, setting this parameter to true
-   *   avoids a second sort.
-   * @param maxIndelSize The size of the largest indel to use for realignment.
-   * @param maxConsensusNumber The maximum number of consensus sequences to
-   *   realign against per target region.
-   * @param lodThreshold Log-odds threshold to use when realigning; realignments
-   *   are only finalized if the log-odds threshold is exceeded.
-   * @param maxTargetSize The maximum width of a single target region for
-   *   realignment.
    * @return Returns a genomic dataset of mapped reads which have been realigned.
    */
-  def realignIndels(
-    consensusModel: ConsensusGenerator,
-    isSorted: java.lang.Boolean,
-    maxIndelSize: java.lang.Integer,
-    maxConsensusNumber: java.lang.Integer,
-    lodThreshold: java.lang.Double,
-    maxTargetSize: java.lang.Integer): AlignmentRecordDataset = {
-    replaceRdd(RealignIndels(rdd,
-      consensusModel,
-      isSorted: Boolean,
-      maxIndelSize: Int,
-      maxConsensusNumber: Int,
-      lodThreshold: Double))
+  def realignIndels(): AlignmentRecordDataset = {
+    realignIndels(consensusModel = new ConsensusGeneratorFromReads)
   }
 
   /**
-   * Realigns indels using a concensus-based heuristic.
+   * (Java-specific) Realigns indels using a consensus-based heuristic with
+   * the specified reference and default parameters.
+   *
+   * @param referenceFile Reference file.
+   * @return Returns a genomic dataset of mapped reads which have been realigned.
+   */
+  def realignIndels(referenceFile: ReferenceFile): AlignmentRecordDataset = {
+    realignIndels(consensusModel = new ConsensusGeneratorFromReads,
+      optReferenceFile = Some(referenceFile)
+    )
+  }
+
+  /**
+   * (Java-specific) Realigns indels using a consensus-based heuristic.
    *
    * @param consensusModel The model to use for generating consensus sequences
    *   to realign against.
@@ -1131,10 +1121,93 @@ sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDatas
    *   are only finalized if the log-odds threshold is exceeded.
    * @param maxTargetSize The maximum width of a single target region for
    *   realignment.
-   * @param optReferenceFile An optional reference. If not provided, reference
-   *   will be inferred from MD tags.
+   * @param maxReadsPerTarget Maximum number of reads per target.
    * @param unclipReads If true, unclips reads prior to realignment. Else,
    *   omits clipped bases during realignment.
+   * @return Returns a genomic dataset of mapped reads which have been realigned.
+   */
+  def realignIndels(
+    consensusModel: ConsensusGenerator,
+    isSorted: java.lang.Boolean,
+    maxIndelSize: java.lang.Integer,
+    maxConsensusNumber: java.lang.Integer,
+    lodThreshold: java.lang.Double,
+    maxTargetSize: java.lang.Integer,
+    maxReadsPerTarget: java.lang.Integer,
+    unclipReads: java.lang.Boolean): AlignmentRecordDataset = {
+    realignIndels(consensusModel,
+      isSorted = isSorted,
+      maxIndelSize = maxIndelSize,
+      maxConsensusNumber = maxConsensusNumber,
+      lodThreshold = lodThreshold,
+      maxTargetSize = maxTargetSize,
+      maxReadsPerTarget = maxReadsPerTarget,
+      unclipReads = unclipReads,
+      optReferenceFile = None)
+  }
+
+  /**
+   * (Java-specific) Realigns indels using a consensus-based heuristic with
+   * the specified reference.
+   *
+   * @param consensusModel The model to use for generating consensus sequences
+   *   to realign against.
+   * @param isSorted If the input data is sorted, setting this parameter to
+   *   true avoids a second sort.
+   * @param maxIndelSize The size of the largest indel to use for realignment.
+   * @param maxConsensusNumber The maximum number of consensus sequences to
+   *   realign against per target region.
+   * @param lodThreshold Log-odds threshold to use when realigning; realignments
+   *   are only finalized if the log-odds threshold is exceeded.
+   * @param maxTargetSize The maximum width of a single target region for
+   *   realignment.
+   * @param maxReadsPerTarget Maximum number of reads per target.
+   * @param unclipReads If true, unclips reads prior to realignment. Else,
+   *   omits clipped bases during realignment.
+   * @param referenceFile Reference file.
+   * @return Returns a genomic dataset of mapped reads which have been realigned.
+   */
+  def realignIndels(
+    consensusModel: ConsensusGenerator,
+    isSorted: java.lang.Boolean,
+    maxIndelSize: java.lang.Integer,
+    maxConsensusNumber: java.lang.Integer,
+    lodThreshold: java.lang.Double,
+    maxTargetSize: java.lang.Integer,
+    maxReadsPerTarget: java.lang.Integer,
+    unclipReads: java.lang.Boolean,
+    referenceFile: ReferenceFile): AlignmentRecordDataset = {
+    realignIndels(consensusModel,
+      isSorted = isSorted,
+      maxIndelSize = maxIndelSize,
+      maxConsensusNumber = maxConsensusNumber,
+      lodThreshold = lodThreshold,
+      maxTargetSize = maxTargetSize,
+      maxReadsPerTarget = maxReadsPerTarget,
+      unclipReads = unclipReads,
+      optReferenceFile = Some(referenceFile))
+  }
+
+  /**
+   * (Scala-specific) Realigns indels using a consensus-based heuristic.
+   *
+   * @param consensusModel The model to use for generating consensus sequences
+   *   to realign against.
+   * @param isSorted If the input data is sorted, setting this parameter to
+   *   true avoids a second sort. Defaults to false.
+   * @param maxIndelSize The size of the largest indel to use for realignment.
+   *   Defaults to 500.
+   * @param maxConsensusNumber The maximum number of consensus sequences to
+   *   realign against per target region. Defaults to 30.
+   * @param lodThreshold Log-odds threshold to use when realigning; realignments
+   *   are only finalized if the log-odds threshold is exceeded. Defaults to 5.0.
+   * @param maxTargetSize The maximum width of a single target region for
+   *   realignment. Defaults to 3000.
+   * @param maxReadsPerTarget Maximum number of reads per target. Defaults to 20000.
+   * @param unclipReads If true, unclips reads prior to realignment. Else,
+   *   omits clipped bases during realignment. Defaults to false.
+   * @param optReferenceFile An optional reference. If not provided, reference
+   *   will be inferred from MD tags. Defaults to None.
    * @return Returns a genomic dataset of mapped reads which have been realigned.
    */
   def realignIndels(
@@ -1145,8 +1218,8 @@ sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDatas
     lodThreshold: Double = 5.0,
     maxTargetSize: Int = 3000,
     maxReadsPerTarget: Int = 20000,
-    optReferenceFile: Option[ReferenceFile] = None,
-    unclipReads: Boolean = false): AlignmentRecordDataset = RealignIndelsInDriver.time {
+    unclipReads: Boolean = false,
+    optReferenceFile: Option[ReferenceFile] = None): AlignmentRecordDataset = RealignIndelsInDriver.time {
     replaceRdd(RealignIndels(rdd,
       consensusModel = consensusModel,
       dataIsSorted = isSorted,
@@ -1155,8 +1228,8 @@ sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDatas
       lodThreshold = lodThreshold,
       maxTargetSize = maxTargetSize,
       maxReadsPerTarget = maxReadsPerTarget,
-      optReferenceFile = optReferenceFile,
-      unclipReads = unclipReads))
+      unclipReads = unclipReads,
+      optReferenceFile = optReferenceFile))
   }
 
   /**

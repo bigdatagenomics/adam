@@ -1023,7 +1023,9 @@ class AlignmentRecordDataset(GenomicDataset):
                       maxIndelSize = 500,
                       maxConsensusNumber = 30,
                       lodThreshold = 5.0,
-                      maxTargetSize = 3000):
+                      maxTargetSize = 3000,
+                      maxReadsPerTarget = 20000,
+                      unclipReads = False):
         """
         Realigns indels using a concensus-based heuristic.
 
@@ -1039,17 +1041,22 @@ class AlignmentRecordDataset(GenomicDataset):
         realignments are only finalized if the log-odds threshold is exceeded.
         :param int maxTargetSize: The maximum width of a single target region
         for realignment.
+        :param int maxReadsPerTarget: Maximum number of reads per target.
+        :param boolean unclipReads: If true, unclips reads prior to realignment.
+        Else, omits clipped bases during realignment.
         :return: Returns an genomic dataset of mapped reads which have been realigned.
         :rtype: bdgenomics.adam.rdd.AlignmentRecordDataset
         """
 
         consensusModel = self.sc._jvm.org.bdgenomics.adam.algorithms.consensus.ConsensusGenerator.fromReads()
         return AlignmentRecordDataset(self._jvmRdd.realignIndels(consensusModel,
-                                                             isSorted,
-                                                             maxIndelSize,
-                                                             maxConsensusNumber,
-                                                             lodThreshold,
-                                                             maxTargetSize),
+                                                                 isSorted,
+                                                                 maxIndelSize,
+                                                                 maxConsensusNumber,
+                                                                 lodThreshold,
+                                                                 maxTargetSize,
+                                                                 maxReadsPerTarget,
+                                                                 unclipReads),
                                   self.sc)
 
 
@@ -1059,7 +1066,9 @@ class AlignmentRecordDataset(GenomicDataset):
                       maxIndelSize = 500,
                       maxConsensusNumber = 30,
                       lodThreshold = 5.0,
-                      maxTargetSize = 3000):
+                      maxTargetSize = 3000,
+                      maxReadsPerTarget = 20000,
+                      unclipReads = False):
         """
         Realigns indels using a concensus-based heuristic.
 
@@ -1077,17 +1086,22 @@ class AlignmentRecordDataset(GenomicDataset):
         realignments are only finalized if the log-odds threshold is exceeded.
         :param int maxTargetSize: The maximum width of a single target region
         for realignment.
+        :param int maxReadsPerTarget: Maximum number of reads per target.
+        :param boolean unclipReads: If true, unclips reads prior to realignment.
+        Else, omits clipped bases during realignment.
         :return: Returns a genomic dataset of mapped reads which have been realigned.
         :rtype: bdgenomics.adam.rdd.AlignmentRecordDataset
         """
 
         consensusModel = self.sc._jvm.org.bdgenomics.adam.algorithms.consensus.ConsensusGenerator.fromKnowns(knownIndels._jvmRdd)
         return AlignmentRecordDataset(self._jvmRdd.realignIndels(consensusModel,
-                                                             isSorted,
-                                                             maxIndelSize,
-                                                             maxConsensusNumber,
-                                                             lodThreshold,
-                                                             maxTargetSize),
+                                                                 isSorted,
+                                                                 maxIndelSize,
+                                                                 maxConsensusNumber,
+                                                                 lodThreshold,
+                                                                 maxTargetSize,
+                                                                 maxReadsPerTarget,
+                                                                 unclipReads),
                                   self.sc)
 
     def flagStat(self):
