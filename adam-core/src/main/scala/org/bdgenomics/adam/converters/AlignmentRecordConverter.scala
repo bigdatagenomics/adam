@@ -375,7 +375,7 @@ class AlignmentRecordConverter extends Serializable {
  * Singleton object to assist with converting AlignmentRecords.
  *
  * Singleton object exists due to cross reference from
- * org.bdgenomics.adam.rdd.read.AlignmentRecordRDDFunctions.
+ * org.bdgenomics.adam.rdd.read.AlignmentRecordDatasetFunctions.
  */
 private[adam] object AlignmentRecordConverter extends Serializable {
 

@@ -31,25 +31,25 @@ private[rdd] class InFormatterRunner[T, U <: Product, V <: GenomicDataset[T, U, 
 }
 
 /**
- * A trait for singleton objects that build an InFormatter from a GenomicRDD.
+ * A trait for singleton objects that build an InFormatter from a GenomicDataset.
  *
  * Often, when creating an outputstream, we need to add metadata to the output
  * that is not attached to individual records. An example of this is writing a
  * header with contig/read group/format info, as is done with SAM/BAM/VCF.
  *
  * @tparam T The type of the records this InFormatter writes out.
- * @tparam U The type of the GenomicRDD this companion object understands.
+ * @tparam U The type of the GenomicDataset this companion object understands.
  * @tparam V The type of InFormatter this companion object creates.
  */
 trait InFormatterCompanion[T, U <: Product, V <: GenomicDataset[T, U, V], W <: InFormatter[T, U, V, W]] {
 
   /**
-   * Creates an InFormatter from a GenomicRDD.
+   * Creates an InFormatter from a GenomicDataset.
    *
-   * @param gRdd The GenomicRDD to get metadata from.
+   * @param gDataset The GenomicDataset to get metadata from.
    * @return Returns an InFormatter with attached metadata.
    */
-  def apply(gRdd: V): W
+  def apply(gDataset: V): W
 }
 
 /**

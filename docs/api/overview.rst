@@ -3,11 +3,11 @@ API Overview
 
 The main entrypoint to ADAM is the `ADAMContext <adamContext.html>`__,
 which allows genomic data to be loaded in to Spark as
-`GenomicRDD <genomicRdd.html>`__. GenomicRDDs can be transformed using
+`GenomicDataset <genomicDataset.html>`__. GenomicDatasets can be transformed using
 ADAM's built in `pre-processing algorithms <../algorithms/reads.html>`__, `Spark's
-RDD primitives <genomicRdd.html#transforming-genomicrdds>`__, the `region join <joins.html>`__
-primitive, and ADAM's `pipe <pipes.html>`__ APIs. GenomicRDDs can also be
-interacted with as `Spark SQL tables <genomicRdd.html#transforming-genomicrdds-via-spark-sql>`__.
+RDD primitives <genomicRdd.html#transforming-genomicdatasets>`__, the `region join <joins.html>`__
+primitive, and ADAM's `pipe <pipes.html>`__ APIs. GenomicDatasets can also be
+interacted with as `Spark SQL tables <genomicRdd.html#transforming-genomicdatasets-via-spark-sql>`__.
 
 In addition to the Scala/Java API, ADAM can be used from
 `Python <#the-adam-python-api>`__ and `R <#the-adam-r-api>`__.
@@ -48,7 +48,7 @@ The ADAM Python API
 -------------------
 
 ADAM's Python API wraps the `ADAMContext <adamContext.html>`__ and
-`GenomicRDD <genomicRdd.html>`__ APIs so they can be used from PySpark. The
+`GenomicDataset <genomicDataset.html>`__ APIs so they can be used from PySpark. The
 Python API is feature complete relative to ADAM's Java API.
 
 `Read more about the Python API. <python.html>`__
@@ -57,5 +57,5 @@ The ADAM R API
 --------------
 
 ADAM's R API wraps the `ADAMContext <adamContext.html>`__ and
-`GenomicRDD <genomicRdd.html>`__ APIs so they can be used from SparkR. The
+`GenomicDataset <genomicDataset.html>`__ APIs so they can be used from SparkR. The
 R API is feature complete relative to ADAM's Java API.

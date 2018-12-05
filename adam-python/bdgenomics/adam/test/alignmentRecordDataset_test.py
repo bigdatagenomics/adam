@@ -19,13 +19,13 @@
 
 from bdgenomics.adam.adamContext import ADAMContext
 from bdgenomics.adam.models import ReferenceRegion
-from bdgenomics.adam.rdd import AlignmentRecordRDD, CoverageRDD
+from bdgenomics.adam.rdd import AlignmentRecordDataset, CoverageDataset
 from bdgenomics.adam.test import SparkTestCase
 
 from pyspark.sql.types import DoubleType
 from  pyspark.storagelevel import StorageLevel
 
-class AlignmentRecordRDDTest(SparkTestCase):
+class AlignmentRecordDatasetTest(SparkTestCase):
 
 
     def test_save_sorted_sam(self):
@@ -137,10 +137,10 @@ class AlignmentRecordRDDTest(SparkTestCase):
                                                              x.end,
                                                              x.mapq.cast(DoubleType()).alias("count"),
                                                              x.recordGroupSample.alias("optSampleId")),
-                                          CoverageRDD)
+                                        CoverageDataset)
 
-        assert(isinstance(readsAsCoverage, CoverageRDD))
-        self.assertEqual(readsAsCoverage.toDF().count(), 5)
+        assert(isinstance(readsAsCoverage, CoverageDataset))
+        self.assertEquals(readsAsCoverage.toDF().count(), 5)
 
 
     def test_to_coverage(self):

@@ -66,7 +66,7 @@ javaStringency <- function(stringency) {
 }
 
 
-#' Load alignment records into an AlignmentRecordRDD.
+#' Load alignment records into an AlignmentRecordDataset.
 #'
 #' Loads path names ending in:
 #' * .bam/.cram/.sam as BAM/CRAM/SAM format,
@@ -83,7 +83,7 @@ javaStringency <- function(stringency) {
 #' @param ac The ADAMContext.
 #' @param filePath The path to load the file from.
 #' @param stringency The validation stringency to apply. Defaults to STRICT.
-#' @return Returns an RDD containing reads.
+#' @return Returns a genomic dataset containing reads.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
@@ -95,10 +95,10 @@ setMethod("loadAlignments",
               jrdd <- sparkR.callJMethod(ac@jac,
                                          "loadAlignments",
                                          filePath, jStringency)
-              AlignmentRecordRDD(jrdd)
+              AlignmentRecordDataset(jrdd)
           })
 
-#' Load nucleotide contig fragments into a NucleotideContigFragmentRDD.
+#' Load nucleotide contig fragments into a NucleotideContigFragmentDataset.
 #'
 #' If the path name has a .fa/.fasta extension, load as FASTA format.
 #' Else, fall back to Parquet + Avro.
@@ -108,7 +108,7 @@ setMethod("loadAlignments",
 #'
 #' @param ac The ADAMContext.
 #' @param filePath The path to load the file from.
-#' @return Returns an RDD containing sequence fragments.
+#' @return Returns a genomic dataset containing nucleotide contig fragments.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
@@ -117,10 +117,10 @@ setMethod("loadContigFragments",
           signature(ac = "ADAMContext", filePath = "character"),
           function(ac, filePath) {
               jrdd <- sparkR.callJMethod(ac@jac, "loadContigFragments", filePath)
-              NucleotideContigFragmentRDD(jrdd)
+              NucleotideContigFragmentDataset(jrdd)
           })
 
-#' Load fragments into a FragmentRDD.
+#' Load fragments into a FragmentDataset.
 #'
 #' Loads path names ending in:
 #' * .bam/.cram/.sam as BAM/CRAM/SAM format and
@@ -134,7 +134,7 @@ setMethod("loadContigFragments",
 #' @param ac The ADAMContext.
 #' @param filePath The path to load the file from.
 #' @param stringency The validation stringency to apply. Defaults to STRICT.
-#' @return Returns an RDD containing sequence fragments.
+#' @return Returns a genomic dataset containing sequence fragments.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
@@ -147,10 +147,10 @@ setMethod("loadFragments",
                                          "loadFragments",
                                          filePath,
                                          jStringency)
-              FragmentRDD(jrdd)
+              FragmentDataset(jrdd)
           })
 
-#' Load features into a FeatureRDD.
+#' Load features into a FeatureDataset.
 #'
 #' Loads path names ending in:
 #' * .bed as BED6/12 format,
@@ -168,7 +168,7 @@ setMethod("loadFragments",
 #' @param ac The ADAMContext.
 #' @param filePath The path to load the file from.
 #' @param stringency The validation stringency to apply. Defaults to STRICT.
-#' @return Returns an RDD containing features.
+#' @return Returns a genomic dataset containing features.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
@@ -181,10 +181,10 @@ setMethod("loadFeatures",
                                          "loadFeatures",
                                          filePath,
                                          jStringency)
-              FeatureRDD(jrdd)
+              FeatureDataset(jrdd)
           })
 
-#' Load features into a FeatureRDD and convert to a CoverageRDD.
+#' Load features into a FeatureDataset and convert to a CoverageDataset.
 #' Coverage is stored in the score field of Feature.
 #'
 #' Loads path names ending in:
@@ -203,7 +203,7 @@ setMethod("loadFeatures",
 #' @param ac The ADAMContext.
 #' @param filePath The path to load the file from.
 #' @param stringency The validation stringency to apply. Defaults to STRICT.
-#' @return Returns an RDD containing coverage.
+#' @return Returns a genomic dataset containing coverage.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
@@ -216,10 +216,10 @@ setMethod("loadCoverage",
                                          "loadCoverage",
                                          filePath,
                                          jStringency)
-              CoverageRDD(jrdd)
+              CoverageDataset(jrdd)
           })
 
-#' Load genotypes into a GenotypeRDD.
+#' Load genotypes into a GenotypeDataset.
 #'
 #' If the path name has a .vcf/.vcf.gz/.vcf.bgz extension, load as VCF format.
 #' Else, fall back to Parquet + Avro.
@@ -227,7 +227,7 @@ setMethod("loadCoverage",
 #' @param ac The ADAMContext.
 #' @param filePath The path to load the file from.
 #' @param stringency The validation stringency to apply. Defaults to STRICT.
-#' @return Returns an RDD containing genotypes.
+#' @return Returns a genomic dataset containing genotypes.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
@@ -240,10 +240,10 @@ setMethod("loadGenotypes",
                                          "loadGenotypes",
                                          filePath,
                                          jStringency)
-              GenotypeRDD(jrdd)
+              GenotypeDataset(jrdd)
           })
 
-#' Load variants into a VariantRDD.
+#' Load variants into a VariantDataset.
 #'
 #' If the path name has a .vcf/.vcf.gz/.vcf.bgz extension, load as VCF format.
 #' Else, fall back to Parquet + Avro.
@@ -251,7 +251,7 @@ setMethod("loadGenotypes",
 #' @param ac The ADAMContext.
 #' @param filePath The path to load the file from.
 #' @param stringency The validation stringency to apply. Defaults to STRICT.
-#' @return Returns an RDD containing variants.
+#' @return Returns a genomic dataset containing variants.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
@@ -264,5 +264,5 @@ setMethod("loadVariants",
                                          "loadVariants",
                                          filePath,
                                          jStringency)
-              VariantRDD(jrdd)
+              VariantDataset(jrdd)
           })

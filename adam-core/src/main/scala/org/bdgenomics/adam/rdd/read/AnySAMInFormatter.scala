@@ -34,28 +34,28 @@ import org.bdgenomics.formats.avro.AlignmentRecord
  *
  * @tparam T The type of the underlying InFormatter.
  */
-trait AnySAMInFormatterCompanion[T <: AnySAMInFormatter[T]] extends InFormatterCompanion[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordRDD, T] {
+trait AnySAMInFormatterCompanion[T <: AnySAMInFormatter[T]] extends InFormatterCompanion[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordDataset, T] {
   protected def makeFormatter(header: SAMFileHeaderWritable,
                               recordGroups: RecordGroupDictionary,
                               converter: AlignmentRecordConverter): T
 
   /**
-   * Makes an AnySAMInFormatter from a GenomicRDD of AlignmentRecords.
+   * Makes an AnySAMInFormatter from a GenomicDataset of AlignmentRecords.
    *
-   * @param gRdd AlignmentRecordRDD with reference build and record group info.
+   * @param gDataset AlignmentRecordDataset with reference build and record group info.
    * @return Returns an InFormatter that extends AnySAMInFormatter.
    */
-  def apply(gRdd: AlignmentRecordRDD): T = {
+  def apply(gDataset: AlignmentRecordDataset): T = {
 
     // make a converter
     val arc = new AlignmentRecordConverter
 
     // build a header and set the sort order
-    val header = arc.createSAMHeader(gRdd.sequences, gRdd.recordGroups)
+    val header = arc.createSAMHeader(gDataset.sequences, gDataset.recordGroups)
     header.setSortOrder(SAMFileHeader.SortOrder.coordinate)
 
     // construct the in formatter
-    makeFormatter(SAMFileHeaderWritable(header), gRdd.recordGroups, arc)
+    makeFormatter(SAMFileHeaderWritable(header), gDataset.recordGroups, arc)
   }
 }
 
@@ -64,7 +64,7 @@ trait AnySAMInFormatterCompanion[T <: AnySAMInFormatter[T]] extends InFormatterC
  *
  * @tparam T The recursive type of the class that implements this trait.
  */
-trait AnySAMInFormatter[T <: AnySAMInFormatter[T]] extends InFormatter[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordRDD, T] {
+trait AnySAMInFormatter[T <: AnySAMInFormatter[T]] extends InFormatter[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordDataset, T] {
 
   /**
    * A serializable form of the SAM File Header.

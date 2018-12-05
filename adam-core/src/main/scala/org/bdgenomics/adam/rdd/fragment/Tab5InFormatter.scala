@@ -28,26 +28,26 @@ import org.bdgenomics.utils.misc.Logging
 /**
  * InFormatter companion that creates an InFormatter that writes Bowtie tab5 format.
  */
-object Tab5InFormatter extends InFormatterCompanion[Fragment, FragmentProduct, FragmentRDD, Tab5InFormatter] {
+object Tab5InFormatter extends InFormatterCompanion[Fragment, FragmentProduct, FragmentDataset, Tab5InFormatter] {
 
   /**
    * Builds an Tab5InFormatter to write Bowtie tab5 format.
    *
-   * @param gRdd GenomicRDD of Fragments. Used to get HadoopConfiguration.
+   * @param gDataset GenomicDataset of Fragments. Used to get HadoopConfiguration.
    * @return Returns a new Tab6InFormatter.
    */
-  def apply(gRdd: FragmentRDD): Tab5InFormatter = {
-    new Tab5InFormatter(gRdd.rdd.context.hadoopConfiguration)
+  def apply(gDataset: FragmentDataset): Tab5InFormatter = {
+    new Tab5InFormatter(gDataset.rdd.context.hadoopConfiguration)
   }
 }
 
 class Tab5InFormatter private (
-    conf: Configuration) extends InFormatter[Fragment, FragmentProduct, FragmentRDD, Tab5InFormatter] with Logging {
+    conf: Configuration) extends InFormatter[Fragment, FragmentProduct, FragmentDataset, Tab5InFormatter] with Logging {
 
   protected val companion = Tab5InFormatter
   private val newLine = "\n".getBytes
   private val converter = new AlignmentRecordConverter
-  private val writeOriginalQualities = conf.getBoolean(FragmentRDD.WRITE_ORIGINAL_QUALITIES, false)
+  private val writeOriginalQualities = conf.getBoolean(FragmentDataset.WRITE_ORIGINAL_QUALITIES, false)
 
   /**
    * Writes alignment records to an output stream in Bowtie tab5 format.

@@ -18,11 +18,11 @@
 
 
 from bdgenomics.adam.adamContext import ADAMContext
-from bdgenomics.adam.rdd import CoverageRDD, FeatureRDD
+from bdgenomics.adam.rdd import CoverageDataset, FeatureDataset
 from bdgenomics.adam.test import SparkTestCase
 import os
 
-class CoverageRDDTest(SparkTestCase):
+class CoverageDatasetTest(SparkTestCase):
 
     def test_save(self):
 
@@ -55,8 +55,8 @@ class CoverageRDDTest(SparkTestCase):
         coverage = reads.toCoverage()
         features = coverage.toFeatures()
 
-        assert(isinstance(features, FeatureRDD))
-        self.assertEqual(features.toDF().count(), coverage.toDF().count())
+        assert(isinstance(features, FeatureDataset))
+        self.assertEquals(features.toDF().count(), coverage.toDF().count())
 
     def test_aggregatedCoverage(self):
         testFile = self.resourceFile("small.sam")

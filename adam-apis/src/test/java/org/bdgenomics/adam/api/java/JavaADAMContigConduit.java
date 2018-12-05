@@ -21,15 +21,15 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.bdgenomics.adam.rdd.ADAMContext;
-import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDD;
+import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentDataset;
 
 /**
  * A simple test class for the JavaADAMRDD/Context. Writes an RDD of nucleotide
  * contig fragments to disk and reads it back.
  */
 final class JavaADAMContigConduit {
-    public static NucleotideContigFragmentRDD conduit(final NucleotideContigFragmentRDD recordRdd,
-                                                      final ADAMContext ac) throws IOException {
+    public static NucleotideContigFragmentDataset conduit(final NucleotideContigFragmentDataset recordRdd,
+                                                          final ADAMContext ac) throws IOException {
 
         // make temp directory and save file
         Path tempDir = Files.createTempDirectory("javaAC");

@@ -27,13 +27,13 @@ import org.bdgenomics.adam.models.{
   VariantContext
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDD
-import org.bdgenomics.adam.rdd.fragment.FragmentRDD
-import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
+import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentDataset
+import org.bdgenomics.adam.rdd.fragment.FragmentDataset
+import org.bdgenomics.adam.rdd.read.AlignmentRecordDataset
 import org.bdgenomics.adam.rdd.variant.{
-  GenotypeRDD,
-  VariantRDD,
-  VariantContextRDD
+  GenotypeDataset,
+  VariantDataset,
+  VariantContextDataset
 }
 import org.bdgenomics.adam.sql.{
   AlignmentRecord => AlignmentRecordProduct,
@@ -47,7 +47,7 @@ import org.bdgenomics.adam.sql.{
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro._
 
-object CoverageRDDSuite extends Serializable {
+object CoverageDatasetSuite extends Serializable {
 
   def ncfFn(cov: Coverage): NucleotideContigFragment = {
     NucleotideContigFragment.newBuilder
@@ -104,7 +104,7 @@ object CoverageRDDSuite extends Serializable {
   }
 }
 
-class CoverageRDDSuite extends ADAMFunSuite {
+class CoverageDatasetSuite extends ADAMFunSuite {
 
   val sd = new SequenceDictionary(Vector(SequenceRecord("chr1", 2000L)))
 
@@ -122,7 +122,7 @@ class CoverageRDDSuite extends ADAMFunSuite {
   }
 
   sparkTest("correctly saves coverage") {
-    def testMetadata(cRdd: CoverageRDD) {
+    def testMetadata(cRdd: CoverageDataset) {
       val sequenceRdd = cRdd.addSequence(SequenceRecord("aSequence", 1000L))
       val sampleRdd = cRdd.addSample(Sample.newBuilder().setName("Sample").build())
       assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
@@ -133,12 +133,12 @@ class CoverageRDDSuite extends ADAMFunSuite {
     val f2 = Feature.newBuilder().setContigName("chr1").setStart(15).setEnd(20).setScore(2.0).build()
     val f3 = Feature.newBuilder().setContigName("chr2").setStart(15).setEnd(20).setScore(2.0).build()
 
-    val featureRDD: FeatureRDD = FeatureRDD(sc.parallelize(Seq(f1, f2, f3)))
-    val coverageRDD: CoverageRDD = featureRDD.toCoverage
-    testMetadata(coverageRDD)
+    val featuresDs: FeatureDataset = FeatureDataset(sc.parallelize(Seq(f1, f2, f3)))
+    val coverageDs: CoverageDataset = featuresDs.toCoverage
+    testMetadata(coverageDs)
 
     val outputFile = tmpLocation(".bed")
-    coverageRDD.save(outputFile, false, false)
+    coverageDs.save(outputFile, false, false)
 
     val coverage = sc.loadCoverage(outputFile)
     testMetadata(coverage)
@@ -147,7 +147,7 @@ class CoverageRDDSuite extends ADAMFunSuite {
 
     // go to dataset and save as parquet
     val outputFile2 = tmpLocation(".adam")
-    val dsCov = coverageRDD.transformDataset(ds => ds)
+    val dsCov = coverage.transformDataset(ds => ds)
     testMetadata(dsCov)
     dsCov.save(outputFile2, false, false)
     val coverage2 = sc.loadCoverage(outputFile2)
@@ -169,7 +169,7 @@ class CoverageRDDSuite extends ADAMFunSuite {
 
     // go to rdd and save as parquet
     val outputFile3 = tmpLocation(".adam")
-    coverageRDD.transform(rdd => rdd).save(outputFile3, false, false)
+    coverageDs.transform(rdd => rdd).save(outputFile3, false, false)
     val coverage3 = sc.loadCoverage(outputFile3)
     assert(coverage3.rdd.count == 3)
     assert(coverage3.dataset.count == 3)
@@ -192,11 +192,11 @@ class CoverageRDDSuite extends ADAMFunSuite {
     val f2 = Feature.newBuilder().setContigName("chr1").setStart(15).setEnd(20).setScore(2.0).build()
     val f3 = Feature.newBuilder().setContigName("chr2").setStart(15).setEnd(20).setScore(2.0).build()
 
-    val featureRDD: FeatureRDD = FeatureRDD(sc.parallelize(Seq(f1, f2, f3)))
-    val coverageRDD: CoverageRDD = featureRDD.toCoverage
+    val featureDs: FeatureDataset = FeatureDataset(sc.parallelize(Seq(f1, f2, f3)))
+    val coverageDs: CoverageDataset = featureDs.toCoverage
 
     val outputFile = tmpLocation(".adam")
-    coverageRDD.save(outputFile, false, false)
+    coverageDs.save(outputFile, false, false)
 
     val region = ReferenceRegion("chr1", 1, 9)
     val predicate = region.toPredicate
@@ -215,8 +215,8 @@ class CoverageRDDSuite extends ADAMFunSuite {
       .setName("Sample2")
       .build()
 
-    val c1 = RDDBoundCoverageRDD(sc.parallelize(cov.toSeq).repartition(1), sd, Seq(sample1), None)
-    val c2 = RDDBoundCoverageRDD(sc.parallelize(cov.toSeq).repartition(1), sd, Seq(sample2), None)
+    val c1 = RDDBoundCoverageDataset(sc.parallelize(cov.toSeq).repartition(1), sd, Seq(sample1), None)
+    val c2 = RDDBoundCoverageDataset(sc.parallelize(cov.toSeq).repartition(1), sd, Seq(sample2), None)
 
     val union = c1.union(c2)
     assert(union.samples.size === 2)
@@ -231,11 +231,11 @@ class CoverageRDDSuite extends ADAMFunSuite {
     val f4 = Feature.newBuilder().setContigName("chr1").setStart(1).setEnd(10).setScore(2.0).setSampleId("S2").build()
     val f5 = Feature.newBuilder().setContigName("chr1").setStart(15).setEnd(20).setScore(2.0).setSampleId("S2").build()
 
-    val featureRDD: FeatureRDD = FeatureRDD(sc.parallelize(Seq(f1, f2, f3, f4, f5)))
-    val coverageRDD: CoverageRDD = featureRDD.toCoverage
+    val featureDs: FeatureDataset = FeatureDataset(sc.parallelize(Seq(f1, f2, f3, f4, f5)))
+    val coverageDs: CoverageDataset = featureDs.toCoverage
 
     val outputFile = tmpLocation(".adam")
-    coverageRDD.save(outputFile, false, false)
+    coverageDs.save(outputFile, false, false)
 
     val region = ReferenceRegion("chr1", 1, 9)
     val predicate = region.toPredicate
@@ -248,9 +248,9 @@ class CoverageRDDSuite extends ADAMFunSuite {
     val f2 = Feature.newBuilder().setContigName("chr1").setStart(5).setEnd(7).setScore(3.0).build()
     val f3 = Feature.newBuilder().setContigName("chr1").setStart(7).setEnd(20).setScore(4.0).build()
 
-    val featureRDD: FeatureRDD = FeatureRDD(sc.parallelize(Seq(f1, f2, f3)))
-    val coverageRDD: CoverageRDD = featureRDD.toCoverage
-    val coverage = coverageRDD.coverage(bpPerBin = 4)
+    val featureDs: FeatureDataset = FeatureDataset(sc.parallelize(Seq(f1, f2, f3)))
+    val coverageDs: CoverageDataset = featureDs.toCoverage
+    val coverage = coverageDs.coverage(bpPerBin = 4)
 
     assert(coverage.rdd.count == 4)
   }
@@ -260,10 +260,10 @@ class CoverageRDDSuite extends ADAMFunSuite {
     val f2 = Feature.newBuilder().setContigName("chr1").setStart(5).setEnd(7).setScore(3.0).build()
     val f3 = Feature.newBuilder().setContigName("chr1").setStart(7).setEnd(20).setScore(4.0).build()
 
-    val featureRDD: FeatureRDD = FeatureRDD(sc.parallelize(Seq(f1, f2, f3)))
-    val coverageRDD: CoverageRDD = featureRDD.toCoverage
+    val featureDs: FeatureDataset = FeatureDataset(sc.parallelize(Seq(f1, f2, f3)))
+    val coverageDs: CoverageDataset = featureDs.toCoverage
 
-    val coverage = coverageRDD
+    val coverage = coverageDs
       .aggregatedCoverage(bpPerBin = 4)
 
     assert(coverage.rdd.count == 5)
@@ -273,7 +273,7 @@ class CoverageRDDSuite extends ADAMFunSuite {
 
   sparkTest("collapses coverage records in one partition") {
     val cov = generateCoverage(20)
-    val coverage = RDDBoundCoverageRDD(sc.parallelize(cov.toSeq).repartition(1), sd, Seq.empty, None)
+    val coverage = RDDBoundCoverageDataset(sc.parallelize(cov.toSeq).repartition(1), sd, Seq.empty, None)
     val collapsed = coverage.collapse
 
     assert(coverage.rdd.count == 20)
@@ -282,7 +282,7 @@ class CoverageRDDSuite extends ADAMFunSuite {
 
   sparkTest("approximately collapses coverage records in multiple partitions") {
     val cov = generateCoverage(20)
-    val coverage = RDDBoundCoverageRDD(sc.parallelize(cov), sd, Seq.empty, None)
+    val coverage = RDDBoundCoverageDataset(sc.parallelize(cov), sd, Seq.empty, None)
     val collapsed = coverage.collapse
 
     assert(collapsed.rdd.count == 8)
@@ -291,16 +291,16 @@ class CoverageRDDSuite extends ADAMFunSuite {
   sparkTest("transform coverage to contig rdd") {
     val coverage = sc.loadCoverage(testFile("sample_coverage.bed"))
 
-    def checkSave(contigs: NucleotideContigFragmentRDD) {
+    def checkSave(contigs: NucleotideContigFragmentDataset) {
       val tempPath = tmpLocation(".adam")
       contigs.saveAsParquet(tempPath)
 
       assert(sc.loadContigFragments(tempPath).rdd.count === 3)
     }
 
-    val contigs: NucleotideContigFragmentRDD = coverage.transmute[NucleotideContigFragment, NucleotideContigFragmentProduct, NucleotideContigFragmentRDD](
+    val contigs: NucleotideContigFragmentDataset = coverage.transmute[NucleotideContigFragment, NucleotideContigFragmentProduct, NucleotideContigFragmentDataset](
       (rdd: RDD[Coverage]) => {
-        rdd.map(CoverageRDDSuite.ncfFn)
+        rdd.map(CoverageDatasetSuite.ncfFn)
       })
 
     checkSave(contigs)
@@ -308,11 +308,11 @@ class CoverageRDDSuite extends ADAMFunSuite {
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
 
-    val contigsDs: NucleotideContigFragmentRDD = coverage.transmuteDataset[NucleotideContigFragment, NucleotideContigFragmentProduct, NucleotideContigFragmentRDD](
+    val contigsDs: NucleotideContigFragmentDataset = coverage.transmuteDataset[NucleotideContigFragment, NucleotideContigFragmentProduct, NucleotideContigFragmentDataset](
       (ds: Dataset[Coverage]) => {
         ds.map(r => {
           NucleotideContigFragmentProduct.fromAvro(
-            CoverageRDDSuite.ncfFn(r))
+            CoverageDatasetSuite.ncfFn(r))
         })
       })
 
@@ -322,16 +322,16 @@ class CoverageRDDSuite extends ADAMFunSuite {
   sparkTest("transform coverage to feature rdd") {
     val coverage = sc.loadCoverage(testFile("sample_coverage.bed"))
 
-    def checkSave(features: FeatureRDD) {
+    def checkSave(features: FeatureDataset) {
       val tempPath = tmpLocation(".bed")
       features.saveAsBed(tempPath)
 
       assert(sc.loadFeatures(tempPath).rdd.count === 3)
     }
 
-    val features: FeatureRDD = coverage.transmute[Feature, FeatureProduct, FeatureRDD](
+    val features: FeatureDataset = coverage.transmute[Feature, FeatureProduct, FeatureDataset](
       (rdd: RDD[Coverage]) => {
-        rdd.map(CoverageRDDSuite.featFn)
+        rdd.map(CoverageDatasetSuite.featFn)
       })
 
     checkSave(features)
@@ -339,11 +339,11 @@ class CoverageRDDSuite extends ADAMFunSuite {
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
 
-    val featuresDs: FeatureRDD = coverage.transmuteDataset[Feature, FeatureProduct, FeatureRDD](
+    val featuresDs: FeatureDataset = coverage.transmuteDataset[Feature, FeatureProduct, FeatureDataset](
       (ds: Dataset[Coverage]) => {
         ds.map(r => {
           FeatureProduct.fromAvro(
-            CoverageRDDSuite.featFn(r))
+            CoverageDatasetSuite.featFn(r))
         })
       })
 
@@ -353,16 +353,16 @@ class CoverageRDDSuite extends ADAMFunSuite {
   sparkTest("transform coverage to fragment rdd") {
     val coverage = sc.loadCoverage(testFile("sample_coverage.bed"))
 
-    def checkSave(fragments: FragmentRDD) {
+    def checkSave(fragments: FragmentDataset) {
       val tempPath = tmpLocation(".adam")
       fragments.saveAsParquet(tempPath)
 
       assert(sc.loadFragments(tempPath).rdd.count === 3)
     }
 
-    val fragments: FragmentRDD = coverage.transmute[Fragment, FragmentProduct, FragmentRDD](
+    val fragments: FragmentDataset = coverage.transmute[Fragment, FragmentProduct, FragmentDataset](
       (rdd: RDD[Coverage]) => {
-        rdd.map(CoverageRDDSuite.fragFn)
+        rdd.map(CoverageDatasetSuite.fragFn)
       })
 
     checkSave(fragments)
@@ -370,11 +370,11 @@ class CoverageRDDSuite extends ADAMFunSuite {
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
 
-    val fragmentsDs: FragmentRDD = coverage.transmuteDataset[Fragment, FragmentProduct, FragmentRDD](
+    val fragmentsDs: FragmentDataset = coverage.transmuteDataset[Fragment, FragmentProduct, FragmentDataset](
       (ds: Dataset[Coverage]) => {
         ds.map(r => {
           FragmentProduct.fromAvro(
-            CoverageRDDSuite.fragFn(r))
+            CoverageDatasetSuite.fragFn(r))
         })
       })
 
@@ -384,16 +384,16 @@ class CoverageRDDSuite extends ADAMFunSuite {
   sparkTest("transform coverage to read rdd") {
     val coverage = sc.loadCoverage(testFile("sample_coverage.bed"))
 
-    def checkSave(reads: AlignmentRecordRDD) {
+    def checkSave(reads: AlignmentRecordDataset) {
       val tempPath = tmpLocation(".adam")
       reads.saveAsParquet(tempPath)
 
       assert(sc.loadAlignments(tempPath).rdd.count === 3)
     }
 
-    val reads: AlignmentRecordRDD = coverage.transmute[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordRDD](
+    val reads: AlignmentRecordDataset = coverage.transmute[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordDataset](
       (rdd: RDD[Coverage]) => {
-        rdd.map(CoverageRDDSuite.readFn)
+        rdd.map(CoverageDatasetSuite.readFn)
       })
 
     checkSave(reads)
@@ -401,11 +401,11 @@ class CoverageRDDSuite extends ADAMFunSuite {
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
 
-    val readsDs: AlignmentRecordRDD = coverage.transmuteDataset[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordRDD](
+    val readsDs: AlignmentRecordDataset = coverage.transmuteDataset[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordDataset](
       (ds: Dataset[Coverage]) => {
         ds.map(r => {
           AlignmentRecordProduct.fromAvro(
-            CoverageRDDSuite.readFn(r))
+            CoverageDatasetSuite.readFn(r))
         })
       })
 
@@ -415,16 +415,16 @@ class CoverageRDDSuite extends ADAMFunSuite {
   sparkTest("transform coverage to genotype rdd") {
     val coverage = sc.loadCoverage(testFile("sample_coverage.bed"))
 
-    def checkSave(genotypes: GenotypeRDD) {
+    def checkSave(genotypes: GenotypeDataset) {
       val tempPath = tmpLocation(".adam")
       genotypes.saveAsParquet(tempPath)
 
       assert(sc.loadGenotypes(tempPath).rdd.count === 3)
     }
 
-    val genotypes: GenotypeRDD = coverage.transmute[Genotype, GenotypeProduct, GenotypeRDD](
+    val genotypes: GenotypeDataset = coverage.transmute[Genotype, GenotypeProduct, GenotypeDataset](
       (rdd: RDD[Coverage]) => {
-        rdd.map(CoverageRDDSuite.genFn)
+        rdd.map(CoverageDatasetSuite.genFn)
       })
 
     checkSave(genotypes)
@@ -432,11 +432,11 @@ class CoverageRDDSuite extends ADAMFunSuite {
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
 
-    val genotypesDs: GenotypeRDD = coverage.transmuteDataset[Genotype, GenotypeProduct, GenotypeRDD](
+    val genotypesDs: GenotypeDataset = coverage.transmuteDataset[Genotype, GenotypeProduct, GenotypeDataset](
       (ds: Dataset[Coverage]) => {
         ds.map(r => {
           GenotypeProduct.fromAvro(
-            CoverageRDDSuite.genFn(r))
+            CoverageDatasetSuite.genFn(r))
         })
       })
 
@@ -446,16 +446,16 @@ class CoverageRDDSuite extends ADAMFunSuite {
   sparkTest("transform coverage to variant rdd") {
     val coverage = sc.loadCoverage(testFile("sample_coverage.bed"))
 
-    def checkSave(variants: VariantRDD) {
+    def checkSave(variants: VariantDataset) {
       val tempPath = tmpLocation(".adam")
       variants.saveAsParquet(tempPath)
 
       assert(sc.loadVariants(tempPath).rdd.count === 3)
     }
 
-    val variants: VariantRDD = coverage.transmute[Variant, VariantProduct, VariantRDD](
+    val variants: VariantDataset = coverage.transmute[Variant, VariantProduct, VariantDataset](
       (rdd: RDD[Coverage]) => {
-        rdd.map(CoverageRDDSuite.varFn)
+        rdd.map(CoverageDatasetSuite.varFn)
       })
 
     checkSave(variants)
@@ -463,11 +463,11 @@ class CoverageRDDSuite extends ADAMFunSuite {
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
 
-    val variantsDs: VariantRDD = coverage.transmuteDataset[Variant, VariantProduct, VariantRDD](
+    val variantsDs: VariantDataset = coverage.transmuteDataset[Variant, VariantProduct, VariantDataset](
       (ds: Dataset[Coverage]) => {
         ds.map(r => {
           VariantProduct.fromAvro(
-            CoverageRDDSuite.varFn(r))
+            CoverageDatasetSuite.varFn(r))
         })
       })
 
@@ -477,13 +477,13 @@ class CoverageRDDSuite extends ADAMFunSuite {
   sparkTest("transform coverage to variant context rdd") {
     val coverage = sc.loadCoverage(testFile("sample_coverage.bed"))
 
-    def checkSave(variantContexts: VariantContextRDD) {
+    def checkSave(variantContexts: VariantContextDataset) {
       assert(variantContexts.rdd.count === 3)
     }
 
-    val variantContexts: VariantContextRDD = coverage.transmute[VariantContext, VariantContextProduct, VariantContextRDD](
+    val variantContexts: VariantContextDataset = coverage.transmute[VariantContext, VariantContextProduct, VariantContextDataset](
       (rdd: RDD[Coverage]) => {
-        rdd.map(CoverageRDDSuite.vcFn)
+        rdd.map(CoverageDatasetSuite.vcFn)
       })
 
     checkSave(variantContexts)
@@ -494,7 +494,7 @@ class CoverageRDDSuite extends ADAMFunSuite {
     val coverage = sc.loadCoverage(testFile("sample_coverage.bed"), optSequenceDictionary = Some(sd))
     assert(coverage.sequences.containsReferenceName("chr1"))
 
-    val copy = CoverageRDD.apply(coverage.rdd, coverage.sequences, Seq.empty)
+    val copy = CoverageDataset.apply(coverage.rdd, coverage.sequences, Seq.empty)
     assert(copy.rdd.count() === coverage.rdd.count())
     assert(copy.sequences.containsReferenceName("chr1"))
   }
@@ -504,7 +504,7 @@ class CoverageRDDSuite extends ADAMFunSuite {
     val coverage = sc.loadCoverage(testFile("sample_coverage.bed"), optSequenceDictionary = Some(sd))
     assert(coverage.sequences.containsReferenceName("chr1"))
 
-    val copy = CoverageRDD.apply(coverage.dataset, coverage.sequences, coverage.samples)
+    val copy = CoverageDataset.apply(coverage.dataset, coverage.sequences, coverage.samples)
     assert(copy.dataset.count() === coverage.dataset.count())
     assert(copy.sequences.containsReferenceName("chr1"))
   }
@@ -514,7 +514,7 @@ class CoverageRDDSuite extends ADAMFunSuite {
     val coverage = sc.loadCoverage(testFile("sample_coverage.bed"), optSequenceDictionary = Some(sd))
     assert(coverage.sequences.containsReferenceName("chr1"))
 
-    val copy = CoverageRDD.apply(coverage.rdd)
+    val copy = CoverageDataset.apply(coverage.rdd)
     assert(copy.rdd.count() === coverage.rdd.count())
     assert(copy.sequences.containsReferenceName("chr1") === false)
   }
@@ -524,7 +524,7 @@ class CoverageRDDSuite extends ADAMFunSuite {
     val coverage = sc.loadCoverage(testFile("sample_coverage.bed"), optSequenceDictionary = Some(sd))
     assert(coverage.sequences.containsReferenceName("chr1"))
 
-    val copy = CoverageRDD.apply(coverage.dataset)
+    val copy = CoverageDataset.apply(coverage.dataset)
     assert(copy.dataset.count() === coverage.dataset.count())
     assert(copy.sequences.containsReferenceName("chr1") == false)
   }

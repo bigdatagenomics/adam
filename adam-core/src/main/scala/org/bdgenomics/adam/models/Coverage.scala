@@ -71,7 +71,7 @@ private[adam] object Coverage {
 }
 
 /**
- * Coverage record for CoverageRDD.
+ * Coverage record for CoverageDataset.
  *
  * Contains Region indexed by contig name, start and end, as well as the average
  * coverage at each base pair in that region.

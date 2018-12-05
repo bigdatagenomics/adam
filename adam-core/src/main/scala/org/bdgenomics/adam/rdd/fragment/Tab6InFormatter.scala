@@ -28,27 +28,27 @@ import org.bdgenomics.utils.misc.Logging
 /**
  * InFormatter companion that creates an InFormatter that writes Bowtie tab6 format.
  */
-object Tab6InFormatter extends InFormatterCompanion[Fragment, FragmentProduct, FragmentRDD, Tab6InFormatter] {
+object Tab6InFormatter extends InFormatterCompanion[Fragment, FragmentProduct, FragmentDataset, Tab6InFormatter] {
 
   /**
    * Builds an Tab6InFormatter to write Bowtie tab6 format.
    *
-   * @param gRdd GenomicRDD of Fragments. Used to get HadoopConfiguration.
+   * @param gDataset GenomicDataset of Fragments. Used to get HadoopConfiguration.
    * @return Returns a new Tab6InFormatter.
    */
-  def apply(gRdd: FragmentRDD): Tab6InFormatter = {
-    new Tab6InFormatter(gRdd.rdd.context.hadoopConfiguration)
+  def apply(gDataset: FragmentDataset): Tab6InFormatter = {
+    new Tab6InFormatter(gDataset.rdd.context.hadoopConfiguration)
   }
 }
 
 class Tab6InFormatter private (
-    conf: Configuration) extends InFormatter[Fragment, FragmentProduct, FragmentRDD, Tab6InFormatter] with Logging {
+    conf: Configuration) extends InFormatter[Fragment, FragmentProduct, FragmentDataset, Tab6InFormatter] with Logging {
 
   protected val companion = Tab6InFormatter
   private val newLine = "\n".getBytes
   private val converter = new AlignmentRecordConverter
-  private val writeSuffixes = conf.getBoolean(FragmentRDD.WRITE_SUFFIXES, false)
-  private val writeOriginalQualities = conf.getBoolean(FragmentRDD.WRITE_ORIGINAL_QUALITIES, false)
+  private val writeSuffixes = conf.getBoolean(FragmentDataset.WRITE_SUFFIXES, false)
+  private val writeOriginalQualities = conf.getBoolean(FragmentDataset.WRITE_ORIGINAL_QUALITIES, false)
 
   /**
    * Writes alignment records to an output stream in Bowtie tab6 format.

@@ -101,9 +101,9 @@ test_that("transmute to coverage", {
 
     readsAsCoverage = transmute(reads, function(df) {
         select(df, df$contigName, df$start, df$end, alias(cast(df$mapq, "double"), "count"), alias(cast(df$recordGroupSample, "string"), "optSampleId"))
-    }, "CoverageRDD")
+    }, "CoverageDataset")
 
-    expect_true(is(readsAsCoverage, "CoverageRDD"))
+    expect_true(is(readsAsCoverage, "CoverageDataset"))
     expect_equal(count(toDF(readsAsCoverage)), 5)
 })
 

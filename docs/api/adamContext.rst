@@ -14,9 +14,9 @@ use this, import the implicit, and call an ``ADAMContext`` method:
 
     // the ._ at the end imports the implicit from the ADAMContext companion object
     import org.bdgenomics.adam.rdd.ADAMContext._
-    import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
+    import org.bdgenomics.adam.rdd.read.AlignmentRecordDataset
 
-    def loadReads(filePath: String, sc: SparkContext): AlignmentRecordRDD = {
+    def loadReads(filePath: String, sc: SparkContext): AlignmentRecordDataset = {
       sc.loadAlignments(filePath)
     }
 
@@ -27,12 +27,12 @@ In Java, instantiate a JavaADAMContext, which wraps an ADAMContext:
     import org.apache.spark.apis.java.JavaSparkContext;
     import org.bdgenomics.adam.apis.java.JavaADAMContext;
     import org.bdgenomics.adam.rdd.ADAMContext;
-    import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD;
+    import org.bdgenomics.adam.rdd.read.AlignmentRecordDataset;
 
     class LoadReads {
 
-      public static AlignmentRecordRDD loadReads(String filePath,
-                                                 JavaSparkContext jsc) {
+      public static AlignmentRecordDataset loadReads(String filePath,
+                                                     JavaSparkContext jsc) {
         // create an ADAMContext first
         ADAMContext ac = new ADAMContext(jsc.sc());
 
@@ -55,7 +55,7 @@ From Python, instantiate an ADAMContext, which wraps a SparkContext:
 
 With an ``ADAMContext``, you can load:
 
--  Single reads as an ``AlignmentRecordRDD``:
+-  Single reads as an ``AlignmentRecordDataset``:
 
    -  From SAM/BAM/CRAM using ``loadBam`` (Scala only)
    -  Selected regions from an indexed BAM/CRAM using ``loadIndexedBam`` (Scala, Java, and Python)
@@ -65,7 +65,7 @@ With an ``ADAMContext``, you can load:
    -  The ``loadAlignments`` method will load from any of the above formats, and will autodetect the
       underlying format (Scala, Java, Python, and R, also supports loading reads from FASTA)
 
--  Paired reads as a ``FragmentRDD``:
+-  Paired reads as a ``FragmentDataset``:
 
    -  From interleaved FASTQ using ``loadInterleavedFastqAsFragments`` (Scala only)
    -  From Parquet using ``loadParquetFragments`` (Scala only)
@@ -73,23 +73,23 @@ With an ``ADAMContext``, you can load:
       and will autodetect the underlying file format. If the file is a SAM/BAM/CRAM file and the file is
       queryname sorted, the data will be converted to fragments without performing a shuffle. (Scala, Java, Python, and R)
 
--  All of the genotypes associated with a variant as a ``VariantContextRDD`` from Parquet
+-  All of the genotypes associated with a variant as a ``VariantContextDataset`` from Parquet
    using ``loadParquetVariantContexts`` (Scala only)
--  VCF lines as a ``VariantContextRDD`` from VCF/BCF1 using ``loadVcf`` (Scala only)
+-  VCF lines as a ``VariantContextDataset`` from VCF/BCF1 using ``loadVcf`` (Scala only)
 -  Selected lines from a tabix indexed VCF using ``loadIndexedVcf`` (Scala only)
--  Genotypes as a ``GenotypeRDD``:
+-  Genotypes as a ``GenotypeDataset``:
 
    -  From Parquet using ``loadParquetGenotypes`` (Scala only)
    -  From partitioned Parquet using ``loadPartitionedParquetGenotypes`` (Scala only)
    -  From either Parquet or VCF/BCF1 using ``loadGenotypes`` (Scala, Java, Python, and R)
 
--  Variants as a ``VariantRDD``:
+-  Variants as a ``VariantDataset``:
 
    -  From Parquet using ``loadParquetVariants`` (Scala only)
    -  From partitioned Parquet using ``loadPartitionedParquetVariants`` (Scala only)
    -  From either Parquet or VCF/BCF1 using ``loadVariants`` (Scala, Java, Python, and R)
 
--  Genomic features as a ``FeatureRDD``:
+-  Genomic features as a ``FeatureDataset``:
 
    -  From BED using ``loadBed`` (Scala only)
    -  From GFF3 using ``loadGff3`` (Scala only)
@@ -100,14 +100,14 @@ With an ``ADAMContext``, you can load:
    -  From partitioned Parquet using ``loadPartitionedParquetFeatures`` (Scala only)
    -  Autodetected from any of the above using ``loadFeatures`` (Scala, Java, Python, and R)
 
--  Fragmented contig sequence as a ``NucleotideContigFragmentRDD``:
+-  Fragmented contig sequence as a ``NucleotideContigFragmentDataset``:
 
    -  From FASTA with ``loadFasta`` (Scala only)
    -  From Parquet with ``loadParquetContigFragments`` (Scala only)
    -  From partitioned Parquet with ``loadPartitionedParquetContigFragments`` (Scala only)
    -  Autodetected from either of the above using ``loadSequences`` (Scala, Java, Python, and R)
 
--  Coverage data as a ``CoverageRDD``:
+-  Coverage data as a ``CoverageDataset``:
 
    -  From Parquet using ``loadParquetCoverage`` (Scala only)
    -  From Parquet or any of the feature file formats using ``loadCoverage`` (Scala only)

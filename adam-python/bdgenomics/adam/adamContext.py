@@ -26,13 +26,13 @@ adamContext
    ADAMContext
 """
 
-from bdgenomics.adam.rdd import AlignmentRecordRDD, \
-    CoverageRDD, \
-    FeatureRDD, \
-    FragmentRDD, \
-    GenotypeRDD, \
-    NucleotideContigFragmentRDD, \
-    VariantRDD
+from bdgenomics.adam.rdd import AlignmentRecordDataset, \
+    CoverageDataset, \
+    FeatureDataset, \
+    FragmentDataset, \
+    GenotypeDataset, \
+    NucleotideContigFragmentDataset, \
+    VariantDataset
 from bdgenomics.adam.stringency import STRICT, _toJava
 
 
@@ -58,7 +58,7 @@ class ADAMContext(object):
 
     def loadAlignments(self, filePath, stringency=STRICT):
         """
-        Load alignment records into an AlignmentRecordRDD.
+        Load alignment records into an AlignmentRecordDataset.
 
         Loads path names ending in:
         * .bam/.cram/.sam as BAM/CRAM/SAM format,
@@ -74,14 +74,14 @@ class ADAMContext(object):
 
         :param str filePath: The path to load the file from.
         :param stringency: The validation stringency to apply. Defaults to STRICT.
-        :return: Returns an RDD containing reads.
-        :rtype: bdgenomics.adam.rdd.AlignmentRecordRDD
+        :return: Returns a genomic dataset containing reads.
+        :rtype: bdgenomics.adam.rdd.AlignmentRecordDataset
         """
 
         adamRdd = self.__jac.loadAlignments(filePath,
                                             _toJava(stringency, self._jvm))
 
-        return AlignmentRecordRDD(adamRdd, self._sc)
+        return AlignmentRecordDataset(adamRdd, self._sc)
 
 
     def loadIndexedBam(self,
@@ -100,11 +100,11 @@ class ADAMContext(object):
         :param int stringency: The validation stringency to use when validating
         the BAM/CRAM/SAM format header. Defaults to ValidationStringency.STRICT.
 
-        :return Returns an AlignmentRecordRDD which wraps the RDD of alignment
+        :return Returns an AlignmentRecordDataset which wraps the RDD of alignment
         records, sequence dictionary representing contigs the alignment records
         may be aligned to, and the record group dictionary for the alignment
         records if one is available.
-        :rtype: bdgenomics.adam.rdd.AlignmentRecordRDD
+        :rtype: bdgenomics.adam.rdd.AlignmentRecordDataset
         """
 
         # translate reference regions into jvm types
@@ -113,14 +113,13 @@ class ADAMContext(object):
         adamRdd = self.__jac.loadIndexedBam(filePath,
                                             javaRrs,
                                             _toJava(stringency, self._jvm))
-
-        return AlignmentRecordRDD(adamRdd, self._sc)
+        return AlignmentRecordDataset(adamRdd, self._sc)
 
 
     def loadCoverage(self, filePath,
                      stringency=STRICT):
         """
-        Load features into a FeatureRDD and convert to a CoverageRDD.
+        Load features into a FeatureDataset and convert to a CoverageDataset.
         Coverage is stored in the score field of Feature.
 
         Loads path names ending in:
@@ -138,19 +137,19 @@ class ADAMContext(object):
 
         :param str filePath: The path to load coverage data from.
         :param stringency: The validation stringency to apply. Defaults to STRICT.
-        :return: Returns an RDD containing coverage.
-        :rtype: bdgenomics.adam.rdd.CoverageRDD
+        :return: Returns a genomic dataset containing coverage.
+        :rtype: bdgenomics.adam.rdd.CoverageDataset
         """
 
         adamRdd = self.__jac.loadCoverage(filePath,
                                           _toJava(stringency, self._jvm))
 
-        return CoverageRDD(adamRdd, self._sc)
+        return CoverageDataset(adamRdd, self._sc)
 
 
     def loadContigFragments(self, filePath):
         """
-        Load nucleotide contig fragments into a NucleotideContigFragmentRDD.
+        Load nucleotide contig fragments into a NucleotideContigFragmentDataset.
 
         If the path name has a .fa/.fasta extension, load as FASTA format.
         Else, fall back to Parquet + Avro.
@@ -159,18 +158,18 @@ class ADAMContext(object):
         in Hadoop, which by default include .gz and .bz2, but can include more.
 
         :param str filePath: The path to load the file from.
-        :return: Returns an RDD containing sequence fragments.
-        :rtype: bdgenomics.adam.rdd.NucleotideContigFragmentRDD
+        :return: Returns a genomic dataset containing sequence fragments.
+        :rtype: bdgenomics.adam.rdd.NucleotideContigFragmentDataset
         """
 
         adamRdd = self.__jac.loadContigFragments(filePath)
 
-        return NucleotideContigFragmentRDD(adamRdd, self._sc)
+        return NucleotideContigFragmentDataset(adamRdd, self._sc)
 
 
     def loadFragments(self, filePath, stringency=STRICT):
         """
-        Load fragments into a FragmentRDD.
+        Load fragments into a FragmentDataset.
 
         Loads path names ending in:
         * .bam/.cram/.sam as BAM/CRAM/SAM format and
@@ -182,18 +181,18 @@ class ADAMContext(object):
 
         :param str filePath: The path to load the file from.
         :param stringency: The validation stringency to apply. Defaults to STRICT.
-        :return: Returns an RDD containing sequenced fragments.
-        :rtype: bdgenomics.adam.rdd.FragmentRDD
+        :return: Returns a genomic dataset containing sequenced fragments.
+        :rtype: bdgenomics.adam.rdd.FragmentDataset
         """
 
         adamRdd = self.__jac.loadFragments(filePath, stringency)
 
-        return FragmentRDD(adamRdd, self._sc)
+        return FragmentDataset(adamRdd, self._sc)
 
 
     def loadFeatures(self, filePath, stringency=STRICT):
         """
-        Load features into a FeatureRDD.
+        Load features into a FeatureDataset.
 
         Loads path names ending in:
         * .bed as BED6/12 format,
@@ -210,49 +209,49 @@ class ADAMContext(object):
 
         :param str filePath: The path to load the file from.
         :param stringency: The validation stringency to apply. Defaults to STRICT.
-        :return: Returns an RDD containing features.
-        :rtype: bdgenomics.adam.rdd.FeatureRDD
+        :return: Returns a genomic dataset containing features.
+        :rtype: bdgenomics.adam.rdd.FeatureDataset
         """
 
         adamRdd = self.__jac.loadFeatures(filePath,
                                           _toJava(stringency, self._jvm))
 
-        return FeatureRDD(adamRdd, self._sc)
+        return FeatureDataset(adamRdd, self._sc)
 
 
     def loadGenotypes(self, filePath, stringency=STRICT):
         """
-        Load genotypes into a GenotypeRDD.
+        Load genotypes into a GenotypeDataset.
 
         If the path name has a .vcf/.vcf.gz/.vcf.bgz extension, load as VCF format.
         Else, fall back to Parquet + Avro.
 
         :param str filePath: The path to load the file from.
         :param stringency: The validation stringency to apply. Defaults to STRICT.
-        :return: Returns an RDD containing genotypes.
-        :rtype: bdgenomics.adam.rdd.GenotypeRDD
+        :return: Returns a genomic dataset containing genotypes.
+        :rtype: bdgenomics.adam.rdd.GenotypeDataset
         """
 
         adamRdd = self.__jac.loadGenotypes(filePath,
                                            _toJava(stringency, self._jvm))
 
-        return GenotypeRDD(adamRdd, self._sc)
+        return GenotypeDataset(adamRdd, self._sc)
 
 
     def loadVariants(self, filePath, stringency=STRICT):
         """
-        Load variants into a VariantRDD.
+        Load variants into a VariantDataset.
 
         If the path name has a .vcf/.vcf.gz/.vcf.bgz extension, load as VCF format.
         Else, fall back to Parquet + Avro.
 
         :param str filePath: The path to load the file from.
         :param stringency: The validation stringency to apply. Defaults to STRICT.
-        :return: Returns an RDD containing variants.
-        :rtype: bdgenomics.adam.rdd.VariantRDD
+        :return: Returns a genomic dataset containing variants.
+        :rtype: bdgenomics.adam.rdd.VariantDataset
         """
 
         adamRdd = self.__jac.loadVariants(filePath,
                                           _toJava(stringency, self._jvm))
 
-        return VariantRDD(adamRdd, self._sc)
+        return VariantDataset(adamRdd, self._sc)

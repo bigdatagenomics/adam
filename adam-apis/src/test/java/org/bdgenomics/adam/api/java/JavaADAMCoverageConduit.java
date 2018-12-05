@@ -21,15 +21,15 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.bdgenomics.adam.rdd.ADAMContext;
-import org.bdgenomics.adam.rdd.feature.CoverageRDD;
+import org.bdgenomics.adam.rdd.feature.CoverageDataset;
 
 /**
  * A simple test class for the JavaADAMRDD/Context. Writes an RDD of coverage to
  * disk and reads it back.
  */
 final class JavaADAMCoverageConduit {
-    public static CoverageRDD conduit(final CoverageRDD recordRdd,
-                                     final ADAMContext ac) throws IOException {
+    public static CoverageDataset conduit(final CoverageDataset recordRdd,
+                                          final ADAMContext ac) throws IOException {
 
         // make temp directory and save file
         Path tempDir = Files.createTempDirectory("javaAC");

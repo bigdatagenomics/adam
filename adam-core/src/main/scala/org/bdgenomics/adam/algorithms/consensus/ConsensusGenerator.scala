@@ -21,7 +21,7 @@ import htsjdk.samtools.{ Cigar, CigarOperator }
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.rdd.read.realignment.IndelRealignmentTarget
-import org.bdgenomics.adam.rdd.variant.VariantRDD
+import org.bdgenomics.adam.rdd.variant.VariantDataset
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import scala.collection.JavaConversions._
 
@@ -87,7 +87,7 @@ object ConsensusGenerator {
    *   is 0 bases.
    * @return A consensus generator that looks at previously called INDELs.
    */
-  def fromKnownIndels(rdd: VariantRDD,
+  def fromKnownIndels(rdd: VariantDataset,
                       flankSize: Int = 0): ConsensusGenerator = {
     new ConsensusGeneratorFromKnowns(rdd.rdd, flankSize)
   }

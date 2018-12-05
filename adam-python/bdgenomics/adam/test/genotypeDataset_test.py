@@ -21,7 +21,7 @@ from bdgenomics.adam.adamContext import ADAMContext
 from bdgenomics.adam.test import SparkTestCase
 
 
-class GenotypeRDDTest(SparkTestCase):
+class GenotypeDatasetTest(SparkTestCase):
 
     def check_for_line_in_file(self, path, line):
 

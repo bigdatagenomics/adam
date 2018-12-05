@@ -30,19 +30,19 @@ import org.bdgenomics.utils.misc.Logging
 /**
  * InFormatter companion that builds a GFF3InFormatter to write features in GFF3 format to a pipe.
  */
-object GFF3InFormatter extends InFormatterCompanion[Feature, FeatureProduct, FeatureRDD, GFF3InFormatter] {
+object GFF3InFormatter extends InFormatterCompanion[Feature, FeatureProduct, FeatureDataset, GFF3InFormatter] {
 
   /**
-   * Apply method for building the GFF3InFormatter from a FeatureRDD.
+   * Apply method for building the GFF3InFormatter from a FeatureDataset.
    *
-   * @param fRdd FeatureRDD to build from.
+   * @param fRdd FeatureDataset to build from.
    */
-  def apply(fRdd: FeatureRDD): GFF3InFormatter = {
+  def apply(fRdd: FeatureDataset): GFF3InFormatter = {
     GFF3InFormatter()
   }
 }
 
-case class GFF3InFormatter private () extends InFormatter[Feature, FeatureProduct, FeatureRDD, GFF3InFormatter] {
+case class GFF3InFormatter private () extends InFormatter[Feature, FeatureProduct, FeatureDataset, GFF3InFormatter] {
   protected val companion = GFF3InFormatter
 
   /**
@@ -56,7 +56,7 @@ case class GFF3InFormatter private () extends InFormatter[Feature, FeatureProduc
 
     // write the features
     iter.foreach(f => {
-      writer.write(FeatureRDD.toGff3(f))
+      writer.write(FeatureDataset.toGff3(f))
       writer.newLine()
     })
 

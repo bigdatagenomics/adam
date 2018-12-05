@@ -21,13 +21,13 @@ import htsjdk.samtools.ValidationStringency
 import org.apache.spark.api.java.JavaSparkContext
 import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.rdd.ADAMContext
-import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDD
-import org.bdgenomics.adam.rdd.feature.{ CoverageRDD, FeatureRDD }
-import org.bdgenomics.adam.rdd.fragment.FragmentRDD
-import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
+import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentDataset
+import org.bdgenomics.adam.rdd.feature.{ CoverageDataset, FeatureDataset }
+import org.bdgenomics.adam.rdd.fragment.FragmentDataset
+import org.bdgenomics.adam.rdd.read.AlignmentRecordDataset
 import org.bdgenomics.adam.rdd.variant.{
-  GenotypeRDD,
-  VariantRDD
+  GenotypeDataset,
+  VariantDataset
 }
 import org.bdgenomics.adam.util.ReferenceFile
 import scala.collection.JavaConversions._
@@ -51,7 +51,7 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
   def getSparkContext: JavaSparkContext = new JavaSparkContext(ac.sc)
 
   /**
-   * Load alignment records into an AlignmentRecordRDD (java-friendly method).
+   * Load alignment records into an AlignmentRecordDataset (java-friendly method).
    *
    * Loads path names ending in:
    * * .bam/.cram/.sam as BAM/CRAM/SAM format,
@@ -70,16 +70,16 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    * @param pathName The path name to load alignment records from.
    *   Globs/directories are supported, although file extension must be present
    *   for BAM/CRAM/SAM, FASTA, and FASTQ formats.
-   * @return Returns an AlignmentRecordRDD which wraps the RDD of alignment records,
+   * @return Returns an AlignmentRecordDataset which wraps the genomic dataset of alignment records,
    *   sequence dictionary representing contigs the alignment records may be aligned to,
    *   and the record group dictionary for the alignment records if one is available.
    */
-  def loadAlignments(pathName: java.lang.String): AlignmentRecordRDD = {
+  def loadAlignments(pathName: java.lang.String): AlignmentRecordDataset = {
     ac.loadAlignments(pathName)
   }
 
   /**
-   * Load alignment records into an AlignmentRecordRDD (java-friendly method).
+   * Load alignment records into an AlignmentRecordDataset (java-friendly method).
    *
    * Loads path names ending in:
    * * .bam/.cram/.sam as BAM/CRAM/SAM format,
@@ -100,12 +100,12 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    *   for BAM/CRAM/SAM, FASTA, and FASTQ formats.
    * @param stringency The validation stringency to use when validating
    *   BAM/CRAM/SAM or FASTQ formats.
-   * @return Returns an AlignmentRecordRDD which wraps the RDD of alignment records,
+   * @return Returns an AlignmentRecordDataset which wraps the genomic dataset of alignment records,
    *   sequence dictionary representing contigs the alignment records may be aligned to,
    *   and the record group dictionary for the alignment records if one is available.
    */
   def loadAlignments(pathName: java.lang.String,
-                     stringency: ValidationStringency): AlignmentRecordRDD = {
+                     stringency: ValidationStringency): AlignmentRecordDataset = {
     ac.loadAlignments(pathName,
       stringency = stringency)
   }
@@ -119,20 +119,20 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    * @param viewRegions Iterable of ReferenceRegion we are filtering on.
    * @param stringency The validation stringency to use when validating the
    *   BAM/CRAM/SAM format header. Defaults to ValidationStringency.STRICT.
-   * @return Returns an AlignmentRecordRDD which wraps the RDD of alignment records,
+   * @return Returns an AlignmentRecordDataset which wraps the genomic dataset of alignment records,
    *   sequence dictionary representing contigs the alignment records may be aligned to,
    *   and the record group dictionary for the alignment records if one is available.
    */
   def loadIndexedBam(
     pathName: String,
     viewRegions: java.util.List[ReferenceRegion],
-    stringency: ValidationStringency): AlignmentRecordRDD = {
+    stringency: ValidationStringency): AlignmentRecordDataset = {
 
     ac.loadIndexedBam(pathName, viewRegions.toIterable, stringency = stringency)
   }
 
   /**
-   * Load nucleotide contig fragments into a NucleotideContigFragmentRDD (java-friendly method).
+   * Load nucleotide contig fragments into a NucleotideContigFragmentDataset (java-friendly method).
    *
    * If the path name has a .fa/.fasta extension, load as FASTA format.
    * Else, fall back to Parquet + Avro.
@@ -145,14 +145,14 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    * @param pathName The path name to load nucleotide contig fragments from.
    *   Globs/directories are supported, although file extension must be present
    *   for FASTA format.
-   * @return Returns a NucleotideContigFragmentRDD.
+   * @return Returns a NucleotideContigFragmentDataset.
    */
-  def loadContigFragments(pathName: java.lang.String): NucleotideContigFragmentRDD = {
+  def loadContigFragments(pathName: java.lang.String): NucleotideContigFragmentDataset = {
     ac.loadContigFragments(pathName)
   }
 
   /**
-   * Load fragments into a FragmentRDD (java-friendly method).
+   * Load fragments into a FragmentDataset (java-friendly method).
    *
    * Loads path names ending in:
    * * .bam/.cram/.sam as BAM/CRAM/SAM format and
@@ -168,14 +168,14 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    * @param pathName The path name to load fragments from.
    *   Globs/directories are supported, although file extension must be present
    *   for BAM/CRAM/SAM and FASTQ formats.
-   * @return Returns a FragmentRDD.
+   * @return Returns a FragmentDataset.
    */
-  def loadFragments(pathName: java.lang.String): FragmentRDD = {
+  def loadFragments(pathName: java.lang.String): FragmentDataset = {
     ac.loadFragments(pathName)
   }
 
   /**
-   * Load fragments into a FragmentRDD (java-friendly method).
+   * Load fragments into a FragmentDataset (java-friendly method).
    *
    * Loads path names ending in:
    * * .bam/.cram/.sam as BAM/CRAM/SAM format and
@@ -192,15 +192,15 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    *   Globs/directories are supported, although file extension must be present
    *   for BAM/CRAM/SAM and FASTQ formats.
    * @param stringency The validation stringency to use when validating BAM/CRAM/SAM or FASTQ formats.
-   * @return Returns a FragmentRDD.
+   * @return Returns a FragmentDataset.
    */
   def loadFragments(pathName: java.lang.String,
-                    stringency: ValidationStringency): FragmentRDD = {
+                    stringency: ValidationStringency): FragmentDataset = {
     ac.loadFragments(pathName, stringency = stringency)
   }
 
   /**
-   * Load features into a FeatureRDD (java-friendly method).
+   * Load features into a FeatureDataset (java-friendly method).
    *
    * Loads path names ending in:
    * * .bed as BED6/12 format,
@@ -220,14 +220,14 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    * @param pathName The path name to load features from.
    *   Globs/directories are supported, although file extension must be present
    *   for BED6/12, GFF3, GTF/GFF2, NarrowPeak, or IntervalList formats.
-   * @return Returns a FeatureRDD.
+   * @return Returns a FeatureDataset.
    */
-  def loadFeatures(pathName: java.lang.String): FeatureRDD = {
+  def loadFeatures(pathName: java.lang.String): FeatureDataset = {
     ac.loadFeatures(pathName)
   }
 
   /**
-   * Load features into a FeatureRDD (java-friendly method).
+   * Load features into a FeatureDataset (java-friendly method).
    *
    * Loads path names ending in:
    * * .bed as BED6/12 format,
@@ -249,15 +249,15 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    *   for BED6/12, GFF3, GTF/GFF2, NarrowPeak, or IntervalList formats.
    * @param stringency The validation stringency to use when validating BED6/12, GFF3,
    *   GTF/GFF2, NarrowPeak, or IntervalList formats.
-   * @return Returns a FeatureRDD.
+   * @return Returns a FeatureDataset.
    */
   def loadFeatures(pathName: java.lang.String,
-                   stringency: ValidationStringency): FeatureRDD = {
+                   stringency: ValidationStringency): FeatureDataset = {
     ac.loadFeatures(pathName, stringency = stringency)
   }
 
   /**
-   * Load features into a FeatureRDD and convert to a CoverageRDD (java-friendly method).
+   * Load features into a FeatureDataset and convert to a CoverageDataset (java-friendly method).
    * Coverage is stored in the score field of Feature.
    *
    * Loads path names ending in:
@@ -278,14 +278,14 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    * @param pathName The path name to load features from.
    *   Globs/directories are supported, although file extension must be present
    *   for BED6/12, GFF3, GTF/GFF2, NarrowPeak, or IntervalList formats.
-   * @return Returns a FeatureRDD converted to a CoverageRDD.
+   * @return Returns a FeatureDataset converted to a CoverageDataset.
    */
-  def loadCoverage(pathName: java.lang.String): CoverageRDD = {
+  def loadCoverage(pathName: java.lang.String): CoverageDataset = {
     ac.loadCoverage(pathName)
   }
 
   /**
-   * Load features into a FeatureRDD and convert to a CoverageRDD (java-friendly method).
+   * Load features into a FeatureDataset and convert to a CoverageDataset (java-friendly method).
    * Coverage is stored in the score field of Feature.
    *
    * Loads path names ending in:
@@ -308,16 +308,16 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    *   for BED6/12, GFF3, GTF/GFF2, NarrowPeak, or IntervalList formats.
    * @param stringency The validation stringency to use when validating BED6/12, GFF3,
    *   GTF/GFF2, NarrowPeak, or IntervalList formats.
-   * @return Returns a FeatureRDD converted to a CoverageRDD.
+   * @return Returns a FeatureDataset converted to a CoverageDataset.
    */
   def loadCoverage(pathName: java.lang.String,
-                   stringency: ValidationStringency): CoverageRDD = {
+                   stringency: ValidationStringency): CoverageDataset = {
     ac.loadCoverage(pathName,
       stringency = stringency)
   }
 
   /**
-   * Load genotypes into a GenotypeRDD (java-friendly method).
+   * Load genotypes into a GenotypeDataset (java-friendly method).
    *
    * If the path name has a .vcf/.vcf.gz/.vcf.bgzf/.vcf.bgz extension, load as VCF format.
    * Else, fall back to Parquet + Avro.
@@ -327,14 +327,14 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    * @param pathName The path name to load genotypes from.
    *   Globs/directories are supported, although file extension must be present
    *   for VCF format.
-   * @return Returns a GenotypeRDD.
+   * @return Returns a GenotypeDataset.
    */
-  def loadGenotypes(pathName: java.lang.String): GenotypeRDD = {
+  def loadGenotypes(pathName: java.lang.String): GenotypeDataset = {
     ac.loadGenotypes(pathName)
   }
 
   /**
-   * Load genotypes into a GenotypeRDD (java-friendly method).
+   * Load genotypes into a GenotypeDataset (java-friendly method).
    *
    * If the path name has a .vcf/.vcf.gz/.vcf.bgzf/.vcf.bgz extension, load as VCF format.
    * Else, fall back to Parquet + Avro.
@@ -345,16 +345,16 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    *   Globs/directories are supported, although file extension must be present
    *   for VCF format.
    * @param stringency The validation stringency to use when validating VCF format.
-   * @return Returns a GenotypeRDD.
+   * @return Returns a GenotypeDataset.
    */
   def loadGenotypes(pathName: java.lang.String,
-                    stringency: ValidationStringency): GenotypeRDD = {
+                    stringency: ValidationStringency): GenotypeDataset = {
     ac.loadGenotypes(pathName,
       stringency = stringency)
   }
 
   /**
-   * Load variants into a VariantRDD (java-friendly method).
+   * Load variants into a VariantDataset (java-friendly method).
    *
    * If the path name has a .vcf/.vcf.gz/.vcf.bgzf/.vcf.bgz extension, load as VCF format.
    * Else, fall back to Parquet + Avro.
@@ -363,14 +363,14 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    *
    * @param pathName The path name to load variants from.
    *   Globs/directories are supported, although file extension must be present for VCF format.
-   * @return Returns a VariantRDD.
+   * @return Returns a VariantDataset.
    */
-  def loadVariants(pathName: java.lang.String): VariantRDD = {
+  def loadVariants(pathName: java.lang.String): VariantDataset = {
     ac.loadVariants(pathName)
   }
 
   /**
-   * Load variants into a VariantRDD (java-friendly method).
+   * Load variants into a VariantDataset (java-friendly method).
    *
    * If the path name has a .vcf/.vcf.gz/.vcf.bgzf/.vcf.bgz extension, load as VCF format.
    * Else, fall back to Parquet + Avro.
@@ -380,10 +380,10 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    * @param pathName The path name to load variants from.
    *   Globs/directories are supported, although file extension must be present for VCF format.
    * @param stringency The validation stringency to use when validating VCF format.
-   * @return Returns a VariantRDD.
+   * @return Returns a VariantDataset.
    */
   def loadVariants(pathName: java.lang.String,
-                   stringency: ValidationStringency): VariantRDD = {
+                   stringency: ValidationStringency): VariantDataset = {
     ac.loadVariants(pathName, stringency = stringency)
   }
 

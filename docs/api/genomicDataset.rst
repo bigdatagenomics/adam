@@ -1,10 +1,10 @@
-Working with genomic data using GenomicRDDs
--------------------------------------------
+Working with genomic data using GenomicDatasets
+-----------------------------------------------
 
 As described in the section on using the
 `ADAMContext <adamContext.html>`__, ADAM loads genomic data into a
-``GenomicRDD`` which is specialized for each datatype. This
-``GenomicRDD`` wraps Apache Spark's Resilient Distributed Dataset (RDD,
+``GenomicDataset`` which is specialized for each datatype. This
+``GenomicDataset`` wraps Apache Spark's Resilient Distributed Dataset (RDD,
 (Zaharia et al. 2012)) API with genomic metadata. The ``RDD``
 abstraction presents an array of data which is distributed across a
 cluster. ``RDD``\ s are backed by a computational lineage, which allows
@@ -16,19 +16,19 @@ Around an ``RDD``, ADAM adds metadata which describes the genome,
 samples, or read group that a dataset came from. Specifically, ADAM
 supports the following metadata:
 
--  ``GenomicRDD`` base: A sequence dictionary, which describes the
+-  ``GenomicDataset`` base: A sequence dictionary, which describes the
    reference assembly that data are aligned to, if it is aligned.
    Applies to all types.
--  ``MultisampleGenomicRDD``: Adds metadata about the samples in a
-   dataset. Applies to ``GenotypeRDD``.
--  ``ReadGroupGenomicRDD``: Adds metadata about the read groups attached
-   to a dataset. Applies to ``AlignmentRecordRDD`` and ``FragmentRDD``.
+-  ``MultisampleGenomicDataset``: Adds metadata about the samples in a
+   dataset. Applies to ``GenotypeDataset``.
+-  ``ReadGroupGenomicDataset``: Adds metadata about the read groups attached
+   to a dataset. Applies to ``AlignmentRecordDataset`` and ``FragmentDataset``.
 
-Additionally, ``GenotypeRDD``, ``VariantRDD``, and ``VariantContextRDD``
+Additionally, ``GenotypeDataset``, ``VariantDataset``, and ``VariantContextDataset``
 store the VCF header lines attached to the original file, to enable a
 round trip between Parquet and VCF.
 
-``GenomicRDD``\ s can be transformed several ways. These include:
+``GenomicDataset``\ s can be transformed several ways. These include:
 
 -  The `core preprocessing <../algorithms/reads.html>`__ algorithms in ADAM:
 -  Reads:
@@ -42,32 +42,32 @@ round trip between Parquet and VCF.
 
    -  `Mark duplicate fragments <../algorithms/dm.html>`__
 
--  `RDD transformations <#transforming-genomicrdds>`__
--  `Spark SQL transformations <#transforming-genomicrdds-via-spark-sql>`__
+-  `Genomic dataset transformations <#transforming-genomicdatasets>`__
+-  `Spark SQL transformations <#transforming-genomicdatasets-via-spark-sql>`__
 -  `By using ADAM to pipe out to another tool <pipes.html>`__
 
-Transforming GenomicRDDs
+Transforming GenomicDatasets
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Although ``GenomicRDD``\ s do not extend Apache Spark's ``RDD`` class,
+Although ``GenomicDataset``\ s do not extend Apache Spark's ``RDD`` class,
 ``RDD`` operations can be performed on them using the ``transform``
 method. Currently, we only support ``RDD`` to ``RDD`` transformations
-that keep the same type as the base type of the ``GenomicRDD``. To apply
+that keep the same type as the base type of the ``GenomicDataset``. To apply
 an ``RDD`` transform, use the ``transform`` method, which takes a
 function mapping one ``RDD`` of the base type into another ``RDD`` of
 the base type. For example, we could use ``transform`` on an
-``AlignmentRecordRDD`` to filter out reads that have a low mapping
+``AlignmentRecordDataset`` to filter out reads that have a low mapping
 quality, but we cannot use ``transform`` to translate those reads into
 ``Feature``\ s showing the genomic locations covered by reads.
 
-If we want to transform a ``GenomicRDD`` into a new ``GenomicRDD`` that
+If we want to transform a ``GenomicDataset`` into a new ``GenomicDataset`` that
 contains a different datatype (e.g., reads to features), we can instead
 use the ``transmute`` function. The ``transmute`` function takes a
 function that transforms an ``RDD`` of the type of the first
-``GenomicRDD`` into a new ``RDD`` that contains records of the type of
-the second ``GenomicRDD``. Additionally, it takes an implicit function
-that maps the metadata in the first ``GenomicRDD`` into the metadata
-needed by the second ``GenomicRDD``. This is akin to the implicit
+``GenomicDataset`` into a new ``RDD`` that contains records of the type of
+the second ``GenomicDataset``. Additionally, it takes an implicit function
+that maps the metadata in the first ``GenomicDataset`` into the metadata
+needed by the second ``GenomicDataset``. This is akin to the implicit
 function required by the `pipe <#pipes.html>`__ API. As an example, let us
 use the ``transmute`` function to make features corresponding to reads
 containing INDELs:
@@ -80,11 +80,11 @@ containing INDELs:
     val reads = sc.loadAlignments("path/to/my/reads.adam")
 
     // the type of the transmuted RDD normally needs to be specified
-    // import the FeatureRDD, which is the output type
-    import org.bdgenomics.adam.rdd.feature.FeatureRDD
+    // import the FeatureDataset, which is the output type
+    import org.bdgenomics.adam.rdd.feature.FeatureDataset
     import org.bdgenomics.formats.avro.Feature
 
-    val features: FeatureRDD = reads.transmute(rdd => {
+    val features: FeatureDataset = reads.transmute(rdd => {
       rdd.filter(r => {
         // does the CIGAR for this read contain an I or a D?
         Option(r.getCigar)
@@ -99,12 +99,12 @@ containing INDELs:
     })
 
 ``ADAMContext`` provides the implicit functions needed to run the
-``transmute`` function between all ``GenomicRDD``\ s contained within
+``transmute`` function between all ``GenomicDataset``\ s contained within
 the ``org.bdgenomics.adam.rdd`` package hierarchy. Any custom
-``GenomicRDD`` can be supported by providing a user defined conversion
+``GenomicDataset`` can be supported by providing a user defined conversion
 function.
 
-Transforming GenomicRDDs via Spark SQL
+Transforming GenomicDatasets via Spark SQL
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Spark SQL introduced the strongly-typed
@@ -120,7 +120,7 @@ substantial speedups for certain queries.
 To resolve this, we added an ``adam-codegen`` package that generates
 Spark SQL compatible classes representing the ADAM schemas. These
 classes are available in the ``org.bdgenomics.adam.sql`` package. All
-Avro-backed GenomicRDDs now support translation to Datasets via the
+Avro-backed GenomicDatasets now support translation to Datasets via the
 ``dataset`` field, and transformation via the Spark SQL APIs through the
 ``transformDataset`` method. As an optimization, we lazily choose either
 the RDD or Dataset API depending on the calculation being performed. For
@@ -150,19 +150,19 @@ an implementation note necessary only for those bypassing the ADAM APIs.
 
 Similar to ``transform``/``transformDataset``, there exists a
 ``transmuteDataset`` function that enables transformations between
-``GenomicRDD``\ s of different types.
+``GenomicDataset``\ s of different types.
 
 Using partitioned Parquet to speed up range based queries
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-GenomicRDDs of types ``AlignmentRecordRDD``, ``GenotypeRDD``,
-``VariantRDD``, and ``NucleotideFragmentContigRDD`` can be written as Parquet
-using a Hive-style hierarchical directory scheme that is based on contig and
+GenomicDatasets of types ``AlignmentRecordDataset``, ``GenotypeDataset``, 
+``VariantDataset``, and ``NucleotideFragmentContigDataset`` can be written as Parquet 
+using a Hive-style hierarchical directory scheme that is based on contig and 
 genomic position.  This partitioning reduces the latency of genomic range
 queries against these datasets, which is particularly important for interactive
 applications such as a genomic browser backed by an ADAM dataset.
 
-The genomicRDD function
-``GenomicRDD.filterByOverlappingRegions(queryRegionsList)`` builds a Spark SQL
+The GenomicDataset function 
+``GenomicDataset.filterByOverlappingRegions(queryRegionsList)`` builds a Spark SQL
 query that uses this partitioning scheme. This can reduce latencies by more
 than 20x when repeatedly querying a datset with genomic range filters.
 On a high coverage alignment dataset, this partitioning strategy improved
@@ -170,8 +170,8 @@ latency from 1-2 minutes to 1-3 seconds when looking up genomic ranges.
 
 **Saving partitioned parquet files to disk**
 
-A ``GenomicRDD`` can be written to disk as a partitioned Parquet dataset with the
-``GenomicRDD`` function ``saveAsPartitionedParquet``. The optional
+A ``GenomicDataset`` can be written to disk as a partitioned Parquet dataset with the
+``GenomicDataset`` function ``saveAsPartitionedParquet``. The optional
 ``partitionSize`` parameter  defines the width in base pairs of the partitions
 within each contig.
 
@@ -185,7 +185,7 @@ ADAM ``transformGenotypes`` CLI.
 
 **Loading partitioned parquet files**
 
-A GenomicRDD can be loaded from a partitioned Parquet dataset using the
+A GenomicDataset can be loaded from a partitioned Parquet dataset using the
 ADAMContext function ``loadPartitionedParquet[*]`` specific to each data type
 such as ``loadPartitionedParquetAlignments``.
 
@@ -234,15 +234,15 @@ by the Parquet files' partitioning scheme, and makes ``positionBin`` available a
 that can be queried through the Spark SQL API. ``positionBin`` is used internally by
 the public function ``GenomicRDD.filterByOverlappingRegions``. User code in ADAM-shell or user applications
 could similarly utilize the ``positionBin`` field when creating Spark
-SQL queries on a ``genomicRDD.dataset`` backed by partitioned Parquet.
+SQL queries on a ``genomicDataset.dataset`` backed by partitioned Parquet.
 
 **Re-using a previously loaded partitioned dataset:**
 
 When a partitioned dataset is first created within an ADAM session, a partition
-discovery/initialization step is performed that can take several minutes for large datasets.
-The original GenomicRDD object can then be re-used multiple times as the parent
+discovery/initialization step is performed that can take several minutes for large datasets. 
+The original GenomicDataset object can then be re-used multiple times as the parent
 of different filtration and processing transformations and actions, without incurring
-this initializiation cost again. Thus, re-use of a parent partitioned ``GenomicRDD``
+this initializiation cost again. Thus, re-use of a parent partitioned ``GenomicDataset``
 is key to realizing the latency advantages of partitioned datasets described above.
 
 .. code:: scala

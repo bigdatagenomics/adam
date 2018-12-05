@@ -20,14 +20,14 @@ package org.bdgenomics.adam.rdd
 import org.bdgenomics.adam.converters.DefaultHeaderLines
 import org.bdgenomics.adam.models.{ SequenceRecord, SequenceDictionary, ReferenceRegion }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
-import org.bdgenomics.adam.rdd.feature.FeatureRDD
-import org.bdgenomics.adam.rdd.variant.GenotypeRDD
+import org.bdgenomics.adam.rdd.read.AlignmentRecordDataset
+import org.bdgenomics.adam.rdd.feature.FeatureDataset
+import org.bdgenomics.adam.rdd.variant.GenotypeDataset
 import org.bdgenomics.formats.avro._
 import org.bdgenomics.utils.misc.SparkFunSuite
 import scala.collection.mutable.ListBuffer
 
-class SortedGenomicRDDSuite extends SparkFunSuite {
+class SortedGenomicDatasetSuite extends SparkFunSuite {
 
   /**
    * Determines if a given partition map has been correctly sorted
@@ -110,9 +110,9 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
     // testing the left side with an extremely large region that is
     // not the last record on a partition
     // this test also tests the case that our
-    val genotypeRddBuilder = new ListBuffer[Genotype]()
+    val genotypeBuilder = new ListBuffer[Genotype]()
 
-    genotypeRddBuilder += {
+    genotypeBuilder += {
       Genotype.newBuilder()
         .setContigName("chr1")
         .setStart(2L)
@@ -129,7 +129,7 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
         .build()
     }
 
-    genotypeRddBuilder += {
+    genotypeBuilder += {
       Genotype.newBuilder()
         .setContigName("chr1")
         .setStart(3L)
@@ -146,7 +146,7 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
         .build()
     }
 
-    genotypeRddBuilder += {
+    genotypeBuilder += {
       Genotype.newBuilder()
         .setContigName("chr1")
         .setStart(6L)
@@ -163,7 +163,7 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
         .build()
     }
 
-    genotypeRddBuilder += {
+    genotypeBuilder += {
       Genotype.newBuilder()
         .setContigName("chr1")
         .setStart(8L)
@@ -180,9 +180,9 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
         .build()
     }
 
-    val featureRddBuilder = new ListBuffer[Feature]()
+    val featureBuilder = new ListBuffer[Feature]()
 
-    featureRddBuilder += {
+    featureBuilder += {
       Feature.newBuilder()
         .setContigName("chr1")
         .setStart(61L)
@@ -190,7 +190,7 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
         .build()
     }
 
-    featureRddBuilder += {
+    featureBuilder += {
       Feature.newBuilder()
         .setContigName("chr1")
         .setStart(11L)
@@ -198,7 +198,7 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
         .build()
     }
 
-    featureRddBuilder += {
+    featureBuilder += {
       Feature.newBuilder()
         .setContigName("chr1")
         .setStart(3L)
@@ -206,7 +206,7 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
         .build()
     }
 
-    featureRddBuilder += {
+    featureBuilder += {
       Feature.newBuilder()
         .setContigName("chr1")
         .setStart(6L)
@@ -214,7 +214,7 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
         .build()
     }
 
-    featureRddBuilder += {
+    featureBuilder += {
       Feature.newBuilder()
         .setContigName("chr1")
         .setStart(50L)
@@ -222,7 +222,7 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
         .build()
     }
 
-    featureRddBuilder += {
+    featureBuilder += {
       Feature.newBuilder()
         .setContigName("chr1")
         .setStart(1L)
@@ -231,13 +231,13 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
     }
 
     val genotypes =
-      GenotypeRDD(sc.parallelize(genotypeRddBuilder),
+      GenotypeDataset(sc.parallelize(genotypeBuilder),
         sd, Seq(), DefaultHeaderLines.allHeaderLines)
         .sortLexicographically(storePartitionMap = true, partitions = 2)
     genotypes.rdd.mapPartitionsWithIndex((idx, iter) => {
       iter.map(f => (idx, f))
     }).collect
-    val features = FeatureRDD(sc.parallelize(featureRddBuilder), sd, Seq.empty)
+    val features = FeatureDataset(sc.parallelize(featureBuilder), sd, Seq.empty)
     val x = features.copartitionByReferenceRegion(genotypes)
     val z = x.rdd.mapPartitionsWithIndex((idx, iter) => {
       if (idx == 0 && iter.size != 6) {
@@ -263,7 +263,7 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
       x.sortLexicographically(storePartitionMap = true, partitions = 1600)
 
     // perform join using 1600 partitions
-    // 1600 is much more than the amount of data in the GenomicRDD
+    // 1600 is much more than the amount of data in the GenomicDataset
     // so we also test our ability to handle this extreme request
     val b = z.shuffleRegionJoin(x, Some(1600), 0L)
     val c = x.shuffleRegionJoin(z, Some(1600), 0L)

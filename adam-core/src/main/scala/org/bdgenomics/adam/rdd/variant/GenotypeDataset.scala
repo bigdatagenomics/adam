@@ -82,49 +82,49 @@ private[adam] class GenotypeArraySerializer extends IntervalArraySerializer[Refe
   }
 }
 
-object GenotypeRDD extends Serializable {
+object GenotypeDataset extends Serializable {
 
   /**
-   * An RDD containing genotypes called in a set of samples against a given
+   * An genomic dataset containing genotypes called in a set of samples against a given
    * reference genome.
    *
    * @param rdd Called genotypes.
    * @param sequences A dictionary describing the reference genome.
    * @param samples The samples called.
    * @param headerLines The VCF header lines that cover all INFO/FORMAT fields
-   *   needed to represent this RDD of Genotypes.
+   *   needed to represent this genomic dataset of Genotypes.
    */
   def apply(rdd: RDD[Genotype],
             sequences: SequenceDictionary,
             samples: Iterable[Sample],
-            headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines): GenotypeRDD = {
-    RDDBoundGenotypeRDD(rdd, sequences, samples.toSeq, headerLines, None)
+            headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines): GenotypeDataset = {
+    RDDBoundGenotypeDataset(rdd, sequences, samples.toSeq, headerLines, None)
   }
 
   /**
-   * An RDD containing genotypes called in a set of samples against a given
+   * An genomic dataset containing genotypes called in a set of samples against a given
    * reference genome, populated from a SQL Dataset.
    *
    * @param ds Called genotypes.
    * @param sequences A dictionary describing the reference genome.
    * @param samples The samples called.
    * @param headerLines The VCF header lines that cover all INFO/FORMAT fields
-   *   needed to represent this RDD of Genotypes.
+   *   needed to represent this genomic dataset of Genotypes.
    */
   def apply(ds: Dataset[GenotypeProduct],
             sequences: SequenceDictionary,
             samples: Iterable[Sample],
-            headerLines: Seq[VCFHeaderLine]): GenotypeRDD = {
-    DatasetBoundGenotypeRDD(ds, sequences, samples.toSeq, headerLines)
+            headerLines: Seq[VCFHeaderLine]): GenotypeDataset = {
+    DatasetBoundGenotypeDataset(ds, sequences, samples.toSeq, headerLines)
   }
 }
 
-case class ParquetUnboundGenotypeRDD private[rdd] (
+case class ParquetUnboundGenotypeDataset private[rdd] (
     @transient private val sc: SparkContext,
     private val parquetFilename: String,
     sequences: SequenceDictionary,
     @transient samples: Seq[Sample],
-    @transient headerLines: Seq[VCFHeaderLine]) extends GenotypeRDD {
+    @transient headerLines: Seq[VCFHeaderLine]) extends GenotypeDataset {
 
   protected lazy val optPartitionMap = sc.extractPartitionMap(parquetFilename)
 
@@ -139,28 +139,28 @@ case class ParquetUnboundGenotypeRDD private[rdd] (
   }
 
   def replaceSequences(
-    newSequences: SequenceDictionary): GenotypeRDD = {
+    newSequences: SequenceDictionary): GenotypeDataset = {
     copy(sequences = newSequences)
   }
 
-  def replaceHeaderLines(newHeaderLines: Seq[VCFHeaderLine]): GenotypeRDD = {
+  def replaceHeaderLines(newHeaderLines: Seq[VCFHeaderLine]): GenotypeDataset = {
     copy(headerLines = newHeaderLines)
   }
 
-  def replaceSamples(newSamples: Iterable[Sample]): GenotypeRDD = {
+  def replaceSamples(newSamples: Iterable[Sample]): GenotypeDataset = {
     copy(samples = newSamples.toSeq)
   }
 }
 
-case class DatasetBoundGenotypeRDD private[rdd] (
+case class DatasetBoundGenotypeDataset private[rdd] (
   dataset: Dataset[GenotypeProduct],
   sequences: SequenceDictionary,
   @transient samples: Seq[Sample],
   @transient headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines,
   override val isPartitioned: Boolean = true,
   override val optPartitionBinSize: Option[Int] = Some(1000000),
-  override val optLookbackPartitions: Option[Int] = Some(1)) extends GenotypeRDD
-    with DatasetBoundGenomicDataset[Genotype, GenotypeProduct, GenotypeRDD] {
+  override val optLookbackPartitions: Option[Int] = Some(1)) extends GenotypeDataset
+    with DatasetBoundGenomicDataset[Genotype, GenotypeProduct, GenotypeDataset] {
 
   protected lazy val optPartitionMap = None
 
@@ -181,24 +181,24 @@ case class DatasetBoundGenotypeRDD private[rdd] (
   }
 
   override def transformDataset(
-    tFn: Dataset[GenotypeProduct] => Dataset[GenotypeProduct]): GenotypeRDD = {
+    tFn: Dataset[GenotypeProduct] => Dataset[GenotypeProduct]): GenotypeDataset = {
     copy(dataset = tFn(dataset))
   }
 
   def replaceSequences(
-    newSequences: SequenceDictionary): GenotypeRDD = {
+    newSequences: SequenceDictionary): GenotypeDataset = {
     copy(sequences = newSequences)
   }
 
-  def replaceHeaderLines(newHeaderLines: Seq[VCFHeaderLine]): GenotypeRDD = {
+  def replaceHeaderLines(newHeaderLines: Seq[VCFHeaderLine]): GenotypeDataset = {
     copy(headerLines = newHeaderLines)
   }
 
-  def replaceSamples(newSamples: Iterable[Sample]): GenotypeRDD = {
+  def replaceSamples(newSamples: Iterable[Sample]): GenotypeDataset = {
     copy(samples = newSamples.toSeq)
   }
 
-  override def copyVariantEndToAttribute(): GenotypeRDD = {
+  override def copyVariantEndToAttribute(): GenotypeDataset = {
     def copyEnd(g: GenotypeProduct): GenotypeProduct = {
       val variant = g.variant.getOrElse(VariantProduct())
       val annotation = variant.annotation.getOrElse(VariantAnnotationProduct())
@@ -212,23 +212,23 @@ case class DatasetBoundGenotypeRDD private[rdd] (
     transformDataset(dataset => dataset.map(copyEnd))
   }
 
-  override def filterToFiltersPassed(): GenotypeRDD = {
+  override def filterToFiltersPassed(): GenotypeDataset = {
     transformDataset(dataset => dataset.filter(dataset.col("variantCallingAnnotations.filtersPassed")))
   }
 
-  override def filterByQuality(minimumQuality: Double): GenotypeRDD = {
+  override def filterByQuality(minimumQuality: Double): GenotypeDataset = {
     transformDataset(dataset => dataset.filter(dataset.col("genotypeQuality") >= minimumQuality))
   }
 
-  override def filterByReadDepth(minimumReadDepth: Int): GenotypeRDD = {
+  override def filterByReadDepth(minimumReadDepth: Int): GenotypeDataset = {
     transformDataset(dataset => dataset.filter(dataset.col("readDepth") >= minimumReadDepth))
   }
 
-  override def filterByAlternateReadDepth(minimumAlternateReadDepth: Int): GenotypeRDD = {
+  override def filterByAlternateReadDepth(minimumAlternateReadDepth: Int): GenotypeDataset = {
     transformDataset(dataset => dataset.filter(dataset.col("alternateReadDepth") >= minimumAlternateReadDepth))
   }
 
-  override def filterByReferenceReadDepth(minimumReferenceReadDepth: Int): GenotypeRDD = {
+  override def filterByReferenceReadDepth(minimumReferenceReadDepth: Int): GenotypeDataset = {
     transformDataset(dataset => dataset.filter(dataset.col("referenceReadDepth") >= minimumReferenceReadDepth))
   }
 
@@ -245,15 +245,15 @@ case class DatasetBoundGenotypeRDD private[rdd] (
   }
 }
 
-case class RDDBoundGenotypeRDD private[rdd] (
+case class RDDBoundGenotypeDataset private[rdd] (
     rdd: RDD[Genotype],
     sequences: SequenceDictionary,
     @transient samples: Seq[Sample],
     @transient headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines,
-    optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None) extends GenotypeRDD {
+    optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None) extends GenotypeDataset {
 
   /**
-   * A SQL Dataset of reads.
+   * A SQL Dataset of genotypes.
    */
   lazy val dataset: Dataset[GenotypeProduct] = {
     val sqlContext = SQLContext.getOrCreate(rdd.context)
@@ -262,20 +262,20 @@ case class RDDBoundGenotypeRDD private[rdd] (
   }
 
   def replaceSequences(
-    newSequences: SequenceDictionary): GenotypeRDD = {
+    newSequences: SequenceDictionary): GenotypeDataset = {
     copy(sequences = newSequences)
   }
 
-  def replaceHeaderLines(newHeaderLines: Seq[VCFHeaderLine]): GenotypeRDD = {
+  def replaceHeaderLines(newHeaderLines: Seq[VCFHeaderLine]): GenotypeDataset = {
     copy(headerLines = newHeaderLines)
   }
 
-  def replaceSamples(newSamples: Iterable[Sample]): GenotypeRDD = {
+  def replaceSamples(newSamples: Iterable[Sample]): GenotypeDataset = {
     copy(samples = newSamples.toSeq)
   }
 }
 
-sealed abstract class GenotypeRDD extends MultisampleAvroGenomicDataset[Genotype, GenotypeProduct, GenotypeRDD] with VCFSupportingGenomicDataset[Genotype, GenotypeProduct, GenotypeRDD] {
+sealed abstract class GenotypeDataset extends MultisampleAvroGenomicDataset[Genotype, GenotypeProduct, GenotypeDataset] with VCFSupportingGenomicDataset[Genotype, GenotypeProduct, GenotypeDataset] {
 
   protected val productFn = GenotypeProduct.fromAvro(_)
   protected val unproductFn = (g: GenotypeProduct) => g.toAvro
@@ -303,12 +303,12 @@ sealed abstract class GenotypeRDD extends MultisampleAvroGenomicDataset[Genotype
     saveVcfHeaders(filePath)
   }
 
-  def union(rdds: GenotypeRDD*): GenotypeRDD = {
-    val iterableRdds = rdds.toSeq
-    GenotypeRDD(rdd.context.union(rdd, iterableRdds.map(_.rdd): _*),
-      iterableRdds.map(_.sequences).fold(sequences)(_ ++ _),
-      (samples ++ iterableRdds.flatMap(_.samples)).distinct,
-      (headerLines ++ iterableRdds.flatMap(_.headerLines)).distinct)
+  def union(datasets: GenotypeDataset*): GenotypeDataset = {
+    val iterableDatasets = datasets.toSeq
+    GenotypeDataset(rdd.context.union(rdd, iterableDatasets.map(_.rdd): _*),
+      iterableDatasets.map(_.sequences).fold(sequences)(_ ++ _),
+      (samples ++ iterableDatasets.flatMap(_.samples)).distinct,
+      (headerLines ++ iterableDatasets.flatMap(_.headerLines)).distinct)
   }
 
   protected def buildTree(rdd: RDD[(ReferenceRegion, Genotype)])(
@@ -317,22 +317,22 @@ sealed abstract class GenotypeRDD extends MultisampleAvroGenomicDataset[Genotype
   }
 
   /**
-   * Applies a function that transforms the underlying RDD into a new RDD using
+   * Applies a function that transforms the underlying Dataset into a new Dataset using
    * the Spark SQL API.
    *
-   * @param tFn A function that transforms the underlying RDD as a Dataset.
-   * @return A new RDD where the RDD of genomic data has been replaced, but the
+   * @param tFn A function that transforms the underlying Dataset as a Dataset.
+   * @return A new genomic dataset where the Dataset of genomic data has been replaced, but the
    *   metadata (sequence dictionary, and etc) is copied without modification.
    */
   def transformDataset(
-    tFn: Dataset[GenotypeProduct] => Dataset[GenotypeProduct]): GenotypeRDD = {
-    DatasetBoundGenotypeRDD(tFn(dataset), sequences, samples, headerLines)
+    tFn: Dataset[GenotypeProduct] => Dataset[GenotypeProduct]): GenotypeDataset = {
+    DatasetBoundGenotypeDataset(tFn(dataset), sequences, samples, headerLines)
   }
 
   /**
-   * @return Returns this GenotypeRDD squared off as a VariantContextRDD.
+   * @return Returns this GenotypeDataset squared off as a VariantContextDataset.
    */
-  def toVariantContexts(): VariantContextRDD = {
+  def toVariantContexts(): VariantContextDataset = {
     val vcIntRdd: RDD[(RichVariant, Genotype)] = rdd.keyBy(g => {
       RichVariant.genotypeToRichVariant(g)
     })
@@ -343,32 +343,32 @@ sealed abstract class GenotypeRDD extends MultisampleAvroGenomicDataset[Genotype
         }
       }
 
-    VariantContextRDD(vcRdd, sequences, samples, headerLines)
+    VariantContextDataset(vcRdd, sequences, samples, headerLines)
   }
 
   /**
-   * Extracts the variants contained in this RDD of genotypes.
+   * Extracts the variants contained in this genomic dataset of genotypes.
    *
    * Does not perform any filtering looking at whether the variant was called or
    * not. Does not dedupe the variants.
    *
-   * @return Returns the variants described by this GenotypeRDD.
+   * @return Returns the variants described by this GenotypeDataset.
    */
-  def toVariants(): VariantRDD = {
+  def toVariants(): VariantDataset = {
     toVariants(dedupe = false)
   }
 
   /**
-   * Extracts the variants contained in this RDD of genotypes.
+   * Extracts the variants contained in this genomic dataset of genotypes.
    *
    * Does not perform any filtering looking at whether the variant was called or
    * not.
    *
    * @param dedupe If true, drops variants described in more than one genotype
    *   record.
-   * @return Returns the variants described by this GenotypeRDD.
+   * @return Returns the variants described by this GenotypeDataset.
    */
-  def toVariants(dedupe: java.lang.Boolean): VariantRDD = {
+  def toVariants(dedupe: java.lang.Boolean): VariantDataset = {
     val sqlContext = SQLContext.getOrCreate(rdd.context)
     import sqlContext.implicits._
 
@@ -388,15 +388,15 @@ sealed abstract class GenotypeRDD extends MultisampleAvroGenomicDataset[Genotype
       notDedupedVariants
     }
 
-    VariantRDD(maybeDedupedVariants, sequences, headerLines)
+    VariantDataset(maybeDedupedVariants, sequences, headerLines)
   }
 
   /**
    * Copy variant end to a variant attribute (VCF INFO field "END").
    *
-   * @return GenotypeRDD with variant end copied to a variant attribute.
+   * @return GenotypeDataset with variant end copied to a variant attribute.
    */
-  def copyVariantEndToAttribute(): GenotypeRDD = {
+  def copyVariantEndToAttribute(): GenotypeDataset = {
     def copyEnd(g: Genotype): Genotype = {
       val variant = Option(g.variant).getOrElse(new Variant())
       val annotation = Option(variant.annotation).getOrElse(new VariantAnnotation())
@@ -411,90 +411,90 @@ sealed abstract class GenotypeRDD extends MultisampleAvroGenomicDataset[Genotype
   }
 
   /**
-   * Filter this GenotypeRDD to genotype filters passed (VCF FORMAT field "FT" value PASS).
+   * Filter this GenotypeDataset to genotype filters passed (VCF FORMAT field "FT" value PASS).
    *
-   * @return GenotypeRDD filtered to genotype filters passed.
+   * @return GenotypeDataset filtered to genotype filters passed.
    */
-  def filterToFiltersPassed(): GenotypeRDD = {
+  def filterToFiltersPassed(): GenotypeDataset = {
     transform(rdd => rdd.filter(g => Option(g.getVariantCallingAnnotations).exists(_.getFiltersPassed)))
   }
 
   /**
-   * Filter this GenotypeRDD by quality (VCF FORMAT field "GQ").
+   * Filter this GenotypeDataset by quality (VCF FORMAT field "GQ").
    *
    * @param minimumQuality Minimum quality to filter by, inclusive.
-   * @return GenotypeRDD filtered by quality.
+   * @return GenotypeDataset filtered by quality.
    */
-  def filterByQuality(minimumQuality: Double): GenotypeRDD = {
+  def filterByQuality(minimumQuality: Double): GenotypeDataset = {
     transform(rdd => rdd.filter(g => Option(g.getGenotypeQuality).exists(_ >= minimumQuality)))
   }
 
   /**
-   * Filter this GenotypeRDD by read depth (VCF FORMAT field "DP").
+   * Filter this GenotypeDataset by read depth (VCF FORMAT field "DP").
    *
    * @param minimumReadDepth Minimum read depth to filter by, inclusive.
-   * @return GenotypeRDD filtered by read depth.
+   * @return GenotypeDataset filtered by read depth.
    */
-  def filterByReadDepth(minimumReadDepth: Int): GenotypeRDD = {
+  def filterByReadDepth(minimumReadDepth: Int): GenotypeDataset = {
     transform(rdd => rdd.filter(g => Option(g.getReadDepth).exists(_ >= minimumReadDepth)))
   }
 
   /**
-   * Filter this GenotypeRDD by alternate read depth (VCF FORMAT field "AD").
+   * Filter this GenotypeDataset by alternate read depth (VCF FORMAT field "AD").
    *
    * @param minimumAlternateReadDepth Minimum alternate read depth to filter by, inclusive.
-   * @return GenotypeRDD filtered by alternate read depth.
+   * @return GenotypeDataset filtered by alternate read depth.
    */
-  def filterByAlternateReadDepth(minimumAlternateReadDepth: Int): GenotypeRDD = {
+  def filterByAlternateReadDepth(minimumAlternateReadDepth: Int): GenotypeDataset = {
     transform(rdd => rdd.filter(g => Option(g.getAlternateReadDepth).exists(_ >= minimumAlternateReadDepth)))
   }
 
   /**
-   * Filter this GenotypeRDD by reference read depth (VCF FORMAT field "AD").
+   * Filter this GenotypeDataset by reference read depth (VCF FORMAT field "AD").
    *
    * @param minimumReferenceReadDepth Minimum reference read depth to filter by, inclusive.
-   * @return GenotypeRDD filtered by reference read depth.
+   * @return GenotypeDataset filtered by reference read depth.
    */
-  def filterByReferenceReadDepth(minimumReferenceReadDepth: Int): GenotypeRDD = {
+  def filterByReferenceReadDepth(minimumReferenceReadDepth: Int): GenotypeDataset = {
     transform(rdd => rdd.filter(g => Option(g.getReferenceReadDepth).exists(_ >= minimumReferenceReadDepth)))
   }
 
   /**
-   * Filter this GenotypeRDD by sample to those that match the specified sample.
+   * Filter this GenotypeDataset by sample to those that match the specified sample.
    *
    * @param sampleId Sample to filter by.
-   * return GenotypeRDD filtered by sample.
+   * return GenotypeDataset filtered by sample.
    */
-  def filterToSample(sampleId: String): GenotypeRDD = {
+  def filterToSample(sampleId: String): GenotypeDataset = {
     transform(rdd => rdd.filter(g => Option(g.getSampleId).exists(_ == sampleId)))
   }
 
   /**
-   * Filter this GenotypeRDD by sample to those that match the specified samples.
+   * Filter this GenotypeDataset by sample to those that match the specified samples.
    *
    * @param sampleIds Sequence of samples to filter by.
-   * return GenotypeRDD filtered by one or more samples.
+   * return GenotypeDataset filtered by one or more samples.
    */
-  def filterToSamples(sampleIds: Seq[String]): GenotypeRDD = {
+  def filterToSamples(sampleIds: Seq[String]): GenotypeDataset = {
     transform(rdd => rdd.filter(g => Option(g.getSampleId).exists(sampleIds.contains(_))))
   }
 
   /**
-   * Filter genotypes containing NO_CALL alleles from this GenotypeRDD.
+   * Filter genotypes containing NO_CALL alleles from this GenotypeDataset.
    *
-   * @return GenotypeRDD filtered to remove genotypes containing NO_CALL alleles.
+   * @return GenotypeDataset filtered to remove genotypes containing NO_CALL alleles.
    */
-  def filterNoCalls(): GenotypeRDD = {
+  def filterNoCalls(): GenotypeDataset = {
     transform(rdd => rdd.filter(g => !g.getAlleles.contains(GenotypeAllele.NO_CALL)))
   }
 
   /**
    * @param newRdd An RDD to replace the underlying RDD with.
-   * @return Returns a new GenotypeRDD with the underlying RDD replaced.
+   * @return Returns a new GenotypeDataset with the underlying RDD replaced.
    */
   protected def replaceRdd(newRdd: RDD[Genotype],
-                           newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): GenotypeRDD = {
-    RDDBoundGenotypeRDD(newRdd, sequences, samples, headerLines, newPartitionMap)
+                           newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): GenotypeDataset = {
+    RDDBoundGenotypeDataset(newRdd, sequences, samples, headerLines, newPartitionMap)
   }
 
   /**

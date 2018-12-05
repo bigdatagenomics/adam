@@ -61,7 +61,7 @@ setGeneric("loadGenotypes",
 setGeneric("loadVariants",
            function(ac, filePath, ...) { standardGeneric("loadVariants") })
 
-#### RDD operations ####
+#### Genomic dataset operations ####
 
 #' The GenomicDataset is the base class that all genomic datatypes extend from in ADAM.
 #' 
@@ -75,7 +75,7 @@ NULL
 #' @param convFn The name of the ADAM GenomicDataset conversion class to
 #'   use.
 #' @param ... additional argument(s).
-#' @return Returns a new RDD where the input from the original RDD has
+#' @return Returns a new genomic dataset where the input from the original genomic dataset has
 #'   been piped through a command that runs locally on each executor.
 #' @export
 setGeneric("pipe",
@@ -104,7 +104,7 @@ setGeneric("destClassSuffix",
            function(destClass) { standardGeneric("destClassSuffix") })
 
 #' @rdname GenomicDataset
-#' @param tFn A function that transforms the underlying RDD as a DataFrame.
+#' @param tFn A function that transforms the underlying DataFrame as a DataFrame.
 #' @param destClass The destination class of this transmutation.
 #' @export
 setGeneric("transmute",
@@ -125,9 +125,9 @@ setGeneric("sort",
 setGeneric("sortLexicographically",
            function(ardd) { standardGeneric("sortLexicographically") })
 
-#' Saves this RDD to disk as Parquet.
+#' Saves this genomic dataset to disk as Parquet.
 #'
-#' @param ardd The RDD to apply this to.
+#' @param ardd The genomic dataset to apply this to.
 #' @param filePath Path to save file to.
 #'
 #' @rdname GenomicDataset
@@ -256,51 +256,51 @@ setGeneric("shuffleRegionJoinAndGroupByLeft",
 
 #### AlignmentRecord operations ####
 
-#' The AlignmentRecordRDD is the class used to manipulate genomic read data.
+#' The AlignmentRecordDataset is the class used to manipulate genomic read data.
 #' 
-#' @name AlignmentRecordRDD
+#' @name AlignmentRecordDataset
 NULL
 
-#' @rdname AlignmentRecordRDD
+#' @rdname AlignmentRecordDataset
 #' @export
 setGeneric("toFragments",
            function(ardd) { standardGeneric("toFragments") })
 
-#' @rdname AlignmentRecordRDD
-#' @param ardd The RDD to apply this to.
+#' @rdname AlignmentRecordDataset
+#' @param ardd The genomic dataset to apply this to.
 #' @param ... additional argument(s).
 #' @export
 setGeneric("toCoverage",
            function(ardd, ...) { standardGeneric("toCoverage") })
 
-#' @rdname AlignmentRecordRDD
+#' @rdname AlignmentRecordDataset
 #' @param kmerLength The value of _k_ to use for cutting _k_-mers.
 #' @export
 setGeneric("countKmers",
            function(ardd, kmerLength) { standardGeneric("countKmers") })
 
-#' @rdname AlignmentRecordRDD
+#' @rdname AlignmentRecordDataset
 #' @param filePath The path to save the file to.
 #' @export
 setGeneric("saveAsSam",
            function(ardd, filePath, ...) { standardGeneric("saveAsSam") })
 
-#' @rdname AlignmentRecordRDD
+#' @rdname AlignmentRecordDataset
 #' @export
 setGeneric("sortReadsByReferencePosition",
            function(ardd) { standardGeneric("sortReadsByReferencePosition") })
 
-#' @rdname AlignmentRecordRDD
+#' @rdname AlignmentRecordDataset
 #' @export
 setGeneric("sortReadsByReferencePositionAndIndex",
            function(ardd) { standardGeneric("sortReadsByReferencePositionAndIndex") })
 
-#' @rdname AlignmentRecordRDD
+#' @rdname AlignmentRecordDataset
 #' @export
 setGeneric("markDuplicates",
            function(ardd) { standardGeneric("markDuplicates") })
 
-#' @rdname AlignmentRecordRDD
+#' @rdname AlignmentRecordDataset
 #' @param knownSnps A table of known SNPs to mask valid variants.
 #' @param validationStringency The stringency to apply towards validating BQSR.
 #' @export
@@ -309,86 +309,86 @@ setGeneric("recalibrateBaseQualities",
              standardGeneric("recalibrateBaseQualities")
            })
 
-#' @rdname AlignmentRecordRDD
+#' @rdname AlignmentRecordDataset
 #' @export
 setGeneric("realignIndels",
            function(ardd, ...) { standardGeneric("realignIndels") })
 
 #### Coverage operations ####
 
-#' The CoverageRDD class is used to manipulate read coverage counts.
+#' The CoverageDataset class is used to manipulate read coverage counts.
 #' 
-#' @name CoverageRDD
+#' @name CoverageDataset
 NULL
 
-#' @rdname CoverageRDD
+#' @rdname CoverageDataset
 #' @param ... additional argument(s).
 #' @export
 setGeneric("collapse",
            function(ardd, ...) { standardGeneric("collapse") })
 
-#' @rdname CoverageRDD
+#' @rdname CoverageDataset
 #' @export
 setGeneric("toFeatures",
            function(ardd) { standardGeneric("toFeatures") })
 
-#' @rdname CoverageRDD
+#' @rdname CoverageDataset
 #' @export
 setGeneric("coverage",
            function(ardd, ...) { standardGeneric("coverage") })
 
-#' @rdname CoverageRDD
+#' @rdname CoverageDataset
 #' @export
-#' @aliases aggregatedCoverage,CoverageRDD-method
+#' @aliases aggregatedCoverage,CoverageDataset-method
 setGeneric("aggregatedCoverage",
            function(ardd, ...) { standardGeneric("aggregatedCoverage") })
 
-#' @rdname CoverageRDD
+#' @rdname CoverageDataset
 #' @export
 setGeneric("flatten",
            function(ardd) { standardGeneric("flatten") })
 
 #### Fragment operations ####
 
-#' The FragmentRDD class is used to manipulate paired reads.
+#' The FragmentDataset class is used to manipulate paired reads.
 #' 
-#' @name FragmentRDD
+#' @name FragmentDataset
 NULL
 
-#' @rdname FragmentRDD
-#' @param ardd The RDD to apply this to.
+#' @rdname FragmentDataset
+#' @param ardd The genomic dataset to apply this to.
 #' @export
 setGeneric("toReads",
            function(ardd) { standardGeneric("toReads") })
 
 #### Genotype and Variant operations ####
 
-#' Converts this RDD to VariantContexts.
+#' Converts this genomic dataset to VariantContexts.
 #'
-#' @param ardd The RDD to apply this to.
-#' @return Returns this RDD of Variants as VariantContexts.
+#' @param ardd The genomic dataset to apply this to.
+#' @return Returns this genomic dataset of Variants as VariantContexts.
 #' @export
 setGeneric("toVariantContexts",
            function(ardd) { standardGeneric("toVariantContexts") })
 
 
-#' Converts this RDD to Variants.
+#' Converts this genomic dataset to Variants.
 #'
-#' @param ardd The RDD to apply this to.
-#' @return Returns this RDD of Genotypes as Variants.
+#' @param ardd The genomic dataset to apply this to.
+#' @return Returns this genomic dataset of Genotypes as Variants.
 #' @export
 setGeneric("toVariants",
            function(ardd, ...) { standardGeneric("toVariants") })
 
 #### NucleotideContigFragment operations ####
 
-#' The NucleotideContigFragmentRDD class is used to manipulate contigs.
+#' The NucleotideContigFragmentDataset class is used to manipulate contigs.
 #' 
-#' @name NucleotideContigFragmentRDD
+#' @name NucleotideContigFragmentDataset
 NULL
 
-#' @rdname NucleotideContigFragmentRDD
-#' @param ardd The RDD to apply this to.
+#' @rdname NucleotideContigFragmentDataset
+#' @param ardd The genomic dataset to apply this to.
 #' @param flankLength The length to extend adjacent records by.
 #' @export
 setGeneric("flankAdjacentFragments",
@@ -398,18 +398,18 @@ setGeneric("flankAdjacentFragments",
 
 #### Variant operations ####
 
-#' The VariantContextRDD class is used to manipulate VCF-styled data.
+#' The VariantContextDataset class is used to manipulate VCF-styled data.
 #'
-#' Each element in a VariantContext RDD corresponds to a VCF line. This
-#' differs from the GenotypeRDD, where each element represents the genotype
-#' of a single sample at a single site, or a VariantRDD, which represents
+#' Each element in a VariantContext genomic dataset corresponds to a VCF line. This
+#' differs from the GenotypeDataset, where each element represents the genotype
+#' of a single sample at a single site, or a VariantDataset, which represents
 #' just the variant of interest.
 #' 
-#' @name VariantContextRDD
+#' @name VariantContextDataset
 NULL
 
-#' @rdname VariantContextRDD
-#' @param ardd The RDD to apply this to.
+#' @rdname VariantContextDataset
+#' @param ardd The genomic dataset to apply this to.
 #' @param filePath Path to save VCF to.
 #' @param ... additional argument(s).
 #' @export

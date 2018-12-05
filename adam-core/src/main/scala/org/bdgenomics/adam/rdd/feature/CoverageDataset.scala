@@ -69,19 +69,19 @@ private[adam] class CoverageArraySerializer(kryo: Kryo) extends IntervalArraySer
   }
 }
 
-object CoverageRDD {
+object CoverageDataset {
 
   /**
-   * A GenomicRDD that wraps a dataset of Coverage data.
+   * A GenomicDataset that wraps a dataset of Coverage data with an empty sequence dictionary.
    *
    * @param ds A Dataset of genomic Coverage features.
    */
-  def apply(ds: Dataset[Coverage]): CoverageRDD = {
-    new DatasetBoundCoverageRDD(ds, SequenceDictionary.empty, Seq.empty[Sample])
+  def apply(ds: Dataset[Coverage]): CoverageDataset = {
+    new DatasetBoundCoverageDataset(ds, SequenceDictionary.empty, Seq.empty[Sample])
   }
 
   /**
-   * A GenomicRDD that wraps a dataset of Coverage data.
+   * A GenomicDataset that wraps a dataset of Coverage data given a sequence dictionary.
    *
    * @param ds A Dataset of genomic Coverage features.
    * @param sequences The reference genome these data are aligned to.
@@ -89,40 +89,40 @@ object CoverageRDD {
    */
   def apply(ds: Dataset[Coverage],
             sequences: SequenceDictionary,
-            samples: Seq[Sample]): CoverageRDD = {
-    new DatasetBoundCoverageRDD(ds, sequences, samples)
+            samples: Seq[Sample]): CoverageDataset = {
+    new DatasetBoundCoverageDataset(ds, sequences, samples)
   }
 
   /**
-   * Builds a CoverageRDD with an empty sequence dictionary.
+   * A CoverageDataset that wraps an RDD of Coverage data with an empty sequence dictionary.
    *
    * @param rdd The underlying Coverage RDD to build from.
-   * @return Returns a new CoverageRDD.
+   * @return Returns a new CoverageDataset.
    */
-  def apply(rdd: RDD[Coverage]): CoverageRDD = {
-    new RDDBoundCoverageRDD(rdd, SequenceDictionary.empty, Seq.empty[Sample], None)
+  def apply(rdd: RDD[Coverage]): CoverageDataset = {
+    new RDDBoundCoverageDataset(rdd, SequenceDictionary.empty, Seq.empty[Sample], None)
   }
 
   /**
-   * Builds a CoverageRDD given a sequence dictionary.
+   * A CoverageDataset that wraps an RDD of Coverage data given a sequence dictionary.
    *
    * @param rdd The underlying Coverage RDD to build from.
-   * @param sd The sequence dictionary for this Coverage RDD.
-   * @param samples The samples in this Coverage RDD.
-   * @return Returns a new CoverageRDD.
+   * @param sd The sequence dictionary for this CoverageDataset.
+   * @param samples The samples in this CoverageDataset.
+   * @return Returns a new CoverageDataset.
    */
   def apply(rdd: RDD[Coverage],
             sd: SequenceDictionary,
-            samples: Seq[Sample]): CoverageRDD = {
-    new RDDBoundCoverageRDD(rdd, sd, samples, None)
+            samples: Seq[Sample]): CoverageDataset = {
+    new RDDBoundCoverageDataset(rdd, sd, samples, None)
   }
 }
 
-case class ParquetUnboundCoverageRDD private[rdd] (
+case class ParquetUnboundCoverageDataset private[rdd] (
     @transient private val sc: SparkContext,
     private val parquetFilename: String,
     sequences: SequenceDictionary,
-    @transient samples: Seq[Sample]) extends CoverageRDD {
+    @transient samples: Seq[Sample]) extends CoverageDataset {
 
   lazy val rdd: RDD[Coverage] = {
     sc.loadParquetCoverage(parquetFilename,
@@ -141,47 +141,27 @@ case class ParquetUnboundCoverageRDD private[rdd] (
       .as[Coverage]
   }
 
-  def toFeatures(): FeatureRDD = {
-    ParquetUnboundFeatureRDD(sc, parquetFilename, sequences, samples)
+  override def toFeatures(): FeatureDataset = {
+    ParquetUnboundFeatureDataset(sc, parquetFilename, sequences, samples)
   }
 
-  /**
-   * Replaces the sequence dictionary attached to a CoverageRDD.
-   *
-   * @param newSequences The new sequence dictionary to attach.
-   * @return Returns a new CoverageRDD with the sequences replaced.
-   */
-  override def replaceSequences(
-    newSequences: SequenceDictionary): CoverageRDD = {
+  override def replaceSequences(newSequences: SequenceDictionary): CoverageDataset = {
     copy(sequences = newSequences)
   }
 
-  /**
-   * Replaces the sample metadata attached to the RDD.
-   *
-   * @param newSamples The new sample metadata to attach.
-   * @return A CoverageRDD with new sample metadata.
-   */
-  override def replaceSamples(newSamples: Iterable[Sample]): CoverageRDD = {
+  override def replaceSamples(newSamples: Iterable[Sample]): CoverageDataset = {
     copy(samples = newSamples.toSeq)
   }
 }
 
-/**
- * A Dataset containing Coverage data.
- *
- * @param dataset A SQL Dataset containing data describing how many reads cover
- *   a genomic locus/region.
- * @param sequences A dictionary describing the reference genome.
- */
-case class DatasetBoundCoverageRDD private[rdd] (
+case class DatasetBoundCoverageDataset private[rdd] (
   dataset: Dataset[Coverage],
   sequences: SequenceDictionary,
   @transient samples: Seq[Sample],
   override val isPartitioned: Boolean = false,
   override val optPartitionBinSize: Option[Int] = None,
-  override val optLookbackPartitions: Option[Int] = None) extends CoverageRDD
-    with DatasetBoundGenomicDataset[Coverage, Coverage, CoverageRDD] {
+  override val optLookbackPartitions: Option[Int] = None) extends CoverageDataset
+    with DatasetBoundGenomicDataset[Coverage, Coverage, CoverageDataset] {
 
   protected lazy val optPartitionMap = None
 
@@ -189,45 +169,25 @@ case class DatasetBoundCoverageRDD private[rdd] (
     dataset.rdd
   }
 
-  def toFeatures(): FeatureRDD = {
+  override def toFeatures(): FeatureDataset = {
     import dataset.sqlContext.implicits._
-    DatasetBoundFeatureRDD(dataset.map(_.toSqlFeature), sequences, samples)
+    DatasetBoundFeatureDataset(dataset.map(_.toSqlFeature), sequences, samples)
   }
 
-  /**
-   * Replaces the sequence dictionary attached to a DatasetBoundCoverageRDD.
-   *
-   * @param newSequences The new sequence dictionary to attach.
-   * @return Returns a new DatasetBoundCoverageRDD with the sequences replaced.
-   */
-  override def replaceSequences(
-    newSequences: SequenceDictionary): CoverageRDD = {
+  override def replaceSequences(newSequences: SequenceDictionary): CoverageDataset = {
     copy(sequences = newSequences)
   }
 
-  /**
-   * Replaces the sample metadata attached to the DatasetBoundCoverageRDD.
-   *
-   * @param newSamples The new sample metadata to attach.
-   * @return A DatasetBoundCoverageRDD with new sample metadata.
-   */
-  override def replaceSamples(newSamples: Iterable[Sample]): CoverageRDD = {
+  override def replaceSamples(newSamples: Iterable[Sample]): CoverageDataset = {
     copy(samples = newSamples.toSeq)
   }
 }
 
-/**
- * An RDD containing Coverage data.
- *
- * @param rdd An RDD containing data describing how many reads cover a genomic
- *   locus/region.
- * @param sequences A dictionary describing the reference genome.
- */
-case class RDDBoundCoverageRDD private[rdd] (
+case class RDDBoundCoverageDataset private[rdd] (
     rdd: RDD[Coverage],
     sequences: SequenceDictionary,
     @transient samples: Seq[Sample],
-    optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends CoverageRDD {
+    optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends CoverageDataset {
 
   lazy val dataset: Dataset[Coverage] = {
     val sqlContext = SQLContext.getOrCreate(rdd.context)
@@ -235,24 +195,23 @@ case class RDDBoundCoverageRDD private[rdd] (
     sqlContext.createDataset(rdd)
   }
 
-  def toFeatures(): FeatureRDD = {
-    val featureRdd = rdd.map(_.toFeature)
-    new RDDBoundFeatureRDD(featureRdd, sequences, samples, optPartitionMap = optPartitionMap)
+  override def toFeatures(): FeatureDataset = {
+    val features = rdd.map(_.toFeature)
+    new RDDBoundFeatureDataset(features, sequences, samples, optPartitionMap = optPartitionMap)
   }
 
-  override def replaceSequences(
-    newSequences: SequenceDictionary): CoverageRDD = {
+  override def replaceSequences(newSequences: SequenceDictionary): CoverageDataset = {
     copy(sequences = newSequences)
   }
 
-  override def replaceSamples(newSamples: Iterable[Sample]): CoverageRDD = {
+  override def replaceSamples(newSamples: Iterable[Sample]): CoverageDataset = {
     copy(samples = newSamples.toSeq)
   }
 }
 
-abstract class CoverageRDD
-    extends MultisampleGenomicDataset[Coverage, Coverage, CoverageRDD]
-    with GenomicDataset[Coverage, Coverage, CoverageRDD] {
+abstract class CoverageDataset
+    extends MultisampleGenomicDataset[Coverage, Coverage, CoverageDataset]
+    with GenomicDataset[Coverage, Coverage, CoverageDataset] {
 
   protected val productFn = (c: Coverage) => c
   protected val unproductFn = (c: Coverage) => c
@@ -264,20 +223,19 @@ abstract class CoverageRDD
     IntervalArray(rdd, CoverageArray.apply(_, _))
   }
 
-  def union(rdds: CoverageRDD*): CoverageRDD = {
-    val iterableRdds = rdds.toSeq
+  def union(datasets: CoverageDataset*): CoverageDataset = {
+    val iterableDatasets = datasets.toSeq
+    val mergedSequences = iterableDatasets.map(_.sequences).fold(sequences)(_ ++ _)
+    val mergedSamples = (samples ++ iterableDatasets.flatMap(_.samples)).distinct.toSeq
 
-    val mergedSequences = iterableRdds.map(_.sequences).fold(sequences)(_ ++ _)
-    val mergedSamples = (samples ++ iterableRdds.flatMap(_.samples)).distinct.toSeq
-
-    if (iterableRdds.forall(rdd => rdd match {
-      case DatasetBoundCoverageRDD(_, _, _, _, _, _) => true
-      case _                                         => false
+    if (iterableDatasets.forall(dataset => dataset match {
+      case DatasetBoundCoverageDataset(_, _, _, _, _, _) => true
+      case _ => false
     })) {
-      DatasetBoundCoverageRDD(iterableRdds.map(_.dataset)
+      DatasetBoundCoverageDataset(iterableDatasets.map(_.dataset)
         .fold(dataset)(_.union(_)), mergedSequences, mergedSamples)
     } else {
-      RDDBoundCoverageRDD(rdd.context.union(rdd, iterableRdds.map(_.rdd): _*),
+      RDDBoundCoverageDataset(rdd.context.union(rdd, iterableDatasets.map(_.rdd): _*),
         mergedSequences,
         mergedSamples,
         None)
@@ -298,14 +256,14 @@ abstract class CoverageRDD
   }
 
   def transformDataset(
-    tFn: Dataset[Coverage] => Dataset[Coverage]): CoverageRDD = {
-    DatasetBoundCoverageRDD(tFn(dataset), sequences, samples)
+    tFn: Dataset[Coverage] => Dataset[Coverage]): CoverageDataset = {
+    DatasetBoundCoverageDataset(tFn(dataset), sequences, samples)
   }
 
   /**
    * Saves coverage as feature file.
    *
-   * @see FeatureRDD.save
+   * @see FeatureDataset.save
    *
    * Supported file formats include bed, narrowPeak and parquet. Coverage is saved
    * as a feature where coverage is stored in score attribute.
@@ -340,7 +298,7 @@ abstract class CoverageRDD
    *
    * @return merged tuples of adjacent ReferenceRegions and coverage.
    */
-  def collapse(): CoverageRDD = {
+  def collapse(): CoverageDataset = {
     val newRDD: RDD[Coverage] = rdd
       .mapPartitions(iter => {
         // must sort values to iteratively collapse coverage
@@ -391,11 +349,11 @@ abstract class CoverageRDD
   }
 
   /**
-   * Converts CoverageRDD to FeatureRDD.
+   * Converts CoverageDataset to FeatureDataset.
    *
-   * @return Returns a FeatureRDD from CoverageRDD.
+   * @return Returns a FeatureDataset from CoverageDataset.
    */
-  def toFeatures(): FeatureRDD
+  def toFeatures(): FeatureDataset
 
   /**
    * Gets coverage overlapping specified ReferenceRegion.
@@ -405,9 +363,9 @@ abstract class CoverageRDD
    * coverage of the first base pair in that bin. Java friendly variant.
    *
    * @param bpPerBin base pairs per bin, number of bases to combine to one bin.
-   * @return RDD of Coverage Records.
+   * @return Genomic dataset of Coverage Records.
    */
-  def coverage(bpPerBin: java.lang.Integer): CoverageRDD = {
+  def coverage(bpPerBin: java.lang.Integer): CoverageDataset = {
     val bp: Int = bpPerBin
     coverage(bpPerBin = bp)
   }
@@ -419,9 +377,9 @@ abstract class CoverageRDD
    * coverage of the first base pair in that bin.
    *
    * @param bpPerBin base pairs per bin, number of bases to combine to one bin.
-   * @return RDD of Coverage Records.
+   * @return Genomic dataset of Coverage Records.
    */
-  def coverage(bpPerBin: Int = 1): CoverageRDD = {
+  def coverage(bpPerBin: Int = 1): CoverageDataset = {
 
     val flattened = flatten()
 
@@ -442,9 +400,9 @@ abstract class CoverageRDD
    * the mean coverage over all base pairs in that bin. Java friendly variant.
    *
    * @param bpPerBin base pairs per bin, number of bases to combine to one bin.
-   * @return RDD of Coverage Records.
+   * @return Genomic dataset of Coverage Records.
    */
-  def aggregatedCoverage(bpPerBin: java.lang.Integer): CoverageRDD = {
+  def aggregatedCoverage(bpPerBin: java.lang.Integer): CoverageDataset = {
     val bp: Int = bpPerBin
     aggregatedCoverage(bpPerBin = bp)
   }
@@ -457,9 +415,9 @@ abstract class CoverageRDD
    * the mean coverage over all base pairs in that bin.
    *
    * @param bpPerBin base pairs per bin, number of bases to combine to one bin.
-   * @return RDD of Coverage Records.
+   * @return Genomic dataset of Coverage Records.
    */
-  def aggregatedCoverage(bpPerBin: Int = 1): CoverageRDD = {
+  def aggregatedCoverage(bpPerBin: Int = 1): CoverageDataset = {
 
     val flattened = flatten()
 
@@ -501,19 +459,19 @@ abstract class CoverageRDD
 
   /**
    * @param newRdd The RDD to replace the underlying RDD with.
-   * @return Returns a new CoverageRDD with the underlying RDD replaced.
+   * @return Returns a new CoverageDataset with the underlying RDD replaced.
    */
   protected def replaceRdd(newRdd: RDD[Coverage],
-                           newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): CoverageRDD = {
-    RDDBoundCoverageRDD(newRdd, sequences, samples, newPartitionMap)
+                           newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): CoverageDataset = {
+    RDDBoundCoverageDataset(newRdd, sequences, samples, newPartitionMap)
   }
 
   /**
-   * Gets flattened RDD of coverage, with coverage mapped to a ReferenceRegion at each base pair.
+   * Gets flattened genomic dataset of coverage, with coverage mapped to a ReferenceRegion at each base pair.
    *
-   * @return CoverageRDD of flattened Coverage records.
+   * @return CoverageDataset of flattened Coverage records.
    */
-  def flatten(): CoverageRDD = {
+  def flatten(): CoverageDataset = {
     transform(rdd => flatMapCoverage(rdd))
   }
 
@@ -521,7 +479,7 @@ abstract class CoverageRDD
    * Flat maps coverage into ReferenceRegion and counts for each base pair.
    *
    * @param rdd RDD of Coverage.
-   * @return RDD of flattened Coverage.
+   * @return Genomic dataset of flattened Coverage.
    */
   private def flatMapCoverage(rdd: RDD[Coverage]): RDD[Coverage] = {
     rdd.flatMap(r => {

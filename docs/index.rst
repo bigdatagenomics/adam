@@ -99,7 +99,7 @@ For more, please see our `awesome list of applications <https://github.com/bigda
 
    api/overview
    api/adamContext
-   api/genomicRdd
+   api/genomicDataset
    api/joins
    api/pipes
    api/python

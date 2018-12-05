@@ -30,11 +30,11 @@ setClass("GenomicDataset",
 
 #' A class that wraps an RDD of genomic reads with helpful metadata.
 #'
-#' @rdname AlignmentRecordRDD
+#' @rdname AlignmentRecordDataset
 #' @slot jrdd The Java RDD of AlignmentRecords that this class wraps.
 #' 
 #' @export
-setClass("AlignmentRecordRDD",
+setClass("AlignmentRecordDataset",
          slots = list(jrdd = "jobj"),
          contains = "GenomicDataset")
 
@@ -44,112 +44,112 @@ GenomicDataset <- function(jrdd) {
 }
 
 #' @importFrom methods new
-AlignmentRecordRDD <- function(jrdd) {
-    new("AlignmentRecordRDD", jrdd = jrdd)
+AlignmentRecordDataset <- function(jrdd) {
+    new("AlignmentRecordDataset", jrdd = jrdd)
 }
 
 #' A class that wraps an RDD of genomic coverage data with helpful metadata.
 #'
-#' @rdname CoverageRDD
+#' @rdname CoverageDataset
 #' @slot jrdd The Java RDD of Coverage that this class wraps.
 #' 
 #' @export
-setClass("CoverageRDD",
+setClass("CoverageDataset",
          slots = list(jrdd = "jobj"),
          contains = "GenomicDataset")
 
 #' @importFrom methods new
-CoverageRDD <- function(jrdd) {
-    new("CoverageRDD", jrdd = jrdd)
+CoverageDataset <- function(jrdd) {
+    new("CoverageDataset", jrdd = jrdd)
 }
 
 #' A class that wraps an RDD of genomic features with helpful metadata.
 #'
-#' @rdname FeatureRDD
+#' @rdname FeatureDataset
 #' @slot jrdd The Java RDD of Features that this class wraps.
 #' 
 #' @export
-setClass("FeatureRDD",
+setClass("FeatureDataset",
          slots = list(jrdd = "jobj"),
          contains = "GenomicDataset")
 
 #' @importFrom methods new
-FeatureRDD <- function(jrdd) {
-    new("FeatureRDD", jrdd = jrdd)
+FeatureDataset <- function(jrdd) {
+    new("FeatureDataset", jrdd = jrdd)
 }
 
 #' A class that wraps an RDD of read pairs grouped by sequencing fragment with helpful metadata.
 #'
-#' @rdname FragmentRDD
+#' @rdname FragmentDataset
 #' @slot jrdd The Java RDD of Fragments that this class wraps.
 #' 
 #' @export
-setClass("FragmentRDD",
+setClass("FragmentDataset",
          slots = list(jrdd = "jobj"),
          contains = "GenomicDataset")
 
-FragmentRDD <- function(jrdd) {
-    new("FragmentRDD", jrdd = jrdd)
+FragmentDataset <- function(jrdd) {
+    new("FragmentDataset", jrdd = jrdd)
 }
 
 #' A class that wraps an RDD of genotypes with helpful metadata.
 #'
-#' @rdname GenotypeRDD
+#' @rdname GenotypeDataset
 #' @slot jrdd The Java RDD of Genotypes that this class wraps.
 #' 
 #' @export
-setClass("GenotypeRDD",
+setClass("GenotypeDataset",
          slots = list(jrdd = "jobj"),
          contains = "GenomicDataset")
 
 #' @importFrom methods new
-GenotypeRDD <- function(jrdd) {
-    new("GenotypeRDD", jrdd = jrdd)
+GenotypeDataset <- function(jrdd) {
+    new("GenotypeDataset", jrdd = jrdd)
 }
 
 #' A class that wraps an RDD of contigs with helpful metadata.
 #'
-#' @rdname NucleotideContigFragmentRDD
+#' @rdname NucleotideContigFragmentDataset
 #' @slot jrdd The Java RDD of contigs that this class wraps.
 #' 
 #' @export
-setClass("NucleotideContigFragmentRDD",
+setClass("NucleotideContigFragmentDataset",
          slots = list(jrdd = "jobj"),
          contains = "GenomicDataset")
 
 #' @importFrom methods new
-NucleotideContigFragmentRDD <- function(jrdd) {
-    new("NucleotideContigFragmentRDD", jrdd = jrdd)
+NucleotideContigFragmentDataset <- function(jrdd) {
+    new("NucleotideContigFragmentDataset", jrdd = jrdd)
 }
 
 #' A class that wraps an RDD of variants with helpful metadata.
 #'
-#' @rdname VariantRDD
+#' @rdname VariantDataset
 #' @slot jrdd The Java RDD of Variants that this class wraps.
 #' 
 #' @export
-setClass("VariantRDD",
+setClass("VariantDataset",
          slots = list(jrdd = "jobj"),
          contains = "GenomicDataset")
 
 #' @importFrom methods new
-VariantRDD <- function(jrdd) {
-    new("VariantRDD", jrdd = jrdd)
+VariantDataset <- function(jrdd) {
+    new("VariantDataset", jrdd = jrdd)
 }
 
 #' A class that wraps an RDD of both variants and genotypes with helpful metadata.
 #'
-#' @rdname VariantContextRDD
+#' @rdname VariantContextDataset
 #' @slot jrdd The Java RDD of VariantContexts that this class wraps.
 #' 
 #' @export
-setClass("VariantContextRDD",
+setClass("VariantContextDataset",
          slots = list(jrdd = "jobj"),
          contains = "GenomicDataset")
 
 #' @importFrom methods new
-VariantContextRDD <- function(jrdd) {
-    new("VariantContextRDD", jrdd = jrdd)
+VariantContextDataset <- function(jrdd) {
+    new("VariantContextDataset", jrdd = jrdd)
 }
 
 #'
@@ -161,16 +161,16 @@ VariantContextRDD <- function(jrdd) {
 #' 
 #' Pipes require the presence of an InFormatterCompanion and an OutFormatter
 #' as implicit values. The InFormatterCompanion should be a singleton whose
-#' apply method builds an InFormatter given a specific type of GenomicRDD.
+#' apply method builds an InFormatter given a specific type of GenomicDataset.
 #' The implicit InFormatterCompanion yields an InFormatter which is used to
 #' format the input to the pipe, and the implicit OutFormatter is used to
 #' parse the output from the pipe.
 #'
-#' @param ardd The RDD to apply this to.
+#' @param ardd The genomic dataset to apply this to.
 #' @param cmd The command to run.
 #' @param tFormatter The name of the ADAM in-formatter class to use.
 #' @param xFormatter The name of the ADAM out-formatter class to use.
-#' @param convFn The name of the ADAM GenomicRDD conversion class to
+#' @param convFn The name of the ADAM GenomicDataset conversion class to
 #'   use.
 #' @param files The files to copy locally onto all executors. Set to
 #'   None (default) to omit.
@@ -178,7 +178,7 @@ VariantContextRDD <- function(jrdd) {
 #'   executor. Set to None (default) to omit.
 #' @param flankSize The number of bases of flanking sequence to have
 #'   around each partition. Defaults to 0.
-#' @return Returns a new RDD where the input from the original RDD has
+#' @return Returns a new genomic dataset where the input from the original genomic dataset has
 #'   been piped through a command that runs locally on each executor.
 #'
 #' @importFrom SparkR sparkR.callJStatic sparkR.callJMethod
@@ -237,8 +237,8 @@ setMethod("pipe",
 
 #' Caches the existing ardd
 #'
-#' @param ardd The RDD to apply this to.
-#' @return A new RDD where the RDD of genomic data has been replaced, but the
+#' @param ardd The genomic dataset to apply this to.
+#' @return A new genomic dataset where the genomic dataset of genomic data has been replaced, but the
 #'    metadata (sequence dictionary, and etc) is copied without modification.
 #'
 #' @importFrom SparkR sparkR.callJMethod
@@ -252,9 +252,9 @@ setMethod("cache",
 
 #' Persists the existing ardd
 #'
-#' @param ardd The RDD to apply this to.
+#' @param ardd The genomic dataset to apply this to.
 #' @param sl the StorageLevel to persist in.
-#' @return A new RDD where the RDD of genomic data has been replaced, but the
+#' @return A new genomic dataset where the genomic dataset of genomic data has been replaced, but the
 #'    metadata (sequence dictionary, and etc) is copied without modification.
 #'
 #' @importFrom SparkR sparkR.callJMethod sparkR.callJStatic
@@ -270,8 +270,8 @@ setMethod("persist",
 
 #' Unpersists the existing ardd
 #'
-#' @param ardd The RDD to apply this to.
-#' @return A new RDD where the RDD of genomic data has been replaced, but the
+#' @param ardd The genomic dataset to apply this to.
+#' @return A new genomic dataset where the genomic dataset of genomic data has been replaced, but the
 #'    metadata (sequence dictionary, and etc) is copied without modification.
 #'
 #' @importFrom SparkR sparkR.callJMethod
@@ -286,8 +286,8 @@ setMethod("unpersist",
 #' Sorts our genome aligned data by reference positions, with contigs ordered
 #' by index.
 #'
-#' @param ardd The RDD to apply this to.
-#' @return Returns a new, sorted RDD, of the implementing class type.
+#' @param ardd The genomic dataset to apply this to.
+#' @return Returns a new, sorted genomic dataset, of the implementing class type.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
@@ -301,8 +301,8 @@ setMethod("sort",
 #' Sorts our genome aligned data by reference positions, with contigs ordered
 #' lexicographically.
 #'
-#' @param ardd The RDD to apply this to.
-#' @return Returns a new, sorted RDD, of the implementing class type.
+#' @param ardd The genomic dataset to apply this to.
+#' @return Returns a new, sorted genomic dataset, of the implementing class type.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
@@ -315,8 +315,8 @@ setMethod("sortLexicographically",
 
 #' Converts this GenomicDataset into a dataframe.
 #'
-#' @param ardd The RDD to convert into a dataframe.
-#' @return Returns a dataframe representing this RDD.
+#' @param ardd The genomic dataset to convert into a dataframe.
+#' @return Returns a dataframe representing this genomic dataset.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
@@ -345,9 +345,9 @@ setMethod("wrapTransformation",
 #' Applies a function that transforms the underlying DataFrame into a new DataFrame
 #' using the Spark SQL API.
 #'
-#' @param ardd The RDD to apply this to.
-#' @param tFn A function that transforms the underlying RDD as a DataFrame.
-#' @return A new RDD where the RDD of genomic data has been replaced, but the
+#' @param ardd The genomic dataset to apply this to.
+#' @param tFn A function that transforms the underlying DataFrame as a DataFrame.
+#' @return A new genomic dataset where the DataFrame of genomic data has been replaced, but the
 #'    metadata (sequence dictionary, and etc) is copied without modification.
 #'
 #' @importFrom SparkR sparkR.callJMethod
@@ -373,19 +373,19 @@ setMethod("inferConversionFn",
 setMethod("destClassSuffix",
           signature(destClass = "character"),
           function(destClass) {
-              if (destClass == "NucleotideContigFragmentRDD") {
+              if (destClass == "NucleotideContigFragmentDataset") {
                   "ContigsDatasetConverter"
-              } else if (destClass == "CoverageRDD") {
+              } else if (destClass == "CoverageDataset") {
                   "CoverageDatasetConverter"
-              } else if (destClass == "FeatureRDD") {
+              } else if (destClass == "FeatureDataset") {
                   "FeaturesDatasetConverter"
-              } else if (destClass == "FragmentRDD") {
+              } else if (destClass == "FragmentDataset") {
                   "FragmentDatasetConverter"
-              } else if (destClass == "AlignmentRecordRDD") {
+              } else if (destClass == "AlignmentRecordDataset") {
                   "AlignmentRecordDatasetConverter"
-              } else if (destClass == "GenotypeRDD") {
+              } else if (destClass == "GenotypeDataset") {
                   "GenotypeDatasetConverter"
-              } else if (destClass == "VariantRDD") {
+              } else if (destClass == "VariantDataset") {
                   "VariantDatasetConverter"
               } else {
                   stop(paste("No conversion method known for",
@@ -393,14 +393,14 @@ setMethod("destClassSuffix",
               }
           })
 
-#' Applies a function that transmutes the underlying DataFrame into a new RDD of a
+#' Applies a function that transmutes the underlying DataFrame into a new DataFrame of a
 #' different type.
 #'
-#' @param ardd The RDD to apply this to.
-#' @param tFn A function that transforms the underlying RDD as a DataFrame.
+#' @param ardd The genomic dataset to apply this to.
+#' @param tFn A function that transforms the underlying DataFrame as a DataFrame.
 #' @param destClass The destination class of this transmutation.
 #' @param convFn The name of the ADAM GenomicDatasetConversion class to use.
-#' @return A new RDD where the RDD of genomic data has been replaced, but the
+#' @return A new genomic dataset where the genomic dataset of genomic data has been replaced, but the
 #'   metadata (sequence dictionary, and etc) is copied without modification.
 #'
 #' @importFrom SparkR sparkR.callJMethod sparkR.callJStatic
@@ -425,19 +425,19 @@ setMethod("transmute",
                   jrdd = sparkR.callJMethod(ardd@jrdd, "transmuteDataFrame", dfFn, convFnInst))
           })
 
-#' Performs a broadcast inner join between this RDD and another RDD.
+#' Performs a broadcast inner join between this genomic dataset and another genomic dataset.
 #'
-#' In a broadcast join, the left RDD (this RDD) is collected to the driver,
+#' In a broadcast join, the left genomic dataset (this genomic dataset) is collected to the driver,
 #' and broadcast to all the nodes in the cluster. The key equality function
 #' used for this join is the reference region overlap function. Since this
 #' is an inner join, all values who do not overlap a value from the other
-#' RDD are dropped.
+#' genomic dataset are dropped.
 #'
-#' @param ardd The left RDD in the join.
-#' @param genomicRdd The right RDD in the join.
+#' @param ardd The left genomic dataset in the join.
+#' @param genomicRdd The right genomic dataset in the join.
 #' @param flankSize Sets a flankSize for the distance between elements to be
 #'   joined. If set to 0, an overlap is required to join two elements.
-#' @return Returns a new genomic RDD containing all pairs of keys that
+#' @return Returns a new genomic dataset containing all pairs of keys that
 #'   overlapped in the genomic coordinate space.
 #'
 #' @importFrom SparkR sparkR.callJMethod
@@ -453,23 +453,23 @@ setMethod("broadcastRegionJoin",
                                                 flankSize))
           })
 
-#' Performs a broadcast right outer join between this RDD and another RDD.
+#' Performs a broadcast right outer join between this genomic dataset and another genomic dataset.
 #'
-#' In a broadcast join, the left RDD (this RDD) is collected to the driver,
+#' In a broadcast join, the left genomic dataset (this genomic dataset) is collected to the driver,
 #' and broadcast to all the nodes in the cluster. The key equality function
 #' used for this join is the reference region overlap function. Since this
-#' is a right outer join, all values in the left RDD that do not overlap a
-#' value from the right RDD are dropped. If a value from the right RDD does
-#' not overlap any values in the left RDD, it will be paired with a `None`
+#' is a right outer join, all values in the left genomic dataset that do not overlap a
+#' value from the right genomic dataset are dropped. If a value from the right genomic dataset does
+#' not overlap any values in the left genomic dataset, it will be paired with a `None`
 #' in the product of the join.
 #'
-#' @param ardd The left RDD in the join.
-#' @param genomicRdd The right RDD in the join.
+#' @param ardd The left genomic dataset in the join.
+#' @param genomicRdd The right genomic dataset in the join.
 #' @param flankSize Sets a flankSize for the distance between elements to be
 #'   joined. If set to 0, an overlap is required to join two elements.
-#' @return Returns a new genomic RDD containing all pairs of keys that
+#' @return Returns a new genomic dataset containing all pairs of keys that
 #'   overlapped in the genomic coordinate space, and all keys from the
-#'   right RDD that did not overlap a key in the left RDD.
+#'   right genomic dataset that did not overlap a key in the left genomic dataset.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
@@ -484,19 +484,19 @@ setMethod("rightOuterBroadcastRegionJoin",
                                                 flankSize))
           })
 
-#' Performs a broadcast inner join between this RDD and another RDD.
+#' Performs a broadcast inner join between this genomic dataset and another genomic dataset.
 #'
-#' In a broadcast join, the left RDD (this RDD) is collected to the driver,
+#' In a broadcast join, the left genomic dataset (this genomic dataset) is collected to the driver,
 #' and broadcast to all the nodes in the cluster. The key equality function
 #' used for this join is the reference region overlap function. Since this
 #' is an inner join, all values who do not overlap a value from the other
-#' RDD are dropped.
+#' genomic dataset are dropped.
 #'
-#' @param ardd The left RDD in the join.
-#' @param genomicRdd The right RDD in the join.
+#' @param ardd The left genomic dataset in the join.
+#' @param genomicRdd The right genomic dataset in the join.
 #' @param flankSize Sets a flankSize for the distance between elements to be
 #'   joined. If set to 0, an overlap is required to join two elements.
-#' @return Returns a new genomic RDD containing all pairs of keys that
+#' @return Returns a new genomic dataset containing all pairs of keys that
 #'   overlapped in the genomic coordinate space.
 #'
 #' @importFrom SparkR sparkR.callJMethod
@@ -512,23 +512,23 @@ setMethod("broadcastRegionJoinAndGroupByRight",
                                                 flankSize))
           })
 
-#' Performs a broadcast right outer join between this RDD and another RDD.
+#' Performs a broadcast right outer join between this genomic dataset and another genomic dataset.
 #'
-#' In a broadcast join, the left RDD (this RDD) is collected to the driver,
+#' In a broadcast join, the left genomic dataset (this genomic dataset) is collected to the driver,
 #' and broadcast to all the nodes in the cluster. The key equality function
 #' used for this join is the reference region overlap function. Since this
-#' is a right outer join, all values in the left RDD that do not overlap a
-#' value from the right RDD are dropped. If a value from the right RDD does
-#' not overlap any values in the left RDD, it will be paired with a `None`
+#' is a right outer join, all values in the left genomic dataset that do not overlap a
+#' value from the right genomic dataset are dropped. If a value from the right genomic dataset does
+#' not overlap any values in the left genomic dataset, it will be paired with a `None`
 #' in the product of the join.
 #'
-#' @param ardd The left RDD in the join.
-#' @param genomicRdd The right RDD in the join.
+#' @param ardd The left genomic dataset in the join.
+#' @param genomicRdd The right genomic dataset in the join.
 #' @param flankSize Sets a flankSize for the distance between elements to be
 #'   joined. If set to 0, an overlap is required to join two elements.
-#' @return Returns a new genomic RDD containing all pairs of keys that
+#' @return Returns a new genomic dataset containing all pairs of keys that
 #'   overlapped in the genomic coordinate space, and all keys from the
-#'   right RDD that did not overlap a key in the left RDD.
+#'   right genomic dataset that did not overlap a key in the left genomic dataset.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
@@ -543,19 +543,19 @@ setMethod("rightOuterBroadcastRegionJoinAndGroupByRight",
                                                 flankSize))
           })
 
-#' Performs a sort-merge inner join between this RDD and another RDD.
+#' Performs a sort-merge inner join between this genomic dataset and another genomic dataset.
 #'
-#' In a sort-merge join, both RDDs are co-partitioned and sorted. The
+#' In a sort-merge join, both genomic datasets are co-partitioned and sorted. The
 #' partitions are then zipped, and we do a merge join on each partition.
 #' The key equality function used for this join is the reference region
 #' overlap function. Since this is an inner join, all values who do not
-#' overlap a value from the other RDD are dropped.
+#' overlap a value from the other genomic dataset are dropped.
 #'
-#' @param ardd The left RDD in the join.
-#' @param genomicRdd The right RDD in the join.
+#' @param ardd The left genomic dataset in the join.
+#' @param genomicRdd The right genomic dataset in the join.
 #' @param flankSize Sets a flankSize for the distance between elements to be
 #'   joined. If set to 0, an overlap is required to join two elements.
-#' @return Returns a new genomic RDD containing all pairs of keys that
+#' @return Returns a new genomic dataset containing all pairs of keys that
 #'   overlapped in the genomic coordinate space.
 #'
 #' @importFrom SparkR sparkR.callJMethod
@@ -571,23 +571,23 @@ setMethod("shuffleRegionJoin",
                                                 flankSize))
           })
 
-#' Performs a sort-merge right outer join between this RDD and another RDD.
+#' Performs a sort-merge right outer join between this genomic dataset and another genomic dataset.
 #'
-#' In a sort-merge join, both RDDs are co-partitioned and sorted. The
+#' In a sort-merge join, both genomic datasets are co-partitioned and sorted. The
 #' partitions are then zipped, and we do a merge join on each partition.
 #' The key equality function used for this join is the reference region
 #' overlap function. Since this is a right outer join, all values in the
-#' left RDD that do not overlap a value from the right RDD are dropped.
-#' If a value from the right RDD does not overlap any values in the left
-#' RDD, it will be paired with a `None` in the product of the join.
+#' left genomic dataset that do not overlap a value from the right genomic dataset are dropped.
+#' If a value from the right genomic dataset does not overlap any values in the left
+#' genomic dataset, it will be paired with a `None` in the product of the join.
 #'
-#' @param ardd The left RDD in the join.
-#' @param genomicRdd The right RDD in the join.
+#' @param ardd The left genomic dataset in the join.
+#' @param genomicRdd The right genomic dataset in the join.
 #' @param flankSize Sets a flankSize for the distance between elements to be
 #'   joined. If set to 0, an overlap is required to join two elements.
-#' @return Returns a new genomic RDD containing all pairs of keys that
+#' @return Returns a new genomic dataset containing all pairs of keys that
 #'   overlapped in the genomic coordinate space, and all keys from the
-#'   right RDD that did not overlap a key in the left RDD.
+#'   right genomic dataset that did not overlap a key in the left genomic dataset.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
@@ -602,23 +602,23 @@ setMethod("rightOuterShuffleRegionJoin",
                                                 flankSize))
           })
 
-#' Performs a sort-merge left outer join between this RDD and another RDD.
+#' Performs a sort-merge left outer join between this genomic dataset and another genomic dataset.
 #'
-#' In a sort-merge join, both RDDs are co-partitioned and sorted. The
+#' In a sort-merge join, both genomic datasets are co-partitioned and sorted. The
 #' partitions are then zipped, and we do a merge join on each partition.
 #' The key equality function used for this join is the reference region
 #' overlap function. Since this is a left outer join, all values in the
-#' right RDD that do not overlap a value from the left RDD are dropped.
-#' If a value from the left RDD does not overlap any values in the right
-#' RDD, it will be paired with a `None` in the product of the join.
+#' right genomic dataset that do not overlap a value from the left genomic dataset are dropped.
+#' If a value from the left genomic dataset does not overlap any values in the right
+#' genomic dataset, it will be paired with a `None` in the product of the join.
 #'
-#' @param ardd The left RDD in the join.
-#' @param genomicRdd The right RDD in the join.
+#' @param ardd The left genomic dataset in the join.
+#' @param genomicRdd The right genomic dataset in the join.
 #' @param flankSize Sets a flankSize for the distance between elements to be
 #'   joined. If set to 0, an overlap is required to join two elements.
-#' @return Returns a new genomic RDD containing all pairs of keys that
+#' @return Returns a new genomic dataset containing all pairs of keys that
 #'   overlapped in the genomic coordinate space, and all keys from the
-#'    left RDD that did not overlap a key in the left RDD.
+#'    left genomic dataset that did not overlap a key in the left genomic dataset.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
@@ -633,24 +633,24 @@ setMethod("leftOuterShuffleRegionJoin",
                                                 flankSize))
           })
 
-#' Performs a sort-merge left outer join between this RDD and another RDD,
+#' Performs a sort-merge left outer join between this genomic dataset and another genomic dataset,
 #' followed by a groupBy on the left value.
 #'
-#' In a sort-merge join, both RDDs are co-partitioned and sorted. The
+#' In a sort-merge join, both genomic datasets are co-partitioned and sorted. The
 #' partitions are then zipped, and we do a merge join on each partition.
 #' The key equality function used for this join is the reference region
 #' overlap function. Since this is a left outer join, all values in the
-#' right RDD that do not overlap a value from the left RDD are dropped.
-#' If a value from the left RDD does not overlap any values in the right
-#' RDD, it will be paired with an empty Iterable in the product of the join.
+#' right genomic dataset that do not overlap a value from the left genomic dataset are dropped.
+#' If a value from the left genomic dataset does not overlap any values in the right
+#' genomic dataset, it will be paired with an empty Iterable in the product of the join.
 #'
-#' @param ardd The left RDD in the join.
-#' @param genomicRdd The right RDD in the join.
+#' @param ardd The left genomic dataset in the join.
+#' @param genomicRdd The right genomic dataset in the join.
 #' @param flankSize Sets a flankSize for the distance between elements to be
 #'   joined. If set to 0, an overlap is required to join two elements.
-#' @return Returns a new genomic RDD containing all pairs of keys that
+#' @return Returns a new genomic dataset containing all pairs of keys that
 #'   overlapped in the genomic coordinate space, and all keys from the
-#'    left RDD that did not overlap a key in the left RDD.
+#'    left genomic dataset that did not overlap a key in the left genomic dataset.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
@@ -665,20 +665,20 @@ setMethod("leftOuterShuffleRegionJoinAndGroupByLeft",
                                                 flankSize))
           })
 
-#' Performs a sort-merge full outer join between this RDD and another RDD.
+#' Performs a sort-merge full outer join between this genomic dataset and another genomic dataset.
 #'
-#' In a sort-merge join, both RDDs are co-partitioned and sorted. The
+#' In a sort-merge join, both genomic datasets are co-partitioned and sorted. The
 #' partitions are then zipped, and we do a merge join on each partition.
 #' The key equality function used for this join is the reference region
 #' overlap function. Since this is a full outer join, if a value from either
-#' RDD does not overlap any values in the other RDD, it will be paired with
+#' genomic dataset does not overlap any values in the other genomic dataset, it will be paired with
 #' a `None` in the product of the join.
 #'
-#' @param ardd The left RDD in the join.
-#' @param genomicRdd The right RDD in the join.
+#' @param ardd The left genomic dataset in the join.
+#' @param genomicRdd The right genomic dataset in the join.
 #' @param flankSize Sets a flankSize for the distance between elements to be
 #'   joined. If set to 0, an overlap is required to join two elements.
-#' @return Returns a new genomic RDD containing all pairs of keys that
+#' @return Returns a new genomic dataset containing all pairs of keys that
 #'   overlapped in the genomic coordinate space, and values that did not
 #'   overlap will be paired with a `None`.
 #'
@@ -695,23 +695,23 @@ setMethod("fullOuterShuffleRegionJoin",
                                                 flankSize))
           })
 
-#' Performs a sort-merge right outer join between this RDD and another RDD,
+#' Performs a sort-merge right outer join between this genomic dataset and another genomic dataset,
 #' followed by a groupBy on the left value.
 #'
-#' In a sort-merge join, both RDDs are co-partitioned and sorted. The
+#' In a sort-merge join, both genomic datasets are co-partitioned and sorted. The
 #' partitions are then zipped, and we do a merge join on each partition.
 #' The key equality function used for this join is the reference region
 #' overlap function. Since this is a right outer join, all values from the
-#' right RDD who did not overlap a value from the left RDD are placed into
+#' right genomic dataset who did not overlap a value from the left genomic dataset are placed into
 #' a length-1 Iterable with a `None` key.
 #'
-#' @param ardd The left RDD in the join.
-#' @param genomicRdd The right RDD in the join.
+#' @param ardd The left genomic dataset in the join.
+#' @param genomicRdd The right genomic dataset in the join.
 #' @param flankSize Sets a flankSize for the distance between elements to be
 #'   joined. If set to 0, an overlap is required to join two elements.
-#' @return Returns a new genomic RDD containing all pairs of keys that
+#' @return Returns a new genomic dataset containing all pairs of keys that
 #'   overlapped in the genomic coordinate space, and all values from the
-#'   right RDD that did not overlap an item in the left RDD.
+#'   right genomic dataset that did not overlap an item in the left genomic dataset.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
@@ -726,22 +726,22 @@ setMethod("rightOuterShuffleRegionJoinAndGroupByLeft",
                                                 flankSize))
           })
 
-#' Performs a sort-merge inner join between this RDD and another RDD,
+#' Performs a sort-merge inner join between this genomic dataset and another genomic dataset,
 #' followed by a groupBy on the left value.
 #'
-#' In a sort-merge join, both RDDs are co-partitioned and sorted. The
+#' In a sort-merge join, both genomic datasets are co-partitioned and sorted. The
 #' partitions are then zipped, and we do a merge join on each partition.
 #' The key equality function used for this join is the reference region
 #' overlap function. In the same operation, we group all values by the left
-#' item in the RDD.
+#' item in the genomic dataset.
 #'
-#' @param ardd The left RDD in the join.
-#' @param genomicRdd The right RDD in the join.
+#' @param ardd The left genomic dataset in the join.
+#' @param genomicRdd The right genomic dataset in the join.
 #' @param flankSize Sets a flankSize for the distance between elements to be
 #'   joined. If set to 0, an overlap is required to join two elements.
-#' @return Returns a new genomic RDD containing all pairs of keys that
+#' @return Returns a new genomic dataset containing all pairs of keys that
 #'   overlapped in the genomic coordinate space, grouped together by
-#'   the value they overlapped in the left RDD.
+#'   the value they overlapped in the left genomic dataset.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
@@ -757,14 +757,14 @@ setMethod("shuffleRegionJoinAndGroupByLeft",
           })
 
 setMethod("replaceRdd",
-          signature(ardd = "AlignmentRecordRDD",
+          signature(ardd = "AlignmentRecordDataset",
                     rdd = "jobj"),
           function(ardd, rdd) {
-              AlignmentRecordRDD(rdd)
+              AlignmentRecordDataset(rdd)
           })
 
 setMethod("inferConversionFn",
-          signature(ardd = "AlignmentRecordRDD",
+          signature(ardd = "AlignmentRecordDataset",
                     destClass = "character"),
           function(ardd, destClass) {
               paste0("org.bdgenomics.adam.api.java.AlignmentRecordsTo",
@@ -773,22 +773,22 @@ setMethod("inferConversionFn",
 
 #' Convert this set of reads into fragments.
 #'
-#' @param ardd The RDD to apply this to.
-#' @return Returns a FragmentRDD where all reads have been grouped together by
+#' @param ardd The genomic dataset to apply this to.
+#' @return Returns a FragmentDataset where all reads have been grouped together by
 #' the original sequence fragment they come from.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
 setMethod("toFragments",
-          signature(ardd = "AlignmentRecordRDD"),
+          signature(ardd = "AlignmentRecordDataset"),
           function(ardd) {
-              FragmentRDD(sparkR.callJMethod(ardd@jrdd, "toFragments"))
+              FragmentDataset(sparkR.callJMethod(ardd@jrdd, "toFragments"))
           })
 
-#' Saves this RDD to disk as a SAM/BAM/CRAM file.
+#' Saves this genomic dataset to disk as a SAM/BAM/CRAM file.
 #'
-#' @param ardd The RDD to apply this to.
+#' @param ardd The genomic dataset to apply this to.
 #' @param filePath The path to save the file to.
 #' @param asType The type of file to save. Valid choices are SAM, BAM,
 #'   CRAM, and NA. If None, the file type is inferred from the extension.
@@ -800,7 +800,7 @@ setMethod("toFragments",
 #'
 #' @export
 setMethod("saveAsSam",
-          signature(ardd = "AlignmentRecordRDD", filePath = "character"),
+          signature(ardd = "AlignmentRecordDataset", filePath = "character"),
           function(ardd,
                    filePath,
                    asType = NA,
@@ -825,25 +825,25 @@ setMethod("saveAsSam",
                                            isSorted))
           })
 
-#' Converts this set of reads into a corresponding CoverageRDD.
+#' Converts this set of reads into a corresponding CoverageDataset.
 #'
-#' @param ardd The RDD to apply this to.
+#' @param ardd The genomic dataset to apply this to.
 #' @param collapse Determines whether to merge adjacent coverage elements with
 #'                 the same score to a single coverage observation.
-#' @return Returns an RDD with observed coverage.
+#' @return Returns a genomic dataset with observed coverage.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
 setMethod("toCoverage",
-          signature(ardd = "AlignmentRecordRDD"),
+          signature(ardd = "AlignmentRecordDataset"),
           function(ardd, collapse = TRUE) {
-              CoverageRDD(sparkR.callJMethod(ardd@jrdd, "toCoverage", collapse))
+              CoverageDataset(sparkR.callJMethod(ardd@jrdd, "toCoverage", collapse))
           })
 
-#' Saves this RDD to disk, with the type identified by the extension.
+#' Saves this genomic dataset to disk, with the type identified by the extension.
 #'
-#' @param ardd The RDD to apply this to.
+#' @param ardd The genomic dataset to apply this to.
 #' @param filePath The path to save the file to.
 #' @param isSorted Whether the file is sorted or not.
 #'
@@ -851,14 +851,14 @@ setMethod("toCoverage",
 #'
 #' @export
 setMethod("save",
-          signature(ardd = "AlignmentRecordRDD", filePath = "character"),
+          signature(ardd = "AlignmentRecordDataset", filePath = "character"),
           function(ardd, filePath, isSorted = FALSE) {
               invisible(sparkR.callJMethod(ardd@jrdd, "save", filePath, isSorted))
           })
 
 #' Cuts reads into _k_-mers, and then counts the occurrences of each _k_-mer.
 #'
-#' @param ardd The RDD to apply this to.
+#' @param ardd The genomic dataset to apply this to.
 #' @param kmerLength The value of _k_ to use for cutting _k_-mers.
 #' @return Returns a DataFrame containing k-mer/count pairs.
 #'
@@ -866,7 +866,7 @@ setMethod("save",
 #'
 #' @export
 setMethod("countKmers",
-          signature(ardd = "AlignmentRecordRDD", kmerLength = "numeric"),
+          signature(ardd = "AlignmentRecordDataset", kmerLength = "numeric"),
           function(ardd, kmerLength) {
               new("SparkDataFrame",
                   sparkR.callJMethod(sparkR.callJMethod(ardd@jrdd,
@@ -883,16 +883,16 @@ setMethod("countKmers",
 #' put at the end and sorted by read name. Contigs are ordered lexicographically
 #' by name.
 #'
-#' @param ardd The RDD to apply this to.
-#' @return A new, sorted AlignmentRecordRDD.
+#' @param ardd The genomic dataset to apply this to.
+#' @return A new, sorted AlignmentRecordDataset.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
 setMethod("sortReadsByReferencePosition",
-          signature(ardd = "AlignmentRecordRDD"),
+          signature(ardd = "AlignmentRecordDataset"),
           function(ardd) {
-              AlignmentRecordRDD(sparkR.callJMethod(ardd@jrdd, "sortReadsByReferencePosition"))
+              AlignmentRecordDataset(sparkR.callJMethod(ardd@jrdd, "sortReadsByReferencePosition"))
           })
 
 #' Sorts our read data by reference positions, with contigs ordered by index.
@@ -901,31 +901,31 @@ setMethod("sortReadsByReferencePosition",
 #' put at the end and sorted by read name. Contigs are ordered by index that
 #' they are ordered in the sequence metadata.
 #'
-#' @param ardd The RDD to apply this to.
-#' @return A new, sorted AlignmentRecordRDD.
+#' @param ardd The genomic dataset to apply this to.
+#' @return A new, sorted AlignmentRecordDataset.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
 setMethod("sortReadsByReferencePositionAndIndex",
-          signature(ardd = "AlignmentRecordRDD"),
+          signature(ardd = "AlignmentRecordDataset"),
           function(ardd) {
-              AlignmentRecordRDD(sparkR.callJMethod(ardd@jrdd, "sortReadsByReferencePositionAndIndex"))
+              AlignmentRecordDataset(sparkR.callJMethod(ardd@jrdd, "sortReadsByReferencePositionAndIndex"))
           })
 
 #' Marks reads as possible fragment duplicates.
 #'
-#' @param ardd The RDD to apply this to.
-#' @return A new RDD where reads have the duplicate read flag set. Duplicate
+#' @param ardd The genomic dataset to apply this to.
+#' @return A new genomic dataset where reads have the duplicate read flag set. Duplicate
 #'          reads are NOT filtered out.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
 setMethod("markDuplicates",
-          signature(ardd = "AlignmentRecordRDD"),
+          signature(ardd = "AlignmentRecordDataset"),
           function(ardd) {
-              AlignmentRecordRDD(sparkR.callJMethod(ardd@jrdd, "markDuplicates"))
+              AlignmentRecordDataset(sparkR.callJMethod(ardd@jrdd, "markDuplicates"))
           })
 
 #' Runs base quality score recalibration on a set of reads.
@@ -933,7 +933,7 @@ setMethod("markDuplicates",
 #' Uses a table of known SNPs to mask true variation during the recalibration
 #' process.
 #'
-#' @param ardd The RDD to apply this to.
+#' @param ardd The genomic dataset to apply this to.
 #' @param knownSnps A table of known SNPs to mask valid variants.
 #' @param validationStringency The stringency to apply towards validating BQSR.
 #'
@@ -941,10 +941,10 @@ setMethod("markDuplicates",
 #'
 #' @export
 setMethod("recalibrateBaseQualities",
-          signature(ardd = "AlignmentRecordRDD", knownSnps = "VariantRDD", validationStringency = "character"),
+          signature(ardd = "AlignmentRecordDataset", knownSnps = "VariantDataset", validationStringency = "character"),
           function(ardd, knownSnps, validationStringency) {
               stringency <- sparkR.callJStatic("htsjdk.samtools.ValidationStringency", "valueOf", validationStringency)
-              AlignmentRecordRDD(sparkR.callJMethod(ardd@jrdd, "recalibrateBaseQualities", knownSnps@jrdd, stringency))
+              AlignmentRecordDataset(sparkR.callJMethod(ardd@jrdd, "recalibrateBaseQualities", knownSnps@jrdd, stringency))
           })
 
 #' Realigns indels using a consensus-based heuristic.
@@ -952,7 +952,7 @@ setMethod("recalibrateBaseQualities",
 #' If no known indels are provided, generates consensuses from reads. Else,
 #' generates consensuses from previously seen variants.
 #' 
-#' @param ardd The RDD to apply this to.
+#' @param ardd The genomic dataset to apply this to.
 #' @param isSorted If the input data is sorted, setting this parameter to true
 #'   avoids a second sort.
 #' @param maxIndelSize The size of the largest indel to use for realignment.
@@ -962,14 +962,14 @@ setMethod("recalibrateBaseQualities",
 #'   are only finalized if the log-odds threshold is exceeded.
 #' @param maxTargetSize The maximum width of a single target region for
 #'   realignment.
-#' @param knownIndels An RDD of previously called INDEL variants.
-#' @return Returns an RDD of mapped reads which have been realigned.
+#' @param knownIndels A genomic dataset of previously called INDEL variants.
+#' @return Returns a genomic dataset of mapped reads which have been realigned.
 #'
 #' @importFrom SparkR sparkR.callJMethod sparkR.callJStatic
 #'
 #' @export
 setMethod("realignIndels",
-          signature(ardd = "AlignmentRecordRDD"),
+          signature(ardd = "AlignmentRecordDataset"),
           function(ardd, isSorted = FALSE, maxIndelSize = 500,
                    maxConsensusNumber = 30, lodThreshold = 5.0,
                    maxTargetSize = 3000,
@@ -978,7 +978,7 @@ setMethod("realignIndels",
               if (is.na(knownIndels)) {
                   consensusModel <- sparkR.callJStatic("org.bdgenomics.adam.algorithms.consensus.ConsensusGenerator",
                                                        "fromKnowns", knownIndels@jrdd)
-                  AlignmentRecordRDD(sparkR.callJMethod(ardd@jrdd, "realignIndels",
+                  AlignmentRecordDataset(sparkR.callJMethod(ardd@jrdd, "realignIndels",
                                                         consensusModel,
                                                         isSorted,
                                                         maxIndelSize,
@@ -989,7 +989,7 @@ setMethod("realignIndels",
               } else {
                   consensusModel <- sparkR.callJStatic("org.bdgenomics.adam.algorithms.consensus.ConsensusGenerator",
                                                        "fromReads")
-                  AlignmentRecordRDD(sparkR.callJMethod(ardd@jrdd, "realignIndels",
+                  AlignmentRecordDataset(sparkR.callJMethod(ardd@jrdd, "realignIndels",
                                                         consensusModel,
                                                         isSorted,
                                                         maxIndelSize,
@@ -1001,7 +1001,7 @@ setMethod("realignIndels",
 
 #' Saves coverage as a feature file.
 #'
-#' @param ardd The RDD to apply this to.
+#' @param ardd The genomic dataset to apply this to.
 #' @param filePath The location to write the output.
 #' @param asSingleFile If true, merges the sharded output into a single file.
 #'
@@ -1009,7 +1009,7 @@ setMethod("realignIndels",
 #'
 #' @export
 setMethod("save",
-          signature(ardd = "CoverageRDD", filePath = "character"),
+          signature(ardd = "CoverageDataset", filePath = "character"),
           function(ardd, filePath, asSingleFile = FALSE) {
               invisible(sparkR.callJMethod(ardd@jrdd, "save", filePath, asSingleFile))
           })
@@ -1017,32 +1017,32 @@ setMethod("save",
 #' Merges adjacent ReferenceRegions with the same coverage value.
 #'
 #' This reduces the loss of coverage information while reducing the number of
-#' of records in the RDD. For example, adjacent records Coverage("chr1", 1, 10,
+#' of records in the genomic dataset. For example, adjacent records Coverage("chr1", 1, 10,
 #' 3.0) and Coverage("chr1", 10, 20, 3.0) would be merged into one record
 #' Coverage("chr1", 1, 20, 3.0).
 #'
-#' @param ardd The RDD to apply this to.
-#' @return An RDD with merged tuples of adjacent sites with same coverage.
+#' @param ardd The genomic dataset to apply this to.
+#' @return A genomic dataset with merged tuples of adjacent sites with same coverage.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
-setMethod("collapse", signature(ardd = "CoverageRDD"),
+setMethod("collapse", signature(ardd = "CoverageDataset"),
           function(ardd) {
-              CoverageRDD(sparkR.callJMethod(ardd@jrdd, "collapse"))
+              CoverageDataset(sparkR.callJMethod(ardd@jrdd, "collapse"))
           })
 
-#' Converts CoverageRDD to FeatureRDD.
+#' Converts CoverageDataset to FeatureDataset.
 #'
-#' @param ardd The RDD to apply this to.
-#' @return Returns a FeatureRDD from a CoverageRDD.
+#' @param ardd The genomic dataset to apply this to.
+#' @return Returns a FeatureDataset from a CoverageDataset.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
-setMethod("toFeatures", signature(ardd = "CoverageRDD"),
+setMethod("toFeatures", signature(ardd = "CoverageDataset"),
           function(ardd) {
-              FeatureRDD(sparkR.callJMethod(ardd@jrdd, "toFeatures"))
+              FeatureDataset(sparkR.callJMethod(ardd@jrdd, "toFeatures"))
           })
 
 #' Gets coverage overlapping specified ReferenceRegion.
@@ -1051,16 +1051,16 @@ setMethod("toFeatures", signature(ardd = "CoverageRDD"),
 #' bin together ReferenceRegions of equal size. The coverage of each bin is the
 #' coverage of the first base pair in that bin.
 #'
-#' @param ardd The RDD to apply this to.
+#' @param ardd The genomic dataset to apply this to.
 #' @param bpPerBin Number of bases to combine to one bin.
-#' @return Returns a sparsified CoverageRDD.
+#' @return Returns a sparsified CoverageDataset.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
-setMethod("coverage", signature(ardd = "CoverageRDD"),
+setMethod("coverage", signature(ardd = "CoverageDataset"),
           function(ardd, bpPerBin = 1) {
-              CoverageRDD(sparkR.callJMethod(ardd@jrdd, "coverage", bpPerBin))
+              CoverageDataset(sparkR.callJMethod(ardd@jrdd, "coverage", bpPerBin))
           })
 
 #' Gets coverage overlapping specified ReferenceRegion.
@@ -1069,37 +1069,37 @@ setMethod("coverage", signature(ardd = "CoverageRDD"),
 #' bin together ReferenceRegions of equal size. The coverage of each bin is the
 #' average coverage of the bases in that bin.
 #'
-#' @param ardd The RDD to apply this to.
+#' @param ardd The genomic dataset to apply this to.
 #' @param bpPerBin Number of bases to combine to one bin.
-#' @return Returns a sparsified CoverageRDD.
+#' @return Returns a sparsified CoverageDataset.
 #'
-#' @rdname CoverageRDD
+#' @rdname CoverageDataset
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
-setMethod("aggregatedCoverage", signature(ardd = "CoverageRDD"),
+setMethod("aggregatedCoverage", signature(ardd = "CoverageDataset"),
           function(ardd, bpPerBin = 1) {
-              CoverageRDD(sparkR.callJMethod(ardd@jrdd, "aggregatedCoverage", bpPerBin))
+              CoverageDataset(sparkR.callJMethod(ardd@jrdd, "aggregatedCoverage", bpPerBin))
           })
 
-#' Gets flattened RDD of coverage, with coverage mapped to each base pair.
+#' Gets flattened genomic dataset of coverage, with coverage mapped to each base pair.
 #'
 #' The opposite operation of collapse.
 #'
-#' @param ardd The RDD to apply this to.
-#' @return New CoverageRDD of flattened coverage.
+#' @param ardd The genomic dataset to apply this to.
+#' @return New CoverageDataset of flattened coverage.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
-setMethod("flatten", signature(ardd = "CoverageRDD"),
+setMethod("flatten", signature(ardd = "CoverageDataset"),
           function(ardd) {
-              CoverageRDD(sparkR.callJMethod(ardd@jrdd, "flatten"))
+              CoverageDataset(sparkR.callJMethod(ardd@jrdd, "flatten"))
           })
 
 setMethod("inferConversionFn",
-          signature(ardd = "FeatureRDD",
+          signature(ardd = "FeatureDataset",
                     destClass = "character"),
           function(ardd, destClass) {
               paste0("org.bdgenomics.adam.api.java.FeaturesTo",
@@ -1107,10 +1107,10 @@ setMethod("inferConversionFn",
           })
 
 setMethod("replaceRdd",
-          signature(ardd = "FeatureRDD",
+          signature(ardd = "FeatureDataset",
                     rdd = "jobj"),
           function(ardd, rdd) {
-              FeatureRDD(rdd)
+              FeatureDataset(rdd)
           })
 
 #' Saves coverage, autodetecting the file type from the extension.
@@ -1120,7 +1120,7 @@ setMethod("replaceRdd",
 #' these match, we fall back to Parquet. These files are written as sharded text
 #' files, which can be merged by passing asSingleFile = True.
 #'
-#' @param ardd The RDD to apply this to.
+#' @param ardd The genomic dataset to apply this to.
 #' @param filePath The location to write the output.
 #' @param asSingleFile If true, merges the sharded output into a single file.
 #' @param disableFastConcat If asSingleFile is true, disables the use of the
@@ -1130,28 +1130,28 @@ setMethod("replaceRdd",
 #'
 #' @export
 setMethod("save",
-          signature(ardd = "FeatureRDD", filePath = "character"),
+          signature(ardd = "FeatureDataset", filePath = "character"),
           function(ardd, filePath,
                    asSingleFile = FALSE, disableFastConcat = FALSE) {
               invisible(sparkR.callJMethod(ardd@jrdd, "save", filePath,
                                            asSingleFile, disableFastConcat))
           })
 
-#' Converts the FeatureRDD to a CoverageRDD.
+#' Converts the FeatureDataset to a CoverageDataset.
 #'
-#' @param ardd The RDD to apply this to.
-#' @return Returns a new CoverageRDD.
+#' @param ardd The genomic dataset to apply this to.
+#' @return Returns a new CoverageDataset.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
-setMethod("toCoverage", signature(ardd = "FeatureRDD"),
+setMethod("toCoverage", signature(ardd = "FeatureDataset"),
           function(ardd) {
-              CoverageRDD(sparkR.callJMethod(ardd@jrdd, "toCoverage"))
+              CoverageDataset(sparkR.callJMethod(ardd@jrdd, "toCoverage"))
           })
 
 setMethod("inferConversionFn",
-          signature(ardd = "FragmentRDD",
+          signature(ardd = "FragmentDataset",
                     destClass = "character"),
           function(ardd, destClass) {
               paste0("org.bdgenomics.adam.api.java.FragmentsTo",
@@ -1159,54 +1159,54 @@ setMethod("inferConversionFn",
           })
 
 setMethod("replaceRdd",
-          signature(ardd = "FragmentRDD",
+          signature(ardd = "FragmentDataset",
                     rdd = "jobj"),
           function(ardd, rdd) {
-              FragmentRDD(rdd)
+              FragmentDataset(rdd)
           })
 
-#' Splits up the reads in a Fragment, and creates a new RDD.
+#' Splits up the reads in a Fragment, and creates a new genomic dataset.
 #'
-#' @param ardd The RDD to apply this to.
-#' @return Returns this RDD converted back to reads.
+#' @param ardd The genomic dataset to apply this to.
+#' @return Returns this genomic dataset converted back to reads.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
-setMethod("toReads", signature(ardd = "FragmentRDD"),
+setMethod("toReads", signature(ardd = "FragmentDataset"),
           function(ardd) {
-              AlignmentRecordRDD(sparkR.callJMethod(ardd@jrdd, "toReads"))
+              AlignmentRecordDataset(sparkR.callJMethod(ardd@jrdd, "toReads"))
           })
 
 #' Marks reads as possible fragment duplicates.
 #'
-#' @param ardd The RDD to apply this to.
-#' @return A new RDD where reads have the duplicate read flag set. Duplicate
+#' @param ardd The genomic dataset to apply this to.
+#' @return A new genomic dataset where reads have the duplicate read flag set. Duplicate
 #'   reads are NOT filtered out.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
-setMethod("markDuplicates", signature(ardd = "FragmentRDD"),
+setMethod("markDuplicates", signature(ardd = "FragmentDataset"),
           function(ardd) {
-              FragmentRDD(sparkR.callJMethod(ardd@jrdd, "markDuplicates"))
+              FragmentDataset(sparkR.callJMethod(ardd@jrdd, "markDuplicates"))
           })
 
 #' Saves fragments to Parquet.
 #'
-#' @param ardd The RDD to apply this to.
+#' @param ardd The genomic dataset to apply this to.
 #' @param filePath Path to save fragments to.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
-setMethod("save", signature(ardd = "FragmentRDD", filePath = "character"),
+setMethod("save", signature(ardd = "FragmentDataset", filePath = "character"),
           function(ardd, filePath) {
               invisible(sparkR.callJMethod(ardd@jrdd, "save", filePath))
           })
 
 setMethod("inferConversionFn",
-          signature(ardd = "GenotypeRDD",
+          signature(ardd = "GenotypeDataset",
                     destClass = "character"),
           function(ardd, destClass) {
               paste0("org.bdgenomics.adam.api.java.GenotypesTo",
@@ -1214,58 +1214,58 @@ setMethod("inferConversionFn",
           })
 
 setMethod("replaceRdd",
-          signature(ardd = "GenotypeRDD",
+          signature(ardd = "GenotypeDataset",
                     rdd = "jobj"),
           function(ardd, rdd) {
-              GenotypeRDD(rdd)
+              GenotypeDataset(rdd)
           })
 
-#' Saves this RDD of genotypes to disk as Parquet.
+#' Saves this genomic dataset of genotypes to disk as Parquet.
 #'
-#' @param ardd The RDD to apply this to.
+#' @param ardd The genomic dataset to apply this to.
 #' @param filePath Path to save file to.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
-setMethod("saveAsParquet", signature(ardd = "GenotypeRDD", filePath = "character"),
+setMethod("saveAsParquet", signature(ardd = "GenotypeDataset", filePath = "character"),
           function(ardd, filePath) {
               invisible(sparkR.callJMethod(ardd@jrdd, "saveAsParquet", filePath))
           })
 
 
-#' Extracts the variants contained in this RDD of genotypes.
+#' Extracts the variants contained in this genomic dataset of genotypes.
 #'
 #' Does not perform any filtering looking at whether the variant was called or
 #' not. By default, does not deduplicate variants.
 #'
 #' @param dedupe If true, drops variants described in more than one genotype
 #'   record.
-#' @return Returns the variants described by this GenotypeRDD.
+#' @return Returns the variants described by this GenotypeDataset.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
-setMethod("toVariants", signature(ardd = "GenotypeRDD"),
+setMethod("toVariants", signature(ardd = "GenotypeDataset"),
           function(ardd, dedupe=FALSE) {
-              VariantRDD(sparkR.callJMethod(ardd@jrdd, "toVariants", dedupe))
+              VariantDataset(sparkR.callJMethod(ardd@jrdd, "toVariants", dedupe))
           })
 
-#' Converts this RDD of Genotypes to VariantContexts.
+#' Converts this genomic dataset of Genotypes to VariantContexts.
 #'
-#' @param ardd The RDD to apply this to.
-#' @return Returns this RDD of Genotypes as VariantContexts.
+#' @param ardd The genomic dataset to apply this to.
+#' @return Returns this genomic dataset of Genotypes as VariantContexts.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
-setMethod("toVariantContexts", signature(ardd = "GenotypeRDD"),
+setMethod("toVariantContexts", signature(ardd = "GenotypeDataset"),
           function(ardd) {
-              VariantContextRDD(sparkR.callJMethod(ardd@jrdd, "toVariantContexts"))
+              VariantContextDataset(sparkR.callJMethod(ardd@jrdd, "toVariantContexts"))
           })
 
 setMethod("inferConversionFn",
-          signature(ardd = "NucleotideContigFragmentRDD",
+          signature(ardd = "NucleotideContigFragmentDataset",
                     destClass = "character"),
           function(ardd, destClass) {
               paste0("org.bdgenomics.adam.api.java.ContigsTo",
@@ -1273,10 +1273,10 @@ setMethod("inferConversionFn",
           })
 
 setMethod("replaceRdd",
-          signature(ardd = "NucleotideContigFragmentRDD",
+          signature(ardd = "NucleotideContigFragmentDataset",
                     rdd = "jobj"),
           function(ardd, rdd) {
-              NucleotideContigFragmentRDD(rdd)
+              NucleotideContigFragmentDataset(rdd)
           })
 
 #' Save nucleotide contig fragments as Parquet or FASTA.
@@ -1284,38 +1284,38 @@ setMethod("replaceRdd",
 #' If filename ends in .fa or .fasta, saves as Fasta. If not, saves fragments to
 #' Parquet. Defaults to 60 character line length, if saving as FASTA.
 #'
-#' @param ardd The RDD to apply this to.
+#' @param ardd The genomic dataset to apply this to.
 #' @param filePath Path to save to.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
-setMethod("save", signature(ardd = "NucleotideContigFragmentRDD", filePath = "character"),
+setMethod("save", signature(ardd = "NucleotideContigFragmentDataset", filePath = "character"),
           function(ardd, filePath) {
               invisible(sparkR.callJMethod(ardd@jrdd, "save", filePath))
           })
 
-#' For all adjacent records in the RDD, we extend the records so that the
+#' For all adjacent records in the genomic dataset, we extend the records so that the
 #' adjacent records now overlap by _n_ bases, where _n_ is the flank length.
 #'
-#' @param ardd The RDD to apply this to.
+#' @param ardd The genomic dataset to apply this to.
 #' @param flankLength The length to extend adjacent records by.
-#' @return Returns the RDD, with all adjacent fragments extended with flanking
+#' @return Returns the genomic dataset, with all adjacent fragments extended with flanking
 #'   sequence.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
 setMethod("flankAdjacentFragments",
-          signature(ardd = "NucleotideContigFragmentRDD", flankLength = "numeric"),
+          signature(ardd = "NucleotideContigFragmentDataset", flankLength = "numeric"),
           function(ardd, flankLength) {
-              NucleotideContigFragmentRDD(sparkR.callJMethod(ardd@jrdd,
+              NucleotideContigFragmentDataset(sparkR.callJMethod(ardd@jrdd,
                                                              "flankAdjacentFragments",
                                                              flankLength))
           })
 
 setMethod("inferConversionFn",
-          signature(ardd = "VariantRDD",
+          signature(ardd = "VariantDataset",
                     destClass = "character"),
           function(ardd, destClass) {
               paste0("org.bdgenomics.adam.api.java.VariantsTo",
@@ -1323,48 +1323,48 @@ setMethod("inferConversionFn",
           })
 
 setMethod("replaceRdd",
-          signature(ardd = "VariantRDD",
+          signature(ardd = "VariantDataset",
                     rdd = "jobj"),
           function(ardd, rdd) {
-              VariantRDD(rdd)
+              VariantDataset(rdd)
           })
 
-#' Saves this RDD of variants to disk as Parquet.
+#' Saves this genomic dataset of variants to disk as Parquet.
 #'
-#' @param ardd The RDD to apply this to.
+#' @param ardd The genomic dataset to apply this to.
 #' @param filePath Path to save file to.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
-setMethod("saveAsParquet", signature(ardd = "VariantRDD", filePath = "character"),
+setMethod("saveAsParquet", signature(ardd = "VariantDataset", filePath = "character"),
           function(ardd, filePath) {
               invisible(sparkR.callJMethod(ardd@jrdd, "saveAsParquet", filePath))
           })
 
-#' Converts this RDD of Variants to VariantContexts.
+#' Converts this genomic dataset of Variants to VariantContexts.
 #'
-#' @param ardd The RDD to apply this to.
-#' @return Returns this RDD of Variants as VariantContexts.
+#' @param ardd The genomic dataset to apply this to.
+#' @return Returns this genomic dataset of Variants as VariantContexts.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
-setMethod("toVariantContexts", signature(ardd = "VariantRDD"),
+setMethod("toVariantContexts", signature(ardd = "VariantDataset"),
           function(ardd) {
-              VariantContextRDD(sparkR.callJMethod(ardd@jrdd, "toVariantContexts"))
+              VariantContextDataset(sparkR.callJMethod(ardd@jrdd, "toVariantContexts"))
           })
 
 setMethod("replaceRdd",
-          signature(ardd = "VariantContextRDD",
+          signature(ardd = "VariantContextDataset",
                     rdd = "jobj"),
           function(ardd, rdd) {
-              VariantContextRDD(rdd)
+              VariantContextDataset(rdd)
           })
 
-#' Saves this RDD of variant contexts to disk as VCF
+#' Saves this genomic dataset of variant contexts to disk as VCF.
 #'
-#' @param ardd The RDD to apply this to.
+#' @param ardd The genomic dataset to apply this to.
 #' @param filePath Path to save VCF to.
 #' @param asSingleFile If true, saves the output as a single file
 #'   by merging the sharded output after saving.
@@ -1377,7 +1377,7 @@ setMethod("replaceRdd",
 #' @importFrom SparkR sparkR.callJMethod sparkR.callJStatic
 #'
 #' @export
-setMethod("saveAsVcf", signature(ardd = "VariantContextRDD", filePath = "character"),
+setMethod("saveAsVcf", signature(ardd = "VariantContextDataset", filePath = "character"),
           function(ardd,
                    filePath,
                    asSingleFile = TRUE,

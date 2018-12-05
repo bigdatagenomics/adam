@@ -36,7 +36,7 @@ import org.bdgenomics.adam.rdd.{
   JavaSaveArgs
 }
 import org.bdgenomics.adam.rdd.read.{
-  AlignmentRecordRDD,
+  AlignmentRecordDataset,
   BinQualities,
   MarkDuplicates,
   QualityScoreBin
@@ -79,52 +79,52 @@ private[adam] class FragmentArraySerializer extends IntervalArraySerializer[Refe
 }
 
 /**
- * Helper singleton object for building FragmentRDDs.
+ * Helper singleton object for building FragmentDatasets.
  */
-object FragmentRDD {
+object FragmentDataset {
 
   /**
    * Hadoop configuration path to check for a boolean value indicating whether
    * the current or original read qualities should be written. True indicates
    * to write the original qualities. The default is false.
    */
-  val WRITE_ORIGINAL_QUALITIES = "org.bdgenomics.adam.rdd.fragment.FragmentRDD.writeOriginalQualities"
+  val WRITE_ORIGINAL_QUALITIES = "org.bdgenomics.adam.rdd.fragment.FragmentDataset.writeOriginalQualities"
 
   /**
    * Hadoop configuration path to check for a boolean value indicating whether
    * to write the "/1" "/2" suffixes to the read name that indicate whether a
    * read is first or second in a pair. Default is false (no suffixes).
    */
-  val WRITE_SUFFIXES = "org.bdgenomics.adam.rdd.fragment.FragmentRDD.writeSuffixes"
+  val WRITE_SUFFIXES = "org.bdgenomics.adam.rdd.fragment.FragmentDataset.writeSuffixes"
 
   /**
-   * Creates a FragmentRDD where no record groups or sequence info are attached.
+   * Creates a FragmentDataset where no record groups or sequence info are attached.
    *
    * @param rdd RDD of fragments.
-   * @return Returns a FragmentRDD with an empty record group dictionary and sequence dictionary.
+   * @return Returns a FragmentDataset with an empty record group dictionary and sequence dictionary.
    */
-  private[adam] def fromRdd(rdd: RDD[Fragment]): FragmentRDD = {
-    FragmentRDD(rdd,
+  private[adam] def fromRdd(rdd: RDD[Fragment]): FragmentDataset = {
+    FragmentDataset(rdd,
       SequenceDictionary.empty,
       RecordGroupDictionary.empty,
       Seq.empty)
   }
 
   /**
-   * Builds a FragmentRDD without a partition map.
+   * Builds a FragmentDataset without a partition map.
    *
-   * @param rdd The underlying Franment RDD.
-   * @param sequences The sequence dictionary for the RDD.
-   * @param recordGroupDictionary The record group dictionary for the RDD.
+   * @param rdd The underlying Fragment RDD.
+   * @param sequences The sequence dictionary for the genomic dataset.
+   * @param recordGroupDictionary The record group dictionary for the genomic dataset.
    * @param processingSteps The processing steps that have been applied to this data.
-   * @return A new FragmentRDD.
+   * @return A new FragmentDataset.
    */
   def apply(rdd: RDD[Fragment],
             sequences: SequenceDictionary,
             recordGroupDictionary: RecordGroupDictionary,
-            processingSteps: Seq[ProcessingStep]): FragmentRDD = {
+            processingSteps: Seq[ProcessingStep]): FragmentDataset = {
 
-    new RDDBoundFragmentRDD(rdd,
+    new RDDBoundFragmentDataset(rdd,
       sequences,
       recordGroupDictionary,
       processingSteps,
@@ -132,28 +132,28 @@ object FragmentRDD {
   }
 
   /**
-   * A genomic RDD that supports Datasets of Fragments.
+   * A genomic dataset that supports Datasets of Fragments.
    *
    * @param ds The underlying Dataset of Fragment data.
    * @param sequences The genomic sequences this data was aligned to, if any.
    * @param recordGroups The record groups these Fragments came from.
    * @param processingSteps The processing steps that have been applied to this data.
-   * @return A new FragmentRDD.
+   * @return A new FragmentDataset.
    */
   def apply(ds: Dataset[FragmentProduct],
             sequences: SequenceDictionary,
             recordGroups: RecordGroupDictionary,
-            processingSteps: Seq[ProcessingStep]): FragmentRDD = {
-    DatasetBoundFragmentRDD(ds, sequences, recordGroups, processingSteps)
+            processingSteps: Seq[ProcessingStep]): FragmentDataset = {
+    DatasetBoundFragmentDataset(ds, sequences, recordGroups, processingSteps)
   }
 }
 
-case class ParquetUnboundFragmentRDD private[rdd] (
+case class ParquetUnboundFragmentDataset private[rdd] (
     @transient private val sc: SparkContext,
     private val parquetFilename: String,
     sequences: SequenceDictionary,
     recordGroups: RecordGroupDictionary,
-    @transient val processingSteps: Seq[ProcessingStep]) extends FragmentRDD {
+    @transient val processingSteps: Seq[ProcessingStep]) extends FragmentDataset {
 
   lazy val rdd: RDD[Fragment] = {
     sc.loadParquet(parquetFilename)
@@ -168,30 +168,30 @@ case class ParquetUnboundFragmentRDD private[rdd] (
   }
 
   def replaceSequences(
-    newSequences: SequenceDictionary): FragmentRDD = {
+    newSequences: SequenceDictionary): FragmentDataset = {
     copy(sequences = newSequences)
   }
 
   def replaceRecordGroups(
-    newRecordGroups: RecordGroupDictionary): FragmentRDD = {
+    newRecordGroups: RecordGroupDictionary): FragmentDataset = {
     copy(recordGroups = newRecordGroups)
   }
 
   def replaceProcessingSteps(
-    newProcessingSteps: Seq[ProcessingStep]): FragmentRDD = {
+    newProcessingSteps: Seq[ProcessingStep]): FragmentDataset = {
     copy(processingSteps = newProcessingSteps)
   }
 }
 
-case class DatasetBoundFragmentRDD private[rdd] (
+case class DatasetBoundFragmentDataset private[rdd] (
   dataset: Dataset[FragmentProduct],
   sequences: SequenceDictionary,
   recordGroups: RecordGroupDictionary,
   @transient val processingSteps: Seq[ProcessingStep],
   override val isPartitioned: Boolean = false,
   override val optPartitionBinSize: Option[Int] = None,
-  override val optLookbackPartitions: Option[Int] = None) extends FragmentRDD
-    with DatasetBoundGenomicDataset[Fragment, FragmentProduct, FragmentRDD] {
+  override val optLookbackPartitions: Option[Int] = None) extends FragmentDataset
+    with DatasetBoundGenomicDataset[Fragment, FragmentProduct, FragmentDataset] {
 
   lazy val rdd = dataset.rdd.map(_.toAvro)
 
@@ -212,35 +212,35 @@ case class DatasetBoundFragmentRDD private[rdd] (
   }
 
   override def transformDataset(
-    tFn: Dataset[FragmentProduct] => Dataset[FragmentProduct]): FragmentRDD = {
+    tFn: Dataset[FragmentProduct] => Dataset[FragmentProduct]): FragmentDataset = {
     copy(dataset = tFn(dataset))
   }
 
   def replaceSequences(
-    newSequences: SequenceDictionary): FragmentRDD = {
+    newSequences: SequenceDictionary): FragmentDataset = {
     copy(sequences = newSequences)
   }
 
   def replaceRecordGroups(
-    newRecordGroups: RecordGroupDictionary): FragmentRDD = {
+    newRecordGroups: RecordGroupDictionary): FragmentDataset = {
     copy(recordGroups = newRecordGroups)
   }
 
   def replaceProcessingSteps(
-    newProcessingSteps: Seq[ProcessingStep]): FragmentRDD = {
+    newProcessingSteps: Seq[ProcessingStep]): FragmentDataset = {
     copy(processingSteps = newProcessingSteps)
   }
 }
 
-case class RDDBoundFragmentRDD private[rdd] (
+case class RDDBoundFragmentDataset private[rdd] (
     rdd: RDD[Fragment],
     sequences: SequenceDictionary,
     recordGroups: RecordGroupDictionary,
     @transient val processingSteps: Seq[ProcessingStep],
-    optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends FragmentRDD {
+    optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends FragmentDataset {
 
   /**
-   * A SQL Dataset of reads.
+   * A SQL Dataset of fragments.
    */
   lazy val dataset: Dataset[FragmentProduct] = {
     val sqlContext = SQLContext.getOrCreate(rdd.context)
@@ -249,22 +249,22 @@ case class RDDBoundFragmentRDD private[rdd] (
   }
 
   def replaceSequences(
-    newSequences: SequenceDictionary): FragmentRDD = {
+    newSequences: SequenceDictionary): FragmentDataset = {
     copy(sequences = newSequences)
   }
 
   def replaceRecordGroups(
-    newRecordGroups: RecordGroupDictionary): FragmentRDD = {
+    newRecordGroups: RecordGroupDictionary): FragmentDataset = {
     copy(recordGroups = newRecordGroups)
   }
 
   def replaceProcessingSteps(
-    newProcessingSteps: Seq[ProcessingStep]): FragmentRDD = {
+    newProcessingSteps: Seq[ProcessingStep]): FragmentDataset = {
     copy(processingSteps = newProcessingSteps)
   }
 }
 
-sealed abstract class FragmentRDD extends AvroRecordGroupGenomicDataset[Fragment, FragmentProduct, FragmentRDD] {
+sealed abstract class FragmentDataset extends AvroRecordGroupGenomicDataset[Fragment, FragmentProduct, FragmentDataset] {
 
   protected val productFn = FragmentProduct.fromAvro(_)
   protected val unproductFn = (f: FragmentProduct) => f.toAvro
@@ -280,37 +280,37 @@ sealed abstract class FragmentRDD extends AvroRecordGroupGenomicDataset[Fragment
    * Replaces the underlying RDD with a new RDD.
    *
    * @param newRdd The RDD to replace our underlying RDD with.
-   * @return Returns a new FragmentRDD where the underlying RDD has been
+   * @return Returns a new FragmentDataset where the underlying RDD has been
    *   swapped out.
    */
   protected def replaceRdd(newRdd: RDD[Fragment],
-                           newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): FragmentRDD = {
-    RDDBoundFragmentRDD(newRdd,
+                           newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): FragmentDataset = {
+    RDDBoundFragmentDataset(newRdd,
       sequences,
       recordGroups,
       processingSteps,
       newPartitionMap)
   }
 
-  def union(rdds: FragmentRDD*): FragmentRDD = {
-    val iterableRdds = rdds.toSeq
-    FragmentRDD(rdd.context.union(rdd, iterableRdds.map(_.rdd): _*),
-      iterableRdds.map(_.sequences).fold(sequences)(_ ++ _),
-      iterableRdds.map(_.recordGroups).fold(recordGroups)(_ ++ _),
-      iterableRdds.map(_.processingSteps).fold(processingSteps)(_ ++ _))
+  def union(datasets: FragmentDataset*): FragmentDataset = {
+    val iterableDatasets = datasets.toSeq
+    FragmentDataset(rdd.context.union(rdd, iterableDatasets.map(_.rdd): _*),
+      iterableDatasets.map(_.sequences).fold(sequences)(_ ++ _),
+      iterableDatasets.map(_.recordGroups).fold(recordGroups)(_ ++ _),
+      iterableDatasets.map(_.processingSteps).fold(processingSteps)(_ ++ _))
   }
 
   /**
-   * Applies a function that transforms the underlying RDD into a new RDD using
+   * Applies a function that transforms the underlying Dataset into a new Dataset using
    * the Spark SQL API.
    *
-   * @param tFn A function that transforms the underlying RDD as a Dataset.
-   * @return A new RDD where the RDD of genomic data has been replaced, but the
+   * @param tFn A function that transforms the underlying Dataset as a Dataset.
+   * @return A new genomic dataset where the Dataset of genomic data has been replaced, but the
    *   metadata (sequence dictionary, and etc) is copied without modification.
    */
   def transformDataset(
-    tFn: Dataset[FragmentProduct] => Dataset[FragmentProduct]): FragmentRDD = {
-    DatasetBoundFragmentRDD(tFn(dataset),
+    tFn: Dataset[FragmentProduct] => Dataset[FragmentProduct]): FragmentDataset = {
+    DatasetBoundFragmentDataset(tFn(dataset),
       sequences,
       recordGroups,
       processingSteps)
@@ -319,16 +319,16 @@ sealed abstract class FragmentRDD extends AvroRecordGroupGenomicDataset[Fragment
   /**
    * Essentially, splits up the reads in a Fragment.
    *
-   * @return Returns this RDD converted back to reads.
+   * @return Returns this genomic dataset converted back to reads.
    */
-  def toReads(): AlignmentRecordRDD = {
+  def toReads(): AlignmentRecordDataset = {
     val converter = new AlignmentRecordConverter
 
     // convert the fragments to reads
     val newRdd = rdd.flatMap(converter.convertFragment)
 
     // are we aligned?
-    AlignmentRecordRDD(newRdd,
+    AlignmentRecordDataset(newRdd,
       sequences,
       recordGroups,
       processingSteps)
@@ -337,10 +337,10 @@ sealed abstract class FragmentRDD extends AvroRecordGroupGenomicDataset[Fragment
   /**
    * Marks reads as possible fragment duplicates.
    *
-   * @return A new RDD where reads have the duplicate read flag set. Duplicate
+   * @return A new genomic dataset where reads have the duplicate read flag set. Duplicate
    *   reads are NOT filtered out.
    */
-  def markDuplicates(): FragmentRDD = MarkDuplicatesInDriver.time {
+  def markDuplicates(): FragmentDataset = MarkDuplicatesInDriver.time {
     replaceRdd(MarkDuplicates(this))
   }
 
@@ -363,8 +363,8 @@ sealed abstract class FragmentRDD extends AvroRecordGroupGenomicDataset[Fragment
    * @param bins The bins to use.
    * @return Fragments whose quality scores are binned.
    */
-  def binQualityScores(bins: Seq[QualityScoreBin]): FragmentRDD = {
-    AlignmentRecordRDD.validateBins(bins)
+  def binQualityScores(bins: Seq[QualityScoreBin]): FragmentDataset = {
+    AlignmentRecordDataset.validateBins(bins)
     BinQualities(this, bins)
   }
 

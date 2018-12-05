@@ -21,15 +21,15 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.bdgenomics.adam.rdd.ADAMContext;
-import org.bdgenomics.adam.rdd.variant.GenotypeRDD;
+import org.bdgenomics.adam.rdd.variant.GenotypeDataset;
 
 /**
  * A simple test class for the JavaADAMRDD/Context. Writes an RDD of annotations to
  * disk and reads it back.
  */
 final class JavaADAMGenotypeConduit {
-    public static GenotypeRDD conduit(final GenotypeRDD recordRdd,
-                                      final ADAMContext ac) throws IOException {
+    public static GenotypeDataset conduit(final GenotypeDataset recordRdd,
+                                          final ADAMContext ac) throws IOException {
 
         // make temp directory and save file
         Path tempDir = Files.createTempDirectory("javaAC");

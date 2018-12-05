@@ -30,19 +30,19 @@ import org.bdgenomics.utils.misc.Logging
 /**
  * InFormatter companion that builds a NarrowPeakInFormatter to write features in NarrowPeak format to a pipe.
  */
-object NarrowPeakInFormatter extends InFormatterCompanion[Feature, FeatureProduct, FeatureRDD, NarrowPeakInFormatter] {
+object NarrowPeakInFormatter extends InFormatterCompanion[Feature, FeatureProduct, FeatureDataset, NarrowPeakInFormatter] {
 
   /**
-   * Apply method for building the NarrowPeakInFormatter from a FeatureRDD.
+   * Apply method for building the NarrowPeakInFormatter from a FeatureDataset.
    *
-   * @param fRdd FeatureRDD to build from.
+   * @param fRdd FeatureDataset to build from.
    */
-  def apply(fRdd: FeatureRDD): NarrowPeakInFormatter = {
+  def apply(fRdd: FeatureDataset): NarrowPeakInFormatter = {
     NarrowPeakInFormatter()
   }
 }
 
-case class NarrowPeakInFormatter private () extends InFormatter[Feature, FeatureProduct, FeatureRDD, NarrowPeakInFormatter] {
+case class NarrowPeakInFormatter private () extends InFormatter[Feature, FeatureProduct, FeatureDataset, NarrowPeakInFormatter] {
   protected val companion = NarrowPeakInFormatter
 
   /**
@@ -56,7 +56,7 @@ case class NarrowPeakInFormatter private () extends InFormatter[Feature, Feature
 
     // write the features
     iter.foreach(f => {
-      writer.write(FeatureRDD.toNarrowPeak(f))
+      writer.write(FeatureDataset.toNarrowPeak(f))
       writer.newLine()
     })
 

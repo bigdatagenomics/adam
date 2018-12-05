@@ -22,7 +22,7 @@ import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import org.apache.spark.rdd.MetricsContext._
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.instrumentation.Timers._
-import org.bdgenomics.adam.rdd.variant.VariantRDD
+import org.bdgenomics.adam.rdd.variant.VariantDataset
 import org.bdgenomics.utils.misc.Logging
 import scala.annotation.tailrec
 import scala.math.{ max, min }
@@ -143,12 +143,12 @@ object SnpTable {
   }
 
   /**
-   * Creates a SNP Table from a VariantRDD.
+   * Creates a SNP Table from a VariantDataset.
    *
    * @param variants The variants to populate the table from.
    * @return Returns a new SNPTable containing the input variants.
    */
-  def apply(variants: VariantRDD): SnpTable = CreatingKnownSnpsTable.time {
+  def apply(variants: VariantDataset): SnpTable = CreatingKnownSnpsTable.time {
     val (indices, positions) = CollectingSnps.time {
       val sortedVariants = variants.sort()
         .rdd

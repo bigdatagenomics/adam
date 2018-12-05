@@ -25,7 +25,7 @@ import org.bdgenomics.adam.models.{
   ReferencePosition
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.fragment.FragmentRDD
+import org.bdgenomics.adam.rdd.fragment.FragmentDataset
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Fragment }
 
 private[rdd] object MarkDuplicates extends Serializable with Logging {
@@ -63,13 +63,13 @@ private[rdd] object MarkDuplicates extends Serializable with Logging {
     })
   }
 
-  def apply(rdd: AlignmentRecordRDD): RDD[AlignmentRecord] = {
+  def apply(rdd: AlignmentRecordDataset): RDD[AlignmentRecord] = {
 
     markBuckets(rdd.groupReadsByFragment(), rdd.recordGroups)
       .flatMap(_.allReads)
   }
 
-  def apply(rdd: FragmentRDD): RDD[Fragment] = {
+  def apply(rdd: FragmentDataset): RDD[Fragment] = {
 
     markBuckets(rdd.rdd.map(f => SingleReadBucket(f)), rdd.recordGroups)
       .map(_.toFragment)

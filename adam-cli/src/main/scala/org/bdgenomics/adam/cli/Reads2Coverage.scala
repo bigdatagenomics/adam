@@ -21,7 +21,7 @@ import org.apache.spark.SparkContext
 import org.bdgenomics.adam.projections.AlignmentRecordField._
 import org.bdgenomics.adam.projections.Projection
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
+import org.bdgenomics.adam.rdd.read.AlignmentRecordDataset
 import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
@@ -76,7 +76,7 @@ class Reads2Coverage(protected val args: Reads2CoverageArgs) extends BDGSparkCom
       "Cannot compute coverage for both negative and positive strands separately")
 
     // load reads
-    val readsRdd: AlignmentRecordRDD = sc.loadAlignments(args.inputPath)
+    val readsRdd: AlignmentRecordDataset = sc.loadAlignments(args.inputPath)
 
     val finalReads = if (args.onlyNegativeStrands && !args.onlyPositiveStrands) {
       readsRdd.transform(rdd => rdd.filter(_.getReadNegativeStrand))
