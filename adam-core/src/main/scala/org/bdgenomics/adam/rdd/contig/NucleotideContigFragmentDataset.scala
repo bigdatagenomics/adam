@@ -21,6 +21,7 @@ import com.google.common.base.Splitter
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.spark.SparkContext
 import org.apache.spark.api.java.JavaRDD
+import org.apache.spark.api.java.function.{ Function => JFunction }
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.bdgenomics.adam.converters.FragmentConverter
@@ -44,6 +45,7 @@ import org.bdgenomics.utils.interval.array.{
   IntervalArraySerializer
 }
 import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.math.max
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
@@ -243,17 +245,14 @@ sealed abstract class NucleotideContigFragmentDataset extends AvroGenomicDataset
     ReferenceRegion(elem).toSeq
   }
 
-  /**
-   * Applies a function that transforms the underlying Dataset into a new Dataset using
-   * the Spark SQL API.
-   *
-   * @param tFn A function that transforms the underlying Dataset as a Dataset.
-   * @return A new genomic dataset where the Dataset of genomic data has been replaced, but the
-   *   metadata (sequence dictionary, and etc) is copied without modification.
-   */
-  def transformDataset(
+  override def transformDataset(
     tFn: Dataset[NucleotideContigFragmentProduct] => Dataset[NucleotideContigFragmentProduct]): NucleotideContigFragmentDataset = {
     DatasetBoundNucleotideContigFragmentDataset(tFn(dataset), sequences)
+  }
+
+  override def transformDataset(
+    tFn: JFunction[Dataset[NucleotideContigFragmentProduct], Dataset[NucleotideContigFragmentProduct]]): NucleotideContigFragmentDataset = {
+    DatasetBoundNucleotideContigFragmentDataset(tFn.call(dataset), sequences)
   }
 
   /**
@@ -406,8 +405,19 @@ sealed abstract class NucleotideContigFragmentDataset extends AvroGenomicDataset
   }
 
   /**
-   * From a set of contigs, returns a list of sequences based on reference regions provided
-   * @param regions List of Reference regions over which to get sequences
+   * (Java-specific) From a set of contigs, returns a list of sequences based on reference regions provided.
+   *
+   * @param regions List of Reference regions over which to get sequences.
+   * @return JavaRDD[(ReferenceRegion, String)] of region -> sequence pairs.
+   */
+  def extractRegions(regions: java.util.List[ReferenceRegion]): JavaRDD[(ReferenceRegion, String)] = {
+    extractRegions(asScalaBuffer(regions)).toJavaRDD()
+  }
+
+  /**
+   * (Scala-specific) From a set of contigs, returns a list of sequences based on reference regions provided.
+   *
+   * @param regions Reference regions over which to get sequences.
    * @return RDD[(ReferenceRegion, String)] of region -> sequence pairs.
    */
   def extractRegions(regions: Iterable[ReferenceRegion]): RDD[(ReferenceRegion, String)] = {
@@ -443,10 +453,8 @@ sealed abstract class NucleotideContigFragmentDataset extends AvroGenomicDataset
   }
 
   /**
-   * For all adjacent records in the genomic dataset, we extend the records so that the adjacent
+   * (Java-specific) For all adjacent records in the genomic dataset, we extend the records so that the adjacent
    * records now overlap by _n_ bases, where _n_ is the flank length.
-   *
-   * Java friendly variant.
    *
    * @param flankLength The length to extend adjacent records by.
    * @return Returns the genomic dataset, with all adjacent fragments extended with flanking sequence.
@@ -458,7 +466,7 @@ sealed abstract class NucleotideContigFragmentDataset extends AvroGenomicDataset
   }
 
   /**
-   * For all adjacent records in the genomic dataset, we extend the records so that the adjacent
+   * (Scala-specific) For all adjacent records in the genomic dataset, we extend the records so that the adjacent
    * records now overlap by _n_ bases, where _n_ is the flank length.
    *
    * @param flankLength The length to extend adjacent records by.
@@ -472,7 +480,7 @@ sealed abstract class NucleotideContigFragmentDataset extends AvroGenomicDataset
   }
 
   /**
-   * Counts the k-mers contained in a FASTA contig.
+   * (Scala-specific) Counts the k-mers contained in a FASTA contig.
    *
    * @param kmerLength The length of k-mers to count.
    * @return Returns an RDD containing k-mer/count pairs.
@@ -487,9 +495,7 @@ sealed abstract class NucleotideContigFragmentDataset extends AvroGenomicDataset
   }
 
   /**
-   * Counts the k-mers contained in a FASTA contig.
-   *
-   * Java friendly variant.
+   * (Java-specific) Counts the k-mers contained in a FASTA contig.
    *
    * @param kmerLength The length of k-mers to count.
    * @return Returns an RDD containing k-mer/count pairs.

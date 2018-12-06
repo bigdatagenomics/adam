@@ -21,6 +21,7 @@ import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.serializers.FieldSerializer
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.spark.SparkContext
+import org.apache.spark.api.java.function.{ Function => JFunction }
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.bdgenomics.adam.models.{
@@ -255,9 +256,14 @@ abstract class CoverageDataset
       disableDictionaryEncoding)
   }
 
-  def transformDataset(
+  override def transformDataset(
     tFn: Dataset[Coverage] => Dataset[Coverage]): CoverageDataset = {
     DatasetBoundCoverageDataset(tFn(dataset), sequences, samples)
+  }
+
+  override def transformDataset(
+    tFn: JFunction[Dataset[Coverage], Dataset[Coverage]]): CoverageDataset = {
+    DatasetBoundCoverageDataset(tFn.call(dataset), sequences, samples)
   }
 
   /**
@@ -356,11 +362,11 @@ abstract class CoverageDataset
   def toFeatures(): FeatureDataset
 
   /**
-   * Gets coverage overlapping specified ReferenceRegion.
+   * (Java-specific) Gets coverage overlapping specified ReferenceRegion.
    *
    * For large ReferenceRegions, base pairs per bin (bpPerBin) can be specified
    * to bin together ReferenceRegions of equal size. The coverage of each bin is
-   * coverage of the first base pair in that bin. Java friendly variant.
+   * coverage of the first base pair in that bin.
    *
    * @param bpPerBin base pairs per bin, number of bases to combine to one bin.
    * @return Genomic dataset of Coverage Records.
@@ -371,7 +377,8 @@ abstract class CoverageDataset
   }
 
   /**
-   * Gets coverage overlapping specified ReferenceRegion.
+   * (Scala-specific) Gets coverage overlapping specified ReferenceRegion.
+   *
    * For large ReferenceRegions, base pairs per bin (bpPerBin) can be specified
    * to bin together ReferenceRegions of equal size. The coverage of each bin is
    * coverage of the first base pair in that bin.
@@ -393,11 +400,11 @@ abstract class CoverageDataset
   }
 
   /**
-   * Gets coverage overlapping specified ReferenceRegion.
+   * (Java-specific) Gets coverage overlapping specified ReferenceRegion.
    *
    * For large ReferenceRegions, base pairs per bin (bpPerBin) can be specified
    * to bin together ReferenceRegions of equal size. The coverage of each bin is
-   * the mean coverage over all base pairs in that bin. Java friendly variant.
+   * the mean coverage over all base pairs in that bin.
    *
    * @param bpPerBin base pairs per bin, number of bases to combine to one bin.
    * @return Genomic dataset of Coverage Records.
@@ -408,7 +415,7 @@ abstract class CoverageDataset
   }
 
   /**
-   * Gets coverage overlapping specified ReferenceRegion.
+   * (Scala-specific) Gets coverage overlapping specified ReferenceRegion.
    *
    * For large ReferenceRegions, base pairs per bin (bpPerBin) can be specified
    * to bin together ReferenceRegions of equal size. The coverage of each bin is

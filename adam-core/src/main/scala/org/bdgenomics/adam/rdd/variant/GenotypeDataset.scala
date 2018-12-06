@@ -21,6 +21,7 @@ import htsjdk.variant.vcf.{ VCFHeader, VCFHeaderLine }
 import org.apache.hadoop.fs.Path
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.spark.SparkContext
+import org.apache.spark.api.java.function.{ Function => JFunction }
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.bdgenomics.adam.converters.DefaultHeaderLines
@@ -185,6 +186,11 @@ case class DatasetBoundGenotypeDataset private[rdd] (
     copy(dataset = tFn(dataset))
   }
 
+  override def transformDataset(
+    tFn: JFunction[Dataset[GenotypeProduct], Dataset[GenotypeProduct]]): GenotypeDataset = {
+    copy(dataset = tFn.call(dataset))
+  }
+
   def replaceSequences(
     newSequences: SequenceDictionary): GenotypeDataset = {
     copy(sequences = newSequences)
@@ -316,17 +322,14 @@ sealed abstract class GenotypeDataset extends MultisampleAvroGenomicDataset[Geno
     IntervalArray(rdd, GenotypeArray.apply(_, _))
   }
 
-  /**
-   * Applies a function that transforms the underlying Dataset into a new Dataset using
-   * the Spark SQL API.
-   *
-   * @param tFn A function that transforms the underlying Dataset as a Dataset.
-   * @return A new genomic dataset where the Dataset of genomic data has been replaced, but the
-   *   metadata (sequence dictionary, and etc) is copied without modification.
-   */
-  def transformDataset(
+  override def transformDataset(
     tFn: Dataset[GenotypeProduct] => Dataset[GenotypeProduct]): GenotypeDataset = {
     DatasetBoundGenotypeDataset(tFn(dataset), sequences, samples, headerLines)
+  }
+
+  override def transformDataset(
+    tFn: JFunction[Dataset[GenotypeProduct], Dataset[GenotypeProduct]]): GenotypeDataset = {
+    DatasetBoundGenotypeDataset(tFn.call(dataset), sequences, samples, headerLines)
   }
 
   /**
@@ -470,7 +473,17 @@ sealed abstract class GenotypeDataset extends MultisampleAvroGenomicDataset[Geno
   }
 
   /**
-   * Filter this GenotypeDataset by sample to those that match the specified samples.
+   * (Java-specific) Filter this GenotypeDataset by sample to those that match the specified samples.
+   *
+   * @param sampleIds List of samples to filter by.
+   * return GenotypeDataset filtered by one or more samples.
+   */
+  def filterToSamples(sampleIds: java.util.List[String]): GenotypeDataset = {
+    filterToSamples(asScalaBuffer(sampleIds))
+  }
+
+  /**
+   * (Scala-specific) Filter this GenotypeDataset by sample to those that match the specified samples.
    *
    * @param sampleIds Sequence of samples to filter by.
    * return GenotypeDataset filtered by one or more samples.

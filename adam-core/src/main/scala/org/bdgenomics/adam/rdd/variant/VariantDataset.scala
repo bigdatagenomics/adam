@@ -21,6 +21,7 @@ import htsjdk.variant.vcf.{ VCFHeader, VCFHeaderLine }
 import org.apache.hadoop.fs.Path
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.spark.SparkContext
+import org.apache.spark.api.java.function.{ Function => JFunction }
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.bdgenomics.adam.converters.DefaultHeaderLines
@@ -166,6 +167,11 @@ case class DatasetBoundVariantDataset private[rdd] (
     copy(dataset = tFn(dataset))
   }
 
+  override def transformDataset(
+    tFn: JFunction[Dataset[VariantProduct], Dataset[VariantProduct]]): VariantDataset = {
+    copy(dataset = tFn.call(dataset))
+  }
+
   def replaceSequences(
     newSequences: SequenceDictionary): VariantDataset = {
     copy(sequences = newSequences)
@@ -280,17 +286,14 @@ sealed abstract class VariantDataset extends AvroGenomicDataset[Variant, Variant
       (headerLines ++ iterableRdds.flatMap(_.headerLines)).distinct)
   }
 
-  /**
-   * Applies a function that transforms the underlying RDD into a new RDD using
-   * the Spark SQL API.
-   *
-   * @param tFn A function that transforms the underlying RDD as a Dataset.
-   * @return A new RDD where the RDD of genomic data has been replaced, but the
-   *   metadata (sequence dictionary, and etc) is copied without modification.
-   */
-  def transformDataset(
+  override def transformDataset(
     tFn: Dataset[VariantProduct] => Dataset[VariantProduct]): VariantDataset = {
     DatasetBoundVariantDataset(tFn(dataset), sequences, headerLines)
+  }
+
+  override def transformDataset(
+    tFn: JFunction[Dataset[VariantProduct], Dataset[VariantProduct]]): VariantDataset = {
+    DatasetBoundVariantDataset(tFn.call(dataset), sequences, headerLines)
   }
 
   /**

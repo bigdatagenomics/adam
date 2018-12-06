@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.adam.rdd.fragment
 
+import org.apache.spark.api.java.function.{ Function => JFunction }
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.bdgenomics.adam.models.{
@@ -609,5 +610,18 @@ class FragmentDatasetSuite extends ADAMFunSuite {
     fragments.rdd.collect().foreach(fragment => {
       assert(fragment.getAlignments.size() == 2)
     })
+  }
+
+  sparkTest("transform dataset via java API") {
+    val path = testFile("read_names_with_index_sequences_interleaved.fq")
+    val fragments = sc.loadInterleavedFastqAsFragments(path)
+
+    val transformed = fragments.transformDataset(new JFunction[Dataset[FragmentProduct], Dataset[FragmentProduct]]() {
+      override def call(ds: Dataset[FragmentProduct]): Dataset[FragmentProduct] = {
+        ds
+      }
+    })
+
+    assert(fragments.dataset.first().alignments.size === transformed.dataset.first().alignments.size)
   }
 }

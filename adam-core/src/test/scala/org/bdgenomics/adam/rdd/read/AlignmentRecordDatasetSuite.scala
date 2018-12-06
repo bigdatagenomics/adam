@@ -20,9 +20,10 @@ package org.bdgenomics.adam.rdd.read
 import java.io.File
 import java.nio.file.Files
 import htsjdk.samtools.{ SAMFileHeader, ValidationStringency }
-import org.apache.spark.api.java.function.Function2
+import org.apache.spark.api.java.function.{ Function => JFunction, Function2 }
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Dataset, SQLContext }
+import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.converters.DefaultHeaderLines
 import org.bdgenomics.adam.io.FastqRecordReader
 import org.bdgenomics.adam.models.{
@@ -1844,5 +1845,17 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
         disableFastConcat = false)
 
     checkFiles(testFile("readname_sorted.sam"), actualSortedPath)
+  }
+
+  sparkTest("transform dataset via java API") {
+    val reads = sc.loadBam(testFile("small.sam")).sort()
+
+    val transformed = reads.transformDataset(new JFunction[Dataset[AlignmentRecordProduct], Dataset[AlignmentRecordProduct]]() {
+      override def call(ds: Dataset[AlignmentRecordProduct]): Dataset[AlignmentRecordProduct] = {
+        ds
+      }
+    })
+
+    assert(reads.dataset.first().start.get === transformed.dataset.first().start.get)
   }
 }

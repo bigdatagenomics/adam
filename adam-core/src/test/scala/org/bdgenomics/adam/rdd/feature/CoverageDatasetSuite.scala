@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.adam.rdd.feature
 
+import org.apache.spark.api.java.function.{ Function => JFunction }
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.bdgenomics.adam.models.{
@@ -527,6 +528,19 @@ class CoverageDatasetSuite extends ADAMFunSuite {
     val copy = CoverageDataset.apply(coverage.dataset)
     assert(copy.dataset.count() === coverage.dataset.count())
     assert(copy.sequences.containsReferenceName("chr1") == false)
+  }
+
+  sparkTest("transform dataset via java API") {
+    val sd = sc.loadSequenceDictionary(testFile("hg19.genome"))
+    val coverage = sc.loadCoverage(testFile("sample_coverage.bed"), optSequenceDictionary = Some(sd))
+
+    val transformed = coverage.transformDataset(new JFunction[Dataset[Coverage], Dataset[Coverage]]() {
+      override def call(ds: Dataset[Coverage]): Dataset[Coverage] = {
+        ds
+      }
+    })
+
+    assert(coverage.dataset.first().start === transformed.dataset.first().start)
   }
 }
 

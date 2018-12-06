@@ -18,6 +18,7 @@
 package org.bdgenomics.adam.rdd.variant
 
 import htsjdk.variant.vcf.VCFHeaderLine
+import org.apache.spark.api.java.function.{ Function => JFunction }
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.bdgenomics.adam.models.{
@@ -707,5 +708,17 @@ class VariantDatasetSuite extends ADAMFunSuite {
     val variants = sc.loadVariants(testFile("NA12878.chr22.tiny.freebayes.vcf"))
     val variantsDs = variants.transformDataset(ds => ds)
     assert(variantsDs.filterToIndels().dataset.count() === 2)
+  }
+
+  sparkTest("transform dataset via java API") {
+    val variants = sc.loadVariants(testFile("NA12878.chr22.tiny.freebayes.vcf")).sort()
+
+    val transformed = variants.transformDataset(new JFunction[Dataset[VariantProduct], Dataset[VariantProduct]]() {
+      override def call(ds: Dataset[VariantProduct]): Dataset[VariantProduct] = {
+        ds
+      }
+    })
+
+    assert(variants.dataset.first().start.get === transformed.dataset.first().start.get)
   }
 }

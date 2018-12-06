@@ -51,7 +51,7 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
   def getSparkContext: JavaSparkContext = new JavaSparkContext(ac.sc)
 
   /**
-   * Load alignment records into an AlignmentRecordDataset (java-friendly method).
+   * (Java-specific) Load alignment records into an AlignmentRecordDataset.
    *
    * Loads path names ending in:
    * * .bam/.cram/.sam as BAM/CRAM/SAM format,
@@ -79,7 +79,7 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
   }
 
   /**
-   * Load alignment records into an AlignmentRecordDataset (java-friendly method).
+   * (Java-specific) Load alignment records into an AlignmentRecordDataset.
    *
    * Loads path names ending in:
    * * .bam/.cram/.sam as BAM/CRAM/SAM format,
@@ -111,7 +111,7 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
   }
 
   /**
-   * Functions like loadBam, but uses BAM index files to look at fewer blocks,
+   * (Java-specific) Functions like loadBam, but uses BAM index files to look at fewer blocks,
    * and only returns records within the specified ReferenceRegions. BAM index file required.
    *
    * @param pathName The path name to load indexed BAM formatted alignment records from.
@@ -132,7 +132,7 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
   }
 
   /**
-   * Load nucleotide contig fragments into a NucleotideContigFragmentDataset (java-friendly method).
+   * (Java-specific) Load nucleotide contig fragments into a NucleotideContigFragmentDataset.
    *
    * If the path name has a .fa/.fasta extension, load as FASTA format.
    * Else, fall back to Parquet + Avro.
@@ -152,7 +152,7 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
   }
 
   /**
-   * Load fragments into a FragmentDataset (java-friendly method).
+   * (Java-specific) Load fragments into a FragmentDataset.
    *
    * Loads path names ending in:
    * * .bam/.cram/.sam as BAM/CRAM/SAM format and
@@ -175,7 +175,7 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
   }
 
   /**
-   * Load fragments into a FragmentDataset (java-friendly method).
+   * (Java-specific) Load fragments into a FragmentDataset.
    *
    * Loads path names ending in:
    * * .bam/.cram/.sam as BAM/CRAM/SAM format and
@@ -200,7 +200,7 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
   }
 
   /**
-   * Load features into a FeatureDataset (java-friendly method).
+   * (Java-specific) Load features into a FeatureDataset.
    *
    * Loads path names ending in:
    * * .bed as BED6/12 format,
@@ -227,7 +227,7 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
   }
 
   /**
-   * Load features into a FeatureDataset (java-friendly method).
+   * (Java-specific) Load features into a FeatureDataset.
    *
    * Loads path names ending in:
    * * .bed as BED6/12 format,
@@ -257,7 +257,7 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
   }
 
   /**
-   * Load features into a FeatureDataset and convert to a CoverageDataset (java-friendly method).
+   * (Java-specific) Load features into a FeatureDataset and convert to a CoverageDataset.
    * Coverage is stored in the score field of Feature.
    *
    * Loads path names ending in:
@@ -285,7 +285,7 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
   }
 
   /**
-   * Load features into a FeatureDataset and convert to a CoverageDataset (java-friendly method).
+   * (Java-specific) Load features into a FeatureDataset and convert to a CoverageDataset.
    * Coverage is stored in the score field of Feature.
    *
    * Loads path names ending in:
@@ -317,7 +317,7 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
   }
 
   /**
-   * Load genotypes into a GenotypeDataset (java-friendly method).
+   * (Java-specific) Load genotypes into a GenotypeDataset.
    *
    * If the path name has a .vcf/.vcf.gz/.vcf.bgzf/.vcf.bgz extension, load as VCF format.
    * Else, fall back to Parquet + Avro.
@@ -334,7 +334,7 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
   }
 
   /**
-   * Load genotypes into a GenotypeDataset (java-friendly method).
+   * (Java-specific) Load genotypes into a GenotypeDataset.
    *
    * If the path name has a .vcf/.vcf.gz/.vcf.bgzf/.vcf.bgz extension, load as VCF format.
    * Else, fall back to Parquet + Avro.
@@ -354,7 +354,7 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
   }
 
   /**
-   * Load variants into a VariantDataset (java-friendly method).
+   * (Java-specific) Load variants into a VariantDataset.
    *
    * If the path name has a .vcf/.vcf.gz/.vcf.bgzf/.vcf.bgz extension, load as VCF format.
    * Else, fall back to Parquet + Avro.
@@ -370,7 +370,7 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
   }
 
   /**
-   * Load variants into a VariantDataset (java-friendly method).
+   * (Java-specific) Load variants into a VariantDataset.
    *
    * If the path name has a .vcf/.vcf.gz/.vcf.bgzf/.vcf.bgz extension, load as VCF format.
    * Else, fall back to Parquet + Avro.
@@ -388,7 +388,7 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
   }
 
   /**
-   * Load reference sequences into a broadcastable ReferenceFile (java-friendly method).
+   * (Java-specific) Load reference sequences into a broadcastable ReferenceFile.
    *
    * If the path name has a .2bit extension, loads a 2bit file. Else, uses loadContigFragments
    * to load the reference as an RDD, which is then collected to the driver.
@@ -407,7 +407,7 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
   }
 
   /**
-   * Load reference sequences into a broadcastable ReferenceFile (java-friendly method).
+   * (Java-specific) Load reference sequences into a broadcastable ReferenceFile.
    *
    * If the path name has a .2bit extension, loads a 2bit file. Else, uses loadContigFragments
    * to load the reference as an RDD, which is then collected to the driver. Uses a
