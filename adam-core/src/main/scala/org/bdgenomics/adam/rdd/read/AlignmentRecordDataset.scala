@@ -28,6 +28,7 @@ import org.apache.hadoop.io.LongWritable
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.spark.SparkContext
 import org.apache.spark.api.java.JavaRDD
+import org.apache.spark.api.java.function.{ Function => JFunction }
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.MetricsContext._
 import org.apache.spark.rdd.RDD
@@ -62,6 +63,7 @@ import org.bdgenomics.utils.interval.array.{
 }
 import org.seqdoop.hadoop_bam._
 import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.language.implicitConversions
 import scala.math.{ abs, min }
 import scala.reflect.ClassTag
@@ -274,6 +276,11 @@ case class DatasetBoundAlignmentRecordDataset private[rdd] (
     copy(dataset = tFn(dataset))
   }
 
+  override def transformDataset(
+    tFn: JFunction[Dataset[AlignmentRecordProduct], Dataset[AlignmentRecordProduct]]): AlignmentRecordDataset = {
+    copy(dataset = tFn.call(dataset))
+  }
+
   def replaceSequences(
     newSequences: SequenceDictionary): AlignmentRecordDataset = {
     copy(sequences = newSequences)
@@ -389,16 +396,17 @@ sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDatas
 
   @transient val uTag: TypeTag[AlignmentRecordProduct] = typeTag[AlignmentRecordProduct]
 
-  /**
-   * Applies a function that transforms the underlying Dataset into a new Dataset using
-   * the Spark SQL API.
-   *
-   * @param tFn A function that transforms the underlying Dataset as a Dataset.
-   * @return A new genomic dataset where the Dataset of genomic data has been replaced, but the
-   *   metadata (sequence dictionary, and etc) is copied without modification.
-   */
-  def transformDataset(
+  override def transformDataset(
     tFn: Dataset[AlignmentRecordProduct] => Dataset[AlignmentRecordProduct]): AlignmentRecordDataset = {
+    DatasetBoundAlignmentRecordDataset(dataset,
+      sequences,
+      recordGroups,
+      processingSteps)
+      .transformDataset(tFn)
+  }
+
+  override def transformDataset(
+    tFn: JFunction[Dataset[AlignmentRecordProduct], Dataset[AlignmentRecordProduct]]): AlignmentRecordDataset = {
     DatasetBoundAlignmentRecordDataset(dataset,
       sequences,
       recordGroups,
@@ -703,22 +711,6 @@ sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDatas
   /**
    * Cuts reads into _k_-mers, and then counts the number of occurrences of each _k_-mer.
    *
-   * Java friendly variant.
-   *
-   * @param kmerLength The value of _k_ to use for cutting _k_-mers.
-   * @return Returns an RDD containing k-mer/count pairs.
-   */
-  def countKmers(kmerLength: java.lang.Integer): JavaRDD[(String, java.lang.Long)] = {
-    val k: Int = kmerLength
-    countKmers(k).map(kv => {
-      val (k, v) = kv
-      (k, v: java.lang.Long)
-    }).toJavaRDD()
-  }
-
-  /**
-   * Cuts reads into _k_-mers, and then counts the number of occurrences of each _k_-mer.
-   *
    * @param kmerLength The value of _k_ to use for cutting _k_-mers.
    * @return Returns an RDD containing k-mer/count pairs.
    */
@@ -737,7 +729,7 @@ sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDatas
    * @param kmerLength The value of _k_ to use for cutting _k_-mers.
    * @return Returns a Dataset containing k-mer/count pairs.
    */
-  def countKmersAsDataset(kmerLength: java.lang.Integer): Dataset[(String, Long)] = {
+  def countKmersAsDataset(kmerLength: Int): Dataset[(String, Long)] = {
     import dataset.sqlContext.implicits._
     val kmers = dataset.select($"sequence".as[String])
       .flatMap(_.sliding(kmerLength))
@@ -1033,10 +1025,8 @@ sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDatas
   }
 
   /**
-   * Runs base quality score recalibration on a set of reads. Uses a table of
+   * (Java-specific) Runs base quality score recalibration on a set of reads. Uses a table of
    * known SNPs to mask true variation during the recalibration process.
-   *
-   * Java friendly variant.
    *
    * @param knownSnps A table of known SNPs to mask valid variants.
    * @param minAcceptableQuality The minimum quality score to recalibrate.
@@ -1057,7 +1047,36 @@ sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDatas
   }
 
   /**
-   * Runs base quality score recalibration on a set of reads. Uses a table of
+   * (Java-specific) Runs base quality score recalibration on a set of reads. Uses a table of
+   * known SNPs to mask true variation during the recalibration process.
+   *
+   * @param knownSnps A table of known SNPs to mask valid variants.
+   * @param minAcceptableQuality The minimum quality score to recalibrate.
+   * @param storageLevel Storage level to set for the output
+   *   of the first stage of BQSR. Set to null to omit.
+   * @param samplingFraction Fraction of reads to sample when
+   *   generating the covariate table.
+   * @param samplingSeed Seed to provide if downsampling reads.
+   * @return Returns a genomic dataset of recalibrated reads.
+   */
+  def recalibrateBaseQualities(
+    knownSnps: VariantDataset,
+    minAcceptableQuality: java.lang.Integer,
+    storageLevel: StorageLevel,
+    samplingFraction: java.lang.Double,
+    samplingSeed: java.lang.Long): AlignmentRecordDataset = {
+    val snpTable = SnpTable(knownSnps)
+    val bcastSnps = rdd.context.broadcast(snpTable)
+    val sMinQual: Int = minAcceptableQuality
+    recalibrateBaseQualities(bcastSnps,
+      minAcceptableQuality = sMinQual,
+      optStorageLevel = Option(storageLevel),
+      optSamplingFraction = Option(samplingFraction),
+      optSamplingSeed = Option(samplingSeed))
+  }
+
+  /**
+   * (Scala-specific) Runs base quality score recalibration on a set of reads. Uses a table of
    * known SNPs to mask true variation during the recalibration process.
    *
    * @param knownSnps A table of known SNPs to mask valid variants.
@@ -1103,7 +1122,7 @@ sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDatas
    */
   def realignIndels(referenceFile: ReferenceFile): AlignmentRecordDataset = {
     realignIndels(consensusModel = new ConsensusGeneratorFromReads,
-      optReferenceFile = Some(referenceFile)
+      optReferenceFile = Option(referenceFile)
     )
   }
 
@@ -1233,7 +1252,30 @@ sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDatas
   }
 
   /**
-   * Computes the mismatching positions field (SAM "MD" tag).
+   * (Java-specific) Computes the mismatching positions field (SAM "MD" tag).
+   *
+   * @param referenceFile A reference file that can be broadcast to all nodes.
+   * @param overwriteExistingTags If true, overwrites the MD tags on reads where
+   *   it is already populated. If false, we only tag reads that are currently
+   *   missing an MD tag.
+   * @param validationStringency If we are recalculating existing tags and we
+   *   find that the MD tag that was previously on the read doesn't match our
+   *   new tag, LENIENT will log a warning message, STRICT will throw an
+   *   exception, and SILENT will ignore.
+   * @return Returns a new AlignmentRecordDataset where all reads have the
+   *   mismatchingPositions field populated.
+   */
+  def computeMismatchingPositions(
+    referenceFile: ReferenceFile,
+    overwriteExistingTags: java.lang.Boolean,
+    validationStringency: ValidationStringency): AlignmentRecordDataset = {
+    computeMismatchingPositions(referenceFile = referenceFile,
+      overwriteExistingTags = overwriteExistingTags,
+      validationStringency = validationStringency)
+  }
+
+  /**
+   * (Scala-specific) Computes the mismatching positions field (SAM "MD" tag).
    *
    * @param referenceFile A reference file that can be broadcast to all nodes.
    * @param overwriteExistingTags If true, overwrites the MD tags on reads where
@@ -1275,10 +1317,10 @@ sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDatas
   }
 
   /**
-   * Saves these AlignmentRecords to two FASTQ files.
+   * (Java-specific) Saves these AlignmentRecords to two FASTQ files.
    *
    * The files are one for the first mate in each pair, and the other for the
-   * second mate in the pair. Java friendly variant.
+   * second mate in the pair.
    *
    * @param fileName1 Path at which to save a FASTQ file containing the first
    *   mate of each pair.
@@ -1454,9 +1496,7 @@ sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDatas
   }
 
   /**
-   * Saves reads in FASTQ format.
-   *
-   * Java friendly variant.
+   * (Java-specific) Saves reads in FASTQ format.
    *
    * @param fileName Path to save files at.
    * @param outputOriginalBaseQualities If true, writes out reads with the base
@@ -1556,8 +1596,8 @@ sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDatas
   }
 
   /**
-   * Reassembles read pairs from two sets of unpaired reads. The assumption is that the two sets
-   * were _originally_ paired together. Java friendly variant.
+   * (Java-specific) Reassembles read pairs from two sets of unpaired reads. The assumption is that the two sets
+   * were _originally_ paired together.
    *
    * @note The RDD that this is called on should be the RDD with the first read from the pair.
    * @param secondPairRdd The rdd containing the second read from the pairs.
@@ -1572,7 +1612,7 @@ sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDatas
   }
 
   /**
-   * Reassembles read pairs from two sets of unpaired reads. The assumption is that the two sets
+   * (Scala-specific) Reassembles read pairs from two sets of unpaired reads. The assumption is that the two sets
    * were _originally_ paired together.
    *
    * @note The RDD that this is called on should be the RDD with the first read from the pair.
@@ -1639,7 +1679,21 @@ sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDatas
   }
 
   /**
-   * Rewrites the quality scores of reads to place all quality scores in bins.
+   * (Java-specific) Rewrites the quality scores of reads to place all quality scores in bins.
+   *
+   * Quality score binning maps all quality scores to a limited number of
+   * discrete values, thus reducing the entropy of the quality score
+   * distribution, and reducing the amount of space that reads consume on disk.
+   *
+   * @param bins The bins to use.
+   * @return Reads whose quality scores are binned.
+   */
+  def binQualityScores(bins: java.util.List[QualityScoreBin]): AlignmentRecordDataset = {
+    binQualityScores(asScalaBuffer(bins))
+  }
+
+  /**
+   * (Scala-specific) Rewrites the quality scores of reads to place all quality scores in bins.
    *
    * Quality score binning maps all quality scores to a limited number of
    * discrete values, thus reducing the entropy of the quality score
@@ -1738,7 +1792,17 @@ sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDatas
   }
 
   /**
-   * Filter this AlignmentRecordDataset by record group to those that match the specified record groups.
+   * (Java-specific) Filter this AlignmentRecordDataset by record group to those that match the specified record groups.
+   *
+   * @param recordGroupNames List of record groups to filter by.
+   * @return AlignmentRecordDataset filtered by one or more record groups.
+   */
+  def filterToRecordGroups(recordGroupNames: java.util.List[String]): AlignmentRecordDataset = {
+    filterToRecordGroups(asScalaBuffer(recordGroupNames))
+  }
+
+  /**
+   * (Scala-specific) Filter this AlignmentRecordDataset by record group to those that match the specified record groups.
    *
    * @param recordGroupNames Sequence of record groups to filter by.
    * @return AlignmentRecordDataset filtered by one or more record groups.
@@ -1758,7 +1822,17 @@ sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDatas
   }
 
   /**
-   * Filter this AlignmentRecordDataset by sample to those that match the specified samples.
+   * (Java-specific) Filter this AlignmentRecordDataset by sample to those that match the specified samples.
+   *
+   * @param recordGroupSamples List of samples to filter by.
+   * @return AlignmentRecordDataset filtered by the specified samples.
+   */
+  def filterToSamples(recordGroupSamples: java.util.List[String]): AlignmentRecordDataset = {
+    filterToSamples(asScalaBuffer(recordGroupSamples))
+  }
+
+  /**
+   * (Scala-specific) Filter this AlignmentRecordDataset by sample to those that match the specified samples.
    *
    * @param recordGroupSamples Sequence of samples to filter by.
    * @return AlignmentRecordDataset filtered by the specified samples.

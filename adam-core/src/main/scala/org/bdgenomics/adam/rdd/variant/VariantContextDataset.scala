@@ -34,6 +34,7 @@ import org.apache.hadoop.io.compress.CompressionCodec
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.spark.SparkContext
+import org.apache.spark.api.java.function.{ Function => JFunction }
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.bdgenomics.adam.converters.{
@@ -142,6 +143,11 @@ case class DatasetBoundVariantContextDataset private[rdd] (
     copy(dataset = tFn(dataset))
   }
 
+  override def transformDataset(
+    tFn: JFunction[Dataset[VariantContextProduct], Dataset[VariantContextProduct]]): VariantContextDataset = {
+    copy(dataset = tFn.call(dataset))
+  }
+
   def replaceSequences(
     newSequences: SequenceDictionary): VariantContextDataset = {
     copy(sequences = newSequences)
@@ -227,9 +233,14 @@ sealed abstract class VariantContextDataset extends MultisampleGenomicDataset[Va
     saveMetadata(pathName)
   }
 
-  def transformDataset(
+  override def transformDataset(
     tFn: Dataset[VariantContextProduct] => Dataset[VariantContextProduct]): VariantContextDataset = {
     DatasetBoundVariantContextDataset(tFn(dataset), sequences, samples, headerLines)
+  }
+
+  override def transformDataset(
+    tFn: JFunction[Dataset[VariantContextProduct], Dataset[VariantContextProduct]]): VariantContextDataset = {
+    DatasetBoundVariantContextDataset(tFn.call(dataset), sequences, samples, headerLines)
   }
 
   /**

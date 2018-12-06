@@ -21,6 +21,7 @@ import com.google.common.io.Files
 import htsjdk.samtools.ValidationStringency
 import htsjdk.variant.vcf.VCFHeaderLine
 import java.io.File
+import org.apache.spark.api.java.function.{ Function => JFunction }
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.bdgenomics.adam.converters.VariantContextConverter
@@ -780,5 +781,17 @@ class GenotypeDatasetSuite extends ADAMFunSuite {
     assert(firstVcfGenotype.end === Some(16157602L))
     assert(firstVcfGenotype.variant.get.end === Some(16157602L))
     assert(firstVcfGenotype.variant.get.annotation.get.attributes.get("END") === Some("16157602"))
+  }
+
+  sparkTest("transform dataset via java API") {
+    val genotypes = sc.loadGenotypes(testFile("gvcf_multiallelic/multiallelic.vcf"))
+
+    val transformed = genotypes.transformDataset(new JFunction[Dataset[GenotypeProduct], Dataset[GenotypeProduct]]() {
+      override def call(ds: Dataset[GenotypeProduct]): Dataset[GenotypeProduct] = {
+        ds
+      }
+    })
+
+    assert(genotypes.dataset.first().start.get === transformed.dataset.first().start.get)
   }
 }

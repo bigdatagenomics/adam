@@ -148,7 +148,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Applies a function that transforms the underlying Dataset into a new Dataset
+   * (Scala-specific) Applies a function that transforms the underlying Dataset into a new Dataset
    * using the Spark SQL API.
    *
    * @param tFn A function that transforms the underlying Dataset as a Dataset.
@@ -158,7 +158,17 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   def transformDataset(tFn: Dataset[U] => Dataset[U]): V
 
   /**
-   * Applies a function that transforms the underlying DataFrame into a new DataFrame
+   * (Java-specific) Applies a function that transforms the underlying Dataset into a new Dataset
+   * using the Spark SQL API.
+   *
+   * @param tFn A function that transforms the underlying Dataset as a Dataset.
+   * @return A new genomic dataset where the Dataset of genomic data has been replaced, but the
+   *   metadata (sequence dictionary, and etc) are copied without modification.
+   */
+  def transformDataset(tFn: JFunction[Dataset[U], Dataset[U]]): V
+
+  /**
+   * (Scala-specific) Applies a function that transforms the underlying DataFrame into a new DataFrame
    * using the Spark SQL API.
    *
    * @param tFn A function that transforms the underlying data as a DataFrame.
@@ -175,8 +185,8 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Applies a function that transforms the underlying DataFrame into a new DataFrame
-   * using the Spark SQL API. Java-friendly variant.
+   * (Java-specific) Applies a function that transforms the underlying DataFrame into a new DataFrame
+   * using the Spark SQL API.
    *
    * @param tFn A function that transforms the underlying DataFrame as a DataFrame.
    * @return A new genomic dataset where the DataFrame of genomic data has been replaced, but the
@@ -189,7 +199,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Applies a function that transmutes the underlying Dataset into a new Dataset of a
+   * (Scala-specific) Applies a function that transmutes the underlying Dataset into a new Dataset of a
    * different type.
    *
    * @param tFn A function that transforms the underlying Dataset.
@@ -204,8 +214,8 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Applies a function that transmutes the underlying Dataset into a new Dataset of a
-   * different type. Java friendly variant.
+   * (Java-specific) Applies a function that transmutes the underlying Dataset into a new Dataset of a
+   * different type.
    *
    * @param tFn A function that transforms the underlying Dataset.
    * @return A new genomic dataset where the Dataset of genomic data has been replaced, but the
@@ -220,8 +230,8 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Applies a function that transmutes the underlying DataFrame into a new DataFrame of a
-   * different type. Java friendly variant.
+   * (Java-specific) Applies a function that transmutes the underlying DataFrame into a new DataFrame of a
+   * different type.
    *
    * @param tFn A function that transforms the underlying DataFrame.
    * @return A new genomic dataset where the DataFrame of genomic data has been replaced, but the
@@ -239,8 +249,8 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Applies a function that transmutes the underlying DataFrame into a new DataFrame of a
-   * different type. Java friendly variant.
+   * (Java-specific) Applies a function that transmutes the underlying DataFrame into a new DataFrame of a
+   * different type.
    *
    * @param tFn A function that transforms the underlying DataFrame.
    * @return A new genomic dataset where the DataFrame of genomic data has been replaced, but the
@@ -347,7 +357,6 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
    *
    * @param pathName The path to save the partitioned Parquet flag file to.
    * @param partitionSize Partition bin size, in base pairs, used in Hive-style partitioning.
-   *
    */
   private def writePartitionedParquetFlag(pathName: String, partitionSize: Int): Unit = {
     val path = new Path(pathName, "_partitionedByStartPos")
@@ -470,14 +479,14 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Unions together multiple genomic datasets.
+   * (Scala-specific) Unions together multiple genomic datasets.
    *
    * @param datasets Genomic datasets to union with this genomic dataset.
    */
   def union(datasets: V*): V
 
   /**
-   * Unions together multiple genomic datasets.
+   * (Java-specific) Unions together multiple genomic datasets.
    *
    * @param datasets Genomic datasets to union with this genomic dataset.
    */
@@ -487,7 +496,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Applies a function that transforms the underlying RDD into a new RDD.
+   * (Scala-specific) Applies a function that transforms the underlying RDD into a new RDD.
    *
    * @param tFn A function that transforms the underlying RDD.
    * @return A new genomic dataset where the RDD of genomic data has been replaced, but the
@@ -498,8 +507,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Applies a function that transforms the underlying RDD into a new RDD.
-   * Java friendly variant.
+   * (Java-specific) Applies a function that transforms the underlying RDD into a new RDD.
    *
    * @param tFn A function that transforms the underlying RDD.
    * @return A new genomic dataset where the RDD of genomic data has been replaced, but the
@@ -510,7 +518,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Applies a function that transmutes the underlying RDD into a new RDD of a
+   * (Scala-specific) Applies a function that transmutes the underlying RDD into a new RDD of a
    * different type.
    *
    * @param tFn A function that transforms the underlying RDD.
@@ -523,8 +531,8 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Applies a function that transmutes the underlying RDD into a new RDD of a
-   * different type. Java friendly variant.
+   * (Java-specific) Applies a function that transmutes the underlying RDD into a new RDD of a
+   * different type.
    *
    * @param tFn A function that transforms the underlying RDD.
    * @param convFn The conversion function used to build the final RDD.
@@ -692,7 +700,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
    *
    * @param partitions The number of partitions for the new genomic dataset.
    * @param storePartitionMap A Boolean flag to determine whether to store the
-   *                          partition bounds from the resulting genomic dataset.
+   *   partition bounds from the resulting genomic dataset.
    * @param storageLevel The level at which to persist the resulting genomic dataset.
    * @param stringency The level of ValidationStringency to enforce.
    * @return Returns a new genomic dataset containing sorted data.
@@ -741,7 +749,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Pipes genomic data to a subprocess that runs in parallel using Spark.
+   * (Scala-specific) Pipes genomic data to a subprocess that runs in parallel using Spark.
    *
    * Files are substituted in to the command with a $x syntax. E.g., to invoke
    * a command that uses the first file from the files Seq, use $0. To access
@@ -905,9 +913,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Pipes genomic data to a subprocess that runs in parallel using Spark.
-   *
-   * SparkR friendly variant.
+   * (R-specific) Pipes genomic data to a subprocess that runs in parallel using Spark.
    *
    * @param cmd Command to run.
    * @param files Files to make locally available to the commands being run.
@@ -944,9 +950,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Pipes genomic data to a subprocess that runs in parallel using Spark.
-   *
-   * Java/PySpark friendly variant.
+   * (Java/Python-specific) Pipes genomic data to a subprocess that runs in parallel using Spark.
    *
    * @param cmd Command to run.
    * @param files Files to make locally available to the commands being run.
@@ -1035,7 +1039,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Runs a filter that selects data in the underlying RDD that overlaps
+   * (Scala-specific) Runs a filter that selects data in the underlying RDD that overlaps
    * several genomic regions.
    *
    * @param querys The regions to query for.
@@ -1054,8 +1058,8 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Runs a filter that selects data in the underlying RDD that overlaps
-   * several genomic regions. Java friendly version.
+   * (Java-specific) Runs a filter that selects data in the underlying RDD that overlaps
+   * several genomic regions.
    *
    * @param querys The regions to query for.
    * @return Returns a new GenomicDataset containing only data that overlaps the
@@ -1083,13 +1087,13 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Performs a broadcast inner join between this genomic dataset and another genomic dataset.
+   * (R-specific) Performs a broadcast inner join between this genomic dataset and another genomic dataset.
    *
    * In a broadcast join, the left genomic dataset (this genomic dataset) is collected to the driver,
    * and broadcast to all the nodes in the cluster. The key equality function
    * used for this join is the reference region overlap function. Since this
    * is an inner join, all values who do not overlap a value from the other
-   * genomic dataset are dropped. SparkR friendly version.
+   * genomic dataset are dropped.
    *
    * @param genomicDataset The right genomic dataset in the join.
    * @param flankSize Sets a flankSize for the distance between elements to be
@@ -1105,13 +1109,13 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Performs a broadcast inner join between this genomic dataset and another genomic dataset.
+   * (Java-specific) Performs a broadcast inner join between this genomic dataset and another genomic dataset.
    *
    * In a broadcast join, the left genomic dataset (this genomic dataset) is collected to the driver,
    * and broadcast to all the nodes in the cluster. The key equality function
    * used for this join is the reference region overlap function. Since this
    * is an inner join, all values who do not overlap a value from the other
-   * genomic dataset are dropped. Python/Java friendly version.
+   * genomic dataset are dropped.
    *
    * @param genomicDataset The right genomic dataset in the join.
    * @param flankSize Sets a flankSize for the distance between elements to be
@@ -1237,7 +1241,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Performs a broadcast right outer join between this genomic dataset and another genomic dataset.
+   * (R-specific) Performs a broadcast right outer join between this genomic dataset and another genomic dataset.
    *
    * In a broadcast join, the left genomic dataset (this genomic dataset) is collected to the driver,
    * and broadcast to all the nodes in the cluster. The key equality function
@@ -1245,7 +1249,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
    * is a right outer join, all values in the left genomic dataset that do not overlap a
    * value from the right genomic dataset are dropped. If a value from the right genomic dataset does
    * not overlap any values in the left genomic dataset, it will be paired with a `None`
-   * in the product of the join. SparkR friendly version.
+   * in the product of the join.
    *
    * @param genomicDataset The right genomic dataset in the join.
    * @param flankSize Sets a flankSize for the distance between elements to be
@@ -1262,7 +1266,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Performs a broadcast right outer join between this genomic dataset and another genomic dataset.
+   * (Java-specific) Performs a broadcast right outer join between this genomic dataset and another genomic dataset.
    *
    * In a broadcast join, the left genomic dataset (this genomic dataset) is collected to the driver,
    * and broadcast to all the nodes in the cluster. The key equality function
@@ -1270,7 +1274,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
    * is a right outer join, all values in the left genomic dataset that do not overlap a
    * value from the right genomic dataset are dropped. If a value from the right genomic dataset does
    * not overlap any values in the left genomic dataset, it will be paired with a `None`
-   * in the product of the join. PySpark/Java friendly version.
+   * in the product of the join.
    *
    * @param genomicDataset The right genomic dataset in the join.
    * @param flankSize Sets a flankSize for the distance between elements to be
@@ -1405,13 +1409,13 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Performs a broadcast inner join between this genomic dataset and another genomic dataset.
+   * (R-specific) Performs a broadcast inner join between this genomic dataset and another genomic dataset.
    *
    * In a broadcast join, the left genomic dataset (this genomic dataset) is collected to the driver,
    * and broadcast to all the nodes in the cluster. The key equality function
    * used for this join is the reference region overlap function. Since this
    * is an inner join, all values who do not overlap a value from the other
-   * genomic dataset are dropped. SparkR friendly variant.
+   * genomic dataset are dropped.
    *
    * @param genomicDataset The right genomic dataset in the join.
    * @param flankSize Sets a flankSize for the distance between elements to be
@@ -1429,13 +1433,13 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Performs a broadcast inner join between this genomic dataset and another genomic dataset.
+   * (Java-specific) Performs a broadcast inner join between this genomic dataset and another genomic dataset.
    *
    * In a broadcast join, the left genomic dataset (this genomic dataset) is collected to the driver,
    * and broadcast to all the nodes in the cluster. The key equality function
    * used for this join is the reference region overlap function. Since this
    * is an inner join, all values who do not overlap a value from the other
-   * genomic dataset are dropped. PySpark/Java friendly variant.
+   * genomic dataset are dropped.
    *
    * @param genomicDataset The right genomic dataset in the join.
    * @param flankSize Sets a flankSize for the distance between elements to be
@@ -1566,7 +1570,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Performs a broadcast right outer join between this genomic dataset and another genomic dataset.
+   * (R-specific) Performs a broadcast right outer join between this genomic dataset and another genomic dataset.
    *
    * In a broadcast join, the left side of the join (broadcastTree) is broadcast to
    * to all the nodes in the cluster. The key equality function
@@ -1574,7 +1578,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
    * is a right outer join, all values in the left genomic dataset that do not overlap a
    * value from the right genomic dataset are dropped. If a value from the right genomic dataset does
    * not overlap any values in the left genomic dataset, it will be paired with a `None`
-   * in the product of the join. SparkR friendly variant.
+   * in the product of the join.
    *
    * @param genomicDataset The right genomic dataset in the join.
    * @param flankSize Sets a flankSize for the distance between elements to be
@@ -1593,7 +1597,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Performs a broadcast right outer join between this genomic dataset and another genomic dataset.
+   * (Java-specific) Performs a broadcast right outer join between this genomic dataset and another genomic dataset.
    *
    * In a broadcast join, the left side of the join (broadcastTree) is broadcast to
    * to all the nodes in the cluster. The key equality function
@@ -1601,7 +1605,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
    * is a right outer join, all values in the left genomic dataset that do not overlap a
    * value from the right genomic dataset are dropped. If a value from the right genomic dataset does
    * not overlap any values in the left genomic dataset, it will be paired with a `None`
-   * in the product of the join. PySpark/Java friendly variant.
+   * in the product of the join.
    *
    * @param genomicDataset The right genomic dataset in the join.
    * @param flankSize Sets a flankSize for the distance between elements to be
@@ -1773,13 +1777,13 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Performs a sort-merge inner join between this genomic dataset and another genomic dataset.
+   * (R-specific) Performs a sort-merge inner join between this genomic dataset and another genomic dataset.
    *
    * In a sort-merge join, both genomic datasets are co-partitioned and sorted. The
    * partitions are then zipped, and we do a merge join on each partition.
    * The key equality function used for this join is the reference region
    * overlap function. Since this is an inner join, all values who do not
-   * overlap a value from the other genomic dataset are dropped. SparkR friendly variant.
+   * overlap a value from the other genomic dataset are dropped.
    *
    * @param genomicDataset The right genomic dataset in the join.
    * @param flankSize Sets a flankSize for the distance between elements to be
@@ -1795,14 +1799,13 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Performs a sort-merge inner join between this genomic dataset and another genomic dataset.
+   * (Java-specific) Performs a sort-merge inner join between this genomic dataset and another genomic dataset.
    *
    * In a sort-merge join, both genomic datasets are co-partitioned and sorted. The
    * partitions are then zipped, and we do a merge join on each partition.
    * The key equality function used for this join is the reference region
    * overlap function. Since this is an inner join, all values who do not
-   * overlap a value from the other genomic dataset are dropped. PySpark/Java friendly
-   * variant.
+   * overlap a value from the other genomic dataset are dropped.
    *
    * @param genomicDataset The right genomic dataset in the join.
    * @param flankSize Sets a flankSize for the distance between elements to be
@@ -1920,7 +1923,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Performs a sort-merge right outer join between this genomic dataset and another genomic dataset.
+   * (R-specific) Performs a sort-merge right outer join between this genomic dataset and another genomic dataset.
    *
    * In a sort-merge join, both genomic datasets are co-partitioned and sorted. The
    * partitions are then zipped, and we do a merge join on each partition.
@@ -1928,8 +1931,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
    * overlap function. Since this is a right outer join, all values in the
    * left genomic dataset that do not overlap a value from the right genomic dataset are dropped.
    * If a value from the right genomic dataset does not overlap any values in the left
-   * genomic dataset, it will be paired with a `None` in the product of the join. SparkR
-   * friendly variant.
+   * genomic dataset, it will be paired with a `None` in the product of the join.
    *
    * @param genomicDataset The right genomic dataset in the join.
    * @param flankSize Sets a flankSize for the distance between elements to be
@@ -1946,7 +1948,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Performs a sort-merge right outer join between this genomic dataset and another genomic dataset.
+   * (Java-specific) Performs a sort-merge right outer join between this genomic dataset and another genomic dataset.
    *
    * In a sort-merge join, both genomic datasets are co-partitioned and sorted. The
    * partitions are then zipped, and we do a merge join on each partition.
@@ -1955,7 +1957,6 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
    * left genomic dataset that do not overlap a value from the right genomic dataset are dropped.
    * If a value from the right genomic dataset does not overlap any values in the left
    * genomic dataset, it will be paired with a `None` in the product of the join.
-   * PySpark/Java friendly variant.
    *
    * @param genomicDataset The right genomic dataset in the join.
    * @param flankSize Sets a flankSize for the distance between elements to be
@@ -2085,7 +2086,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Performs a sort-merge left outer join between this genomic dataset and another genomic dataset.
+   * (R-specific) Performs a sort-merge left outer join between this genomic dataset and another genomic dataset.
    *
    * In a sort-merge join, both genomic datasets are co-partitioned and sorted. The
    * partitions are then zipped, and we do a merge join on each partition.
@@ -2093,8 +2094,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
    * overlap function. Since this is a left outer join, all values in the
    * right genomic dataset that do not overlap a value from the left genomic dataset are dropped.
    * If a value from the left genomic dataset does not overlap any values in the right
-   * genomic dataset, it will be paired with a `None` in the product of the join. SparkR
-   * friendly variant.
+   * genomic dataset, it will be paired with a `None` in the product of the join.
    *
    * @param genomicDataset The right genomic dataset in the join.
    * @param flankSize Sets a flankSize for the distance between elements to be
@@ -2111,7 +2111,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Performs a sort-merge left outer join between this genomic dataset and another genomic dataset.
+   * (Java-specific) Performs a sort-merge left outer join between this genomic dataset and another genomic dataset.
    *
    * In a sort-merge join, both genomic datasets are co-partitioned and sorted. The
    * partitions are then zipped, and we do a merge join on each partition.
@@ -2120,7 +2120,6 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
    * right genomic dataset that do not overlap a value from the left genomic dataset are dropped.
    * If a value from the left genomic dataset does not overlap any values in the right
    * genomic dataset, it will be paired with a `None` in the product of the join.
-   * PySpark/Java friendly variant.
    *
    * @param genomicDataset The right genomic dataset in the join.
    * @param flankSize Sets a flankSize for the distance between elements to be
@@ -2248,7 +2247,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Performs a sort-merge left outer join between this genomic dataset and another genomic dataset,
+   * (R-specific) Performs a sort-merge left outer join between this genomic dataset and another genomic dataset,
    * followed by a groupBy on the left value.
    *
    * In a sort-merge join, both genomic datasets are co-partitioned and sorted. The
@@ -2258,7 +2257,6 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
    * right genomic dataset that do not overlap a value from the left genomic dataset are dropped.
    * If a value from the left genomic dataset does not overlap any values in the right
    * genomic dataset, it will be paired with an empty Iterable in the product of the join.
-   * SparkR friendly variant.
    *
    * @param genomicDataset The right genomic dataset in the join.
    * @param flankSize Sets a flankSize for the distance between elements to be
@@ -2275,7 +2273,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Performs a sort-merge left outer join between this genomic dataset and another genomic dataset,
+   * (Java-specific) Performs a sort-merge left outer join between this genomic dataset and another genomic dataset,
    * followed by a groupBy on the left value.
    *
    * In a sort-merge join, both genomic datasets are co-partitioned and sorted. The
@@ -2285,7 +2283,6 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
    * right genomic dataset that do not overlap a value from the left genomic dataset are dropped.
    * If a value from the left genomic dataset does not overlap any values in the right
    * genomic dataset, it will be paired with an empty Iterable in the product of the join.
-   * PySpark/Java friendly variant.
    *
    * @param genomicDataset The right genomic dataset in the join.
    * @param flankSize Sets a flankSize for the distance between elements to be
@@ -2416,14 +2413,14 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Performs a sort-merge full outer join between this genomic dataset and another genomic dataset.
+   * (R-specific) Performs a sort-merge full outer join between this genomic dataset and another genomic dataset.
    *
    * In a sort-merge join, both genomic datasets are co-partitioned and sorted. The
    * partitions are then zipped, and we do a merge join on each partition.
    * The key equality function used for this join is the reference region
    * overlap function. Since this is a full outer join, if a value from either
    * genomic dataset does not overlap any values in the other genomic dataset, it will be paired with
-   * a `None` in the product of the join. SparkR friendly variant.
+   * a `None` in the product of the join.
    *
    * @param genomicDataset The right genomic dataset in the join.
    * @param flankSize Sets a flankSize for the distance between elements to be
@@ -2440,14 +2437,14 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Performs a sort-merge full outer join between this genomic dataset and another genomic dataset.
+   * (Python-specific) Performs a sort-merge full outer join between this genomic dataset and another genomic dataset.
    *
    * In a sort-merge join, both genomic datasets are co-partitioned and sorted. The
    * partitions are then zipped, and we do a merge join on each partition.
    * The key equality function used for this join is the reference region
    * overlap function. Since this is a full outer join, if a value from either
    * genomic dataset does not overlap any values in the other genomic dataset, it will be paired with
-   * a `None` in the product of the join. PySpark/Java friendly variant.
+   * a `None` in the product of the join.
    *
    * @param genomicDataset The right genomic dataset in the join.
    * @param flankSize Sets a flankSize for the distance between elements to be
@@ -2572,14 +2569,14 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Performs a sort-merge inner join between this genomic dataset and another genomic dataset,
+   * (R-specific) Performs a sort-merge inner join between this genomic dataset and another genomic dataset,
    * followed by a groupBy on the left value.
    *
    * In a sort-merge join, both genomic datasets are co-partitioned and sorted. The
    * partitions are then zipped, and we do a merge join on each partition.
    * The key equality function used for this join is the reference region
    * overlap function. In the same operation, we group all values by the left
-   * item in the genomic dataset. SparkR friendly variant.
+   * item in the genomic dataset.
    *
    * @param genomicDataset The right genomic dataset in the join.
    * @param flankSize Sets a flankSize for the distance between elements to be
@@ -2596,14 +2593,14 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Performs a sort-merge inner join between this genomic dataset and another genomic dataset,
+   * (Java-specific) Performs a sort-merge inner join between this genomic dataset and another genomic dataset,
    * followed by a groupBy on the left value.
    *
    * In a sort-merge join, both genomic datasets are co-partitioned and sorted. The
    * partitions are then zipped, and we do a merge join on each partition.
    * The key equality function used for this join is the reference region
    * overlap function. In the same operation, we group all values by the left
-   * item in the genomic dataset. PySpark/Java friendly variant.
+   * item in the genomic dataset.
    *
    * @param genomicDataset The right genomic dataset in the join.
    * @param flankSize Sets a flankSize for the distance between elements to be
@@ -2732,7 +2729,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Performs a sort-merge right outer join between this genomic dataset and another genomic dataset,
+   * (R-specific) Performs a sort-merge right outer join between this genomic dataset and another genomic dataset,
    * followed by a groupBy on the left value, if not null.
    *
    * In a sort-merge join, both genomic datasets are co-partitioned and sorted. The
@@ -2741,7 +2738,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
    * overlap function. In the same operation, we group all values by the left
    * item in the genomic dataset. Since this is a right outer join, all values from the
    * right genomic dataset who did not overlap a value from the left genomic dataset are placed into
-   * a length-1 Iterable with a `None` key. SparkR friendly variant.
+   * a length-1 Iterable with a `None` key.
    *
    * @param genomicDataset The right genomic dataset in the join.
    * @param flankSize Sets a flankSize for the distance between elements to be
@@ -2759,7 +2756,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Performs a sort-merge right outer join between this genomic dataset and another genomic dataset,
+   * (Java-specific) Performs a sort-merge right outer join between this genomic dataset and another genomic dataset,
    * followed by a groupBy on the left value, if not null.
    *
    * In a sort-merge join, both genomic datasets are co-partitioned and sorted. The
@@ -2768,7 +2765,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
    * overlap function. In the same operation, we group all values by the left
    * item in the genomic dataset. Since this is a right outer join, all values from the
    * right genomic dataset who did not overlap a value from the left genomic dataset are placed into
-   * a length-1 Iterable with a `None` key. PySpark/Java friendly variant.
+   * a length-1 Iterable with a `None` key.
    *
    * @param genomicDataset The right genomic dataset in the join.
    * @param flankSize Sets a flankSize for the distance between elements to be
@@ -3194,8 +3191,15 @@ case class DatasetBoundGenericGenomicDataset[T, U <: Product](
 
   // this cannot be in the GenericGenomicDataset trait due to need for the
   // implicit classtag
-  def transformDataset(tFn: Dataset[U] => Dataset[U]): GenericGenomicDataset[T, U] = {
+  override def transformDataset(tFn: Dataset[U] => Dataset[U]): GenericGenomicDataset[T, U] = {
     DatasetBoundGenericGenomicDataset(tFn(dataset),
+      sequences,
+      converter,
+      tagHolder)
+  }
+
+  override def transformDataset(tFn: JFunction[Dataset[U], Dataset[U]]): GenericGenomicDataset[T, U] = {
+    DatasetBoundGenericGenomicDataset(tFn.call(dataset),
       sequences,
       converter,
       tagHolder)
@@ -3254,8 +3258,15 @@ case class RDDBoundGenericGenomicDataset[T, U <: Product](
 
   // this cannot be in the GenericGenomicDataset trait due to need for the
   // implicit classtag
-  def transformDataset(tFn: Dataset[U] => Dataset[U]): GenericGenomicDataset[T, U] = {
+  override def transformDataset(tFn: Dataset[U] => Dataset[U]): GenericGenomicDataset[T, U] = {
     DatasetBoundGenericGenomicDataset(tFn(dataset),
+      sequences,
+      converter,
+      tagHolder)
+  }
+
+  override def transformDataset(tFn: JFunction[Dataset[U], Dataset[U]]): GenericGenomicDataset[T, U] = {
+    DatasetBoundGenericGenomicDataset(tFn.call(dataset),
       sequences,
       converter,
       tagHolder)
@@ -3513,7 +3524,7 @@ private[rdd] trait VCFSupportingGenomicDataset[T, U <: Product, V <: VCFSupporti
   }
 
   /**
-   * Adds a VCF header line describing an array format field, with fixed count.
+   * (Scala-specific) Adds a VCF header line describing an array format field, with fixed count.
    *
    * @param id The identifier for the field.
    * @param count The number of elements in the array.
@@ -3529,9 +3540,7 @@ private[rdd] trait VCFSupportingGenomicDataset[T, U <: Product, V <: VCFSupporti
   }
 
   /**
-   * Adds a VCF header line describing an array format field, with fixed count.
-   *
-   * Java friendly variant.
+   * (Java-specific) Adds a VCF header line describing an array format field, with fixed count.
    *
    * @param id The identifier for the field.
    * @param count The number of elements in the array.
@@ -3631,7 +3640,7 @@ private[rdd] trait VCFSupportingGenomicDataset[T, U <: Product, V <: VCFSupporti
   }
 
   /**
-   * Adds a VCF header line describing an array info field, with fixed count.
+   * (Scala-specific) Adds a VCF header line describing an array info field, with fixed count.
    *
    * @param id The identifier for the field.
    * @param count The number of elements in the array.
@@ -3647,9 +3656,7 @@ private[rdd] trait VCFSupportingGenomicDataset[T, U <: Product, V <: VCFSupporti
   }
 
   /**
-   * Adds a VCF header line describing an array info field, with fixed count.
-   *
-   * Java friendly variant.
+   * (Java-specific) Adds a VCF header line describing an array info field, with fixed count.
    *
    * @param id The identifier for the field.
    * @param count The number of elements in the array.
@@ -3880,7 +3887,7 @@ abstract class AvroGenomicDataset[T <% IndexedRecord: Manifest, U <: Product, V 
   }
 
   /**
-   * Saves this genomic dataset to disk as a Parquet file.
+   * (Java-specific) Saves this genomic dataset to disk as a Parquet file.
    *
    * @param pathName Path to save the file at.
    * @param blockSize The size in bytes of blocks to write.

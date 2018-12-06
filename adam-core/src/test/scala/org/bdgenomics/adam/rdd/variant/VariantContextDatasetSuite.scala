@@ -26,7 +26,9 @@ import htsjdk.variant.vcf.{
   VCFInfoHeaderLine
 }
 import java.io.File
+import org.apache.spark.api.java.function.{ Function => JFunction }
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.{ Dataset }
 import org.apache.spark.util.CollectionAccumulator
 import org.bdgenomics.adam.converters.DefaultHeaderLines
 import org.bdgenomics.adam.models.{
@@ -538,5 +540,17 @@ class VariantContextDatasetSuite extends ADAMFunSuite {
     testMetadata(regionsVariantContexts)
     assert(regionsVariantContexts.rdd.count === 2)
     assert(regionsVariantContexts.dataset.count === 2)
+  }
+
+  sparkTest("transform dataset via java API") {
+    val variantContexts = sc.loadVcf(testFile("sorted-variants.vcf"))
+
+    val transformed = variantContexts.transformDataset(new JFunction[Dataset[VariantContextProduct], Dataset[VariantContextProduct]]() {
+      override def call(ds: Dataset[VariantContextProduct]): Dataset[VariantContextProduct] = {
+        ds
+      }
+    })
+
+    assert(variantContexts.dataset.first().start === transformed.dataset.first().start)
   }
 }

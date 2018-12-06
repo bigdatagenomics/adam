@@ -19,6 +19,7 @@ package org.bdgenomics.adam.rdd.feature
 
 import com.google.common.collect.ImmutableMap
 import java.io.File
+import org.apache.spark.api.java.function.{ Function => JFunction }
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.bdgenomics.adam.models.{
@@ -1377,5 +1378,17 @@ class FeatureDatasetSuite extends ADAMFunSuite {
     val features = sc.loadFeatures(testFile("dvl1.200.gff3"))
     val featuresDs = features.transformDataset(ds => ds)
     assert(features.filterByAttribute("biotype", "protein_coding").rdd.count() === 68)
+  }
+
+  sparkTest("transform dataset via java API") {
+    val features = sc.loadFeatures(testFile("dvl1.200.gff3")).sortByReference()
+
+    val transformed = features.transformDataset(new JFunction[Dataset[FeatureProduct], Dataset[FeatureProduct]]() {
+      override def call(ds: Dataset[FeatureProduct]): Dataset[FeatureProduct] = {
+        ds
+      }
+    })
+
+    assert(features.dataset.first().start.get === transformed.dataset.first().start.get)
   }
 }

@@ -22,6 +22,7 @@ import java.util.{ Collections, Comparator }
 import org.apache.hadoop.fs.{ FileSystem, Path }
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.spark.SparkContext
+import org.apache.spark.api.java.function.{ Function => JFunction }
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.bdgenomics.adam.instrumentation.Timers._
@@ -335,6 +336,11 @@ case class DatasetBoundFeatureDataset private[rdd] (
     copy(dataset = tFn(dataset))
   }
 
+  override def transformDataset(
+    tFn: JFunction[Dataset[FeatureProduct], Dataset[FeatureProduct]]): FeatureDataset = {
+    copy(dataset = tFn.call(dataset))
+  }
+
   override def replaceSequences(newSequences: SequenceDictionary): FeatureDataset = {
     copy(sequences = newSequences)
   }
@@ -461,17 +467,14 @@ sealed abstract class FeatureDataset extends AvroGenomicDataset[Feature, Feature
       iterableDatasets.map(_.samples).fold(samples)(_ ++ _))
   }
 
-  /**
-   * Applies a function that transforms the underlying Dataset into a new Dataset using
-   * the Spark SQL API.
-   *
-   * @param tFn A function that transforms the underlying Dataset as a Dataset.
-   * @return A new FeatureDataset where the Dataset of genomic data has been replaced, but the
-   *   metadata (sequence dictionary, and etc) is copied without modification.
-   */
-  def transformDataset(
+  override def transformDataset(
     tFn: Dataset[FeatureProduct] => Dataset[FeatureProduct]): FeatureDataset = {
     DatasetBoundFeatureDataset(tFn(dataset), sequences, samples)
+  }
+
+  override def transformDataset(
+    tFn: JFunction[Dataset[FeatureProduct], Dataset[FeatureProduct]]): FeatureDataset = {
+    DatasetBoundFeatureDataset(tFn.call(dataset), sequences, samples)
   }
 
   /**
@@ -540,7 +543,17 @@ sealed abstract class FeatureDataset extends AvroGenomicDataset[Feature, Feature
   }
 
   /**
-   * Filter this FeatureDataset by feature type to those that match the specified feature types.
+   * (Java-specific) Filter this FeatureDataset by feature type to those that match the specified feature types.
+   *
+   * @param featureType List of feature types to filter by.
+   * @return FeatureDataset filtered by the specified feature types.
+   */
+  def filterToFeatureTypes(featureTypes: java.util.List[String]): FeatureDataset = {
+    filterToFeatureTypes(asScalaBuffer(featureTypes))
+  }
+
+  /**
+   * (Scala-specific) Filter this FeatureDataset by feature type to those that match the specified feature types.
    *
    * @param featureType Sequence of feature types to filter by.
    * @return FeatureDataset filtered by the specified feature types.
@@ -560,7 +573,17 @@ sealed abstract class FeatureDataset extends AvroGenomicDataset[Feature, Feature
   }
 
   /**
-   * Filter this FeatureDataset by gene to those that match the specified genes.
+   * (Java-specific) Filter this FeatureDataset by gene to those that match the specified genes.
+   *
+   * @param geneIds List of genes to filter by.
+   * @return FeatureDataset filtered by the specified genes.
+   */
+  def filterToGenes(geneIds: java.util.List[String]): FeatureDataset = {
+    filterToGenes(asScalaBuffer(geneIds))
+  }
+
+  /**
+   * (Scala-specific) Filter this FeatureDataset by gene to those that match the specified genes.
    *
    * @param geneIds Sequence of genes to filter by.
    * @return FeatureDataset filtered by the specified genes.
@@ -580,7 +603,17 @@ sealed abstract class FeatureDataset extends AvroGenomicDataset[Feature, Feature
   }
 
   /**
-   * Filter this FeatureDataset by transcript to those that match the specified transcripts.
+   * (Java-specific) Filter this FeatureDataset by transcript to those that match the specified transcripts.
+   *
+   * @param transcriptIds List of transcripts to filter by.
+   * @return FeatureDataset filtered by the specified transcripts.
+   */
+  def filterToTranscripts(transcriptIds: java.util.List[String]): FeatureDataset = {
+    filterToTranscripts(asScalaBuffer(transcriptIds))
+  }
+
+  /**
+   * (Scala-specific) Filter this FeatureDataset by transcript to those that match the specified transcripts.
    *
    * @param transcriptIds Sequence of transcripts to filter by.
    * @return FeatureDataset filtered by the specified transcripts.
@@ -600,7 +633,17 @@ sealed abstract class FeatureDataset extends AvroGenomicDataset[Feature, Feature
   }
 
   /**
-   * Filter this FeatureDataset by exon to those that match the specified exons.
+   * (Java-specific) Filter this FeatureDataset by exon to those that match the specified exons.
+   *
+   * @param exonIds List of exons to filter by.
+   * @return FeatureDataset filtered by the specified exons.
+   */
+  def filterToExons(exonIds: java.util.List[String]): FeatureDataset = {
+    filterToExons(asScalaBuffer(exonIds))
+  }
+
+  /**
+   * (Scala-specific) Filter this FeatureDataset by exon to those that match the specified exons.
    *
    * @param exonIds Sequence of exons to filter by.
    * @return FeatureDataset filtered by the specified exons.
@@ -630,7 +673,17 @@ sealed abstract class FeatureDataset extends AvroGenomicDataset[Feature, Feature
   }
 
   /**
-   * Filter this FeatureDataset by parent to those that match the specified parents.
+   * (Java-specific) Filter this FeatureDataset by parent to those that match the specified parents.
+   *
+   * @param parentIds List of parents to filter by.
+   * @return FeatureDataset filtered by the specified parents.
+   */
+  def filterToParents(parentIds: java.util.List[String]): FeatureDataset = {
+    filterToParents(asScalaBuffer(parentIds))
+  }
+
+  /**
+   * (Scala-specific) Filter this FeatureDataset by parent to those that match the specified parents.
    *
    * @param parentIds Sequence of parents to filter by.
    * @return FeatureDataset filtered by the specified parents.

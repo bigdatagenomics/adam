@@ -19,6 +19,7 @@ package org.bdgenomics.adam.rdd.fragment
 
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.spark.SparkContext
+import org.apache.spark.api.java.function.{ Function => JFunction }
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.bdgenomics.adam.converters.AlignmentRecordConverter
@@ -50,6 +51,7 @@ import org.bdgenomics.utils.interval.array.{
 }
 import org.bdgenomics.utils.misc.Logging
 import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 
@@ -216,6 +218,11 @@ case class DatasetBoundFragmentDataset private[rdd] (
     copy(dataset = tFn(dataset))
   }
 
+  override def transformDataset(
+    tFn: JFunction[Dataset[FragmentProduct], Dataset[FragmentProduct]]): FragmentDataset = {
+    copy(dataset = tFn.call(dataset))
+  }
+
   def replaceSequences(
     newSequences: SequenceDictionary): FragmentDataset = {
     copy(sequences = newSequences)
@@ -300,17 +307,17 @@ sealed abstract class FragmentDataset extends AvroRecordGroupGenomicDataset[Frag
       iterableDatasets.map(_.processingSteps).fold(processingSteps)(_ ++ _))
   }
 
-  /**
-   * Applies a function that transforms the underlying Dataset into a new Dataset using
-   * the Spark SQL API.
-   *
-   * @param tFn A function that transforms the underlying Dataset as a Dataset.
-   * @return A new genomic dataset where the Dataset of genomic data has been replaced, but the
-   *   metadata (sequence dictionary, and etc) is copied without modification.
-   */
-  def transformDataset(
+  override def transformDataset(
     tFn: Dataset[FragmentProduct] => Dataset[FragmentProduct]): FragmentDataset = {
     DatasetBoundFragmentDataset(tFn(dataset),
+      sequences,
+      recordGroups,
+      processingSteps)
+  }
+
+  override def transformDataset(
+    tFn: JFunction[Dataset[FragmentProduct], Dataset[FragmentProduct]]): FragmentDataset = {
+    DatasetBoundFragmentDataset(tFn.call(dataset),
       sequences,
       recordGroups,
       processingSteps)
@@ -354,7 +361,21 @@ sealed abstract class FragmentDataset extends AvroRecordGroupGenomicDataset[Frag
   }
 
   /**
-   * Rewrites the quality scores of fragments to place all quality scores in bins.
+   * (Java-specific) Rewrites the quality scores of fragments to place all quality scores in bins.
+   *
+   * Quality score binning maps all quality scores to a limited number of
+   * discrete values, thus reducing the entropy of the quality score
+   * distribution, and reducing the amount of space that fragments consume on disk.
+   *
+   * @param bins The bins to use.
+   * @return Fragments whose quality scores are binned.
+   */
+  def binQualityScores(bins: java.util.List[QualityScoreBin]): FragmentDataset = {
+    binQualityScores(asScalaBuffer(bins))
+  }
+
+  /**
+   * (Scala-specific) Rewrites the quality scores of fragments to place all quality scores in bins.
    *
    * Quality score binning maps all quality scores to a limited number of
    * discrete values, thus reducing the entropy of the quality score
