@@ -359,3 +359,29 @@ class AlignmentRecordDatasetTest(SparkTestCase):
         jRdd = reads.rightOuterShuffleRegionJoinAndGroupByLeft(targets)
 
         self.assertEqual(jRdd.toDF().count(), 21)
+
+
+    def test_realignIndels_reads(self):
+
+        readsPath = self.resourceFile("small.1.sam")
+
+        ac = ADAMContext(self.ss)
+
+        reads = ac.loadAlignments(readsPath)
+        realigned = reads.realignIndels()
+
+        self.assertEqual(realigned.toDF().count(), 20)
+
+    def test_realignIndels_known_indels(self):
+
+        readsPath = self.resourceFile("small.1.sam")
+        variantsPath = self.resourceFile("small.vcf")
+
+        ac = ADAMContext(self.ss)
+
+        reads = ac.loadAlignments(readsPath)
+        knownIndels = ac.loadVariants(variantsPath)
+
+        realigned = reads.realignIndelsFromKnownIndels(knownIndels)
+
+        self.assertEqual(realigned.toDF().count(), 20)

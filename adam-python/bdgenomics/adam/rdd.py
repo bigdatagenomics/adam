@@ -1027,9 +1027,7 @@ class AlignmentRecordDataset(GenomicDataset):
                       maxReadsPerTarget = 20000,
                       unclipReads = False):
         """
-        Realigns indels using a concensus-based heuristic.
-
-        Generates consensuses from reads.
+        Realigns indels using a consensus-based heuristic from reads.
 
         :param bool isSorted: If the input data is sorted, setting this
         parameter to true avoids a second sort.
@@ -1060,19 +1058,17 @@ class AlignmentRecordDataset(GenomicDataset):
                                   self.sc)
 
 
-    def realignIndels(self,
-                      knownIndels,
-                      isSorted = False,
-                      maxIndelSize = 500,
-                      maxConsensusNumber = 30,
-                      lodThreshold = 5.0,
-                      maxTargetSize = 3000,
-                      maxReadsPerTarget = 20000,
-                      unclipReads = False):
+    def realignIndelsFromKnownIndels(self,
+                                     knownIndels,
+                                     isSorted = False,
+                                     maxIndelSize = 500,
+                                     maxConsensusNumber = 30,
+                                     lodThreshold = 5.0,
+                                     maxTargetSize = 3000,
+                                     maxReadsPerTarget = 20000,
+                                     unclipReads = False):
         """
-        Realigns indels using a concensus-based heuristic.
-
-        Generates consensuses from prior called INDELs.
+        Realigns indels using a consensus-based heuristic from prior called INDELs.
 
         :param bdgenomics.adam.rdd.VariantDataset knownIndels: An RDD of previously
         called INDEL variants.
@@ -1093,7 +1089,7 @@ class AlignmentRecordDataset(GenomicDataset):
         :rtype: bdgenomics.adam.rdd.AlignmentRecordDataset
         """
 
-        consensusModel = self.sc._jvm.org.bdgenomics.adam.algorithms.consensus.ConsensusGenerator.fromKnowns(knownIndels._jvmRdd)
+        consensusModel = self.sc._jvm.org.bdgenomics.adam.algorithms.consensus.ConsensusGenerator.fromKnownIndels(knownIndels._jvmRdd, 0)
         return AlignmentRecordDataset(self._jvmRdd.realignIndels(consensusModel,
                                                                  isSorted,
                                                                  maxIndelSize,
