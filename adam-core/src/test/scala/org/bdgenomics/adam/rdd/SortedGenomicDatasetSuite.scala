@@ -81,10 +81,10 @@ class SortedGenomicDatasetSuite extends SparkFunSuite {
     for (currentArray <- List(y.rdd.collect, z.rdd.collect)) {
       for (i <- currentArray.indices) {
         if (i != 0) assert(
-          ReferenceRegion(arrayRepresentationOfZ(i).getContigName,
+          ReferenceRegion(arrayRepresentationOfZ(i).getReferenceName,
             arrayRepresentationOfZ(i).getStart,
             arrayRepresentationOfZ(i).getEnd).compareTo(
-              ReferenceRegion(arrayRepresentationOfZ(i - 1).getContigName,
+              ReferenceRegion(arrayRepresentationOfZ(i - 1).getReferenceName,
                 arrayRepresentationOfZ(i - 1).getStart,
                 arrayRepresentationOfZ(i - 1).getEnd)) >= 0)
       }
@@ -114,7 +114,7 @@ class SortedGenomicDatasetSuite extends SparkFunSuite {
 
     genotypeBuilder += {
       Genotype.newBuilder()
-        .setContigName("chr1")
+        .setReferenceName("chr1")
         .setStart(2L)
         .setEnd(100L)
         .setVariant(
@@ -131,7 +131,7 @@ class SortedGenomicDatasetSuite extends SparkFunSuite {
 
     genotypeBuilder += {
       Genotype.newBuilder()
-        .setContigName("chr1")
+        .setReferenceName("chr1")
         .setStart(3L)
         .setEnd(5L)
         .setVariant(
@@ -148,7 +148,7 @@ class SortedGenomicDatasetSuite extends SparkFunSuite {
 
     genotypeBuilder += {
       Genotype.newBuilder()
-        .setContigName("chr1")
+        .setReferenceName("chr1")
         .setStart(6L)
         .setEnd(7L)
         .setVariant(
@@ -165,7 +165,7 @@ class SortedGenomicDatasetSuite extends SparkFunSuite {
 
     genotypeBuilder += {
       Genotype.newBuilder()
-        .setContigName("chr1")
+        .setReferenceName("chr1")
         .setStart(8L)
         .setEnd(12L)
         .setVariant(
@@ -184,7 +184,7 @@ class SortedGenomicDatasetSuite extends SparkFunSuite {
 
     featureBuilder += {
       Feature.newBuilder()
-        .setContigName("chr1")
+        .setReferenceName("chr1")
         .setStart(61L)
         .setEnd(62L)
         .build()
@@ -192,7 +192,7 @@ class SortedGenomicDatasetSuite extends SparkFunSuite {
 
     featureBuilder += {
       Feature.newBuilder()
-        .setContigName("chr1")
+        .setReferenceName("chr1")
         .setStart(11L)
         .setEnd(15L)
         .build()
@@ -200,7 +200,7 @@ class SortedGenomicDatasetSuite extends SparkFunSuite {
 
     featureBuilder += {
       Feature.newBuilder()
-        .setContigName("chr1")
+        .setReferenceName("chr1")
         .setStart(3L)
         .setEnd(6L)
         .build()
@@ -208,7 +208,7 @@ class SortedGenomicDatasetSuite extends SparkFunSuite {
 
     featureBuilder += {
       Feature.newBuilder()
-        .setContigName("chr1")
+        .setReferenceName("chr1")
         .setStart(6L)
         .setEnd(8L)
         .build()
@@ -216,7 +216,7 @@ class SortedGenomicDatasetSuite extends SparkFunSuite {
 
     featureBuilder += {
       Feature.newBuilder()
-        .setContigName("chr1")
+        .setReferenceName("chr1")
         .setStart(50L)
         .setEnd(52L)
         .build()
@@ -224,7 +224,7 @@ class SortedGenomicDatasetSuite extends SparkFunSuite {
 
     featureBuilder += {
       Feature.newBuilder()
-        .setContigName("chr1")
+        .setReferenceName("chr1")
         .setStart(1L)
         .setEnd(2L)
         .build()
@@ -329,8 +329,8 @@ class SortedGenomicDatasetSuite extends SparkFunSuite {
     val test = t.rdd.collect.drop(1)
     val test2 = t.rdd.collect.dropRight(1)
     assert(!test2.zip(test).exists(f => {
-      ReferenceRegion(f._1.getContigName, f._1.getStart, f._1.getEnd)
-        .compareTo(ReferenceRegion(f._2.getContigName, f._2.getStart, f._2.getEnd)) >= 0
+      ReferenceRegion(f._1.getReferenceName, f._1.getStart, f._1.getEnd)
+        .compareTo(ReferenceRegion(f._2.getReferenceName, f._2.getStart, f._2.getEnd)) >= 0
     }))
   }
 }

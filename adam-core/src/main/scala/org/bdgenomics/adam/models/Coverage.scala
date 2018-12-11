@@ -45,14 +45,14 @@ private[adam] object Coverage {
    * @return Coverage spanning the specified feature
    */
   def apply(feature: Feature): Coverage = {
-    require(feature.getContigName != null && feature.getContigName.length > 0,
-      "Features must have Contig name to convert to Coverage")
+    require(feature.getReferenceName != null && feature.getReferenceName.length > 0,
+      "Features must have reference name to convert to Coverage")
     require(feature.getStart != null && feature.getEnd != null,
       "Features must have valid position data to convert to Coverage")
     require(feature.getScore != null,
       "Features must have valid score to convert to Coverage")
 
-    Coverage(feature.getContigName,
+    Coverage(feature.getReferenceName,
       feature.getStart,
       feature.getEnd,
       feature.getScore,
@@ -73,10 +73,10 @@ private[adam] object Coverage {
 /**
  * Coverage record for CoverageDataset.
  *
- * Contains Region indexed by contig name, start and end, as well as the average
+ * Contains Region indexed by reference name, start and end, as well as the average
  * coverage at each base pair in that region.
  *
- * @param contigName The chromosome that this coverage was observed on.
+ * @param referenceName The chromosome that this coverage was observed on.
  * @param start The start coordinate of the region where this coverage value was
  *   observed.
  * @param end The end coordinate of the region where this coverage value was
@@ -84,7 +84,7 @@ private[adam] object Coverage {
  * @param optSampleId Option of sampleId for this Coverage record
  * @param count The average coverage across this region.
  */
-case class Coverage(contigName: String, start: Long, end: Long, count: Double, optSampleId: Option[String] = None) {
+case class Coverage(referenceName: String, start: Long, end: Long, count: Double, optSampleId: Option[String] = None) {
 
   /**
    * Converts Coverage to Feature, setting Coverage count in the score attribute.
@@ -93,7 +93,7 @@ case class Coverage(contigName: String, start: Long, end: Long, count: Double, o
    */
   def toFeature: Feature = {
     val featureBuilder = Feature.newBuilder()
-      .setContigName(contigName)
+      .setReferenceName(referenceName)
       .setStart(start)
       .setEnd(end)
       .setScore(count)
@@ -114,7 +114,7 @@ case class Coverage(contigName: String, start: Long, end: Long, count: Double, o
       name = None,
       source = None,
       featureType = None,
-      contigName = Some(contigName),
+      referenceName = Some(referenceName),
       start = Some(start),
       end = Some(end),
       strand = None,

@@ -130,7 +130,7 @@ case class RichAlignmentRecord(record: AlignmentRecord) {
     } else {
       Strand.FORWARD
     }
-    ReferencePosition(record.getContigName, fivePrimePosition, strand)
+    ReferencePosition(record.getReferenceName, fivePrimePosition, strand)
   }
 
   /**

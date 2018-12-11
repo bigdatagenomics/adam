@@ -25,7 +25,7 @@ class CoverageSuite extends ADAMFunSuite {
     // create a valid feature
     val featureToConvert =
       Feature.newBuilder()
-        .setContigName("chr1")
+        .setReferenceName("chr1")
         .setStart(1)
         .setEnd(2)
         .setScore(100)
@@ -36,7 +36,7 @@ class CoverageSuite extends ADAMFunSuite {
     // all fields should match between the two
     assert(coverageAfterConversion.start == featureToConvert.start)
     assert(coverageAfterConversion.end == featureToConvert.end)
-    assert(coverageAfterConversion.contigName == featureToConvert.contigName)
+    assert(coverageAfterConversion.referenceName == featureToConvert.getReferenceName)
     assert(coverageAfterConversion.count == featureToConvert.score)
   }
 
@@ -44,7 +44,7 @@ class CoverageSuite extends ADAMFunSuite {
     // create a valid feature
     val featureToConvert =
       Feature.newBuilder()
-        .setContigName("chr1")
+        .setReferenceName("chr1")
         .setStart(1)
         .setEnd(2)
         .setScore(100)
@@ -56,7 +56,7 @@ class CoverageSuite extends ADAMFunSuite {
     // all fields should match between the two
     assert(coverageAfterConversion.start == featureToConvert.start)
     assert(coverageAfterConversion.end == featureToConvert.end)
-    assert(coverageAfterConversion.contigName == featureToConvert.contigName)
+    assert(coverageAfterConversion.referenceName == featureToConvert.getReferenceName)
     assert(coverageAfterConversion.count == featureToConvert.score)
     assert(coverageAfterConversion.optSampleId == Some(featureToConvert.sampleId))
   }
@@ -65,7 +65,7 @@ class CoverageSuite extends ADAMFunSuite {
     // feature with empty contigname is not valid when converting to Coverage
     val featureWithEmptyContigName =
       Feature.newBuilder()
-        .setContigName("")
+        .setReferenceName("")
         .setStart(1)
         .setEnd(2)
         .setScore(100)
@@ -74,7 +74,7 @@ class CoverageSuite extends ADAMFunSuite {
     val caughtWithEmptyContigName =
       intercept[IllegalArgumentException](Coverage(featureWithEmptyContigName))
 
-    assert(caughtWithEmptyContigName.getMessage == "requirement failed: Features must have Contig name to convert to Coverage")
+    assert(caughtWithEmptyContigName.getMessage == "requirement failed: Features must have reference name to convert to Coverage")
     // feature without contigname is not valid when converting to Coverage
     val featureWithNullContigName =
       Feature.newBuilder()
@@ -86,14 +86,14 @@ class CoverageSuite extends ADAMFunSuite {
     val caughtWithNullContigName =
       intercept[IllegalArgumentException](Coverage(featureWithNullContigName))
 
-    assert(caughtWithNullContigName.getMessage == "requirement failed: Features must have Contig name to convert to Coverage")
+    assert(caughtWithNullContigName.getMessage == "requirement failed: Features must have reference name to convert to Coverage")
   }
 
   sparkTest("Convert to coverage from Feature with no start/end position fails with correct error") {
     // feature without start position is invalid when converting to Coverage
     val featureWithoutStartPosition =
       Feature.newBuilder()
-        .setContigName("chr1")
+        .setReferenceName("chr1")
         .setEnd(2)
         .setScore(100)
         .build()
@@ -105,7 +105,7 @@ class CoverageSuite extends ADAMFunSuite {
     // feature without end position is invalid when converting to Coverage
     val featureWithoutEndPosition =
       Feature.newBuilder()
-        .setContigName("chr1")
+        .setReferenceName("chr1")
         .setStart(1)
         .setScore(100)
         .build()
@@ -120,7 +120,7 @@ class CoverageSuite extends ADAMFunSuite {
     // feature without score is invalid when converting to Coverage 
     val featureWithoutScore =
       Feature.newBuilder()
-        .setContigName("chr1")
+        .setReferenceName("chr1")
         .setStart(1)
         .setEnd(2)
         .build()

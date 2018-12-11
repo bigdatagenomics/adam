@@ -24,7 +24,7 @@ import org.bdgenomics.adam.models.{
   SequenceDictionary
 }
 import org.bdgenomics.adam.util.ADAMFunSuite
-import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
+import org.bdgenomics.formats.avro.{ AlignmentRecord, Reference }
 
 class MarkDuplicatesSuite extends ADAMFunSuite {
 
@@ -48,12 +48,12 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
     val qual = (for (i <- 0 until 100) yield (avgPhredScore + 33).toChar).toString()
     val cigar = if (numClippedBases > 0) "%dS%dM".format(numClippedBases, 100 - numClippedBases) else "100M"
 
-    val contig = Contig.newBuilder
-      .setContigName(referenceName)
+    val reference = Reference.newBuilder
+      .setName(referenceName)
       .build
 
     AlignmentRecord.newBuilder()
-      .setContigName(contig.getContigName)
+      .setReferenceName(reference.getName)
       .setStart(start)
       .setQual(qual)
       .setCigar(cigar)
@@ -72,26 +72,26 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
                  secondReferenceName: String, secondStart: Long, secondEnd: Long,
                  readName: String = UUID.randomUUID().toString,
                  avgPhredScore: Int = 20): Seq[AlignmentRecord] = {
-    val firstContig = Contig.newBuilder
-      .setContigName(firstReferenceName)
+    val firstReference = Reference.newBuilder
+      .setName(firstReferenceName)
       .build
 
-    val secondContig = Contig.newBuilder
-      .setContigName(secondReferenceName)
+    val secondReference = Reference.newBuilder
+      .setName(secondReferenceName)
       .build
 
     val firstOfPair = createMappedRead(firstReferenceName, firstStart, firstEnd,
       readName = readName, avgPhredScore = avgPhredScore)
     firstOfPair.setReadInFragment(0)
     firstOfPair.setMateMapped(true)
-    firstOfPair.setMateContigName(secondContig.getContigName)
+    firstOfPair.setMateReferenceName(secondReference.getName)
     firstOfPair.setMateAlignmentStart(secondStart)
     firstOfPair.setReadPaired(true)
     val secondOfPair = createMappedRead(secondReferenceName, secondStart, secondEnd,
       readName = readName, avgPhredScore = avgPhredScore, isNegativeStrand = true)
     secondOfPair.setReadInFragment(1)
     secondOfPair.setMateMapped(true)
-    secondOfPair.setMateContigName(firstContig.getContigName)
+    secondOfPair.setMateReferenceName(firstReference.getName)
     secondOfPair.setMateAlignmentStart(firstStart)
     secondOfPair.setReadPaired(true)
     Seq(firstOfPair, secondOfPair)

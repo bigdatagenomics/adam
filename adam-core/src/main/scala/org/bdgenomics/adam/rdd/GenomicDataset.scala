@@ -54,9 +54,9 @@ import org.bdgenomics.adam.models.{
 }
 import org.bdgenomics.adam.util.{ ManualRegionPartitioner, TextRddWriter }
 import org.bdgenomics.formats.avro.{
-  Contig,
   ProcessingStep,
   RecordGroup => RecordGroupMetadata,
+  Reference,
   Sample
 }
 import org.bdgenomics.utils.cli.SaveArgs
@@ -358,7 +358,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
    * @param pathName The path to save the partitioned Parquet flag file to.
    * @param partitionSize Partition bin size, in base pairs, used in Hive-style partitioning.
    */
-  private def writePartitionedParquetFlag(pathName: String, partitionSize: Int): Unit = {
+  private[rdd] def writePartitionedParquetFlag(pathName: String, partitionSize: Int): Unit = {
     val path = new Path(pathName, "_partitionedByStartPos")
     val fs: FileSystem = path.getFileSystem(rdd.context.hadoopConfiguration)
     val f = fs.create(path)
@@ -381,7 +381,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
     val df = toDF()
     df.withColumn("positionBin", floor(df("start") / partitionSize))
       .write
-      .partitionBy("contigName", "positionBin")
+      .partitionBy("referenceName", "positionBin")
       .format("parquet")
       .option("spark.sql.parquet.compression.codec", compressCodec.toString.toLowerCase())
       .save(pathName)
@@ -470,12 +470,12 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
    */
   protected def saveSequences(pathName: String): Unit = {
     // convert sequence dictionary to avro form and save
-    val contigs = sequences.toAvro
+    val references = sequences.toAvro
 
-    saveAvro("%s/_seqdict.avro".format(pathName),
+    saveAvro("%s/_references.avro".format(pathName),
       rdd.context,
-      Contig.SCHEMA$,
-      contigs)
+      Reference.SCHEMA$,
+      references)
   }
 
   /**
@@ -621,7 +621,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Sorts our genome aligned data by reference positions, with contigs ordered
+   * Sorts our genome aligned data by reference positions, with references ordered
    * by index.
    *
    * @return Returns a new genomic dataset containing sorted data.
@@ -634,7 +634,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Sorts our genome aligned data by reference positions, with contigs ordered
+   * Sorts our genome aligned data by reference positions, with references ordered
    * by index.
    *
    * @param partitions The number of partitions for the new genomic dataset.
@@ -666,16 +666,16 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
           "Cannot sort RDD containing an unmapped element %s.".format(elem),
           stringency)
       } else {
-        val contigName = coveredRegions.head.referenceName
-        val sr = sequences(contigName)
+        val referenceName = coveredRegions.head.referenceName
+        val sr = sequences(referenceName)
 
         if (sr.isEmpty) {
           throwWarnOrNone[((Int, Long), T)](
-            "Element %s has contig name %s not in dictionary %s.".format(
-              elem, contigName, sequences),
+            "Element %s has reference name %s not in dictionary %s.".format(
+              elem, referenceName, sequences),
             stringency)
         } else {
-          Some(((sr.get.referenceIndex.get, coveredRegions.head.start), elem))
+          Some(((sr.get.index.get, coveredRegions.head.start), elem))
         }
       }
     }).sortByKey(ascending = true, numPartitions = partitions)
@@ -683,7 +683,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Sorts our genome aligned data by reference positions, with contigs ordered
+   * Sorts our genome aligned data by reference positions, with references ordered
    * lexicographically.
    *
    * @return Returns a new genomic dataset containing sorted data.
@@ -695,7 +695,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Sorts our genome aligned data by reference positions, with contigs ordered
+   * Sorts our genome aligned data by reference positions, with references ordered
    * lexicographically.
    *
    * @param partitions The number of partitions for the new genomic dataset.
@@ -2941,7 +2941,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
             // regions up to the start of the next partition.
             if (firstRegion.referenceName != secondRegion.referenceName) {
 
-              // this partition covers the end of one contig and the
+              // this partition covers the end of one reference and the
               // start of another
               Iterable((ReferenceRegion.toEnd(firstRegion.referenceName,
                 firstRegion.start), index),
@@ -2965,16 +2965,16 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
             val (referenceName, indexedRegions) = p
 
             val regions: Seq[(ReferenceRegion, Int)] = if (indexedRegions.size == 1) {
-              // if we only have a single partition for this contig, extend the
-              // region to cover the whole contig
+              // if we only have a single partition for this reference, extend the
+              // region to cover the whole reference sequence
               Seq((ReferenceRegion.all(indexedRegions.head._1.referenceName),
                 indexedRegions.head._2))
             } else {
               val sortedRegions = indexedRegions.sortBy(_._2)
 
-              // if we have multiple partitions for this contig, extend the
-              // first region to the start of the contig, and the last region to
-              // the end of the contig
+              // if we have multiple partitions for this reference, extend the
+              // first region to the start of the reference sequence, and the last region to
+              // the end of the reference sequence
               sortedRegions.take(1).map(rp => {
                 (ReferenceRegion.fromStart(rp._1.referenceName,
                   rp._1.end), rp._2)
@@ -3357,14 +3357,14 @@ trait DatasetBoundGenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] 
         val startBin = (mathFloor(r.start / optPartitionBinSize.get).toLong) - optLookbackPartitions.get
         val endBin = min(Int.MaxValue.toLong, (mathFloor(r.end / optPartitionBinSize.get).toLong + 1)).toInt
 
-        (s"(contigName=\'${r.referenceName}\' and positionBin >= " +
+        (s"(referenceName=\'${r.referenceName}\' and positionBin >= " +
           s"\'${startBin}\'" +
           s" and positionBin < \'${endBin}\'" +
           s" and (end > ${r.start} and start < ${r.end}))")
       }).mkString(" or ")
     } else { // if no positionBin field is found then construct query without bin optimization
       regions.map(r =>
-        s"(contigName=\'${r.referenceName} \' " +
+        s"(referenceName=\'${r.referenceName} \' " +
           s"and (end > ${r.start} and start < ${r.end}))")
         .mkString(" or ")
     }
@@ -3839,7 +3839,7 @@ abstract class AvroGenomicDataset[T <% IndexedRecord: Manifest, U <: Product, V 
             ("ReferenceRegion2" -> (("referenceName" -> f.get._2.referenceName) ~
               ("start" -> f.get._2.start) ~ ("end" -> f.get._2.end)))
         })
-      val schema = Contig.SCHEMA$
+      val schema = Reference.SCHEMA$
       schema.addProp("partitionMap", compact(render(jsonString)).asInstanceOf[Any])
 
       saveAvro("%s/_partitionMap.avro".format(pathName),
@@ -3925,7 +3925,7 @@ abstract class AvroGenomicDataset[T <% IndexedRecord: Manifest, U <: Product, V 
    * @param pathName Path to save the file at.
    * @param partitionSize Partition bin size, in base pairs, used in Hive-style partitioning.
    */
-  private def writePartitionedParquetFlag(pathName: String, partitionSize: Int): Unit = {
+  override def writePartitionedParquetFlag(pathName: String, partitionSize: Int): Unit = {
     val path = new Path(pathName, "_partitionedByStartPos")
     val fs: FileSystem = path.getFileSystem(rdd.context.hadoopConfiguration)
     val f = fs.create(path)

@@ -248,7 +248,7 @@ class GenotypeDatasetTest(SparkTestCase):
 
         genotypes = ac.loadGenotypes(testFile)
 
-        transformedGenotypes = genotypes.transform(lambda x: x.filter(x.contigName == '1'))
+        transformedGenotypes = genotypes.transform(lambda x: x.filter(x.referenceName == '1'))
 
         self.assertEqual(transformedGenotypes.toDF().count(), 9)
 

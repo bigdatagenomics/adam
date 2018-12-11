@@ -89,7 +89,7 @@ test_that("transform dataframe of reads", {
     reads <- loadAlignments(ac, readsPath)
 
     transformedReads = transform(reads, function(df) {
-        filter(df, df$contigName == "1")
+        filter(df, df$referenceName == "1")
     })
 
     expect_equal(count(toDF(transformedReads)), 1)
@@ -100,7 +100,7 @@ test_that("transmute to coverage", {
     reads <- loadAlignments(ac, readsPath)
 
     readsAsCoverage = transmute(reads, function(df) {
-        select(df, df$contigName, df$start, df$end, alias(cast(df$mapq, "double"), "count"), alias(cast(df$recordGroupSample, "string"), "optSampleId"))
+        select(df, df$referenceName, df$start, df$end, alias(cast(df$mapq, "double"), "count"), alias(cast(df$recordGroupSample, "string"), "optSampleId"))
     }, "CoverageDataset")
 
     expect_true(is(readsAsCoverage, "CoverageDataset"))

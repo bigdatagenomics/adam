@@ -172,10 +172,10 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(annot.count == 369)
     val arr = annot.collect
 
-    val first = arr.find(f => f.getContigName == "chr1" && f.getStart == 14415L && f.getEnd == 14499L).get
+    val first = arr.find(f => f.getReferenceName == "chr1" && f.getStart == 14415L && f.getEnd == 14499L).get
     assert(first.getName === "gn|DDX11L1;gn|RP11-34P13.2;ens|ENSG00000223972;ens|ENSG00000227232;vega|OTTHUMG00000000958;vega|OTTHUMG00000000961")
 
-    val last = arr.find(f => f.getContigName == "chrY" && f.getStart == 27190031L && f.getEnd == 27190210L).get
+    val last = arr.find(f => f.getReferenceName == "chrY" && f.getStart == 27190031L && f.getEnd == 27190210L).get
     assert(last.getName === "gn|BPY2C;ccds|CCDS44030;ens|ENSG00000185894;vega|OTTHUMG00000045199")
   }
 
@@ -196,7 +196,7 @@ class ADAMContextSuite extends ADAMFunSuite {
 
     val vc = vcs.head
     val variant = vc.variant.variant
-    assert(variant.getContigName === "1")
+    assert(variant.getReferenceName === "1")
     assert(variant.getStart === 14396L)
     assert(variant.getEnd === 14400L)
     assert(variant.getReferenceAllele === "CTGT")

@@ -21,20 +21,20 @@ import org.apache.spark.SparkContext._
 import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.rdd.read.AlignmentRecordArray
 import org.bdgenomics.adam.util.ADAMFunSuite
-import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
+import org.bdgenomics.formats.avro.{ AlignmentRecord, Reference }
 import org.bdgenomics.utils.interval.array.IntervalArray
 
 class InnerTreeRegionJoinSuite extends ADAMFunSuite {
 
   sparkTest("Ensure same reference regions get passed together") {
-    val contig = Contig.newBuilder
-      .setContigName("chr1")
-      .setContigLength(5L)
-      .setReferenceURL("test://chrom1")
+    val reference = Reference.newBuilder
+      .setName("chr1")
+      .setLength(5L)
+      .setSourceUri("test://chrom1")
       .build
 
     val builder = AlignmentRecord.newBuilder()
-      .setContigName(contig.getContigName)
+      .setReferenceName(reference.getName)
       .setStart(1L)
       .setReadMapped(true)
       .setCigar("1M")
@@ -67,14 +67,14 @@ class InnerTreeRegionJoinSuite extends ADAMFunSuite {
   }
 
   sparkTest("Overlapping reference regions") {
-    val contig = Contig.newBuilder
-      .setContigName("chr1")
-      .setContigLength(5L)
-      .setReferenceURL("test://chrom1")
+    val reference = Reference.newBuilder
+      .setName("chr1")
+      .setLength(5L)
+      .setSourceUri("test://chrom1")
       .build
 
     val built = AlignmentRecord.newBuilder()
-      .setContigName(contig.getContigName)
+      .setReferenceName(reference.getName)
       .setStart(1L)
       .setReadMapped(true)
       .setCigar("1M")
@@ -104,27 +104,27 @@ class InnerTreeRegionJoinSuite extends ADAMFunSuite {
   }
 
   sparkTest("Multiple reference regions do not throw exception") {
-    val contig1 = Contig.newBuilder
-      .setContigName("chr1")
-      .setContigLength(5L)
-      .setReferenceURL("test://chrom1")
+    val reference1 = Reference.newBuilder
+      .setName("chr1")
+      .setLength(5L)
+      .setSourceUri("test://chrom1")
       .build
 
-    val contig2 = Contig.newBuilder
-      .setContigName("chr2")
-      .setContigLength(5L)
-      .setReferenceURL("test://chrom2")
+    val reference2 = Reference.newBuilder
+      .setName("chr2")
+      .setLength(5L)
+      .setSourceUri("test://chrom2")
       .build
 
     val builtRef1 = AlignmentRecord.newBuilder()
-      .setContigName(contig1.getContigName)
+      .setReferenceName(reference1.getName)
       .setStart(1L)
       .setReadMapped(true)
       .setCigar("1M")
       .setEnd(2L)
       .build()
     val builtRef2 = AlignmentRecord.newBuilder()
-      .setContigName(contig2.getContigName)
+      .setReferenceName(reference2.getName)
       .setStart(1)
       .setReadMapped(true)
       .setCigar("1M")

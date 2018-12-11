@@ -84,7 +84,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     .chr("1")
 
   def adamSNVBuilder(contig: String = "1"): Variant.Builder = Variant.newBuilder()
-    .setContigName(contig)
+    .setReferenceName(contig)
     .setStart(0L)
     .setEnd(1L)
     .setReferenceAllele("A")
@@ -98,7 +98,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     assert(adamVC.genotypes.size === 0)
 
     val variant = adamVC.variant.variant
-    assert(variant.getContigName === "1")
+    assert(variant.getReferenceName === "1")
 
     assert(variant.getReferenceAllele === "A")
     assert(variant.getStart === 0L)
@@ -127,7 +127,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     assert(adamVC.genotypes.size === 0)
 
     val variant = adamVC.variant.variant
-    assert(variant.getContigName === "1")
+    assert(variant.getReferenceName === "1")
 
     assert(variant.getReferenceAllele === "A")
     assert(variant.getAlternateAllele === "<CN0>")
@@ -1915,7 +1915,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
   }
 
   val v = Variant.newBuilder
-    .setContigName("1")
+    .setReferenceName("1")
     .setStart(0L)
     .setEnd(1L)
     .setReferenceAllele("A")

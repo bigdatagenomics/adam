@@ -19,7 +19,7 @@ package org.bdgenomics.adam.rich
 
 import org.bdgenomics.adam.models.{ ReferencePosition, TagType, Attribute }
 import org.bdgenomics.adam.rich.RichAlignmentRecord._
-import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
+import org.bdgenomics.formats.avro.{ AlignmentRecord, Reference }
 import org.scalatest.FunSuite
 
 class RichAlignmentRecordSuite extends FunSuite {
@@ -44,8 +44,8 @@ class RichAlignmentRecordSuite extends FunSuite {
   }
 
   test("tags contains optional fields") {
-    val contig = Contig.newBuilder.setContigName("chr1").build
-    val rec = AlignmentRecord.newBuilder().setAttributes("XX:i:3\tYY:Z:foo").setContigName(contig.getContigName).build()
+    val reference = Reference.newBuilder.setName("chr1").build
+    val rec = AlignmentRecord.newBuilder().setAttributes("XX:i:3\tYY:Z:foo").setReferenceName(reference.getName).build()
     assert(rec.tags.size === 2)
     assert(rec.tags(0) === Attribute("XX", TagType.Integer, 3))
     assert(rec.tags(1) === Attribute("YY", TagType.String, "foo"))
@@ -60,8 +60,14 @@ class RichAlignmentRecordSuite extends FunSuite {
 
   test("read overlap reference position") {
 
-    val contig = Contig.newBuilder.setContigName("chr1").build
-    val record = RichAlignmentRecord(AlignmentRecord.newBuilder().setReadMapped(true).setCigar("10M").setStart(10L).setEnd(20L).setContigName(contig.getContigName).build())
+    val reference = Reference.newBuilder.setName("chr1").build
+    val record = RichAlignmentRecord(AlignmentRecord.newBuilder()
+      .setReadMapped(true)
+      .setCigar("10M")
+      .setStart(10L)
+      .setEnd(20L)
+      .setReferenceName(reference.getName)
+      .build())
 
     assert(record.overlapsReferencePosition(ReferencePosition("chr1", 10)) == true)
     assert(record.overlapsReferencePosition(ReferencePosition("chr1", 14)) == true)
@@ -71,8 +77,14 @@ class RichAlignmentRecordSuite extends FunSuite {
 
   test("read overlap same position different contig") {
 
-    val contig = Contig.newBuilder.setContigName("chr1").build
-    val record = RichAlignmentRecord(AlignmentRecord.newBuilder().setReadMapped(true).setCigar("10M").setStart(10L).setEnd(20L).setContigName(contig.getContigName).build())
+    val reference = Reference.newBuilder.setName("chr1").build
+    val record = RichAlignmentRecord(AlignmentRecord.newBuilder()
+      .setReadMapped(true)
+      .setCigar("10M")
+      .setStart(10L)
+      .setEnd(20L)
+      .setReferenceName(reference.getName)
+      .build())
 
     assert(record.overlapsReferencePosition(ReferencePosition("chr2", 10)) == false)
   }

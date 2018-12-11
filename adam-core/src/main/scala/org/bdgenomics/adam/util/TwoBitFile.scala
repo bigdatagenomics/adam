@@ -71,12 +71,12 @@ class TwoBitFile(byteAccess: ByteAccess) extends ReferenceFile {
   private val seqRecordsMap = seqRecords.toMap
 
   /**
-   * The sequence dictionary corresponding to the contigs in this two bit file.
+   * The sequence dictionary corresponding to the reference sequences in this two bit file.
    */
   val sequences = new SequenceDictionary(seqRecords.toVector
     .map(r => SequenceRecord(r._1,
       r._2.dnaSize,
-      referenceIndex = Some(r._2.seqIdx))))
+      index = Some(r._2.seqIdx))))
 
   private def readHeader(): Int = {
     // figure out proper byte order
@@ -113,7 +113,7 @@ class TwoBitFile(byteAccess: ByteAccess) extends ReferenceFile {
       seqRecordsMap.getOrElse(
         region.referenceName,
         throw new Exception(
-          s"Contig ${region.referenceName} not found in reference map with keys: ${seqRecordsMap.keys.toList.sortBy(x => x).mkString(", ")}"
+          s"Reference sequence ${region.referenceName} not found in reference map with keys: ${seqRecordsMap.keys.toList.sortBy(x => x).mkString(", ")}"
         )
       )
     val contigLength = record.dnaSize

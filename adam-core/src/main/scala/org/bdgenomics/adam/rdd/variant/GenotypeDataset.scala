@@ -382,7 +382,7 @@ sealed abstract class GenotypeDataset extends MultisampleAvroGenomicDataset[Geno
       // we can't call dropDuplicates without specifying fields,
       // because you can't call a set operation on a schema that includes
       // map/array types
-      notDedupedVariants.dropDuplicates("contigName",
+      notDedupedVariants.dropDuplicates("referenceName",
         "start",
         "end",
         "referenceAllele",

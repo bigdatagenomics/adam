@@ -32,7 +32,7 @@ object RichVariant {
    */
   def genotypeToRichVariant(genotype: Genotype): RichVariant = {
     val variant = Variant.newBuilder(genotype.variant)
-      .setContigName(genotype.getContigName)
+      .setReferenceName(genotype.getReferenceName)
       .setStart(genotype.getStart)
       .setEnd(genotype.getEnd)
       .build()

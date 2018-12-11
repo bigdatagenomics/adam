@@ -44,7 +44,7 @@ class FragmentConverterSuite extends ADAMFunSuite {
     val convertedRead = convertedReads.head
 
     assert(convertedRead.getSequence === "ACACACAC")
-    assert(convertedRead.getContigName === "ctg")
+    assert(convertedRead.getReferenceName === "ctg")
     assert(convertedRead.getStart === 0L)
     assert(convertedRead.getEnd === 8L)
   }
@@ -75,11 +75,11 @@ class FragmentConverterSuite extends ADAMFunSuite {
     val secondRead = reads.filter(_.getStart != 0L).head
 
     assert(firstRead.getSequence === "ACACACAC")
-    assert(firstRead.getContigName === "ctg")
+    assert(firstRead.getReferenceName === "ctg")
     assert(firstRead.getStart === 0L)
     assert(firstRead.getEnd === 8L)
     assert(secondRead.getSequence === "AATTCCGGCCTTAA")
-    assert(secondRead.getContigName === "ctg")
+    assert(secondRead.getReferenceName === "ctg")
     assert(secondRead.getStart === 14L)
     assert(secondRead.getEnd === 28L)
   }
@@ -108,7 +108,7 @@ class FragmentConverterSuite extends ADAMFunSuite {
     assert(reads.length === 1)
     val read = reads(0)
     assert(read.getSequence === "ACACACACTGTGTGAATTCCGGCCTTAA")
-    assert(read.getContigName === "ctg")
+    assert(read.getReferenceName === "ctg")
     assert(read.getStart === 0L)
     assert(read.getEnd === 28L)
   }
@@ -151,36 +151,36 @@ class FragmentConverterSuite extends ADAMFunSuite {
 
     assert(reads.length === 4)
 
-    val ctg1Reads = reads.filter(_.getContigName == "ctg1")
+    val ctg1Reads = reads.filter(_.getReferenceName == "ctg1")
     assert(ctg1Reads.length === 1)
 
     val ctg1Read = ctg1Reads.head
     assert(ctg1Read.getSequence === "ACACACACTGTGTGAATTCCGGCCTTAA")
-    assert(ctg1Read.getContigName === "ctg1")
+    assert(ctg1Read.getReferenceName === "ctg1")
     assert(ctg1Read.getStart === 0L)
     assert(ctg1Read.getEnd === 28L)
 
-    val ctg2Reads = reads.filter(_.getContigName == "ctg2")
+    val ctg2Reads = reads.filter(_.getReferenceName == "ctg2")
     assert(ctg2Reads.length === 2)
 
     val firstCtg2Read = ctg2Reads.filter(_.getStart == 0L).head
     val secondCtg2Read = ctg2Reads.filter(_.getStart != 0L).head
 
     assert(firstCtg2Read.getSequence === "ACACACAC")
-    assert(firstCtg2Read.getContigName === "ctg2")
+    assert(firstCtg2Read.getReferenceName === "ctg2")
     assert(firstCtg2Read.getStart === 0L)
     assert(firstCtg2Read.getEnd === 8L)
     assert(secondCtg2Read.getSequence === "AATTCCGGCCTTAA")
-    assert(secondCtg2Read.getContigName === "ctg2")
+    assert(secondCtg2Read.getReferenceName === "ctg2")
     assert(secondCtg2Read.getStart === 14L)
     assert(secondCtg2Read.getEnd === 28L)
 
-    val ctg3Reads = reads.filter(_.getContigName == "ctg3")
+    val ctg3Reads = reads.filter(_.getReferenceName == "ctg3")
     assert(ctg3Reads.length === 1)
 
     val ctg3Read = ctg3Reads.head
     assert(ctg3Read.getSequence === "AATTCCGGCCTTAA")
-    assert(ctg3Read.getContigName === "ctg3")
+    assert(ctg3Read.getReferenceName === "ctg3")
     assert(ctg3Read.getStart === 14L)
     assert(ctg3Read.getEnd === 28L)
   }

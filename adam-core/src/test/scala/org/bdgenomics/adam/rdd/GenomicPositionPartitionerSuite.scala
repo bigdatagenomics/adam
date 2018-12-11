@@ -22,7 +22,7 @@ import org.bdgenomics.adam.models.{ ReferencePosition, SequenceRecord, SequenceD
 import org.bdgenomics.adam.projections.Projection
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
-import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
+import org.bdgenomics.formats.avro.{ AlignmentRecord, Reference }
 import scala.util.Random
 
 class GenomicPositionPartitionerSuite extends ADAMFunSuite {
@@ -80,7 +80,7 @@ class GenomicPositionPartitionerSuite extends ADAMFunSuite {
     val count = 1000
     val pos = sc.parallelize((1 to count).map(i => adamRecord("chr1", "read_%d".format(i), rand.nextInt(100), readMapped = true)), 1)
     val parts = 200
-    val pairs = pos.map(p => (ReferencePosition(p.getContigName, p.getStart), p))
+    val pairs = pos.map(p => (ReferencePosition(p.getReferenceName, p.getStart), p))
     val parter = new RangePartitioner(parts, pairs)
     val partitioned = pairs.sortByKey().partitionBy(parter)
 
@@ -96,7 +96,7 @@ class GenomicPositionPartitionerSuite extends ADAMFunSuite {
     val count = 1000
     val pos = sc.parallelize((1 to count).map(i => adamRecord("chr1", "read_%d".format(i), rand.nextInt(100), readMapped = true)), 1)
     val parts = 200
-    val pairs = pos.map(p => ((ReferencePosition(p.getContigName, p.getStart), "sample"), p))
+    val pairs = pos.map(p => ((ReferencePosition(p.getReferenceName, p.getStart), "sample"), p))
     val parter = new RangePartitioner(parts, pairs)
     val partitioned = pairs.sortByKey().partitionBy(parter)
 
@@ -110,7 +110,7 @@ class GenomicPositionPartitionerSuite extends ADAMFunSuite {
 
     val p = {
       import org.bdgenomics.adam.projections.AlignmentRecordField._
-      Projection(contigName, start, readName, readMapped)
+      Projection(referenceName, start, readName, readMapped)
     }
     val gDataset = sc.loadAlignments(filename, optProjection = Some(p))
     val rdd = gDataset.rdd
@@ -120,7 +120,7 @@ class GenomicPositionPartitionerSuite extends ADAMFunSuite {
     assert(rdd.count() === 200)
 
     val keyed =
-      rdd.map(rec => (ReferencePosition(rec.getContigName, rec.getStart), rec)).sortByKey()
+      rdd.map(rec => (ReferencePosition(rec.getReferenceName, rec.getStart), rec)).sortByKey()
 
     val keys = keyed.map(_._1).collect()
     assert(!keys.exists(rp => parter.getPartition(rp) < 0 || parter.getPartition(rp) >= parts))
@@ -147,13 +147,13 @@ class GenomicPositionPartitionerSuite extends ADAMFunSuite {
 
     val p = {
       import org.bdgenomics.adam.projections.AlignmentRecordField._
-      Projection(contigName, start, readName, readMapped)
+      Projection(referenceName, start, readName, readMapped)
     }
 
     assert(rdd.count() === 200)
 
     val keyed =
-      rdd.keyBy(rec => (ReferencePosition(rec.getContigName, rec.getStart), "sample")).sortByKey()
+      rdd.keyBy(rec => (ReferencePosition(rec.getReferenceName, rec.getStart), "sample")).sortByKey()
 
     val keys = keyed.map(_._1).collect()
     assert(!keys.exists(rp => parter.getPartition(rp) < 0 || parter.getPartition(rp) >= parts))
@@ -170,12 +170,12 @@ class GenomicPositionPartitionerSuite extends ADAMFunSuite {
   }
 
   def adamRecord(referenceName: String, readName: String, start: Long, readMapped: Boolean) = {
-    val contig = Contig.newBuilder
-      .setContigName(referenceName)
+    val reference = Reference.newBuilder
+      .setName(referenceName)
       .build
 
     AlignmentRecord.newBuilder()
-      .setContigName(contig.getContigName)
+      .setReferenceName(reference.getName)
       .setReadName(readName)
       .setReadMapped(readMapped)
       .setStart(start)

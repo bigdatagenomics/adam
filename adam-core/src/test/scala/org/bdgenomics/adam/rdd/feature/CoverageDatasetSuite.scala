@@ -52,7 +52,7 @@ object CoverageDatasetSuite extends Serializable {
 
   def ncfFn(cov: Coverage): NucleotideContigFragment = {
     NucleotideContigFragment.newBuilder
-      .setContigName(cov.contigName)
+      .setContigName(cov.referenceName)
       .setStart(cov.start)
       .setEnd(cov.end)
       .build
@@ -60,7 +60,7 @@ object CoverageDatasetSuite extends Serializable {
 
   def featFn(cov: Coverage): Feature = {
     Feature.newBuilder
-      .setContigName(cov.contigName)
+      .setReferenceName(cov.referenceName)
       .setStart(cov.start)
       .setEnd(cov.end)
       .build
@@ -68,13 +68,13 @@ object CoverageDatasetSuite extends Serializable {
 
   def fragFn(cov: Coverage): Fragment = {
     Fragment.newBuilder
-      .setName(cov.contigName)
+      .setName(cov.referenceName)
       .build
   }
 
   def genFn(cov: Coverage): Genotype = {
     Genotype.newBuilder
-      .setContigName(cov.contigName)
+      .setReferenceName(cov.referenceName)
       .setStart(cov.start)
       .setEnd(cov.end)
       .build
@@ -82,7 +82,7 @@ object CoverageDatasetSuite extends Serializable {
 
   def readFn(cov: Coverage): AlignmentRecord = {
     AlignmentRecord.newBuilder
-      .setContigName(cov.contigName)
+      .setReferenceName(cov.referenceName)
       .setStart(cov.start)
       .setEnd(cov.end)
       .build
@@ -90,7 +90,7 @@ object CoverageDatasetSuite extends Serializable {
 
   def varFn(cov: Coverage): Variant = {
     Variant.newBuilder
-      .setContigName(cov.contigName)
+      .setReferenceName(cov.referenceName)
       .setStart(cov.start)
       .setEnd(cov.end)
       .build
@@ -98,7 +98,7 @@ object CoverageDatasetSuite extends Serializable {
 
   def vcFn(cov: Coverage): VariantContext = {
     VariantContext(Variant.newBuilder
-      .setContigName(cov.contigName)
+      .setReferenceName(cov.referenceName)
       .setStart(cov.start)
       .setEnd(cov.end)
       .build)
@@ -130,9 +130,9 @@ class CoverageDatasetSuite extends ADAMFunSuite {
       assert(sampleRdd.samples.map(r => r.getName).contains("Sample"))
     }
 
-    val f1 = Feature.newBuilder().setContigName("chr1").setStart(1).setEnd(10).setScore(3.0).build()
-    val f2 = Feature.newBuilder().setContigName("chr1").setStart(15).setEnd(20).setScore(2.0).build()
-    val f3 = Feature.newBuilder().setContigName("chr2").setStart(15).setEnd(20).setScore(2.0).build()
+    val f1 = Feature.newBuilder().setReferenceName("chr1").setStart(1).setEnd(10).setScore(3.0).build()
+    val f2 = Feature.newBuilder().setReferenceName("chr1").setStart(15).setEnd(20).setScore(2.0).build()
+    val f3 = Feature.newBuilder().setReferenceName("chr2").setStart(15).setEnd(20).setScore(2.0).build()
 
     val featuresDs: FeatureDataset = FeatureDataset(sc.parallelize(Seq(f1, f2, f3)))
     val coverageDs: CoverageDataset = featuresDs.toCoverage
@@ -189,9 +189,9 @@ class CoverageDatasetSuite extends ADAMFunSuite {
   }
 
   sparkTest("correctly filters coverage with predicate") {
-    val f1 = Feature.newBuilder().setContigName("chr1").setStart(1).setEnd(10).setScore(3.0).build()
-    val f2 = Feature.newBuilder().setContigName("chr1").setStart(15).setEnd(20).setScore(2.0).build()
-    val f3 = Feature.newBuilder().setContigName("chr2").setStart(15).setEnd(20).setScore(2.0).build()
+    val f1 = Feature.newBuilder().setReferenceName("chr1").setStart(1).setEnd(10).setScore(3.0).build()
+    val f2 = Feature.newBuilder().setReferenceName("chr1").setStart(15).setEnd(20).setScore(2.0).build()
+    val f3 = Feature.newBuilder().setReferenceName("chr2").setStart(15).setEnd(20).setScore(2.0).build()
 
     val featureDs: FeatureDataset = FeatureDataset(sc.parallelize(Seq(f1, f2, f3)))
     val coverageDs: CoverageDataset = featureDs.toCoverage
@@ -225,12 +225,12 @@ class CoverageDatasetSuite extends ADAMFunSuite {
 
   sparkTest("can read a bed file with multiple samples to coverage") {
 
-    val f1 = Feature.newBuilder().setContigName("chr1").setStart(1).setEnd(10).setScore(3.0).setSampleId("S1").build()
-    val f2 = Feature.newBuilder().setContigName("chr1").setStart(15).setEnd(20).setScore(2.0).setSampleId("S1").build()
-    val f3 = Feature.newBuilder().setContigName("chr2").setStart(15).setEnd(20).setScore(2.0).setSampleId("S1").build()
+    val f1 = Feature.newBuilder().setReferenceName("chr1").setStart(1).setEnd(10).setScore(3.0).setSampleId("S1").build()
+    val f2 = Feature.newBuilder().setReferenceName("chr1").setStart(15).setEnd(20).setScore(2.0).setSampleId("S1").build()
+    val f3 = Feature.newBuilder().setReferenceName("chr2").setStart(15).setEnd(20).setScore(2.0).setSampleId("S1").build()
 
-    val f4 = Feature.newBuilder().setContigName("chr1").setStart(1).setEnd(10).setScore(2.0).setSampleId("S2").build()
-    val f5 = Feature.newBuilder().setContigName("chr1").setStart(15).setEnd(20).setScore(2.0).setSampleId("S2").build()
+    val f4 = Feature.newBuilder().setReferenceName("chr1").setStart(1).setEnd(10).setScore(2.0).setSampleId("S2").build()
+    val f5 = Feature.newBuilder().setReferenceName("chr1").setStart(15).setEnd(20).setScore(2.0).setSampleId("S2").build()
 
     val featureDs: FeatureDataset = FeatureDataset(sc.parallelize(Seq(f1, f2, f3, f4, f5)))
     val coverageDs: CoverageDataset = featureDs.toCoverage
@@ -245,9 +245,9 @@ class CoverageDatasetSuite extends ADAMFunSuite {
   }
 
   sparkTest("correctly flatmaps coverage without aggregated bins") {
-    val f1 = Feature.newBuilder().setContigName("chr1").setStart(1).setEnd(5).setScore(1.0).build()
-    val f2 = Feature.newBuilder().setContigName("chr1").setStart(5).setEnd(7).setScore(3.0).build()
-    val f3 = Feature.newBuilder().setContigName("chr1").setStart(7).setEnd(20).setScore(4.0).build()
+    val f1 = Feature.newBuilder().setReferenceName("chr1").setStart(1).setEnd(5).setScore(1.0).build()
+    val f2 = Feature.newBuilder().setReferenceName("chr1").setStart(5).setEnd(7).setScore(3.0).build()
+    val f3 = Feature.newBuilder().setReferenceName("chr1").setStart(7).setEnd(20).setScore(4.0).build()
 
     val featureDs: FeatureDataset = FeatureDataset(sc.parallelize(Seq(f1, f2, f3)))
     val coverageDs: CoverageDataset = featureDs.toCoverage
@@ -257,9 +257,9 @@ class CoverageDatasetSuite extends ADAMFunSuite {
   }
 
   sparkTest("correctly flatmaps coverage with aggregated bins") {
-    val f1 = Feature.newBuilder().setContigName("chr1").setStart(1).setEnd(5).setScore(1.0).build()
-    val f2 = Feature.newBuilder().setContigName("chr1").setStart(5).setEnd(7).setScore(3.0).build()
-    val f3 = Feature.newBuilder().setContigName("chr1").setStart(7).setEnd(20).setScore(4.0).build()
+    val f1 = Feature.newBuilder().setReferenceName("chr1").setStart(1).setEnd(5).setScore(1.0).build()
+    val f2 = Feature.newBuilder().setReferenceName("chr1").setStart(5).setEnd(7).setScore(3.0).build()
+    val f3 = Feature.newBuilder().setReferenceName("chr1").setStart(7).setEnd(20).setScore(4.0).build()
 
     val featureDs: FeatureDataset = FeatureDataset(sc.parallelize(Seq(f1, f2, f3)))
     val coverageDs: CoverageDataset = featureDs.toCoverage

@@ -36,7 +36,7 @@ import org.bdgenomics.adam.rdd.read.AlignmentRecordDataset
 import org.bdgenomics.adam.rdd.variant.VariantDataset
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.util.{ ADAMFunSuite, ReferenceFile }
-import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig, Variant }
+import org.bdgenomics.formats.avro.{ AlignmentRecord, Variant, Reference }
 
 class RealignIndelsSuite extends ADAMFunSuite {
 
@@ -67,7 +67,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
 
   def makeRead(start: Long, end: Long): RichAlignmentRecord = {
     RichAlignmentRecord(AlignmentRecord.newBuilder()
-      .setContigName("ctg")
+      .setReferenceName("ctg")
       .setStart(start)
       .setEnd(end)
       .setReadMapped(true)
@@ -219,7 +219,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
 
   sparkTest("checking realigned reads for artificial input using knowns") {
     val indel = Variant.newBuilder()
-      .setContigName("artificial")
+      .setReferenceName("artificial")
       .setStart(33)
       .setEnd(44)
       .setReferenceAllele("AGGGGGGGGGG")
@@ -247,7 +247,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
 
   sparkTest("checking realigned reads for artificial input using knowns and reads") {
     val indel = Variant.newBuilder()
-      .setContigName("artificial")
+      .setReferenceName("artificial")
       .setStart(33)
       .setEnd(44)
       .setReferenceAllele("AGGGGGGGGGG")
@@ -360,11 +360,11 @@ class RealignIndelsSuite extends ADAMFunSuite {
   }
 
   test("we shouldn't try to realign a region with no target") {
-    val ctg = Contig.newBuilder()
-      .setContigName("chr1")
+    val reference = Reference.newBuilder()
+      .setName("chr1")
       .build()
     val reads = Seq(AlignmentRecord.newBuilder()
-      .setContigName(ctg.getContigName)
+      .setReferenceName(reference.getName)
       .setStart(1L)
       .setEnd(4L)
       .setSequence("AAA")
@@ -373,7 +373,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
       .setReadMapped(true)
       .setMismatchingPositions("3")
       .build(), AlignmentRecord.newBuilder()
-      .setContigName(ctg.getContigName)
+      .setReferenceName(reference.getName)
       .setStart(9L)
       .setEnd(12L)
       .setSequence("AAA")
@@ -391,11 +391,11 @@ class RealignIndelsSuite extends ADAMFunSuite {
   }
 
   sparkTest("we shouldn't try to realign reads with no indel evidence") {
-    val ctg = Contig.newBuilder()
-      .setContigName("chr1")
+    val reference = Reference.newBuilder()
+      .setName("chr1")
       .build()
     val reads = sc.parallelize(Seq(AlignmentRecord.newBuilder()
-      .setContigName(ctg.getContigName)
+      .setReferenceName(reference.getName)
       .setStart(1L)
       .setEnd(4L)
       .setSequence("AAA")
@@ -404,7 +404,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
       .setReadMapped(true)
       .setMismatchingPositions("3")
       .build(), AlignmentRecord.newBuilder()
-      .setContigName(ctg.getContigName)
+      .setReferenceName(reference.getName)
       .setStart(10L)
       .setEnd(13L)
       .setSequence("AAA")
@@ -413,7 +413,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
       .setReadMapped(true)
       .setMismatchingPositions("3")
       .build(), AlignmentRecord.newBuilder()
-      .setContigName(ctg.getContigName)
+      .setReferenceName(reference.getName)
       .setStart(4L)
       .setEnd(7L)
       .setSequence("AAA")
@@ -422,7 +422,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
       .setReadMapped(true)
       .setMismatchingPositions("3")
       .build(), AlignmentRecord.newBuilder()
-      .setContigName(ctg.getContigName)
+      .setReferenceName(reference.getName)
       .setStart(7L)
       .setEnd(10L)
       .setSequence("AAA")
@@ -462,7 +462,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
     // sc:     agA   GGTC
     // ec:       A   GGTCt
     val insRead = AlignmentRecord.newBuilder
-      .setContigName("1")
+      .setReferenceName("1")
       .setStart(10L)
       .setEnd(15L)
       .setSequence("ACCAGTTC")
@@ -473,7 +473,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
       .setMapq(40)
       .build
     val extRead = AlignmentRecord.newBuilder
-      .setContigName("1")
+      .setReferenceName("1")
       .setStart(8L)
       .setEnd(16L)
       .setSequence("TTACCAGT")
@@ -484,7 +484,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
       .setMapq(40)
       .build
     val ovlRead = AlignmentRecord.newBuilder
-      .setContigName("1")
+      .setReferenceName("1")
       .setStart(9L)
       .setEnd(18L)
       .setSequence("TACCAGTTC")
@@ -495,7 +495,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
       .setMapq(41)
       .build
     val ovsRead = AlignmentRecord.newBuilder
-      .setContigName("1")
+      .setReferenceName("1")
       .setStart(10L)
       .setEnd(18L)
       .setSequence("AGTTCCAC")
@@ -506,7 +506,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
       .setMapq(42)
       .build
     val stRead = AlignmentRecord.newBuilder
-      .setContigName("1")
+      .setReferenceName("1")
       .setStart(12L)
       .setEnd(19L)
       .setSequence("TTCCACA")
@@ -518,7 +518,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
       .build
     val scRead = AlignmentRecord.newBuilder
       .setReadName("sc")
-      .setContigName("1")
+      .setReferenceName("1")
       .setStart(13L)
       .setEnd(18L)
       .setSequence("AGAGGTC")
@@ -529,7 +529,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
       .setMapq(44)
       .build
     val ecRead = AlignmentRecord.newBuilder
-      .setContigName("1")
+      .setReferenceName("1")
       .setStart(13L)
       .setEnd(18L)
       .setSequence("AGGTCA")

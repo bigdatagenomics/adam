@@ -21,7 +21,7 @@ import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.util.ADAMFunSuite
-import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
+import org.bdgenomics.formats.avro.{ AlignmentRecord, Reference }
 
 trait OuterRegionJoinSuite extends ADAMFunSuite {
 
@@ -29,14 +29,14 @@ trait OuterRegionJoinSuite extends ADAMFunSuite {
               rightRdd: RDD[(ReferenceRegion, AlignmentRecord)]): RDD[(Option[AlignmentRecord], AlignmentRecord)]
 
   sparkTest("Ensure same reference regions get passed together") {
-    val contig = Contig.newBuilder
-      .setContigName("chr1")
-      .setContigLength(15L)
-      .setReferenceURL("test://chrom1")
+    val reference = Reference.newBuilder
+      .setName("chr1")
+      .setLength(15L)
+      .setSourceUri("test://chrom1")
       .build
 
     val builder = AlignmentRecord.newBuilder()
-      .setContigName(contig.getContigName)
+      .setReferenceName(reference.getName)
       .setStart(1L)
       .setReadMapped(true)
       .setCigar("1M")
@@ -67,14 +67,14 @@ trait OuterRegionJoinSuite extends ADAMFunSuite {
   }
 
   sparkTest("Overlapping reference regions") {
-    val contig = Contig.newBuilder
-      .setContigName("chr1")
-      .setContigLength(15L)
-      .setReferenceURL("test://chrom1")
+    val reference = Reference.newBuilder
+      .setName("chr1")
+      .setLength(15L)
+      .setSourceUri("test://chrom1")
       .build
 
     val built = AlignmentRecord.newBuilder()
-      .setContigName(contig.getContigName)
+      .setReferenceName(reference.getName)
       .setStart(1L)
       .setReadMapped(true)
       .setCigar("1M")

@@ -83,7 +83,7 @@ private trait FeatureOrdering[T <: Feature] extends Ordering[T] {
     // use ComparisonChain to safely handle nulls, as Feature is a java object
     ComparisonChain.start()
       // consider reference region first
-      .compare(x.getContigName, y.getContigName)
+      .compare(x.getReferenceName, y.getReferenceName)
       .compare(x.getStart, y.getStart)
       .compare(x.getEnd, y.getEnd)
       .compare(x.getStrand, y.getStrand, strandNullsLast)
@@ -163,7 +163,7 @@ object FeatureDataset {
       entry._1 + " \"" + entry._2 + "\""
     }
 
-    val seqname = feature.getContigName
+    val seqname = feature.getReferenceName
     val source = Option(feature.getSource).getOrElse(".")
     val featureType = Option(feature.getFeatureType).getOrElse(".")
     val start = feature.getStart + 1 // GTF/GFF ranges are 1-based
@@ -180,7 +180,7 @@ object FeatureDataset {
    * @return Feature as a one line interval list string.
    */
   private[rdd] def toInterval(feature: Feature): String = {
-    val sequenceName = feature.getContigName
+    val sequenceName = feature.getReferenceName
     val start = feature.getStart + 1 // IntervalList ranges are 1-based
     val end = feature.getEnd // IntervalList ranges are closed
     val strand = Features.asString(feature.getStrand, emptyUnknown = false)
@@ -193,7 +193,7 @@ object FeatureDataset {
    * @return Returns this feature as a single narrow peak line.
    */
   private[rdd] def toNarrowPeak(feature: Feature): String = {
-    val chrom = feature.getContigName
+    val chrom = feature.getReferenceName
     val start = feature.getStart
     val end = feature.getEnd
     val name = Features.nameOf(feature)
@@ -223,7 +223,7 @@ object FeatureDataset {
                          maximumScore: Option[Double],
                          missingValue: Option[Int]): String = {
 
-    val chrom = feature.getContigName
+    val chrom = feature.getReferenceName
     val start = feature.getStart
     val end = feature.getEnd
     val name = Features.nameOf(feature)
@@ -261,7 +261,7 @@ object FeatureDataset {
       entry._1 + "=" + entry._2
     }
 
-    val seqid = feature.getContigName
+    val seqid = feature.getReferenceName
     val source = Option(feature.getSource).getOrElse(".")
     val featureType = Option(feature.getFeatureType).getOrElse(".")
     val start = feature.getStart + 1 // GFF3 coordinate system is 1-based
@@ -352,7 +352,7 @@ case class DatasetBoundFeatureDataset private[rdd] (
   def toCoverage(): CoverageDataset = {
     import dataset.sqlContext.implicits._
     DatasetBoundCoverageDataset(dataset.toDF
-      .select("contigName", "start", "end", "score", "sampleId")
+      .select("referenceName", "start", "end", "score", "sampleId")
       .withColumnRenamed("score", "count")
       .withColumnRenamed("sampleId", "optSampleId")
       .as[Coverage], sequences, samples)

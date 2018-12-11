@@ -91,7 +91,7 @@ private[adam] class ConsensusGeneratorFromReads extends ConsensusGenerator {
         Consensus.generateAlternateConsensus(
           r.getSequence,
           ReferencePosition(
-            r.getContigName,
+            r.getReferenceName,
             r.getStart
           ),
           r.samtoolsCigar

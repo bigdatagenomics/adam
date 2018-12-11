@@ -34,14 +34,14 @@ object VariantContext {
   }
 }
 
-case class VariantContext(contigName: String,
+case class VariantContext(referenceName: String,
                           start: Long,
                           end: Long,
                           variant: Variant,
                           genotypes: Seq[Genotype]) {
 
   def toModel(): VariantContextModel = {
-    new VariantContextModel(new ReferencePosition(contigName, start),
+    new VariantContextModel(new ReferencePosition(referenceName, start),
       RichVariant(variant.toAvro),
       genotypes.map(_.toAvro))
   }

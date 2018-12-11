@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.converters
 
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.formats.avro.{ Contig, NucleotideContigFragment }
+import org.bdgenomics.formats.avro.{ NucleotideContigFragment, Reference }
 import scala.collection.mutable
 
 /**
@@ -45,25 +45,25 @@ private[adam] object FastaConverter {
                                   seqId: Int = 0,
                                   descriptionLine: Option[String] = None) {
     /**
-     * The contig name and description that was parsed out of this description line.
+     * The reference name and description that was parsed out of this description line.
      */
-    val (contigName, contigDescription) = parseDescriptionLine(descriptionLine, fileIndex)
+    val (referenceName, referenceDescription) = parseDescriptionLine(descriptionLine, fileIndex)
 
     /**
      * Parses the text of a given line.
      *
-     * Assumes that the line contains the contig name followed by an optional
-     * description of the contig, with the two separated by a space.
+     * Assumes that the line contains the reference name followed by an optional
+     * description of the reference, with the two separated by a space.
      *
      * @throws IllegalArgumentException if there is no name in the line and the
      *   line is not the only record in a file (i.e., the file contains multiple
-     *   contigs).
+     *   reference sequences).
      *
-     * @param descriptionLine The optional string describing the contig. If this
+     * @param descriptionLine The optional string describing the reference. If this
      *   is not set and this isn't the only line in the file, we throw.
-     * @param id The index of this contig in the file.
-     * @return Returns a tuple containing (the optional contig name, and the
-     *   optional contig description).
+     * @param id The index of this reference in the file.
+     * @return Returns a tuple containing (the optional reference name, and the
+     *   optional reference description).
      */
     private def parseDescriptionLine(descriptionLine: Option[String],
                                      id: Long): (Option[String], Option[String]) = {
@@ -80,10 +80,10 @@ private[adam] object FastaConverter {
           if (split._1.contains('|')) {
             (None, Some(dL.stripPrefix(">").trim))
           } else {
-            val contigName: String = split._1.stripPrefix(">").trim
-            val contigDescription: String = split._2.trim
+            val referenceName: String = split._1.stripPrefix(">").trim
+            val referenceDescription: String = split._2.trim
 
-            (Some(contigName), Some(contigDescription))
+            (Some(referenceName), Some(referenceDescription))
           }
         } else {
           (Some(dL.stripPrefix(">").trim), None)
@@ -121,33 +121,33 @@ private[adam] object FastaConverter {
       .filter((kv: (Long, String)) => isFasta(kv._2))
 
     val descriptionLines: Map[Long, FastaDescriptionLine] = getDescriptionLines(filtered)
-    val indexToContigDescription = rdd.context.broadcast(descriptionLines)
+    val indexToReferenceDescription = rdd.context.broadcast(descriptionLines)
 
     val sequenceLines = filtered.filter(kv => !isDescriptionLine(kv._2))
 
     val keyedSequences =
-      if (indexToContigDescription.value.isEmpty) {
+      if (indexToReferenceDescription.value.isEmpty) {
         sequenceLines.keyBy(kv => -1L)
       } else {
-        sequenceLines.keyBy(row => findContigIndex(row._1, indexToContigDescription.value.keys.toList))
+        sequenceLines.keyBy(row => findReferenceIndex(row._1, indexToReferenceDescription.value.keys.toList))
       }
 
-    val groupedContigs = keyedSequences.groupByKey()
+    val groupedReferences = keyedSequences.groupByKey()
 
     val converter = new FastaConverter(maximumLength)
 
-    groupedContigs.flatMap {
+    groupedReferences.flatMap {
       case (id, lines) =>
 
-        val descriptionLine = indexToContigDescription.value.getOrElse(id, FastaDescriptionLine())
+        val descriptionLine = indexToReferenceDescription.value.getOrElse(id, FastaDescriptionLine())
         assert(lines.nonEmpty, s"Sequence ${descriptionLine.seqId} has no sequence data.")
 
         val sequence: Seq[String] = lines.toSeq.sortBy(_._1).map(kv => cleanSequence(kv._2))
         converter.convert(
-          descriptionLine.contigName,
+          descriptionLine.referenceName,
           descriptionLine.seqId,
           sequence,
-          descriptionLine.contigDescription
+          descriptionLine.referenceDescription
         )
     }
   }
@@ -194,18 +194,18 @@ private[adam] object FastaConverter {
   }
 
   /**
-   * Finds the index of a contig.
+   * Finds the index of a reference sequence.
    *
-   * The index of a contig is the highest index below the index of our row.
+   * The index of a reference is the highest index below the index of our row.
    * Here, we define the index as the row number of the description line that
-   * describes this contig.
+   * describes this reference sequence.
    *
-   * @param rowIdx The row number of the contig row to check.
+   * @param rowIdx The row number of the reference sequence row to check.
    * @param indices A list containing the row numbers of all description lines.
    * @return Returns the row index of the description line that describes this
    *   sequence line.
    */
-  private[converters] def findContigIndex(rowIdx: Long, indices: List[Long]): Long = {
+  private[converters] def findReferenceIndex(rowIdx: Long, indices: List[Long]): Long = {
     val idx = indices.filter(_ <= rowIdx)
     idx.max
   }
