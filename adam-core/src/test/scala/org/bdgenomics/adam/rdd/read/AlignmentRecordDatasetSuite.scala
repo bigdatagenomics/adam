@@ -91,7 +91,7 @@ object AlignmentRecordDatasetSuite extends Serializable {
 
   def ncfFn(r: AlignmentRecord): NucleotideContigFragment = {
     NucleotideContigFragment.newBuilder
-      .setContigName(r.getContigName)
+      .setContigName(r.getReferenceName)
       .setSequence(r.getSequence)
       .build
   }
@@ -101,7 +101,7 @@ object AlignmentRecordDatasetSuite extends Serializable {
   }
 
   def covFn(r: AlignmentRecord): Coverage = {
-    Coverage(r.getContigName,
+    Coverage(r.getReferenceName,
       r.getStart,
       r.getEnd,
       1)
@@ -113,7 +113,7 @@ object AlignmentRecordDatasetSuite extends Serializable {
 
   def featFn(r: AlignmentRecord): Feature = {
     Feature.newBuilder
-      .setContigName(r.getContigName)
+      .setReferenceName(r.getReferenceName)
       .setStart(r.getStart)
       .setEnd(r.getEnd)
       .build
@@ -131,7 +131,7 @@ object AlignmentRecordDatasetSuite extends Serializable {
 
   def genFn(r: AlignmentRecord): Genotype = {
     Genotype.newBuilder
-      .setContigName(r.getContigName)
+      .setReferenceName(r.getReferenceName)
       .setStart(r.getStart)
       .setEnd(r.getEnd)
       .build
@@ -143,7 +143,7 @@ object AlignmentRecordDatasetSuite extends Serializable {
 
   def varFn(r: AlignmentRecord): Variant = {
     Variant.newBuilder
-      .setContigName(r.getContigName)
+      .setReferenceName(r.getReferenceName)
       .setStart(r.getStart)
       .setEnd(r.getEnd)
       .build
@@ -163,9 +163,9 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
       val mapped = random.nextBoolean()
       val builder = AlignmentRecord.newBuilder().setReadMapped(mapped)
       if (mapped) {
-        val contigName = random.nextInt(numReadsToCreate / 10).toString
+        val referenceName = random.nextInt(numReadsToCreate / 10).toString
         val start = random.nextInt(1000000)
-        builder.setContigName(contigName).setStart(start).setEnd(start)
+        builder.setReferenceName(referenceName).setStart(start).setEnd(start)
       }
       builder.setReadName((0 until 20).map(i => (random.nextInt(100) + 64)).mkString)
       builder.build()
@@ -173,7 +173,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
     val rdd = sc.parallelize(reads)
 
     // make seq dict 
-    val contigNames = rdd.flatMap(r => Option(r.getContigName)).distinct.collect
+    val contigNames = rdd.flatMap(r => Option(r.getReferenceName)).distinct.collect
     val sd = new SequenceDictionary(contigNames.map(v => SequenceRecord(v, 1000000L)).toVector)
 
     val sortedReads = AlignmentRecordDataset(rdd, sd, RecordGroupDictionary.empty, Seq.empty)
@@ -186,7 +186,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
     assert(unmapped.forall(p => p._2 > mapped.takeRight(1)(0)._2))
     // Make sure that we appropriately sorted the reads
     val expectedSortedReads = mapped.sortWith(
-      (a, b) => a._1.getContigName < b._1.getContigName && a._1.getStart < b._1.getStart)
+      (a, b) => a._1.getReferenceName < b._1.getReferenceName && a._1.getStart < b._1.getStart)
     assert(expectedSortedReads === mapped)
   }
 
@@ -270,17 +270,17 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
       if (mapped) {
         val contigName = random.nextInt(numReadsToCreate / 10).toString
         val start = random.nextInt(1000000)
-        builder.setContigName(contigName).setStart(start).setEnd(start)
+        builder.setReferenceName(contigName).setStart(start).setEnd(start)
       }
       builder.setReadName((0 until 20).map(i => (random.nextInt(100) + 64)).mkString)
       builder.build()
     }
-    val contigNames = reads.filter(_.getReadMapped).map(_.getContigName).toSet
+    val contigNames = reads.filter(_.getReadMapped).map(_.getReferenceName).toSet
     val sd = new SequenceDictionary(contigNames.toSeq
       .zipWithIndex
       .map(kv => {
-        val (name, index) = kv
-        SequenceRecord(name, Int.MaxValue, referenceIndex = Some(index))
+        val (name, idx) = kv
+        SequenceRecord(name, Int.MaxValue, index = Some(idx))
       }).toVector)
 
     val rdd = sc.parallelize(reads)
@@ -295,7 +295,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
     assert(unmapped.forall(p => p._2 > mapped.takeRight(1)(0)._2))
 
     def toIndex(r: AlignmentRecord): Int = {
-      sd(r.getContigName).get.referenceIndex.get
+      sd(r.getReferenceName).get.index.get
     }
 
     // Make sure that we appropriately sorted the reads
@@ -616,7 +616,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
         // that some fields should be disregarded if the read is not mapped
         if (p1.getReadMapped && p2.getReadMapped) {
           assert(p1.getDuplicateRead === p2.getDuplicateRead)
-          assert(p1.getContigName === p2.getContigName)
+          assert(p1.getReferenceName === p2.getReferenceName)
           assert(p1.getStart === p2.getStart)
           assert(p1.getEnd === p2.getEnd)
           assert(p1.getCigar === p2.getCigar)
@@ -637,7 +637,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
           assert(p1.getMateMapped === p2.getMateMapped)
           if (p1.getMateMapped && p2.getMateMapped) {
             assert(p1.getMateNegativeStrand === p2.getMateNegativeStrand)
-            assert(p1.getMateContigName === p2.getMateContigName)
+            assert(p1.getMateReferenceName === p2.getMateReferenceName)
             assert(p1.getMateAlignmentStart === p2.getMateAlignmentStart)
           }
         }
@@ -682,7 +682,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
       // all reads are on 1, so this is effectively a no-op
       import ds.sqlContext.implicits._
       val df = ds.toDF()
-      df.where(df("contigName") === "1")
+      df.where(df("referenceName") === "1")
         .as[AlignmentRecordProduct]
     })
     testMetadata(rdd)
@@ -1134,7 +1134,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
         partition),
         AlignmentRecord.newBuilder
         .setReadMapped(true)
-        .setContigName(contigName)
+        .setReferenceName(contigName)
         .setStart(start)
         .setEnd(end)
         .build)
@@ -1159,7 +1159,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
         Some(ReferenceRegion("chr2", 40L, 50L), ReferenceRegion("chr2", 40L, 50L)))))
 
     val features = FeatureDataset(sc.parallelize(Seq(Feature.newBuilder
-      .setContigName("chr2")
+      .setReferenceName("chr2")
       .setStart(20L)
       .setEnd(50L)
       .build)), sd, Seq.empty)

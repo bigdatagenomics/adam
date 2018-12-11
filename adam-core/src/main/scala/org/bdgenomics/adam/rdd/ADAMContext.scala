@@ -93,13 +93,13 @@ import org.bdgenomics.adam.util.{
 }
 import org.bdgenomics.formats.avro.{
   AlignmentRecord,
-  Contig,
   Feature,
   Fragment,
   Genotype,
   NucleotideContigFragment,
   ProcessingStep,
   RecordGroup => RecordGroupMetadata,
+  Reference,
   Sample,
   Variant
 }
@@ -1223,7 +1223,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @return Returns a SequenceDictionary.
    */
   private[rdd] def loadAvroSequenceDictionary(pathName: String): SequenceDictionary = {
-    getFsAndFilesWithFilter(pathName, new FileFilter("_seqdict.avro"))
+    getFsAndFilesWithFilter(pathName, new FileFilter("_references.avro"))
       .map(p => loadSingleAvroSequenceDictionary(p.toString))
       .reduce(_ ++ _)
   }
@@ -1236,7 +1236,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @return Returns a SequenceDictionary.
    */
   private def loadSingleAvroSequenceDictionary(pathName: String): SequenceDictionary = {
-    val avroSd = loadAvro[Contig](pathName, Contig.SCHEMA$)
+    val avroSd = loadAvro[Reference](pathName, Reference.SCHEMA$)
     SequenceDictionary.fromAvro(avroSd)
   }
 
@@ -1514,7 +1514,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @param stringency The validation stringency to use when validating the
    *   BAM/CRAM/SAM format header. Defaults to ValidationStringency.STRICT.
    * @return Returns an AlignmentRecordDataset which wraps the genomic dataset of alignment records,
-   *   sequence dictionary representing contigs the alignment records may be aligned to,
+   *   sequence dictionary representing reference sequences the alignment records may be aligned to,
    *   and the record group dictionary for the alignment records if one is available.
    */
   def loadBam(
@@ -1596,7 +1596,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   Globs/directories are supported.
    * @param viewRegion The ReferenceRegion we are filtering on.
    * @return Returns an AlignmentRecordDataset which wraps the genomic dataset of alignment records,
-   *   sequence dictionary representing contigs the alignment records may be aligned to,
+   *   sequence dictionary representing reference sequences the alignment records may be aligned to,
    *   and the record group dictionary for the alignment records if one is available.
    */
   // todo: add stringency with default if possible
@@ -1616,7 +1616,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @param stringency The validation stringency to use when validating the
    *   BAM/CRAM/SAM format header. Defaults to ValidationStringency.STRICT.
    * @return Returns an AlignmentRecordDataset which wraps the genomic dataset of alignment records,
-   *   sequence dictionary representing contigs the alignment records may be aligned to,
+   *   sequence dictionary representing reference sequences the alignment records may be aligned to,
    *   and the record group dictionary for the alignment records if one is available.
    */
   def loadIndexedBam(
@@ -1867,7 +1867,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * Load a path name in Parquet + Avro format into an AlignmentRecordDataset.
    *
    * @note The sequence dictionary is read from an Avro file stored at
-   *   pathName/_seqdict.avro and the record group dictionary is read from an
+   *   pathName/_references.avro and the record group dictionary is read from an
    *   Avro file stored at pathName/_rgdict.avro. These files are pure Avro,
    *   not Parquet + Avro.
    *
@@ -1878,7 +1878,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @param optProjection An option projection schema to use when reading Parquet + Avro.
    *   Defaults to None.
    * @return Returns an AlignmentRecordDataset which wraps the genomic dataset of alignment records,
-   *   sequence dictionary representing contigs the alignment records may be aligned to,
+   *   sequence dictionary representing reference sequences the alignment records may be aligned to,
    *   and the record group dictionary for the alignment records if one is available.
    */
   def loadParquetAlignments(
@@ -1913,7 +1913,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * Load a path name with range binned partitioned Parquet format into an AlignmentRecordDataset.
    *
    * @note The sequence dictionary is read from an Avro file stored at
-   *   pathName/_seqdict.avro and the record group dictionary is read from an
+   *   pathName/_references.avro and the record group dictionary is read from an
    *   Avro file stored at pathName/_rgdict.avro. These files are pure Avro,
    *   not Parquet + Avro.
    *
@@ -2669,7 +2669,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
       new ParquetUnboundCoverageDataset(sc, pathName, sd, samples)
     } else {
-      val coverageFields = Projection(FeatureField.contigName,
+      val coverageFields = Projection(FeatureField.referenceName,
         FeatureField.start,
         FeatureField.end,
         FeatureField.score,
@@ -3258,7 +3258,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @param stringency The validation stringency to use when validating BAM/CRAM/SAM or FASTQ formats.
    *   Defaults to ValidationStringency.STRICT.
    * @return Returns an AlignmentRecordDataset which wraps the genomic dataset of alignment records,
-   *   sequence dictionary representing contigs the alignment records may be aligned to,
+   *   sequence dictionary representing reference sequences the alignment records may be aligned to,
    *   and the record group dictionary for the alignment records if one is available.
    */
   def loadAlignments(

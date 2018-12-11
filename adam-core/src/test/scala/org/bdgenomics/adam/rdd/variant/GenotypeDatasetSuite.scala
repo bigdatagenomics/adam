@@ -51,7 +51,7 @@ import org.bdgenomics.formats.avro._
 object GenotypeDatasetSuite extends Serializable {
 
   def covFn(g: Genotype): Coverage = {
-    Coverage(g.getContigName,
+    Coverage(g.getReferenceName,
       g.getStart,
       g.getEnd,
       1)
@@ -59,7 +59,7 @@ object GenotypeDatasetSuite extends Serializable {
 
   def featFn(g: Genotype): Feature = {
     Feature.newBuilder
-      .setContigName(g.getContigName)
+      .setReferenceName(g.getReferenceName)
       .setStart(g.getStart)
       .setEnd(g.getEnd)
       .build
@@ -67,19 +67,19 @@ object GenotypeDatasetSuite extends Serializable {
 
   def fragFn(g: Genotype): Fragment = {
     Fragment.newBuilder
-      .setName(g.getContigName)
+      .setName(g.getReferenceName)
       .build
   }
 
   def ncfFn(g: Genotype): NucleotideContigFragment = {
     NucleotideContigFragment.newBuilder
-      .setContigName(g.getContigName)
+      .setContigName(g.getReferenceName)
       .build
   }
 
   def readFn(g: Genotype): AlignmentRecord = {
     AlignmentRecord.newBuilder
-      .setContigName(g.getContigName)
+      .setReferenceName(g.getReferenceName)
       .setStart(g.getStart)
       .setEnd(g.getEnd)
       .build
@@ -87,7 +87,7 @@ object GenotypeDatasetSuite extends Serializable {
 
   def varFn(g: Genotype): Variant = {
     Variant.newBuilder
-      .setContigName(g.getContigName)
+      .setReferenceName(g.getReferenceName)
       .setStart(g.getStart)
       .setEnd(g.getEnd)
       .build
@@ -95,7 +95,7 @@ object GenotypeDatasetSuite extends Serializable {
 
   def vcFn(g: Genotype): VariantContext = {
     VariantContext(Variant.newBuilder
-      .setContigName(g.getContigName)
+      .setReferenceName(g.getReferenceName)
       .setStart(g.getStart)
       .setEnd(g.getEnd)
       .build)
@@ -347,7 +347,7 @@ class GenotypeDatasetSuite extends ADAMFunSuite {
 
     val vc = vcs.head
     assert(vc.position.referenceName === "1")
-    assert(vc.variant.variant.contigName === "1")
+    assert(vc.variant.variant.getReferenceName === "1")
     assert(vc.genotypes.nonEmpty)
   }
 

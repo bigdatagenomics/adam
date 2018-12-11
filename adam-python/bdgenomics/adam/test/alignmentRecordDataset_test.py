@@ -120,7 +120,7 @@ class AlignmentRecordDatasetTest(SparkTestCase):
 
         reads = ac.loadAlignments(readsPath)
 
-        transformedReads = reads.transform(lambda x: x.filter(x.contigName == "1"))
+        transformedReads = reads.transform(lambda x: x.filter(x.referenceName == "1"))
 
         self.assertEqual(transformedReads.toDF().count(), 1)
 
@@ -132,7 +132,7 @@ class AlignmentRecordDatasetTest(SparkTestCase):
 
         reads = ac.loadAlignments(readsPath)
 
-        readsAsCoverage = reads.transmute(lambda x: x.select(x.contigName,
+        readsAsCoverage = reads.transmute(lambda x: x.select(x.referenceName,
                                                              x.start,
                                                              x.end,
                                                              x.mapq.cast(DoubleType()).alias("count"),

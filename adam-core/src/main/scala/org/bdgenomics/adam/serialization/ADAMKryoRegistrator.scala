@@ -235,8 +235,6 @@ class ADAMKryoRegistrator extends KryoRegistrator with Logging {
     // org.bdgenomics.formats.avro
     kryo.register(classOf[org.bdgenomics.formats.avro.AlignmentRecord],
       new AvroSerializer[org.bdgenomics.formats.avro.AlignmentRecord])
-    kryo.register(classOf[org.bdgenomics.formats.avro.Contig],
-      new AvroSerializer[org.bdgenomics.formats.avro.Contig])
     kryo.register(classOf[org.bdgenomics.formats.avro.Dbxref],
       new AvroSerializer[org.bdgenomics.formats.avro.Dbxref])
     kryo.register(classOf[org.bdgenomics.formats.avro.Feature],
@@ -257,6 +255,8 @@ class ADAMKryoRegistrator extends KryoRegistrator with Logging {
       new AvroSerializer[org.bdgenomics.formats.avro.Read])
     kryo.register(classOf[org.bdgenomics.formats.avro.RecordGroup],
       new AvroSerializer[org.bdgenomics.formats.avro.RecordGroup])
+    kryo.register(classOf[org.bdgenomics.formats.avro.Reference],
+      new AvroSerializer[org.bdgenomics.formats.avro.Reference])
     kryo.register(classOf[org.bdgenomics.formats.avro.Sample],
       new AvroSerializer[org.bdgenomics.formats.avro.Sample])
     kryo.register(classOf[org.bdgenomics.formats.avro.Sequence],
@@ -313,7 +313,6 @@ class ADAMKryoRegistrator extends KryoRegistrator with Logging {
     kryo.register(classOf[scala.Array[org.apache.spark.sql.types.StructField]])
     kryo.register(classOf[scala.Array[org.apache.spark.sql.types.StructType]])
     kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.AlignmentRecord]])
-    kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.Contig]])
     kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.Dbxref]])
     kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.Feature]])
     kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.Fragment]])
@@ -323,6 +322,7 @@ class ADAMKryoRegistrator extends KryoRegistrator with Logging {
     kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.NucleotideContigFragment]])
     kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.Read]])
     kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.RecordGroup]])
+    kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.Reference]])
     kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.Sample]])
     kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.Sequence]])
     kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.Slice]])

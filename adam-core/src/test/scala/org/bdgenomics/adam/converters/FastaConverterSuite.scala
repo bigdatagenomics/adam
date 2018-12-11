@@ -35,9 +35,9 @@ class FastaConverterSuite extends ADAMFunSuite {
     val descLines = FastaConverter.getDescriptionLines(headerLines)
     val headerIndices: List[Long] = descLines.keys.toList
 
-    assert(0 === FastaConverter.findContigIndex(252366300L, headerIndices))
-    assert(892647244L === FastaConverter.findContigIndex(892647249L, headerIndices))
-    assert(252366306L === FastaConverter.findContigIndex(498605720L, headerIndices))
+    assert(0 === FastaConverter.findReferenceIndex(252366300L, headerIndices))
+    assert(892647244L === FastaConverter.findReferenceIndex(892647249L, headerIndices))
+    assert(252366306L === FastaConverter.findReferenceIndex(498605720L, headerIndices))
   }
 
   test("convert a single record without naming information") {

@@ -22,15 +22,15 @@ import com.esotericsoftware.kryo.io.{ Input, Output }
 import org.bdgenomics.formats.avro._
 
 /**
- * A sort order that orders all positions lexicographically by contig and
- * numerically within a single contig.
+ * A sort order that orders all positions lexicographically by reference and
+ * numerically within a single reference.
  */
 object PositionOrdering extends ReferenceOrdering[ReferencePosition] {
 }
 
 /**
- * A sort order that orders all given positions lexicographically by contig and
- * numerically within a single contig, and puts all non-provided positions at
+ * A sort order that orders all given positions lexicographically by reference and
+ * numerically within a single reference, and puts all non-provided positions at
  * the end. An extension of PositionOrdering to Optional data.
  *
  * @see PositionOrdering
@@ -64,7 +64,7 @@ object ReferencePosition extends Serializable {
    * @see fivePrime
    */
   def apply(record: AlignmentRecord): ReferencePosition = {
-    new ReferencePosition(record.getContigName, record.getStart)
+    new ReferencePosition(record.getReferenceName, record.getStart)
   }
 
   /**
@@ -77,9 +77,9 @@ object ReferencePosition extends Serializable {
   def apply(variant: Variant): ReferencePosition = {
     // see ADAM-1959, VCF 0 = telomere
     if (variant.getStart != -1) {
-      new ReferencePosition(variant.getContigName, variant.getStart)
+      new ReferencePosition(variant.getReferenceName, variant.getStart)
     } else {
-      new ReferencePosition(variant.getContigName, 0L)
+      new ReferencePosition(variant.getReferenceName, 0L)
     }
   }
 
@@ -90,31 +90,31 @@ object ReferencePosition extends Serializable {
    * @return The reference position of this genotype.
    */
   def apply(genotype: Genotype): ReferencePosition = {
-    val contigNameSet = Seq(Option(genotype.getContigName), Option(genotype.getVariant.getContigName))
+    val referenceNameSet = Seq(Option(genotype.getReferenceName), Option(genotype.getVariant.getReferenceName))
       .flatten
       .toSet
     val startSet = Seq(Option(genotype.getStart), Option(genotype.getVariant.getStart))
       .flatten
       .toSet
-    require(contigNameSet.nonEmpty, "Genotype has no contig name: %s".format(genotype))
-    require(contigNameSet.size == 1, "Genotype has multiple contig names: %s, %s".format(
-      contigNameSet, genotype))
+    require(referenceNameSet.nonEmpty, "Genotype has no reference name: %s".format(genotype))
+    require(referenceNameSet.size == 1, "Genotype has multiple reference names: %s, %s".format(
+      referenceNameSet, genotype))
     require(startSet.nonEmpty, "Genotype has no start: %s".format(genotype))
     require(startSet.size == 1, "Genotype has multiple starts: %s, %s".format(
       startSet, genotype))
 
     // see ADAM-1959, VCF 0 = telomere
     if (startSet.head != -1) {
-      new ReferencePosition(contigNameSet.head, startSet.head)
+      new ReferencePosition(referenceNameSet.head, startSet.head)
     } else {
-      new ReferencePosition(contigNameSet.head, 0L)
+      new ReferencePosition(referenceNameSet.head, 0L)
     }
   }
 
   /**
    * Convenience method for building a ReferencePosition.
    *
-   * @param referenceName The name of the reference contig this locus exists on.
+   * @param referenceName The name of the reference sequence this locus exists on.
    * @param pos The position of this locus.
    */
   def apply(referenceName: String, pos: Long): ReferencePosition = {
@@ -124,7 +124,7 @@ object ReferencePosition extends Serializable {
   /**
    * Convenience method for building a ReferencePosition.
    *
-   * @param referenceName The name of the reference contig this locus exists on.
+   * @param referenceName The name of the reference sequence this locus exists on.
    * @param pos The position of this locus.
    * @param strand The strand that this locus is on.
    */
@@ -136,7 +136,7 @@ object ReferencePosition extends Serializable {
 /**
  * A single genomic locus.
  *
- * @param referenceName The name of the reference contig this locus exists on.
+ * @param referenceName The name of the reference sequence this locus exists on.
  * @param pos The position of this locus.
  * @param strand The strand that this locus is on.
  */

@@ -87,7 +87,7 @@ private[adam] class ConsensusGeneratorFromKnowns(rdd: RDD[Variant],
       // get region
       val start = reads.map(_.record.getStart).min
       val end = reads.map(_.getEnd).max
-      val refId = reads.head.record.getContigName
+      val refId = reads.head.record.getReferenceName
 
       val region = ReferenceRegion(refId, start, end + 1)
 

@@ -101,11 +101,11 @@ private[adam] class SAMRecordConverter extends Serializable with Logging {
       // This prevents looking up a -1 in the sequence dictionary
       val readReference: Int = samRecord.getReferenceIndex
       if (readReference != SAMRecord.NO_ALIGNMENT_REFERENCE_INDEX) {
-        builder.setContigName(samRecord.getReferenceName)
+        builder.setReferenceName(samRecord.getReferenceName)
 
         // set read alignment flag
         val start: Int = samRecord.getAlignmentStart
-        assert(start != 0, "Start cannot equal 0 if contig is set.")
+        assert(start != 0, "Start cannot equal 0 if reference is set.")
         builder.setStart(start - 1L)
 
         // set OP and OC flags, if applicable
@@ -146,7 +146,7 @@ private[adam] class SAMRecordConverter extends Serializable with Logging {
       val mateReference: Int = samRecord.getMateReferenceIndex
 
       if (mateReference != SAMRecord.NO_ALIGNMENT_REFERENCE_INDEX) {
-        builder.setMateContigName(samRecord.getMateReferenceName)
+        builder.setMateReferenceName(samRecord.getMateReferenceName)
 
         val mateStart = samRecord.getMateAlignmentStart
         if (mateStart > 0) {

@@ -62,11 +62,12 @@ class VariantContextDatasetSuite extends ADAMFunSuite {
   val tempDir = Files.createTempDir()
 
   def variants: VariantContextDataset = {
-    val contig = Contig.newBuilder.setContigName("chr11")
-      .setContigLength(249250621L)
+    val reference = Reference.newBuilder
+      .setName("chr11")
+      .setLength(249250621L)
       .build
     val v0 = Variant.newBuilder
-      .setContigName("chr11")
+      .setReferenceName("chr11")
       .setStart(17409572L)
       .setEnd(17409573L)
       .setReferenceAllele("T")
@@ -83,7 +84,7 @@ class VariantContextDatasetSuite extends ADAMFunSuite {
 
     VariantContextDataset(sc.parallelize(List(
       VariantContext(v0, Seq(g0))), 1),
-      SequenceDictionary.fromAvro(Seq(contig)), Seq(Sample.newBuilder()
+      SequenceDictionary.fromAvro(Seq(reference)), Seq(Sample.newBuilder()
         .setSampleId("NA12878")
         .build),
       DefaultHeaderLines.allHeaderLines)
@@ -119,7 +120,7 @@ class VariantContextDatasetSuite extends ADAMFunSuite {
     assert(vcRdd.rdd.count === 1)
 
     val variant = vcRdd.rdd.first.variant.variant
-    assert(variant.getContigName === "chr11")
+    assert(variant.getReferenceName === "chr11")
     assert(variant.getStart === 17409572)
     assert(variant.getReferenceAllele === "T")
     assert(variant.getAlternateAllele === "C")

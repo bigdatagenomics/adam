@@ -293,7 +293,7 @@ private[read] class RealignIndels(
         // get reference from reads
         val refStart = reads.map(_.getStart).min
         val refEnd = reads.map(_.getEnd).max
-        val refRegion = ReferenceRegion(reads.head.record.getContigName, refStart, refEnd)
+        val refRegion = ReferenceRegion(reads.head.record.getReferenceName, refStart, refEnd)
         val reference = optBcastReferenceFile.fold(getReferenceFromReads(reads.map(r => new RichAlignmentRecord(r)))._1)(brf => GetReferenceFromFile.time { brf.value.extract(refRegion) })
 
         // preprocess reads and get consensus

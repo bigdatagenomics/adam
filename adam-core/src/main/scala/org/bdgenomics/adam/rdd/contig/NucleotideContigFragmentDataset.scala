@@ -23,6 +23,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.api.java.function.{ Function => JFunction }
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.bdgenomics.adam.converters.FragmentConverter
 import org.bdgenomics.adam.models.{
@@ -128,7 +129,7 @@ case class ParquetUnboundNucleotideContigFragmentDataset private[rdd] (
   lazy val dataset = {
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
-    sqlContext.read.parquet(parquetFilename).as[NucleotideContigFragmentProduct]
+    sqlContext.read.parquet(parquetFilename).withColumnRenamed("referenceName", "contigName").as[NucleotideContigFragmentProduct]
   }
 
   def replaceSequences(
@@ -255,6 +256,23 @@ sealed abstract class NucleotideContigFragmentDataset extends AvroGenomicDataset
     DatasetBoundNucleotideContigFragmentDataset(tFn.call(dataset), sequences)
   }
 
+  override def saveAsPartitionedParquet(pathName: String,
+                                        compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
+                                        partitionSize: Int = 1000000) {
+    log.info("Saving directly as Hive-partitioned Parquet from SQL. " +
+      "Options other than compression codec are ignored.")
+    val df = toDF()
+      .withColumnRenamed("contigName", "referenceName")
+    df.withColumn("positionBin", floor(df("start") / partitionSize))
+      .write
+      .partitionBy("referenceName", "positionBin")
+      .format("parquet")
+      .option("spark.sql.parquet.compression.codec", compressCodec.toString.toLowerCase())
+      .save(pathName)
+    writePartitionedParquetFlag(pathName, partitionSize)
+    saveMetadata(pathName)
+  }
+
   /**
    * Save nucleotide contig fragments as Parquet or FASTA.
    *
@@ -349,7 +367,6 @@ sealed abstract class NucleotideContigFragmentDataset extends AvroGenomicDataset
    * From a set of contigs, returns the base sequence that corresponds to a region of the reference.
    *
    * @throws UnsupportedOperationException Throws exception if query region is not found.
-   *
    * @param region Reference region over which to get sequence.
    * @return String of bases corresponding to reference sequence.
    */

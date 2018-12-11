@@ -49,7 +49,7 @@ object GenomeFileReader {
           genbank = None,
           assembly = None,
           species = None,
-          referenceIndex = None
+          index = None
         )
       } else {
         SequenceRecord(tokens(0), tokens(1).toLong)

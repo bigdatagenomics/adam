@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.rdd.contig
 
 import org.bdgenomics.adam.models.ReferenceRegion
-import org.bdgenomics.formats.avro.{ Contig, NucleotideContigFragment }
+import org.bdgenomics.formats.avro.NucleotideContigFragment
 import org.scalatest.FunSuite
 
 class FlankReferenceFragmentsSuite extends FunSuite {

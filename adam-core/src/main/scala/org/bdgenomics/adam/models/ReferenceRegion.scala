@@ -59,8 +59,8 @@ trait OptionalReferenceOrdering[T <: ReferenceRegion] extends Ordering[Option[T]
 }
 
 /**
- * A sort order that orders all given regions lexicographically by contig and
- * numerically within a single contig, and puts all non-provided regions at
+ * A sort order that orders all given regions lexicographically by reference and
+ * numerically within a single reference sequence, and puts all non-provided regions at
  * the end. Regions are compared by start position first. If start positions
  * are equal, then we compare by end position.
  */
@@ -68,8 +68,8 @@ object RegionOrdering extends ReferenceOrdering[ReferenceRegion] {
 }
 
 /**
- * A sort order that orders all given regions lexicographically by contig and
- * numerically within a single contig, and puts all non-provided regions at
+ * A sort order that orders all given regions lexicographically by reference and
+ * numerically within a single reference sequence, and puts all non-provided regions at
  * the end. An extension of PositionOrdering to Optional data.
  *
  * @see PositionOrdering
@@ -106,32 +106,32 @@ object ReferenceRegion {
         if (colonIdx == -1) {
           all(token)
         } else {
-          val contigName = token.substring(0, colonIdx)
+          val referenceName = token.substring(0, colonIdx)
           val dashIdx = token.lastIndexOf("-")
           if (dashIdx == -1) {
             if (token.endsWith("+")) {
-              toEnd(contigName, token.substring(colonIdx + 1, token.length() - 1).toLong)
+              toEnd(referenceName, token.substring(colonIdx + 1, token.length() - 1).toLong)
             } else {
               val position = token.substring(colonIdx + 1).toLong
-              apply(contigName, position, position + 1L)
+              apply(referenceName, position, position + 1L)
             }
           } else {
             val start = token.substring(colonIdx + 1, dashIdx).toLong
             val end = token.substring(dashIdx + 1).toLong
-            apply(contigName, start, end)
+            apply(referenceName, start, end)
           }
         }
       })
   }
 
   /**
-   * Creates a reference region that starts at the beginning of a contig.
+   * Creates a reference region that starts at the beginning of a reference sequence.
    *
-   * @param referenceName The name of the reference contig that this region is
+   * @param referenceName The name of the reference sequence that this region is
    *   on.
    * @param end The end position for this region.
    * @param strand The strand of the genome that this region exists on.
-   * @return Returns a reference region that goes from the start of a contig to
+   * @return Returns a reference region that goes from the start of a reference sequence to
    *   a user provided end point.
    */
   def fromStart(referenceName: String,
@@ -143,12 +143,12 @@ object ReferenceRegion {
   /**
    * Creates a reference region that has an open end point.
    *
-   * @param referenceName The name of the reference contig that this region is
+   * @param referenceName The name of the reference sequence that this region is
    *   on.
    * @param start The start position for this region.
    * @param strand The strand of the genome that this region exists on.
    * @return Returns a reference region that goes from a user provided starting
-   *   point to the end of a contig.
+   *   point to the end of a reference sequence.
    */
   def toEnd(referenceName: String,
             start: Long,
@@ -157,11 +157,11 @@ object ReferenceRegion {
   }
 
   /**
-   * Creates a reference region that covers the entirety of a contig.
+   * Creates a reference region that covers the entirety of a reference sequence.
    *
-   * @param referenceName The name of the reference contig to cover.
+   * @param referenceName The name of the reference sequence to cover.
    * @param strand The strand of the genome that this region exists on.
-   * @return Returns a reference region that covers the entirety of a contig.
+   * @return Returns a reference region that covers the entirety of a reference sequence.
    */
   def all(referenceName: String,
           strand: Strand = Strand.INDEPENDENT): ReferenceRegion = {
@@ -191,11 +191,11 @@ object ReferenceRegion {
    */
   def apply(genotype: Genotype): ReferenceRegion = {
     if (genotype.getStart != -1) {
-      ReferenceRegion(genotype.getContigName,
+      ReferenceRegion(genotype.getReferenceName,
         genotype.getStart,
         genotype.getEnd)
     } else {
-      ReferenceRegion(genotype.getContigName,
+      ReferenceRegion(genotype.getReferenceName,
         0L,
         1L)
     }
@@ -209,9 +209,9 @@ object ReferenceRegion {
    */
   def apply(variant: Variant): ReferenceRegion = {
     if (variant.getStart != -1L) {
-      ReferenceRegion(variant.getContigName, variant.getStart, variant.getEnd)
+      ReferenceRegion(variant.getReferenceName, variant.getStart, variant.getEnd)
     } else {
-      ReferenceRegion(variant.getContigName, 0L, 1L)
+      ReferenceRegion(variant.getReferenceName, 0L, 1L)
     }
   }
 
@@ -230,7 +230,7 @@ object ReferenceRegion {
   private def checkRead(record: AlignmentRecord) {
     require(record.getReadMapped,
       "Cannot build reference region for unmapped read %s.".format(record))
-    require(record.getContigName != null &&
+    require(record.getReferenceName != null &&
       record.getStart != null &&
       record.getEnd != null,
       "Read %s contains required fields that are null.".format(record))
@@ -249,7 +249,7 @@ object ReferenceRegion {
    */
   def unstranded(record: AlignmentRecord): ReferenceRegion = {
     checkRead(record)
-    ReferenceRegion(record.getContigName, record.getStart, record.getEnd)
+    ReferenceRegion(record.getReferenceName, record.getStart, record.getEnd)
   }
 
   /**
@@ -273,7 +273,7 @@ object ReferenceRegion {
         case Some(true)  => Strand.REVERSE
         case Some(false) => Strand.FORWARD
       }
-    new ReferenceRegion(record.getContigName,
+    new ReferenceRegion(record.getReferenceName,
       record.getStart,
       record.getEnd,
       strand = strand)
@@ -311,7 +311,7 @@ object ReferenceRegion {
   }
 
   private def checkFeature(record: Feature) {
-    require(record.getContigName != null &&
+    require(record.getReferenceName != null &&
       record.getStart != null &&
       record.getEnd != null,
       "Feature %s contains required fields that are null.".format(record))
@@ -327,7 +327,7 @@ object ReferenceRegion {
    */
   def unstranded(feature: Feature): ReferenceRegion = {
     checkFeature(feature)
-    new ReferenceRegion(feature.getContigName, feature.getStart, feature.getEnd)
+    new ReferenceRegion(feature.getReferenceName, feature.getStart, feature.getEnd)
   }
 
   /**
@@ -345,7 +345,7 @@ object ReferenceRegion {
     checkFeature(feature)
     require(feature.getStrand != null,
       "Strand is not defined in feature %s.".format(feature))
-    new ReferenceRegion(feature.getContigName,
+    new ReferenceRegion(feature.getReferenceName,
       feature.getStart,
       feature.getEnd,
       strand = feature.getStrand)
@@ -358,7 +358,7 @@ object ReferenceRegion {
    * @return Extracted ReferenceRegion
    */
   def apply(coverage: Coverage): ReferenceRegion = {
-    new ReferenceRegion(coverage.contigName, coverage.start, coverage.end)
+    new ReferenceRegion(coverage.referenceName, coverage.start, coverage.end)
   }
 
   /**
@@ -684,10 +684,10 @@ case class ReferenceRegion(
   }
 
   /**
-   * Determines if two regions are on the same contig.
+   * Determines if two regions are on the same reference sequence.
    *
    * @param other The other region.
-   * @return True if the two are on the same reference name, false otherwise.
+   * @return True if the two are on the same reference sequence, false otherwise.
    */
   @inline final def sameReferenceName(other: ReferenceRegion): Boolean = {
     referenceName == other.referenceName
@@ -747,7 +747,7 @@ case class ReferenceRegion(
   def toPredicate: FilterPredicate = {
     ((LongColumn("end") > start) &&
       (LongColumn("start") <= end) &&
-      (BinaryColumn("contigName") === referenceName))
+      (BinaryColumn("referenceName") === referenceName))
   }
 
   override def hashCode: Int = {

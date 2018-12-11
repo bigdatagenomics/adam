@@ -43,7 +43,7 @@ private[read] object DuplicateMetrics {
         b2i(f(record)),
         b2i(f(record) && record.getReadMapped && record.getMateMapped),
         b2i(f(record) && record.getReadMapped && !record.getMateMapped),
-        b2i(f(record) && (record.getContigName != record.getMateContigName))
+        b2i(f(record) && (record.getReferenceName != record.getMateReferenceName))
       )
     }
     (duplicateMetrics(isPrimary), duplicateMetrics(isSecondary))
@@ -96,7 +96,7 @@ private[read] object FlagStat {
     rdd.map {
       p =>
         val mateMappedToDiffChromosome =
-          p.getReadPaired && p.getReadMapped && p.getMateMapped && (p.getContigName != p.getMateContigName)
+          p.getReadPaired && p.getReadMapped && p.getMateMapped && (p.getReferenceName != p.getMateReferenceName)
         val (primaryDuplicates, secondaryDuplicates) = DuplicateMetrics(p)
         new FlagStatMetrics(
           1,

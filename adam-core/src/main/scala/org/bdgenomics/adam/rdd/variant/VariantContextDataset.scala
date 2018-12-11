@@ -59,7 +59,7 @@ import org.bdgenomics.adam.rdd.{
 }
 import org.bdgenomics.adam.sql.{ VariantContext => VariantContextProduct }
 import org.bdgenomics.adam.util.{ FileMerger, FileExtensions }
-import org.bdgenomics.formats.avro.{ Contig, Sample }
+import org.bdgenomics.formats.avro.Sample
 import org.bdgenomics.utils.misc.Logging
 import org.bdgenomics.utils.interval.array.{
   IntervalArray,

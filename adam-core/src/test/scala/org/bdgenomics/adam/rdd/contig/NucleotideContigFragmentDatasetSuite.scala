@@ -20,6 +20,8 @@ package org.bdgenomics.adam.rdd.contig
 import java.io.File
 
 import com.google.common.io.Files
+import org.apache.parquet.filter2.dsl.Dsl._
+import org.apache.parquet.filter2.predicate.FilterPredicate
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.bdgenomics.adam.models._
@@ -56,7 +58,7 @@ object NucleotideContigFragmentDatasetSuite extends Serializable {
 
   def featFn(ncf: NucleotideContigFragment): Feature = {
     Feature.newBuilder
-      .setContigName(ncf.getContigName)
+      .setReferenceName(ncf.getContigName)
       .setStart(ncf.getStart)
       .setEnd(ncf.getEnd)
       .build
@@ -70,7 +72,7 @@ object NucleotideContigFragmentDatasetSuite extends Serializable {
 
   def genFn(ncf: NucleotideContigFragment): Genotype = {
     Genotype.newBuilder
-      .setContigName(ncf.getContigName)
+      .setReferenceName(ncf.getContigName)
       .setStart(ncf.getStart)
       .setEnd(ncf.getEnd)
       .build
@@ -78,7 +80,7 @@ object NucleotideContigFragmentDatasetSuite extends Serializable {
 
   def readFn(ncf: NucleotideContigFragment): AlignmentRecord = {
     AlignmentRecord.newBuilder
-      .setContigName(ncf.getContigName)
+      .setReferenceName(ncf.getContigName)
       .setStart(ncf.getStart)
       .setEnd(ncf.getEnd)
       .build
@@ -86,7 +88,7 @@ object NucleotideContigFragmentDatasetSuite extends Serializable {
 
   def varFn(ncf: NucleotideContigFragment): Variant = {
     Variant.newBuilder
-      .setContigName(ncf.getContigName)
+      .setReferenceName(ncf.getContigName)
       .setStart(ncf.getStart)
       .setEnd(ncf.getEnd)
       .build
@@ -94,7 +96,7 @@ object NucleotideContigFragmentDatasetSuite extends Serializable {
 
   def vcFn(ncf: NucleotideContigFragment): VariantContext = {
     VariantContext(Variant.newBuilder
-      .setContigName(ncf.getContigName)
+      .setReferenceName(ncf.getContigName)
       .setStart(ncf.getStart)
       .setEnd(ncf.getEnd)
       .build)
@@ -182,9 +184,6 @@ class NucleotideContigFragmentDatasetSuite extends ADAMFunSuite {
   }
 
   sparkTest("generate sequence dict from fasta") {
-
-    val contig1 = Contig.newBuilder
-      .build
 
     val ctg0 = NucleotideContigFragment.newBuilder()
       .setContigName("chr0")
@@ -702,7 +701,13 @@ class NucleotideContigFragmentDatasetSuite extends ADAMFunSuite {
     val fragments2 = sc.loadContigFragments(output)
     assert(fragments2.rdd.count === 8)
     val fragments3 = sc.loadContigFragments(output,
-      optPredicate = Some(ReferenceRegion("HLA-DQB1*05:01:01:02", 500L, 1500L).toPredicate))
+      optPredicate = Some(
+        // ReferenceRegion.toPredicate uses referenceName instead of contigName
+        (BinaryColumn("contigName") === "HLA-DQB1*05:01:01:02") &&
+          (LongColumn("end") > 500L) &&
+          (LongColumn("start") <= 1500L)
+      )
+    )
     assert(fragments3.rdd.count === 2)
   }
 

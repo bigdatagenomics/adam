@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.models
 
-import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
+import org.bdgenomics.formats.avro.{ AlignmentRecord, Reference }
 import org.scalatest.FunSuite
 
 class NonoverlappingRegionsSuite extends FunSuite {
@@ -92,14 +92,14 @@ class NonoverlappingRegionsSuite extends FunSuite {
   }
 
   test("ADAMRecords return proper references") {
-    val contig = Contig.newBuilder
-      .setContigName("chr1")
-      .setContigLength(5L)
-      .setReferenceURL("test://chrom1")
+    val reference = Reference.newBuilder
+      .setName("chr1")
+      .setLength(5L)
+      .setSourceUri("test://chrom1")
       .build
 
     val built = AlignmentRecord.newBuilder()
-      .setContigName(contig.getContigName)
+      .setReferenceName(reference.getName)
       .setStart(1L)
       .setReadMapped(true)
       .setCigar("1M")

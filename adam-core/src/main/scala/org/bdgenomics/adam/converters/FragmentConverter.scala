@@ -114,18 +114,18 @@ private[adam] object FragmentConverter extends Serializable {
   }
 
   /**
-   * Converts a contig assembly into one or more reads.
+   * Converts a reference assembly into one or more reads.
    *
    * Takes in a reduced key value pair containing merged FragmentCollectors.
    * The strings that are in this FragmentCollector are used to create reads.
-   * The Contig key is used to populate the metadata for the contig.
+   * The reference key is used to populate the metadata for the reference.
    *
-   * @param kv (Contig metadata, FragmentCollector) key value pair.
+   * @param kv (Reference metadata, FragmentCollector) key value pair.
    * @return Returns one alignment record per sequence in the collector.
    */
   private[converters] def convertFragment(kv: (String, FragmentCollector)): Seq[AlignmentRecord] = {
     // extract kv pair
-    val (contigName, fragment) = kv
+    val (referenceName, fragment) = kv
 
     // extract the fragment string and region
     fragment.fragments.map(p => {
@@ -133,7 +133,7 @@ private[adam] object FragmentConverter extends Serializable {
 
       // build record
       AlignmentRecord.newBuilder()
-        .setContigName(contigName)
+        .setReferenceName(referenceName)
         .setStart(fragmentRegion.start)
         .setEnd(fragmentRegion.end)
         .setSequence(fragmentString)

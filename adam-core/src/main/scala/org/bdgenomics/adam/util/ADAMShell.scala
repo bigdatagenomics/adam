@@ -50,7 +50,7 @@ object ADAMShell {
 
   /** Alignment record headers. */
   val alignmentHeaders = Array(
-    new ASCIITableHeader("Contig Name"),
+    new ASCIITableHeader("Reference Name"),
     new ASCIITableHeader("Start"),
     new ASCIITableHeader("End"),
     new ASCIITableHeader("Read Name"),
@@ -83,7 +83,7 @@ object ADAMShell {
     val header = alignmentHeaders ++ keys.map(key => new ASCIITableHeader(key))
 
     val rows: Array[Array[String]] = alignments.map(a => Array[String](
-      a.getContigName(),
+      a.getReferenceName(),
       a.getStart().toString,
       a.getEnd().toString,
       Option(a.getReadName()).getOrElse(""),
@@ -96,7 +96,7 @@ object ADAMShell {
 
   /** Feature headers. */
   val featureHeaders = Array(
-    new ASCIITableHeader("Contig Name"),
+    new ASCIITableHeader("Reference Name"),
     new ASCIITableHeader("Start"),
     new ASCIITableHeader("End"),
     new ASCIITableHeader("Strand"),
@@ -127,7 +127,7 @@ object ADAMShell {
     val header = featureHeaders ++ keys.map(key => new ASCIITableHeader(key))
 
     val rows: Array[Array[String]] = features.map(f => Array[String](
-      f.getContigName(),
+      f.getReferenceName(),
       f.getStart().toString,
       f.getEnd().toString,
       f.getStrand().toString,
@@ -153,7 +153,7 @@ object ADAMShell {
 
   /** Genotype headers. */
   val genotypeHeaders = Array(
-    new ASCIITableHeader("Contig Name"),
+    new ASCIITableHeader("Reference Name"),
     new ASCIITableHeader("Start"),
     new ASCIITableHeader("End"),
     new ASCIITableHeader("Ref", Alignment.Left),
@@ -176,7 +176,7 @@ object ADAMShell {
     val header = genotypeHeaders ++ keys.map(key => new ASCIITableHeader(key))
 
     val rows: Array[Array[String]] = genotypes.map(g => Array[String](
-      g.getContigName(),
+      g.getReferenceName(),
       g.getStart().toString,
       g.getEnd().toString,
       g.getVariant().getReferenceAllele(),
@@ -215,7 +215,7 @@ object ADAMShell {
     )
 
     val rows: Array[Array[String]] = genotypes.map(g => Array[String](
-      g.getContigName(),
+      g.getReferenceName(),
       g.getStart().toString,
       g.getEnd().toString,
       g.getVariant().getReferenceAllele(),
@@ -262,7 +262,7 @@ object ADAMShell {
 
   /** Variant headers. */
   val variantHeaders = Array(
-    new ASCIITableHeader("Contig Name"),
+    new ASCIITableHeader("Reference Name"),
     new ASCIITableHeader("Start"),
     new ASCIITableHeader("End"),
     new ASCIITableHeader("Ref", Alignment.Left),
@@ -286,7 +286,7 @@ object ADAMShell {
     )
 
     val rows: Array[Array[String]] = variants.map(v => Array[String](
-      v.getContigName(),
+      v.getReferenceName(),
       v.getStart().toString,
       v.getEnd().toString,
       v.getReferenceAllele(),
@@ -324,7 +324,7 @@ object ADAMShell {
     val header = variantHeaders ++ keys.map(key => new ASCIITableHeader(key))
 
     val rows: Array[Array[String]] = variants.map(v => Array[String](
-      v.getContigName(),
+      v.getReferenceName(),
       v.getStart().toString,
       v.getEnd().toString,
       v.getReferenceAllele(),

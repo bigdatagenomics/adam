@@ -41,7 +41,7 @@ class ConsensusGeneratorFromKnownsSuite extends ADAMFunSuite {
     val read = AlignmentRecord.newBuilder
       .setStart(1L)
       .setEnd(2L)
-      .setContigName("notAContig")
+      .setReferenceName("notAContig")
       .build
     assert(c.findConsensus(Iterable(new RichAlignmentRecord(read))).isEmpty)
   }
@@ -51,7 +51,7 @@ class ConsensusGeneratorFromKnownsSuite extends ADAMFunSuite {
     val read = AlignmentRecord.newBuilder
       .setStart(19189L)
       .setEnd(19191L)
-      .setContigName("2")
+      .setReferenceName("2")
       .build
     val consensuses = c.findConsensus(Iterable(new RichAlignmentRecord(read)))
     assert(consensuses.size === 1)

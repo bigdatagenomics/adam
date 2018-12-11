@@ -45,6 +45,6 @@ class TransformFeaturesSuite extends ADAMFunSuite {
     val converted = sc.loadFeatures(outputPath).rdd.collect
 
     assert(converted.size === 10)
-    assert(converted.find(_.getContigName != "chr1").isEmpty)
+    assert(converted.find(_.getReferenceName != "chr1").isEmpty)
   }
 }

@@ -20,37 +20,37 @@ package org.bdgenomics.adam.rdd.read
 import htsjdk.samtools.ValidationStringency
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.util.{ ADAMFunSuite, ReferenceContigMap }
-import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig, NucleotideContigFragment }
+import org.bdgenomics.formats.avro.{ AlignmentRecord, NucleotideContigFragment, Reference }
 
 class MDTaggingSuite extends ADAMFunSuite {
   val chr1 =
-    Contig
+    Reference
       .newBuilder()
-      .setContigName("chr1")
-      .setContigLength(100L)
+      .setName("chr1")
+      .setLength(100L)
       .build()
   val chr2 =
-    Contig
+    Reference
       .newBuilder()
-      .setContigName("chr2")
-      .setContigLength(100L)
+      .setName("chr2")
+      .setLength(100L)
       .build()
 
-  def makeFrags(frags: (Contig, Int, String)*): RDD[NucleotideContigFragment] =
+  def makeFrags(frags: (Reference, Int, String)*): RDD[NucleotideContigFragment] =
     sc.parallelize(
       for {
-        (contig, start, seq) <- frags
+        (reference, start, seq) <- frags
       } yield (
-        NucleotideContigFragment.newBuilder()
-        .setContigLength(contig.getContigLength)
-        .setContigName(contig.getContigName)
+        NucleotideContigFragment.newBuilder
+        .setContigLength(reference.getLength)
+        .setContigName(reference.getName)
         .setStart(start.toLong)
         .setEnd(start.toLong + seq.length)
         .setSequence(seq).build()
       )
     )
 
-  def makeReads(reads: ((Contig, Int, Int, String, String), String)*): (Map[Int, String], RDD[AlignmentRecord]) = {
+  def makeReads(reads: ((Reference, Int, Int, String, String), String)*): (Map[Int, String], RDD[AlignmentRecord]) = {
     val (map, rs) =
       (for {
         (((contig, start, end, seq, cigar), mdTag), id) <- reads.zipWithIndex
@@ -58,7 +58,7 @@ class MDTaggingSuite extends ADAMFunSuite {
         id -> mdTag,
         AlignmentRecord
         .newBuilder
-        .setContigName(contig.getContigName)
+        .setReferenceName(contig.getName)
         .setStart(start.toLong)
         .setEnd(end.toLong)
         .setSequence(seq)
@@ -71,7 +71,7 @@ class MDTaggingSuite extends ADAMFunSuite {
     (map.toMap, sc.parallelize(rs))
   }
 
-  def testReads(fs: (Contig, Int, String)*)(rs: ((Contig, Int, Int, String, String), String)*)(accumulators: (Long, Long, Long, Long)): Unit = {
+  def testReads(fs: (Reference, Int, String)*)(rs: ((Reference, Int, Int, String, String), String)*)(accumulators: (Long, Long, Long, Long)): Unit = {
     val (expectedReadMap, reads) = makeReads(rs: _*)
 
     def check(mdTagging: MDTagging): Unit = {

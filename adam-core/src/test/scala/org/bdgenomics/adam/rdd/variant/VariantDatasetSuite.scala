@@ -47,7 +47,7 @@ import org.bdgenomics.formats.avro._
 object VariantDatasetSuite extends Serializable {
 
   def covFn(v: Variant): Coverage = {
-    Coverage(v.getContigName,
+    Coverage(v.getReferenceName,
       v.getStart,
       v.getEnd,
       1)
@@ -59,7 +59,7 @@ object VariantDatasetSuite extends Serializable {
 
   def featFn(v: Variant): Feature = {
     Feature.newBuilder
-      .setContigName(v.getContigName)
+      .setReferenceName(v.getReferenceName)
       .setStart(v.getStart)
       .setEnd(v.getEnd)
       .build
@@ -71,7 +71,7 @@ object VariantDatasetSuite extends Serializable {
 
   def fragFn(v: Variant): Fragment = {
     Fragment.newBuilder
-      .setName(v.getContigName)
+      .setName(v.getReferenceName)
       .build
   }
 
@@ -81,7 +81,7 @@ object VariantDatasetSuite extends Serializable {
 
   def ncfFn(v: Variant): NucleotideContigFragment = {
     NucleotideContigFragment.newBuilder
-      .setContigName(v.getContigName)
+      .setContigName(v.getReferenceName)
       .build
   }
 
@@ -91,7 +91,7 @@ object VariantDatasetSuite extends Serializable {
 
   def readFn(v: Variant): AlignmentRecord = {
     AlignmentRecord.newBuilder
-      .setContigName(v.getContigName)
+      .setReferenceName(v.getReferenceName)
       .setStart(v.getStart)
       .setEnd(v.getEnd)
       .build
@@ -103,7 +103,7 @@ object VariantDatasetSuite extends Serializable {
 
   def genFn(v: Variant): Genotype = {
     Genotype.newBuilder
-      .setContigName(v.getContigName)
+      .setReferenceName(v.getReferenceName)
       .setStart(v.getStart)
       .setEnd(v.getEnd)
       .build
@@ -115,7 +115,7 @@ object VariantDatasetSuite extends Serializable {
 
   def vcFn(v: Variant): VariantContext = {
     VariantContext(Variant.newBuilder
-      .setContigName(v.getContigName)
+      .setReferenceName(v.getReferenceName)
       .setStart(v.getStart)
       .setEnd(v.getEnd)
       .build)
@@ -368,7 +368,7 @@ class VariantDatasetSuite extends ADAMFunSuite {
 
     val vc = vcs.head
     assert(vc.position.referenceName === "1")
-    assert(vc.variant.variant.contigName === "1")
+    assert(vc.variant.variant.getReferenceName === "1")
     assert(vc.genotypes.isEmpty)
   }
 

@@ -55,7 +55,7 @@ class TwoBitFileSuite extends ADAMFunSuite {
     val dict = twoBitFile.sequences
     assert(dict.records.length == 1)
     assert(dict.records.head.length == 16571)
-    assert(dict.records.head.referenceIndex.isDefined)
-    assert(dict.records.head.referenceIndex.get === 0)
+    assert(dict.records.head.index.isDefined)
+    assert(dict.records.head.index.get === 0)
   }
 }

@@ -18,17 +18,17 @@
 package org.bdgenomics.adam.models
 
 import org.scalatest.FunSuite
-import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig, Genotype, Variant }
+import org.bdgenomics.formats.avro.{ AlignmentRecord, Genotype, Variant, Reference }
 
 class ReferencePositionSuite extends FunSuite {
 
   test("create reference position from mapped read") {
-    val contig = Contig.newBuilder
-      .setContigName("chr1")
+    val reference = Reference.newBuilder
+      .setName("chr1")
       .build
 
     val read = AlignmentRecord.newBuilder()
-      .setContigName(contig.getContigName)
+      .setReferenceName(reference.getName)
       .setStart(1L)
       .setReadMapped(true)
       .build()
@@ -41,7 +41,7 @@ class ReferencePositionSuite extends FunSuite {
 
   test("create reference position from variant") {
     val variant = Variant.newBuilder()
-      .setContigName("chr10")
+      .setReferenceName("chr10")
       .setReferenceAllele("A")
       .setAlternateAllele("T")
       .setStart(10L)
@@ -56,7 +56,7 @@ class ReferencePositionSuite extends FunSuite {
   test("create reference position from genotype") {
     val variant = Variant.newBuilder()
       .setStart(100L)
-      .setContigName("chr10")
+      .setReferenceName("chr10")
       .setReferenceAllele("A")
       .setAlternateAllele("T")
       .build()
@@ -64,7 +64,7 @@ class ReferencePositionSuite extends FunSuite {
       .setVariant(variant)
       .setStart(100L)
       .setEnd(101L)
-      .setContigName("chr10")
+      .setReferenceName("chr10")
       .setSampleId("NA12878")
       .build()
 
@@ -76,7 +76,7 @@ class ReferencePositionSuite extends FunSuite {
 
   test("create reference position from variant starting at vcf 0") {
     val variant = Variant.newBuilder()
-      .setContigName("chr10")
+      .setReferenceName("chr10")
       .setStart(0L)
       .build()
 
@@ -89,12 +89,12 @@ class ReferencePositionSuite extends FunSuite {
   test("create reference position from genotype starting at vcf 0") {
     val variant = Variant.newBuilder()
       .setStart(0L)
-      .setContigName("chr10")
+      .setReferenceName("chr10")
       .build()
     val genotype = Genotype.newBuilder()
       .setVariant(variant)
       .setStart(0L)
-      .setContigName("chr10")
+      .setReferenceName("chr10")
       .build()
 
     val refPos = ReferencePosition(genotype)

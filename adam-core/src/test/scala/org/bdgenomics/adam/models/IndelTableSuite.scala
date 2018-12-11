@@ -40,13 +40,13 @@ class IndelTableSuite extends ADAMFunSuite {
 
   sparkTest("build indel table from rdd of variants") {
     val ins = Variant.newBuilder()
-      .setContigName("1")
+      .setReferenceName("1")
       .setStart(1000L)
       .setReferenceAllele("A")
       .setAlternateAllele("ATT")
       .build()
     val del = Variant.newBuilder()
-      .setContigName("2")
+      .setReferenceName("2")
       .setStart(50L)
       .setReferenceAllele("ACAT")
       .setAlternateAllele("A")

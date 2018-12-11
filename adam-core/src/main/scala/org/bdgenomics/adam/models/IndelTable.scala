@@ -25,7 +25,7 @@ import org.bdgenomics.formats.avro.Variant
 import org.bdgenomics.utils.misc.Logging
 
 private[adam] class IndelTable(private val table: Map[String, Iterable[Consensus]]) extends Serializable with Logging {
-  log.info("Indel table has %s contigs and %s entries".format(
+  log.info("Indel table has %s reference sequences and %s entries".format(
     table.size,
     table.values.map(_.size).sum
   ))
@@ -58,7 +58,7 @@ private[adam] object IndelTable {
   def apply(variants: RDD[Variant]): IndelTable = {
     val consensus: Map[String, Iterable[Consensus]] = variants.filter(v => v.getReferenceAllele.length != v.getAlternateAllele.length)
       .map(v => {
-        val referenceName = v.getContigName
+        val referenceName = v.getReferenceName
         val consensus = if (v.getReferenceAllele.length > v.getAlternateAllele.length) {
           // deletion
           val deletionLength = v.getReferenceAllele.length - v.getAlternateAllele.length

@@ -65,8 +65,8 @@ class AlignmentRecordConverterSuite extends FunSuite {
     // add reference details
     adamRead.setRecordGroupName("record_group")
     adamRead.setRecordGroupSample("sample")
-    adamRead.setContigName("referencetest")
-    adamRead.setMateContigName("matereferencetest")
+    adamRead.setReferenceName("referencetest")
+    adamRead.setMateReferenceName("matereferencetest")
     adamRead.setMateAlignmentStart(6L)
 
     // make sequence dictionary
@@ -108,8 +108,8 @@ class AlignmentRecordConverterSuite extends FunSuite {
     // add reference details
     adamRead.setRecordGroupName("record_group")
     adamRead.setRecordGroupSample("sample")
-    adamRead.setContigName("referencetest")
-    adamRead.setMateContigName("matereferencetest")
+    adamRead.setReferenceName("referencetest")
+    adamRead.setMateReferenceName("matereferencetest")
     adamRead.setMateAlignmentStart(6L)
 
     // make sequence dictionary
@@ -297,7 +297,7 @@ class AlignmentRecordConverterSuite extends FunSuite {
   test("converting a fragment with alignments should restore the alignments") {
     val alignments = List(AlignmentRecord.newBuilder()
       .setReadMapped(true)
-      .setContigName("1")
+      .setReferenceName("1")
       .setStart(10L)
       .setEnd(20L)
       .setReadName("testRead")
@@ -324,7 +324,7 @@ class AlignmentRecordConverterSuite extends FunSuite {
     assert(read.getCigar === "10M")
     assert(read.getSequence === "TACTGTGGGT")
     assert(read.getQual === "?????*****")
-    assert(read.getContigName === "1")
+    assert(read.getReferenceName === "1")
   }
 
   test("read negative strand is propagated even when not mapped") {

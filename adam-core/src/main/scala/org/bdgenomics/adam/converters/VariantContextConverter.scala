@@ -1679,7 +1679,7 @@ class VariantContextConverter(
 
       // create the builder
       val variantBuilder = Variant.newBuilder
-        .setContigName(vc.getChr)
+        .setReferenceName(vc.getChr)
         .setStart(vc.getStart - 1)
         .setEnd(vc.getEnd)
         .setReferenceAllele(vc.getReference.getBaseString)
@@ -1791,7 +1791,7 @@ class VariantContextConverter(
       // create the builder
       val builder = Genotype.newBuilder()
         .setVariant(variant)
-        .setContigName(variant.getContigName)
+        .setReferenceName(variant.getReferenceName)
         .setStart(variant.getStart)
         .setEnd(variant.getEnd)
         .setSampleId(g.getSampleName)
@@ -2182,7 +2182,7 @@ class VariantContextConverter(
       val hasNonRefAlleles = vc.genotypes
         .exists(_.getNonReferenceLikelihoods.length != 0)
       val builder = new VariantContextBuilder()
-        .chr(v.getContigName)
+        .chr(v.getReferenceName)
         .start(v.getStart + 1)
         .stop(v.getEnd)
         .alleles(VariantContextConverter.convertAlleles(v, hasNonRefAlleles))

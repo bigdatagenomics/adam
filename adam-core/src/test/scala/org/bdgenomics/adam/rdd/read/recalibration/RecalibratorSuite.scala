@@ -40,7 +40,7 @@ class RecalibratorSuite extends FunSuite {
   val rgd = RecordGroupDictionary(Seq(RecordGroup("s", "rg0")))
 
   val read = AlignmentRecord.newBuilder
-    .setContigName("chr1")
+    .setReferenceName("chr1")
     .setRecordGroupName("rg0")
     .setStart(10L)
     .setEnd(12L)

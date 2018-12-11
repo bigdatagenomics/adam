@@ -356,14 +356,14 @@ case class RDDBoundAlignmentRecordDataset private[rdd] (
 
         // validate alignment fields
         if (readMapped) {
-          require(r.getStart != null && r.getEnd != null && r.getContigName != null,
-            "Read was mapped but was missing alignment start/end/contig (%s).".format(r))
+          require(r.getStart != null && r.getEnd != null && r.getReferenceName != null,
+            "Read was mapped but was missing alignment start/end/reference (%s).".format(r))
         }
 
         readMapped
       }).flatMap(r => {
         val positions: List[Long] = List.range(r.getStart, r.getEnd)
-        positions.map(n => ((r.getRecordGroupSample, ReferencePosition(r.getContigName, n)), 1))
+        positions.map(n => ((r.getRecordGroupSample, ReferencePosition(r.getReferenceName, n)), 1))
       }).reduceByKey(_ + _)
         .map(r => Coverage(r._1._2, r._2.toDouble, Option(r._1._1)))
 
@@ -386,7 +386,7 @@ case class RDDBoundAlignmentRecordDataset private[rdd] (
   }
 }
 
-private case class AlignmentWindow(contigName: String, start: Long, end: Long, sampleId: String) {
+private case class AlignmentWindow(referenceName: String, start: Long, end: Long, sampleId: String) {
 }
 
 sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDataset[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordDataset] {
@@ -499,7 +499,7 @@ sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDatas
     import dataset.sqlContext.implicits._
     val covCounts = dataset.toDF
       .where($"readMapped")
-      .select($"contigName", $"start", $"end", $"recordGroupSample")
+      .select($"referenceName", $"start", $"end", $"recordGroupSample")
       .withColumnRenamed("recordGroupSample", "sampleId")
       .as[AlignmentWindow]
       .flatMap(w => {
@@ -510,13 +510,13 @@ sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDatas
         while (idx < width) {
           val lastPos = pos
           pos += 1L
-          buffer(idx) = Coverage(w.contigName, lastPos, pos, 1.0, Option(w.sampleId))
+          buffer(idx) = Coverage(w.referenceName, lastPos, pos, 1.0, Option(w.sampleId))
           idx += 1
         }
         buffer
       }).toDF
       .withColumnRenamed("sampleId", "optSampleId")
-      .groupBy("contigName", "start", "end", "optSampleId")
+      .groupBy("referenceName", "start", "end", "optSampleId")
       .sum("count")
       .withColumnRenamed("sum(count)", "count")
       .as[Coverage]
@@ -951,10 +951,10 @@ sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDatas
   }
 
   /**
-   * Sorts our read data by reference positions, with contigs ordered by name.
+   * Sorts our read data by reference positions, with references ordered by name.
    *
    * Sorts reads by the location where they are aligned. Unaligned reads are
-   * put at the end and sorted by read name. Contigs are ordered
+   * put at the end and sorted by read name. References are ordered
    * lexicographically.
    *
    * @return Returns a new genomic dataset containing sorted reads.
@@ -967,7 +967,7 @@ sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDatas
     // NOTE: In order to keep unmapped reads from swamping a single partition
     // we sort the unmapped reads by read name. We prefix with tildes ("~";
     // ASCII 126) to ensure that the read name is lexicographically "after" the
-    // contig names.
+    // reference names.
     replaceRddAndSequences(rdd.sortBy(r => {
       if (r.getReadMapped) {
         ReferencePosition(r)
@@ -978,10 +978,10 @@ sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDatas
   }
 
   /**
-   * Sorts our read data by reference positions, with contigs ordered by index.
+   * Sorts our read data by reference positions, with references ordered by index.
    *
    * Sorts reads by the location where they are aligned. Unaligned reads are
-   * put at the end and sorted by read name. Contigs are ordered by index
+   * put at the end and sorted by read name. References are ordered by index
    * that they are ordered in the SequenceDictionary.
    *
    * @return Returns a new genomic dataset containing sorted reads.
@@ -995,20 +995,20 @@ sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDatas
 
     // NOTE: In order to keep unmapped reads from swamping a single partition
     // we sort the unmapped reads by read name. To do this, we hash the sequence name
-    // and add the max contig index
-    val maxContigIndex = sequences.records.flatMap(_.referenceIndex).max
+    // and add the max reference index
+    val maxReferenceIndex = sequences.records.flatMap(_.index).max
     replaceRdd(rdd.sortBy(r => {
       if (r.getReadMapped) {
-        val sr = sequences(r.getContigName)
-        require(sr.isDefined, "Read %s has contig name %s not in dictionary %s.".format(
-          r, r.getContigName, sequences))
-        require(sr.get.referenceIndex.isDefined,
-          "Contig %s from sequence dictionary lacks an index.".format(sr))
+        val sr = sequences(r.getReferenceName)
+        require(sr.isDefined, "Read %s has reference name %s not in dictionary %s.".format(
+          r, r.getReferenceName, sequences))
+        require(sr.get.index.isDefined,
+          "Reference %s from sequence dictionary lacks an index.".format(sr))
 
-        (sr.get.referenceIndex.get, r.getStart: Long)
+        (sr.get.index.get, r.getStart: Long)
       } else {
-        val readHash = abs(r.getReadName.hashCode + maxContigIndex)
-        val idx = if (readHash > maxContigIndex) readHash else Int.MaxValue
+        val readHash = abs(r.getReadName.hashCode + maxReferenceIndex)
+        val idx = if (readHash > maxReferenceIndex) readHash else Int.MaxValue
         (idx, 0L)
       }
     }))

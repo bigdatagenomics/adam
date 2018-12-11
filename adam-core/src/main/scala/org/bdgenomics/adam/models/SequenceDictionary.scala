@@ -19,8 +19,9 @@ package org.bdgenomics.adam.models
 
 import htsjdk.samtools.{ SAMFileHeader, SAMSequenceDictionary, SAMSequenceRecord }
 import htsjdk.variant.vcf.VCFHeader
-import org.bdgenomics.formats.avro.{ Contig, NucleotideContigFragment }
+import org.bdgenomics.formats.avro.{ NucleotideContigFragment, Reference }
 import scala.collection.JavaConversions.{ asScalaIterator, seqAsJavaList }
+import scala.collection.JavaConverters._
 import scala.collection._
 
 /**
@@ -62,13 +63,13 @@ object SequenceDictionary {
   }
 
   /**
-   * Creates a sequence dictionary from a sequence of Avro Contigs.
+   * Creates a sequence dictionary from a sequence of Avro References.
    *
-   * @param contigs Seq of Contig records.
+   * @param contigs Seq of Reference records.
    * @return Returns a sequence dictionary.
    */
-  def fromAvro(contigs: Seq[Contig]): SequenceDictionary = {
-    new SequenceDictionary(contigs.map(SequenceRecord.fromADAMContig).toVector)
+  def fromAvro(references: Seq[Reference]): SequenceDictionary = {
+    new SequenceDictionary(references.map(SequenceRecord.fromADAMReference).toVector)
   }
 
   /**
@@ -108,7 +109,7 @@ object SequenceDictionary {
  *
  * @see SequenceRecord
  *
- * @param records The individual reference contigs.
+ * @param records The individual reference sequences.
  */
 class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializable {
   def this() = this(Vector.empty[SequenceRecord])
@@ -116,7 +117,7 @@ class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializab
   private val byName: Map[String, SequenceRecord] = records.view.map(r => r.name -> r).toMap
   assert(byName.size == records.length, "SequenceRecords with duplicate names aren't permitted")
 
-  val hasSequenceOrdering = records.forall(_.referenceIndex.isDefined)
+  val hasSequenceOrdering = records.forall(_.index.isDefined)
 
   /**
    * The number of sequences in the dictionary.
@@ -137,16 +138,16 @@ class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializab
   }
 
   /**
-   * @param name The name of the contig to extract.
-   * @return If available, the sequence record for this contig.
+   * @param name The name of the reference to extract.
+   * @return If available, the sequence record for this reference.
    */
   def apply(name: String): Option[SequenceRecord] = byName.get(name)
 
   /**
-   * Checks to see if we have a contig with a given name.
+   * Checks to see if we have a reference with a given name.
    *
-   * @param name The name of the contig to extract.
-   * @return True if we have a sequence record for this contig.
+   * @param name The name of the reference to extract.
+   * @return True if we have a sequence record for this reference.
    */
   def containsReferenceName(name: String): Boolean = byName.contains(name)
 
@@ -164,7 +165,7 @@ class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializab
    * Filters any sequence records that exist in both dictionaries.
    *
    * @param that The sequence dictionary to add.
-   * @return A new sequence dictionary that contains a record per contig in each
+   * @return A new sequence dictionary that contains a record per reference in each
    *   input dictionary.
    */
   def ++(that: SequenceDictionary): SequenceDictionary = {
@@ -244,7 +245,7 @@ class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializab
    * @return Returns a new sequence dictionary where the sequence records are
    *   sorted. If the sequence records have indices, the records will be sorted
    *   by their indices. If not, the sequence records will be sorted lexically
-   *   by contig name.
+   *   by reference name.
    *
    * @see stripIndices
    */
@@ -261,8 +262,8 @@ class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializab
     records.map(_.toString).fold("SequenceDictionary{")(_ + "\n" + _) + "}"
   }
 
-  private[adam] def toAvro: Seq[Contig] = {
-    records.map(_.toADAMContig)
+  private[adam] def toAvro: Seq[Reference] = {
+    records.map(_.toADAMReference)
   }
 
   /**
@@ -284,8 +285,8 @@ private object SequenceOrderingByRefIdx extends Ordering[SequenceRecord] {
     a: SequenceRecord,
     b: SequenceRecord): Int = {
     (for {
-      aRefIdx <- a.referenceIndex
-      bRefIdx <- b.referenceIndex
+      aRefIdx <- a.index
+      bRefIdx <- b.index
     } yield {
       aRefIdx.compareTo(bRefIdx)
     }).getOrElse(
@@ -295,19 +296,21 @@ private object SequenceOrderingByRefIdx extends Ordering[SequenceRecord] {
 }
 
 /**
- * Metadata about a single reference contig.
+ * Metadata about a single reference sequence.
  *
- * @param name The name of the contig.
- * @param length The length of the contig.
- * @param url If available, the URL the contig is accessible from.
- * @param md5 If available, the MD5 checksum for the contig.
- * @param refseq If available, the REFSEQ ID for the contig.
- * @param genbank If available, the Genbank ID for the contig.
- * @param assembly If available, the assembly name for the assembly this contig
- *   is from.
- * @param species If available, the species this contig was assembled from.
- * @param referenceIndex If available, the number of this contig in a set of
- *   contigs.
+ * @param name The name of this reference in the assembly.
+ * @param length The length of the sequence for this reference.
+ * @param url If available, the URI from which the reference sequence was obtained.
+ * @param md5 If available, the MD5 checksum uniquely representing this
+ *    reference as a lower-case hexadecimal string, calculated as the MD5
+ *    of the upper-case sequence excluding all whitespace characters (equivalent
+ *    to SQ:M5 in SAM).
+ * @param refseq If available, the REFSEQ ID for the reference.
+ * @param genbank If available, the Genbank ID for the reference.
+ * @param assembly If available, the name of the assembly for this reference.
+ * @param species If available, the species that this reference is for.
+ * @param index If available, the number of this reference in a set of
+ *   references.
  */
 case class SequenceRecord(
     name: String,
@@ -318,7 +321,7 @@ case class SequenceRecord(
     genbank: Option[String],
     assembly: Option[String],
     species: Option[String],
-    referenceIndex: Option[Int]) extends Serializable {
+    index: Option[Int]) extends Serializable {
 
   assert(name != null && !name.isEmpty, "SequenceRecord.name is null or empty")
   assert(length > 0, "SequenceRecord.length <= 0")
@@ -340,7 +343,7 @@ case class SequenceRecord(
 
   override def toString: String = "%s->%s%s".format(name,
     length,
-    referenceIndex.fold("")(d => ", %d".format(d)))
+    index.fold("")(d => ", %d".format(d)))
 
   /**
    * Converts this sequence record into a SAM sequence record.
@@ -368,7 +371,7 @@ case class SequenceRecord(
     // set genbank accession number if available
     genbank.foreach(rec.setAttribute("GENBANK", _))
 
-    referenceIndex.foreach(rec.setSequenceIndex)
+    index.foreach(rec.setSequenceIndex)
 
     // return record
     rec
@@ -387,17 +390,20 @@ case class SequenceRecord(
   }
 
   /**
-   * @return Builds an Avro contig representation from this record.
+   * @return Builds an Avro Reference representation from this record.
    */
-  def toADAMContig: Contig = {
-    val builder = Contig.newBuilder()
-      .setContigName(name)
-      .setContigLength(length)
-    md5.foreach(builder.setContigMD5)
-    url.foreach(builder.setReferenceURL)
-    assembly.foreach(builder.setAssembly)
+  def toADAMReference: Reference = {
+    val builder = Reference.newBuilder()
+      .setName(name)
+      .setLength(length)
+    md5.foreach(builder.setMd5)
+    url.foreach(builder.setSourceUri)
+    val sourceAccessions = refseq ++ genbank
+    if (!sourceAccessions.isEmpty) {
+      builder.setSourceAccessions(sourceAccessions.toList.asJava)
+    }
     species.foreach(builder.setSpecies)
-    referenceIndex.foreach(builder.setReferenceIndex(_))
+    index.foreach(builder.setIndex(_))
     builder.build
   }
 }
@@ -412,17 +418,19 @@ object SequenceRecord {
   /**
    * Java friendly apply method that wraps null strings.
    *
-   * @param name The name of the contig.
-   * @param length The length of the contig.
-   * @param url If available, the URL the contig is accessible from.
-   * @param md5 If available, the MD5 checksum for the contig.
-   * @param refseq If available, the REFSEQ ID for the contig.
-   * @param genbank If available, the Genbank ID for the contig.
-   * @param assembly If available, the assembly name for the assembly this contig
-   *   is from.
-   * @param species If available, the species this contig was assembled from.
-   * @param referenceIndex If available, the number of this contig in a set of
-   *   contigs.
+   * @param name The name of this reference in the assembly.
+   * @param length The length of the sequence for this reference.
+   * @param url If available, the URI from which the reference sequence was obtained.
+   * @param md5 If available, the MD5 checksum uniquely representing this
+   *    reference as a lower-case hexadecimal string, calculated as the MD5
+   *    of the upper-case sequence excluding all whitespace characters (equivalent
+   *    to SQ:M5 in SAM).
+   * @param refseq If available, the REFSEQ ID for the reference.
+   * @param genbank If available, the Genbank ID for the reference.
+   * @param assembly If available, the name of the assembly for this reference.
+   * @param species If available, the species that this reference is for.
+   * @param index If available, the number of this reference in a set of
+   *   references.
    * @return Returns a new SequenceRecord where all strings except for name are
    *   wrapped in Options to check for null values.
    */
@@ -435,7 +443,7 @@ object SequenceRecord {
     genbank: String = null,
     assembly: String = null,
     species: String = null,
-    referenceIndex: Option[Int] = None): SequenceRecord = {
+    index: Option[Int] = None): SequenceRecord = {
     new SequenceRecord(
       name,
       length,
@@ -445,7 +453,7 @@ object SequenceRecord {
       Option(genbank),
       Option(assembly),
       Option(species),
-      referenceIndex
+      index
     )
   }
 
@@ -465,7 +473,7 @@ object SequenceRecord {
       genbank = record.getAttribute(GENBANK_TAG),
       assembly = record.getAssembly,
       species = record.getAttribute(SAMSequenceRecord.SPECIES_TAG),
-      referenceIndex = if (record.getSequenceIndex == -1) None else Some(record.getSequenceIndex)
+      index = if (record.getSequenceIndex == -1) None else Some(record.getSequenceIndex)
     )
   }
 
@@ -475,15 +483,15 @@ object SequenceRecord {
    * @param contig Contig record to build from.
    * @return This Contig record as a SequenceRecord.
    */
-  def fromADAMContig(contig: Contig): SequenceRecord = {
+  def fromADAMReference(reference: Reference): SequenceRecord = {
     SequenceRecord(
-      contig.getContigName,
-      Option(contig.getContigLength).map(l => l: Long).getOrElse(Long.MaxValue),
-      md5 = contig.getContigMD5,
-      url = contig.getReferenceURL,
-      assembly = contig.getAssembly,
-      species = contig.getSpecies,
-      referenceIndex = Option(contig.getReferenceIndex).map(Integer2int)
+      reference.getName,
+      Option(reference.getLength).map(l => l: Long).getOrElse(Long.MaxValue),
+      md5 = reference.getMd5,
+      url = reference.getSourceUri,
+      assembly = reference.getAssembly,
+      species = reference.getSpecies,
+      index = Option(reference.getIndex).map(Integer2int)
     )
   }
 

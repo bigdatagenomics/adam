@@ -68,7 +68,7 @@ private[read] case class MDTagging(
     val referenceFileB = sc.broadcast(referenceFile)
     reads.map(read => {
       (for {
-        contig <- Option(read.getContigName)
+        reference <- Option(read.getReferenceName)
         if read.getReadMapped
       } yield {
         try {
@@ -80,7 +80,7 @@ private[read] case class MDTagging(
               throw t
             } else if (validationStringency == ValidationStringency.LENIENT) {
               log.warn("Caught exception when processing read %s: %s".format(
-                read.getContigName, t))
+                read.getReferenceName, t))
             }
             read
           }
@@ -102,5 +102,5 @@ private[read] case class MDTagging(
  */
 case class IncorrectMDTagException(read: AlignmentRecord, mdTag: String) extends Exception {
   override def getMessage: String =
-    s"Read: ${read.getReadName}, pos: ${read.getContigName}:${read.getStart}, cigar: ${read.getCigar}, existing MD tag: ${read.getMismatchingPositions}, correct MD tag: $mdTag"
+    s"Read: ${read.getReadName}, pos: ${read.getReferenceName}:${read.getStart}, cigar: ${read.getCigar}, existing MD tag: ${read.getMismatchingPositions}, correct MD tag: $mdTag"
 }

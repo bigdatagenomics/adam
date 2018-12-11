@@ -136,7 +136,7 @@ case class ParquetUnboundCoverageDataset private[rdd] (
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
     sqlContext.read.parquet(parquetFilename)
-      .select("contigName", "start", "end", "score", "sampleId")
+      .select("referenceName", "start", "end", "score", "sampleId")
       .withColumnRenamed("sampleId", "optSampleId")
       .withColumnRenamed("score", "count")
       .as[Coverage]
@@ -271,13 +271,8 @@ abstract class CoverageDataset
    *
    * @see FeatureDataset.save
    *
-   * Supported file formats include bed, narrowPeak and parquet. Coverage is saved
-   * as a feature where coverage is stored in score attribute.
-   *   val chrom    = feature.getContigName
-   *   val start    = feature.getStart
-   *   val end      = feature.getEnd
-   *   val name     = Features.nameOf(feature)
-   *   val coverage = feature.getScore
+   * Coverage is saved as a feature where coverage is stored in the score column
+   * and sampleId is stored in attributes, if available.
    *
    * @param filePath The location to write the output.
    * @param asSingleFile If false, writes file to disk as shards with
@@ -309,7 +304,7 @@ abstract class CoverageDataset
       .mapPartitions(iter => {
         // must sort values to iteratively collapse coverage
         val sortedIter = iter.toList
-          .sortBy(r => (r.contigName, r.start))
+          .sortBy(r => (r.referenceName, r.start))
           .toIterator
         if (sortedIter.hasNext) {
           val first = sortedIter.next
@@ -440,7 +435,7 @@ abstract class CoverageDataset
           // key coverage by binning start site mod bpPerbin
           // subtract region.start to shift mod to start of ReferenceRegion
           val start = r.start - (r.start % bpPerBin)
-          (r.optSampleId, ReferenceRegion(r.contigName, start, start + bpPerBin))
+          (r.optSampleId, ReferenceRegion(r.referenceName, start, start + bpPerBin))
         }).mapValues(r => (r.count, 1))
         .reduceByKey(reduceFn)
         .map(r => {
@@ -461,7 +456,7 @@ abstract class CoverageDataset
    * @return Sequence of ReferenceRegions extracted from Coverage.
    */
   protected def getReferenceRegions(elem: Coverage): Seq[ReferenceRegion] = {
-    Seq(ReferenceRegion(elem.contigName, elem.start, elem.end))
+    Seq(ReferenceRegion(elem.referenceName, elem.start, elem.end))
   }
 
   /**
@@ -491,7 +486,7 @@ abstract class CoverageDataset
   private def flatMapCoverage(rdd: RDD[Coverage]): RDD[Coverage] = {
     rdd.flatMap(r => {
       val positions = r.start until r.end
-      positions.map(n => Coverage(r.contigName, n, n + 1, r.count, r.optSampleId))
+      positions.map(n => Coverage(r.referenceName, n, n + 1, r.count, r.optSampleId))
     })
   }
 }
