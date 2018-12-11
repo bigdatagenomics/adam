@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -308,5 +308,18 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
     val (dups, nonDups) = marked.partition(_.getDuplicateRead)
     assert(nonDups.size == 2 && nonDups.forall(p => p.getReadName.toString == "best"))
     assert(dups.forall(p => p.getReadName.startsWith("poor")))
+  }
+
+  sparkTest("inverse pairs") {
+    val firstPair = createPair("0", 100, 251, "0", 1100, 1251, "pair1")
+    val secondPair = createPair("0", 1100, 1251, "0", 100, 251, "pair2")
+    secondPair.head.setReadNegativeStrand(true)
+    secondPair.head.setMateNegativeStrand(false)
+    secondPair(1).setReadNegativeStrand(false)
+    secondPair(1).setMateNegativeStrand(true)
+
+    val marked = markDuplicateFragments(firstPair ++ secondPair: _*)
+    val (dups, nonDups) = marked.partition(_.getDuplicateRead)
+    assert(dups.size == 2)
   }
 }
