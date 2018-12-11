@@ -55,7 +55,7 @@ private[read] object RealignIndels extends Serializable with Logging {
     unclipReads: Boolean = false): RDD[AlignmentRecord] = {
     new RealignIndels(
       rdd.context,
-      consensusModel = consensusModel,
+      consensusGenerator = consensusModel,
       dataIsSorted = dataIsSorted,
       maxIndelSize = maxIndelSize,
       maxConsensusNumber = maxConsensusNumber,
@@ -228,7 +228,7 @@ import org.bdgenomics.adam.rdd.read.realignment.RealignIndels._
 
 private[read] class RealignIndels(
     @transient val sc: SparkContext,
-    val consensusModel: ConsensusGenerator = ConsensusGenerator.fromReads,
+    val consensusGenerator: ConsensusGenerator = ConsensusGenerator.fromReads,
     val dataIsSorted: Boolean = false,
     val maxIndelSize: Int = 500,
     val maxConsensusNumber: Int = 30,
@@ -297,12 +297,12 @@ private[read] class RealignIndels(
         val reference = optBcastReferenceFile.fold(getReferenceFromReads(reads.map(r => new RichAlignmentRecord(r)))._1)(brf => GetReferenceFromFile.time { brf.value.extract(refRegion) })
 
         // preprocess reads and get consensus
-        val readsToClean = consensusModel.preprocessReadsForRealignment(
+        val readsToClean = consensusGenerator.preprocessReadsForRealignment(
           reads,
           reference,
           refRegion
         ).zipWithIndex
-        val observedConsensusSeq = consensusModel.findConsensus(reads)
+        val observedConsensusSeq = consensusGenerator.findConsensus(reads)
           .toSeq
         val observedConsensus = observedConsensusSeq.distinct
 
@@ -720,6 +720,7 @@ private[read] class RealignIndels(
     log.info("Generating realignment targets...")
     val targets: Array[IndelRealignmentTarget] = RealignmentTargetFinder(
       richRdd,
+      consensusGenerator,
       maxIndelSize,
       maxTargetSize
     ).toArray

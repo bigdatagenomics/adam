@@ -18,6 +18,7 @@
 package org.bdgenomics.adam.rdd.read.realignment
 
 import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.algorithms.consensus.{ Consensus, ConsensusGenerator }
 import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
@@ -218,5 +219,23 @@ class IndelRealignmentTargetSuite extends ADAMFunSuite {
     // read 7 has a single 4 bp deletion
     assert(targets_collected(4).variation.get.length === 4)
     assert(targets_collected(4).variation.get.start == 869644 && targets_collected(4).variation.get.end == 869648)
+  }
+
+  sparkTest("additional indel targets taken from consensus generator") {
+    val target = new IndelRealignmentTarget(Some(ReferenceRegion("1", 1, 10)), ReferenceRegion("1", 1, 51))
+    val targets_to_add = sc.makeRDD(Seq(target))
+    val targets_collected: Array[IndelRealignmentTarget] = RealignmentTargetFinder(sc.makeRDD(Nil), new ConsensusGenerator {
+      override def preprocessReadsForRealignment(reads: Iterable[RichAlignmentRecord], reference: String, region: ReferenceRegion): Iterable[RichAlignmentRecord] = Nil
+
+      override def findConsensus(reads: Iterable[RichAlignmentRecord]): Iterable[Consensus] = Nil
+
+      override def targetsToAdd(): Option[RDD[IndelRealignmentTarget]] = Some(targets_to_add)
+    }).toArray
+
+    assert(targets_collected.length == 1)
+
+    // Just check a couple fields to ensure this is the target we're looking for
+    assert(targets_collected(0).readRange.start == target.readRange.start)
+    assert(targets_collected(0).readRange.end == target.readRange.end)
   }
 }
