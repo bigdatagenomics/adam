@@ -19,8 +19,10 @@ package org.bdgenomics.adam.rdd.read.realignment
 
 import org.bdgenomics.utils.misc.Logging
 import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.algorithms.consensus.{ ConsensusGenerator, ConsensusGeneratorFromReads }
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.instrumentation.Timers._
+
 import scala.annotation.tailrec
 import scala.collection.immutable.TreeSet
 
@@ -34,9 +36,10 @@ private[realignment] object RealignmentTargetFinder {
    */
   def apply(
     rdd: RDD[RichAlignmentRecord],
+    consensusGenerator: ConsensusGenerator = new ConsensusGeneratorFromReads,
     maxIndelSize: Int = 500,
     maxTargetSize: Int = 3000): TreeSet[IndelRealignmentTarget] = {
-    new RealignmentTargetFinder().findTargets(rdd, maxIndelSize, maxTargetSize).set
+    new RealignmentTargetFinder().findTargets(rdd, consensusGenerator, maxIndelSize, maxTargetSize).set
   }
 }
 
@@ -98,6 +101,7 @@ private[realignment] class RealignmentTargetFinder extends Serializable with Log
    */
   def findTargets(
     reads: RDD[RichAlignmentRecord],
+    consensusGenerator: ConsensusGenerator,
     maxIndelSize: Int = 500,
     maxTargetSize: Int = 3000): TargetSet = FindTargets.time {
 
@@ -113,11 +117,12 @@ private[realignment] class RealignmentTargetFinder extends Serializable with Log
     val targets = reads.flatMap(IndelRealignmentTarget(_, maxIndelSize))
       .filter(t => !t.isEmpty)
 
-    val targetSet: TargetSet = TargetSet(targets.mapPartitions(iter => SortTargets.time { iter.toArray.sorted(TargetOrdering).toIterator })
+    val targetWithAdditions = consensusGenerator.targetsToAdd().map(toAdd => targets.union(toAdd)).getOrElse(targets)
+
+    val targetSet: TargetSet = TargetSet(targetWithAdditions.mapPartitions(iter => SortTargets.time { iter.toArray.sorted(TargetOrdering).toIterator })
       .map(createTargetSet)
       .fold(TargetSet())((t1: TargetSet, t2: TargetSet) => joinTargets(t1, t2))
       .set.filter(_.readRange.length <= maxTargetSize))
-
     targetSet
   }
 }
