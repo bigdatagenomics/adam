@@ -309,4 +309,17 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
     assert(nonDups.size == 2 && nonDups.forall(p => p.getReadName.toString == "best"))
     assert(dups.forall(p => p.getReadName.startsWith("poor")))
   }
+
+  sparkTest("inverse pairs") {
+    val firstPair = createPair("0", 100, 251, "0", 1100, 1251, "pair1")
+    val secondPair = createPair("0", 1100, 1251, "0", 100, 251, "pair2")
+    secondPair.head.setReadNegativeStrand(true)
+    secondPair.head.setMateNegativeStrand(false)
+    secondPair(1).setReadNegativeStrand(false)
+    secondPair(1).setMateNegativeStrand(true)
+
+    val marked = markDuplicateFragments(firstPair ++ secondPair: _*)
+    val (dups, nonDups) = marked.partition(_.getDuplicateRead)
+    assert(dups.size == 2)
+  }
 }
