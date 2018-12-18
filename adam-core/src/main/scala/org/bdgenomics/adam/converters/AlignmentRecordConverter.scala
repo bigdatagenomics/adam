@@ -290,6 +290,10 @@ class AlignmentRecordConverter extends Serializable {
       .foreach(m => {
         builder.setReadUnmappedFlag(!m.booleanValue)
 
+        // Sometimes aligners like BWA-MEM mark a read as negative even if it's not mapped
+        Option(adamRecord.getReadNegativeStrand)
+          .foreach(v => builder.setReadNegativeStrandFlag(v.booleanValue))
+
         // only set alignment flags if read is aligned
         if (m) {
           // if we are aligned, we must have a reference
@@ -301,8 +305,6 @@ class AlignmentRecordConverter extends Serializable {
           // set the old cigar, if provided
           Option(adamRecord.getOldCigar).foreach(v => builder.setAttribute("OC", v))
           // set mapping flags
-          Option(adamRecord.getReadNegativeStrand)
-            .foreach(v => builder.setReadNegativeStrandFlag(v.booleanValue))
           Option(adamRecord.getPrimaryAlignment)
             .foreach(v => builder.setNotPrimaryAlignmentFlag(!v.booleanValue))
           Option(adamRecord.getSupplementaryAlignment)

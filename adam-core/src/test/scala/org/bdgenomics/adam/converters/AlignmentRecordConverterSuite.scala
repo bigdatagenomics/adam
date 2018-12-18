@@ -326,5 +326,15 @@ class AlignmentRecordConverterSuite extends FunSuite {
     assert(read.getQual === "?????*****")
     assert(read.getContigName === "1")
   }
+
+  test("read negative strand is propagated even when not mapped") {
+    val record = AlignmentRecord.newBuilder()
+      .setReadMapped(false)
+      .setReadNegativeStrand(true)
+      .build()
+    val fragment = Fragment.newBuilder().setAlignments(List(record)).build()
+    val converted = adamRecordConverter.convertFragment(fragment)
+    assert(converted.head.getReadNegativeStrand)
+  }
 }
 
