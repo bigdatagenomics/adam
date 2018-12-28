@@ -243,8 +243,8 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
-      <groupId>org.apache.parquet</groupId>
-      <artifactId>parquet-scala_2.10</artifactId>
+      <groupId>org.lasersonlab.apache.parquet</groupId>
+      <artifactId>parquet-scala_${scala.version.prefix}</artifactId>
       <scope>compile</scope>
     </dependency>
     <dependency>

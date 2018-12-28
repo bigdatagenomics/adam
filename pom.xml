@@ -525,9 +525,8 @@
         </exclusions>
       </dependency>
       <dependency>
-        <groupId>org.apache.parquet</groupId>
-        <!-- This library has no Scala 2.11 version, but using the 2 dot 10 version seems to work. -->
-        <artifactId>parquet-scala_2.10</artifactId>
+        <groupId>org.lasersonlab.apache.parquet</groupId>
+        <artifactId>parquet-scala_${scala.version.prefix}</artifactId>
         <version>${parquet.version}</version>
         <exclusions>
           <exclusion>
