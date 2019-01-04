@@ -195,9 +195,13 @@ then
     for python in ${pythons[*]}
     do
     	uuid=$(uuidgen)
-    	conda create -q -n adam-build-${uuid} python=${python} anaconda
-    	source activate adam-build-${uuid}
-    	
+        conda create -q -n adam-build-${uuid} python=${python}
+        source activate adam-build-${uuid}
+
+        # prepare adam python
+        pushd adam-python
+        make prepare
+        popd
     	
     	# we only support SparkR on Spark 2.x
     	if [ ${SPARK_VERSION} == 2.2.2 ];
