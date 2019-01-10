@@ -40,7 +40,7 @@ class BaseQualityRecalibrationSuite extends ADAMFunSuite {
 
     val bqsr = new BaseQualityRecalibration(reads,
       snps,
-      rdd.recordGroups,
+      rdd.readGroups,
       optStorageLevel = optSl)
 
     // Sanity checks
@@ -53,7 +53,7 @@ class BaseQualityRecalibrationSuite extends ADAMFunSuite {
       .toSeq
       .sortWith((kv1, kv2) => kv1.compare(kv2) < 0)
     val testObs: Seq[String] = bqsr.observed
-      .toCSV(rdd.recordGroups)
+      .toCSV(rdd.readGroups)
       .split('\n')
       .filter(_.length > 0)
       .toSeq

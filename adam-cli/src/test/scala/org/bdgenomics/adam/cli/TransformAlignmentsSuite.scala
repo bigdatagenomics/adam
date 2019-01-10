@@ -63,7 +63,7 @@ class TransformAlignmentsSuite extends ADAMFunSuite {
     TransformAlignments(Array(inputPath, finalPath, "-bin_quality_scores", "0,20,10;20,40,30;40,60,50")).run(sc)
     val qualityScoreCounts = sc.loadAlignments(finalPath)
       .rdd
-      .flatMap(_.getQual)
+      .flatMap(_.getQuality)
       .map(s => s.toInt - 33)
       .countByValue
 

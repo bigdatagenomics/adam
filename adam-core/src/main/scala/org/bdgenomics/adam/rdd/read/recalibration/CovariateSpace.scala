@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.rdd.read.recalibration
 
-import org.bdgenomics.adam.models.RecordGroupDictionary
+import org.bdgenomics.adam.models.ReadGroupDictionary
 import org.bdgenomics.formats.avro.AlignmentRecord
 
 /**
@@ -33,7 +33,7 @@ private[adam] object CovariateSpace extends Serializable {
    * Generates an array of observed covariates for a given read.
    *
    * @param read The read to generate covariates for.
-   * @param recordGroups A record group dictionary containing the record group
+   * @param readGroups A read group dictionary containing the read group
    *   that generated this read.
    * @return Returns an array of error covariates.
    *
@@ -41,11 +41,11 @@ private[adam] object CovariateSpace extends Serializable {
    */
   private[recalibration] def apply(
     read: AlignmentRecord,
-    recordGroups: RecordGroupDictionary): Array[CovariateKey] = {
+    readGroups: ReadGroupDictionary): Array[CovariateKey] = {
     apply(read,
       Array.fill(read.getSequence.length) { true },
       Array.fill(read.getSequence.length) { false },
-      recordGroups)
+      readGroups)
   }
 
   /**
@@ -56,14 +56,14 @@ private[adam] object CovariateSpace extends Serializable {
    *   be included in the generated observation table.
    * @param isMismatch An array indicating whether the base was a mismatch
    *   against the reference genome.
-   * @param recordGroups A record group dictionary containing the record group
+   * @param readGroups A read group dictionary containing the read group
    *   that generated this read.
    * @return Returns an array of error covariates, one per base in the read.
    */
   def apply(read: AlignmentRecord,
             toInclude: Array[Boolean],
             isMismatch: Array[Boolean],
-            recordGroups: RecordGroupDictionary): Array[CovariateKey] = {
+            readGroups: ReadGroupDictionary): Array[CovariateKey] = {
     val cycles = cycle.compute(read)
     val dinucs = dinuc.compute(read)
     assert(cycles.length == dinucs.length)
@@ -73,13 +73,13 @@ private[adam] object CovariateSpace extends Serializable {
     // Construct the CovariateKeys
     val readLength = cycles.length
     val covariateArray = new Array[CovariateKey](readLength)
-    val qualities = read.getQual
+    val qualities = read.getQuality
     var idx = 0
     while (idx < readLength) {
       val residueCycle = cycles(idx)
       val (residueDinucPrev, residueDinucCurr) = dinucs(idx)
       covariateArray(idx) = new CovariateKey(
-        recordGroups.getIndex(read.getRecordGroupName),
+        readGroups.getIndex(read.getReadGroupId),
         qualities(idx),
         residueCycle,
         residueDinucPrev,
@@ -95,12 +95,12 @@ private[adam] object CovariateSpace extends Serializable {
    * Formats a given covariate to match the GATK's CSV output.
    *
    * @param key The error covariate to render.
-   * @param recordGroups A dictionary mapping recordGroupIds to record groups.
+   * @param readGroups A dictionary mapping readGroupIds to read groups.
    * @return Returns a Seq containing CSV cells for a single row of the CSV file.
    */
   def toCSV(key: CovariateKey,
-            recordGroups: RecordGroupDictionary): Seq[String] = {
-    Seq(recordGroups.recordGroups(key.readGroupId).recordGroupName,
+            readGroups: ReadGroupDictionary): Seq[String] = {
+    Seq(readGroups.readGroups(key.readGroupId).id,
       (key.quality.toInt - 33).toString,
       cycle.toCSV(key.cycle),
       dinuc.toCSV((key.dinucPrev, key.dinucCurr)))

@@ -19,8 +19,8 @@ package org.bdgenomics.adam.rdd.read
 
 import java.util.UUID
 import org.bdgenomics.adam.models.{
-  RecordGroup,
-  RecordGroupDictionary,
+  ReadGroup,
+  ReadGroupDictionary,
   SequenceDictionary
 }
 import org.bdgenomics.adam.util.ADAMFunSuite
@@ -28,8 +28,8 @@ import org.bdgenomics.formats.avro.{ AlignmentRecord, Reference }
 
 class MarkDuplicatesSuite extends ADAMFunSuite {
 
-  val rgd = new RecordGroupDictionary(Seq(
-    new RecordGroup("sammy sample",
+  val rgd = new ReadGroupDictionary(Seq(
+    new ReadGroup("sammy sample",
       "machine foo",
       library = Some("library bar"))))
 
@@ -55,13 +55,13 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
     AlignmentRecord.newBuilder()
       .setReferenceName(reference.getName)
       .setStart(start)
-      .setQual(qual)
+      .setQuality(qual)
       .setCigar(cigar)
       .setEnd(end)
       .setReadMapped(true)
       .setPrimaryAlignment(isPrimaryAlignment)
       .setReadName(readName)
-      .setRecordGroupName("machine foo")
+      .setReadGroupId("machine foo")
       .setDuplicateRead(false)
       .setReadNegativeStrand(isNegativeStrand)
       .setSequence("ACGT")
@@ -190,7 +190,7 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
   test("quality scores") {
     // The ascii value 53 is equal to a phred score of 20
     val qual = 53.toChar.toString * 100
-    val record = AlignmentRecord.newBuilder().setQual(qual).build()
+    val record = AlignmentRecord.newBuilder().setQuality(qual).build()
     assert(MarkDuplicates.score(record) == 2000)
   }
 

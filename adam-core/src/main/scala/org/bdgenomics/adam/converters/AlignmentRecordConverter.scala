@@ -69,15 +69,15 @@ class AlignmentRecordConverter extends Serializable {
       else
         adamRecord.getSequence.length
     val qualityScores =
-      if (outputOriginalBaseQualities && adamRecord.getOrigQual != null)
-        if (adamRecord.getOrigQual == "*")
+      if (outputOriginalBaseQualities && adamRecord.getOriginalQuality != null)
+        if (adamRecord.getOriginalQuality == "*")
           "B" * seqLength
         else
-          adamRecord.getOrigQual
-      else if (adamRecord.getQual == null)
+          adamRecord.getOriginalQuality
+      else if (adamRecord.getQuality == null)
         "B" * seqLength
       else
-        adamRecord.getQual
+        adamRecord.getQuality
 
     (
       adamRecord.getReadName + readNameSuffix,
@@ -234,7 +234,7 @@ class AlignmentRecordConverter extends Serializable {
    */
   def convert(adamRecord: AlignmentRecord,
               header: SAMFileHeaderWritable,
-              rgd: RecordGroupDictionary): SAMRecord = ConvertToSAMRecord.time {
+              rgd: ReadGroupDictionary): SAMRecord = ConvertToSAMRecord.time {
 
     // attach header
     val builder: SAMRecord = new SAMRecord(header.header)
@@ -242,13 +242,13 @@ class AlignmentRecordConverter extends Serializable {
     // set canonically necessary fields
     builder.setReadName(adamRecord.getReadName)
     builder.setReadString(adamRecord.getSequence)
-    adamRecord.getQual match {
+    adamRecord.getQuality match {
       case null      => builder.setBaseQualityString("*")
       case s: String => builder.setBaseQualityString(s)
     }
 
     // set read group flags
-    Option(adamRecord.getRecordGroupName)
+    Option(adamRecord.getReadGroupId)
       .foreach(v => {
         builder.setAttribute("RG", v)
         val rg = rgd(v)
@@ -263,7 +263,7 @@ class AlignmentRecordConverter extends Serializable {
       .foreach(s => builder.setMateAlignmentStart(s.toInt + 1))
 
     // set template length
-    Option(adamRecord.getInferredInsertSize)
+    Option(adamRecord.getInsertSize)
       .foreach(s => builder.setInferredInsertSize(s.toInt))
 
     // set flags
@@ -303,7 +303,7 @@ class AlignmentRecordConverter extends Serializable {
           // set the cigar, if provided
           Option(adamRecord.getCigar).foreach(builder.setCigarString)
           // set the old cigar, if provided
-          Option(adamRecord.getOldCigar).foreach(v => builder.setAttribute("OC", v))
+          Option(adamRecord.getOriginalCigar).foreach(v => builder.setAttribute("OC", v))
           // set mapping flags
           Option(adamRecord.getPrimaryAlignment)
             .foreach(v => builder.setNotPrimaryAlignmentFlag(!v.booleanValue))
@@ -311,9 +311,9 @@ class AlignmentRecordConverter extends Serializable {
             .foreach(v => builder.setSupplementaryAlignmentFlag(v.booleanValue))
           Option(adamRecord.getStart)
             .foreach(s => builder.setAlignmentStart(s.toInt + 1))
-          Option(adamRecord.getOldPosition)
+          Option(adamRecord.getOriginalStart)
             .foreach(s => builder.setAttribute("OP", s.toInt + 1))
-          Option(adamRecord.getMapq).foreach(v => builder.setMappingQuality(v))
+          Option(adamRecord.getMappingQuality).foreach(v => builder.setMappingQuality(v))
         } else {
           // mapping quality must be 0 if read is unmapped
           builder.setMappingQuality(0)
@@ -323,12 +323,12 @@ class AlignmentRecordConverter extends Serializable {
       .foreach(v => builder.setReadFailsVendorQualityCheckFlag(v.booleanValue))
     Option(adamRecord.getMismatchingPositions)
       .foreach(builder.setAttribute("MD", _))
-    Option(adamRecord.getOrigQual)
+    Option(adamRecord.getOriginalQuality)
       .map(s => s.getBytes.map(v => (v - 33).toByte)) // not ascii, but short int
       .foreach(builder.setOriginalBaseQualities(_))
-    Option(adamRecord.getOldCigar)
+    Option(adamRecord.getOriginalCigar)
       .foreach(builder.setAttribute("OC", _))
-    Option(adamRecord.getOldPosition)
+    Option(adamRecord.getOriginalStart)
       .foreach(i => builder.setAttribute("OP", i + 1))
 
     // add all other tags
@@ -347,15 +347,15 @@ class AlignmentRecordConverter extends Serializable {
    * Creates a SAM formatted header. This can be used with SAM or BAM files.
    *
    * @param sd Reference sequence dictionary to use for conversion.
-   * @param rgd Dictionary containing record groups.
+   * @param rgd Dictionary containing read groups.
    * @return Converted SAM formatted record.
    */
   def createSAMHeader(sd: SequenceDictionary,
-                      rgd: RecordGroupDictionary): SAMFileHeader = {
+                      rgd: ReadGroupDictionary): SAMFileHeader = {
     val samSequenceDictionary = sd.toSAMSequenceDictionary
     val samHeader = new SAMFileHeader
     samHeader.setSequenceDictionary(samSequenceDictionary)
-    rgd.recordGroups.foreach(group => samHeader.addReadGroup(group.toSAMReadGroupRecord()))
+    rgd.readGroups.foreach(group => samHeader.addReadGroup(group.toSAMReadGroupRecord()))
 
     samHeader
   }

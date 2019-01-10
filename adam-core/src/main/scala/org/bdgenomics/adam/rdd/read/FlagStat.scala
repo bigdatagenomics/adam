@@ -109,7 +109,7 @@ private[read] object FlagStat {
           b2i(b(p.getReadPaired) && b(p.getReadMapped) && b(p.getMateMapped) && b(!p.getSupplementaryAlignment) && p.getPrimaryAlignment),
           b2i(b(p.getReadPaired) && b(p.getReadMapped) && b(!p.getMateMapped) && b(!p.getSupplementaryAlignment) && p.getPrimaryAlignment),
           b2i(b(mateMappedToDiffChromosome) && b(!p.getSupplementaryAlignment) && p.getPrimaryAlignment),
-          b2i(b(mateMappedToDiffChromosome && i(p.getMapq) >= 5) && b(!p.getSupplementaryAlignment) && p.getPrimaryAlignment),
+          b2i(b(mateMappedToDiffChromosome && i(p.getMappingQuality) >= 5) && b(!p.getSupplementaryAlignment) && p.getPrimaryAlignment),
           p.getFailedVendorQualityChecks
         )
     }.aggregate((FlagStatMetrics.emptyFailedQuality, FlagStatMetrics.emptyPassedQuality))(

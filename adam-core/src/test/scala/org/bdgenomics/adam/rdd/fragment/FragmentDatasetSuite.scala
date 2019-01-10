@@ -22,7 +22,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.bdgenomics.adam.models.{
   Coverage,
-  RecordGroup,
+  ReadGroup,
   SequenceRecord,
   VariantContext
 }
@@ -326,7 +326,7 @@ class FragmentDatasetSuite extends ADAMFunSuite {
     val qualityScoreCounts = binnedFragments.rdd.flatMap(fragment => {
       fragment.getAlignments.toSeq
     }).flatMap(read => {
-      read.getQual
+      read.getQuality
     }).map(s => s.toInt - 33)
       .countByValue
 
@@ -341,8 +341,8 @@ class FragmentDatasetSuite extends ADAMFunSuite {
     assert(union.rdd.count === (reads1.rdd.count + reads2.rdd.count))
     // all of the contigs small.sam has are in bqsr1.sam
     assert(union.sequences.size === reads1.sequences.size)
-    // small.sam has no record groups
-    assert(union.recordGroups.size === reads1.recordGroups.size)
+    // small.sam has no read groups
+    assert(union.readGroups.size === reads1.readGroups.size)
   }
 
   sparkTest("load parquet to sql, save, re-read from avro") {
@@ -350,8 +350,8 @@ class FragmentDatasetSuite extends ADAMFunSuite {
       val sequenceRdd = fRdd.addSequence(SequenceRecord("aSequence", 1000L))
       assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
 
-      val rgDataset = fRdd.addRecordGroup(RecordGroup("test", "aRg"))
-      assert(rgDataset.recordGroups("aRg").sample === "test")
+      val rgDataset = fRdd.addReadGroup(ReadGroup("test", "aRg"))
+      assert(rgDataset.readGroups("aRg").sampleId === "test")
     }
 
     val inputPath = testFile("small.sam")

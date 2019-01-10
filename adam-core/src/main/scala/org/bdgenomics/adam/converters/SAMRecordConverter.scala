@@ -88,13 +88,13 @@ private[adam] class SAMRecordConverter extends Serializable with Logging {
         .setCigar(cigar)
         .setBasesTrimmedFromStart(startTrim)
         .setBasesTrimmedFromEnd(endTrim)
-        .setOrigQual(SAMUtils.phredToFastq(samRecord.getOriginalBaseQualities))
+        .setOriginalQuality(SAMUtils.phredToFastq(samRecord.getOriginalBaseQualities))
 
       // if the quality string is "*", then we null it in the record
       // or, in other words, we only set the quality string if it is not "*"
       val qual = samRecord.getBaseQualityString
       if (qual != "*") {
-        builder.setQual(qual)
+        builder.setQuality(qual)
       }
 
       // Only set the reference information if the read is aligned, matching the mate reference
@@ -110,8 +110,8 @@ private[adam] class SAMRecordConverter extends Serializable with Logging {
 
         // set OP and OC flags, if applicable
         if (samRecord.getAttribute("OP") != null) {
-          builder.setOldPosition(samRecord.getIntegerAttribute("OP").toLong - 1)
-          builder.setOldCigar(samRecord.getStringAttribute("OC"))
+          builder.setOriginalStart(samRecord.getIntegerAttribute("OP").toLong - 1)
+          builder.setOriginalCigar(samRecord.getStringAttribute("OC"))
         }
 
         val end = start.toLong - 1 + samRecord.getCigar.getReferenceLength
@@ -120,7 +120,7 @@ private[adam] class SAMRecordConverter extends Serializable with Logging {
         val mapq: Int = samRecord.getMappingQuality
 
         if (mapq != SAMRecord.UNKNOWN_MAPPING_QUALITY) {
-          builder.setMapq(mapq)
+          builder.setMappingQuality(mapq)
         }
 
       }
@@ -187,7 +187,7 @@ private[adam] class SAMRecordConverter extends Serializable with Logging {
       var tags = List[Attribute]()
       val tlen = samRecord.getInferredInsertSize
       if (tlen != 0) {
-        builder.setInferredInsertSize(tlen.toLong)
+        builder.setInsertSize(tlen.toLong)
       }
       if (samRecord.getAttributes != null) {
         samRecord.getAttributes.asScala.foreach {
@@ -205,8 +205,8 @@ private[adam] class SAMRecordConverter extends Serializable with Logging {
 
       val recordGroup: SAMReadGroupRecord = samRecord.getReadGroup
       if (recordGroup != null) {
-        builder.setRecordGroupName(recordGroup.getReadGroupId)
-          .setRecordGroupSample(recordGroup.getSample)
+        builder.setReadGroupId(recordGroup.getReadGroupId)
+          .setReadGroupSampleId(recordGroup.getSample)
       }
 
       builder.build

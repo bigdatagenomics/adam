@@ -60,7 +60,7 @@ class FlagStat(protected val args: FlagStatArgs) extends BDGSparkCommand[FlagSta
       AlignmentRecordField.mateMapped,
       AlignmentRecordField.readInFragment,
       AlignmentRecordField.properPair,
-      AlignmentRecordField.mapq,
+      AlignmentRecordField.mappingQuality,
       AlignmentRecordField.failedVendorQualityChecks,
       AlignmentRecordField.supplementaryAlignment
     )

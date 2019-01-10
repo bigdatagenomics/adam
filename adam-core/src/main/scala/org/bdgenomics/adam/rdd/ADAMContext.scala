@@ -98,7 +98,7 @@ import org.bdgenomics.formats.avro.{
   Genotype,
   NucleotideContigFragment,
   ProcessingStep,
-  RecordGroup => RecordGroupMetadata,
+  ReadGroup => ReadGroupMetadata,
   Reference,
   Sample,
   Variant
@@ -180,7 +180,7 @@ object ADAMContext {
     rdd: RDD[Fragment]): FragmentDataset = {
     new RDDBoundFragmentDataset(rdd,
       gDataset.sequences,
-      RecordGroupDictionary.empty,
+      ReadGroupDictionary.empty,
       Seq.empty,
       None)
   }
@@ -190,7 +190,7 @@ object ADAMContext {
     ds: Dataset[FragmentProduct]): FragmentDataset = {
     new DatasetBoundFragmentDataset(ds,
       gDataset.sequences,
-      RecordGroupDictionary.empty,
+      ReadGroupDictionary.empty,
       Seq.empty)
   }
 
@@ -199,7 +199,7 @@ object ADAMContext {
     rdd: RDD[AlignmentRecord]): AlignmentRecordDataset = {
     new RDDBoundAlignmentRecordDataset(rdd,
       gDataset.sequences,
-      RecordGroupDictionary.empty,
+      ReadGroupDictionary.empty,
       Seq.empty,
       None)
   }
@@ -209,7 +209,7 @@ object ADAMContext {
     ds: Dataset[AlignmentRecordProduct]): AlignmentRecordDataset = {
     new DatasetBoundAlignmentRecordDataset(ds,
       gDataset.sequences,
-      RecordGroupDictionary.empty,
+      ReadGroupDictionary.empty,
       Seq.empty)
   }
 
@@ -293,7 +293,7 @@ object ADAMContext {
     rdd: RDD[Fragment]): FragmentDataset = {
     new RDDBoundFragmentDataset(rdd,
       gDataset.sequences,
-      RecordGroupDictionary.empty,
+      ReadGroupDictionary.empty,
       Seq.empty,
       None)
   }
@@ -303,7 +303,7 @@ object ADAMContext {
     ds: Dataset[FragmentProduct]): FragmentDataset = {
     new DatasetBoundFragmentDataset(ds,
       gDataset.sequences,
-      RecordGroupDictionary.empty,
+      ReadGroupDictionary.empty,
       Seq.empty)
   }
 
@@ -312,7 +312,7 @@ object ADAMContext {
     rdd: RDD[AlignmentRecord]): AlignmentRecordDataset = {
     new RDDBoundAlignmentRecordDataset(rdd,
       gDataset.sequences,
-      RecordGroupDictionary.empty,
+      ReadGroupDictionary.empty,
       Seq.empty,
       None)
   }
@@ -322,7 +322,7 @@ object ADAMContext {
     ds: Dataset[AlignmentRecordProduct]): AlignmentRecordDataset = {
     new DatasetBoundAlignmentRecordDataset(ds,
       gDataset.sequences,
-      RecordGroupDictionary.empty,
+      ReadGroupDictionary.empty,
       Seq.empty)
   }
 
@@ -406,7 +406,7 @@ object ADAMContext {
     rdd: RDD[Fragment]): FragmentDataset = {
     new RDDBoundFragmentDataset(rdd,
       gDataset.sequences,
-      RecordGroupDictionary.empty,
+      ReadGroupDictionary.empty,
       Seq.empty,
       None)
   }
@@ -416,7 +416,7 @@ object ADAMContext {
     ds: Dataset[FragmentProduct]): FragmentDataset = {
     new DatasetBoundFragmentDataset(ds,
       gDataset.sequences,
-      RecordGroupDictionary.empty,
+      ReadGroupDictionary.empty,
       Seq.empty)
   }
 
@@ -425,7 +425,7 @@ object ADAMContext {
     rdd: RDD[AlignmentRecord]): AlignmentRecordDataset = {
     new RDDBoundAlignmentRecordDataset(rdd,
       gDataset.sequences,
-      RecordGroupDictionary.empty,
+      ReadGroupDictionary.empty,
       Seq.empty,
       None)
   }
@@ -435,7 +435,7 @@ object ADAMContext {
     ds: Dataset[AlignmentRecordProduct]): AlignmentRecordDataset = {
     new DatasetBoundAlignmentRecordDataset(ds,
       gDataset.sequences,
-      RecordGroupDictionary.empty,
+      ReadGroupDictionary.empty,
       Seq.empty)
   }
 
@@ -531,7 +531,7 @@ object ADAMContext {
     rdd: RDD[AlignmentRecord]): AlignmentRecordDataset = {
     new RDDBoundAlignmentRecordDataset(rdd,
       gDataset.sequences,
-      gDataset.recordGroups,
+      gDataset.readGroups,
       gDataset.processingSteps,
       None)
   }
@@ -541,7 +541,7 @@ object ADAMContext {
     ds: Dataset[AlignmentRecordProduct]): AlignmentRecordDataset = {
     new DatasetBoundAlignmentRecordDataset(ds,
       gDataset.sequences,
-      gDataset.recordGroups,
+      gDataset.readGroups,
       gDataset.processingSteps)
   }
 
@@ -550,7 +550,7 @@ object ADAMContext {
     rdd: RDD[Genotype]): GenotypeDataset = {
     new RDDBoundGenotypeDataset(rdd,
       gDataset.sequences,
-      gDataset.recordGroups.toSamples,
+      gDataset.readGroups.toSamples,
       DefaultHeaderLines.allHeaderLines,
       None)
   }
@@ -560,7 +560,7 @@ object ADAMContext {
     ds: Dataset[GenotypeProduct]): GenotypeDataset = {
     new DatasetBoundGenotypeDataset(ds,
       gDataset.sequences,
-      gDataset.recordGroups.toSamples,
+      gDataset.readGroups.toSamples,
       DefaultHeaderLines.allHeaderLines)
   }
 
@@ -586,7 +586,7 @@ object ADAMContext {
     rdd: RDD[VariantContext]): VariantContextDataset = {
     VariantContextDataset(rdd,
       gDataset.sequences,
-      gDataset.recordGroups.toSamples,
+      gDataset.readGroups.toSamples,
       DefaultHeaderLines.allHeaderLines)
   }
 
@@ -613,7 +613,7 @@ object ADAMContext {
     rdd: RDD[Fragment]): FragmentDataset = {
     new RDDBoundFragmentDataset(rdd,
       gDataset.sequences,
-      RecordGroupDictionary.empty,
+      ReadGroupDictionary.empty,
       Seq.empty,
       None)
   }
@@ -623,7 +623,7 @@ object ADAMContext {
     rdd: RDD[AlignmentRecord]): AlignmentRecordDataset = {
     new RDDBoundAlignmentRecordDataset(rdd,
       gDataset.sequences,
-      RecordGroupDictionary.empty,
+      ReadGroupDictionary.empty,
       Seq.empty,
       None)
   }
@@ -698,7 +698,7 @@ object ADAMContext {
     rdd: RDD[Fragment]): FragmentDataset = {
     new RDDBoundFragmentDataset(rdd,
       gDataset.sequences,
-      gDataset.recordGroups,
+      gDataset.readGroups,
       gDataset.processingSteps,
       None)
   }
@@ -708,7 +708,7 @@ object ADAMContext {
     ds: Dataset[FragmentProduct]): FragmentDataset = {
     new DatasetBoundFragmentDataset(ds,
       gDataset.sequences,
-      gDataset.recordGroups,
+      gDataset.readGroups,
       gDataset.processingSteps)
   }
 
@@ -723,7 +723,7 @@ object ADAMContext {
     rdd: RDD[Genotype]): GenotypeDataset = {
     new RDDBoundGenotypeDataset(rdd,
       gDataset.sequences,
-      gDataset.recordGroups.toSamples,
+      gDataset.readGroups.toSamples,
       DefaultHeaderLines.allHeaderLines,
       None)
   }
@@ -733,7 +733,7 @@ object ADAMContext {
     ds: Dataset[GenotypeProduct]): GenotypeDataset = {
     new DatasetBoundGenotypeDataset(ds,
       gDataset.sequences,
-      gDataset.recordGroups.toSamples,
+      gDataset.readGroups.toSamples,
       DefaultHeaderLines.allHeaderLines)
   }
 
@@ -759,7 +759,7 @@ object ADAMContext {
     rdd: RDD[VariantContext]): VariantContextDataset = {
     VariantContextDataset(rdd,
       gDataset.sequences,
-      gDataset.recordGroups.toSamples,
+      gDataset.readGroups.toSamples,
       DefaultHeaderLines.allHeaderLines)
   }
 
@@ -804,7 +804,7 @@ object ADAMContext {
     rdd: RDD[Fragment]): FragmentDataset = {
     new RDDBoundFragmentDataset(rdd,
       gDataset.sequences,
-      RecordGroupDictionary.empty,
+      ReadGroupDictionary.empty,
       Seq.empty,
       None)
   }
@@ -814,7 +814,7 @@ object ADAMContext {
     ds: Dataset[FragmentProduct]): FragmentDataset = {
     new DatasetBoundFragmentDataset(ds,
       gDataset.sequences,
-      RecordGroupDictionary.empty,
+      ReadGroupDictionary.empty,
       Seq.empty)
   }
 
@@ -823,7 +823,7 @@ object ADAMContext {
     rdd: RDD[AlignmentRecord]): AlignmentRecordDataset = {
     new RDDBoundAlignmentRecordDataset(rdd,
       gDataset.sequences,
-      RecordGroupDictionary.empty,
+      ReadGroupDictionary.empty,
       Seq.empty,
       None)
   }
@@ -833,7 +833,7 @@ object ADAMContext {
     ds: Dataset[AlignmentRecordProduct]): AlignmentRecordDataset = {
     new DatasetBoundAlignmentRecordDataset(ds,
       gDataset.sequences,
-      RecordGroupDictionary.empty,
+      ReadGroupDictionary.empty,
       Seq.empty)
   }
 
@@ -910,7 +910,7 @@ object ADAMContext {
     rdd: RDD[Fragment]): FragmentDataset = {
     new RDDBoundFragmentDataset(rdd,
       gDataset.sequences,
-      RecordGroupDictionary.empty,
+      ReadGroupDictionary.empty,
       Seq.empty,
       None)
   }
@@ -920,7 +920,7 @@ object ADAMContext {
     ds: Dataset[FragmentProduct]): FragmentDataset = {
     new DatasetBoundFragmentDataset(ds,
       gDataset.sequences,
-      RecordGroupDictionary.empty,
+      ReadGroupDictionary.empty,
       Seq.empty)
   }
 
@@ -929,7 +929,7 @@ object ADAMContext {
     rdd: RDD[AlignmentRecord]): AlignmentRecordDataset = {
     new RDDBoundAlignmentRecordDataset(rdd,
       gDataset.sequences,
-      RecordGroupDictionary.empty,
+      ReadGroupDictionary.empty,
       Seq.empty,
       None)
   }
@@ -939,7 +939,7 @@ object ADAMContext {
     ds: Dataset[AlignmentRecordProduct]): AlignmentRecordDataset = {
     new DatasetBoundAlignmentRecordDataset(ds,
       gDataset.sequences,
-      RecordGroupDictionary.empty,
+      ReadGroupDictionary.empty,
       Seq.empty)
   }
 
@@ -1000,7 +1000,7 @@ object ADAMContext {
     rdd: RDD[Fragment]): FragmentDataset = {
     new RDDBoundFragmentDataset(rdd,
       gDataset.sequences,
-      RecordGroupDictionary.empty,
+      ReadGroupDictionary.empty,
       Seq.empty,
       None)
   }
@@ -1010,7 +1010,7 @@ object ADAMContext {
     rdd: RDD[AlignmentRecord]): AlignmentRecordDataset = {
     new RDDBoundAlignmentRecordDataset(rdd,
       gDataset.sequences,
-      RecordGroupDictionary.empty,
+      ReadGroupDictionary.empty,
       Seq.empty,
       None)
   }
@@ -1135,8 +1135,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @param samHeader The header to extract a read group dictionary from.
    * @return Returns the dictionary converted to an ADAM model.
    */
-  private[rdd] def loadBamReadGroups(samHeader: SAMFileHeader): RecordGroupDictionary = {
-    RecordGroupDictionary.fromSAMHeader(samHeader)
+  private[rdd] def loadBamReadGroups(samHeader: SAMFileHeader): ReadGroupDictionary = {
+    ReadGroupDictionary.fromSAMHeader(samHeader)
   }
 
   /**
@@ -1181,7 +1181,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       val samples = asScalaBuffer(vcfHeader.getGenotypeSamples)
         .map(s => {
           Sample.newBuilder()
-            .setSampleId(s)
+            .setId(s)
             .build()
         }).toSeq
       (sd, samples, VariantContextConverter.headerLines(vcfHeader))
@@ -1211,7 +1211,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @return Returns a seq of processing steps.
    */
   private[rdd] def loadAvroPrograms(pathName: String): Seq[ProcessingStep] = {
-    getFsAndFilesWithFilter(pathName, new FileFilter("_processing.avro"))
+    getFsAndFilesWithFilter(pathName, new FileFilter("_processingSteps.avro"))
       .map(p => {
         loadAvro[ProcessingStep](p.toString, ProcessingStep.SCHEMA$)
       }).reduce(_ ++ _)
@@ -1252,29 +1252,29 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * @param pathName The path name to load Avro record group dictionaries from.
+   * @param pathName The path name to load Avro read group dictionaries from.
    *   Globs/directories are supported.
-   * @return Returns a RecordGroupDictionary.
+   * @return Returns a ReadGroupDictionary.
    */
-  private[rdd] def loadAvroRecordGroupDictionary(pathName: String): RecordGroupDictionary = {
-    getFsAndFilesWithFilter(pathName, new FileFilter("_rgdict.avro"))
-      .map(p => loadSingleAvroRecordGroupDictionary(p.toString))
+  private[rdd] def loadAvroReadGroupDictionary(pathName: String): ReadGroupDictionary = {
+    getFsAndFilesWithFilter(pathName, new FileFilter("_readGroups.avro"))
+      .map(p => loadSingleAvroReadGroupDictionary(p.toString))
       .reduce(_ ++ _)
   }
 
   /**
-   * @see loadAvroRecordGroupDictionary
+   * @see loadAvroReadGroupDictionary
    *
-   * @param pathName The path name to load a single Avro record group dictionary from.
+   * @param pathName The path name to load a single Avro read group dictionary from.
    *   Globs/directories are not supported.
-   * @return Returns a RecordGroupDictionary.
+   * @return Returns a ReadGroupDictionary.
    */
-  private def loadSingleAvroRecordGroupDictionary(pathName: String): RecordGroupDictionary = {
-    val avroRgd = loadAvro[RecordGroupMetadata](pathName,
-      RecordGroupMetadata.SCHEMA$)
+  private def loadSingleAvroReadGroupDictionary(pathName: String): ReadGroupDictionary = {
+    val avroRgd = loadAvro[ReadGroupMetadata](pathName,
+      ReadGroupMetadata.SCHEMA$)
 
-    // convert avro to record group dictionary
-    new RecordGroupDictionary(avroRgd.map(RecordGroup.fromAvro))
+    // convert avro to read group dictionary
+    new ReadGroupDictionary(avroRgd.map(ReadGroup.fromAvro))
   }
 
   /**
@@ -1505,7 +1505,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   /**
    * Load alignment records from BAM/CRAM/SAM into an AlignmentRecordDataset.
    *
-   * This reads the sequence and record group dictionaries from the BAM/CRAM/SAM file
+   * This reads the sequence and read group dictionaries from the BAM/CRAM/SAM file
    * header. SAMRecords are read from the file and converted to the
    * AlignmentRecord schema.
    *
@@ -1515,7 +1515,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   BAM/CRAM/SAM format header. Defaults to ValidationStringency.STRICT.
    * @return Returns an AlignmentRecordDataset which wraps the genomic dataset of alignment records,
    *   sequence dictionary representing reference sequences the alignment records may be aligned to,
-   *   and the record group dictionary for the alignment records if one is available.
+   *   and the read group dictionary for the alignment records if one is available.
    */
   def loadBam(
     pathName: String,
@@ -1597,7 +1597,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @param viewRegion The ReferenceRegion we are filtering on.
    * @return Returns an AlignmentRecordDataset which wraps the genomic dataset of alignment records,
    *   sequence dictionary representing reference sequences the alignment records may be aligned to,
-   *   and the record group dictionary for the alignment records if one is available.
+   *   and the read group dictionary for the alignment records if one is available.
    */
   // todo: add stringency with default if possible
   def loadIndexedBam(
@@ -1617,7 +1617,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   BAM/CRAM/SAM format header. Defaults to ValidationStringency.STRICT.
    * @return Returns an AlignmentRecordDataset which wraps the genomic dataset of alignment records,
    *   sequence dictionary representing reference sequences the alignment records may be aligned to,
-   *   and the record group dictionary for the alignment records if one is available.
+   *   and the read group dictionary for the alignment records if one is available.
    */
   def loadIndexedBam(
     pathName: String,
@@ -1756,14 +1756,14 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     // this would be OK, but if the Seq[T] goes into a spark closure, the closure
     // cleaner will fail with a NotSerializableException, since SpecificRecord's
     // are not java serializable. specifically, we see this happen when using
-    // this function to load RecordGroupMetadata when creating a
-    // RecordGroupDictionary.
+    // this function to load ReadGroupMetadata when creating a
+    // ReadGroupDictionary.
     //
     // good news is, you can work around this by explicitly walking the iterator
     // and building a collection, which is what we do here. this would not be
     // efficient if we were loading a large amount of avro data (since we're
     // loading all the data into memory), but currently, we are just using this
-    // code for building sequence/record group dictionaries, which are fairly
+    // code for building sequence/read group dictionaries, which are fairly
     // small (seq dict is O(30) entries, rgd is O(20n) entries, where n is the
     // number of samples).
     while (iter.hasNext) {
@@ -1867,8 +1867,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * Load a path name in Parquet + Avro format into an AlignmentRecordDataset.
    *
    * @note The sequence dictionary is read from an Avro file stored at
-   *   pathName/_references.avro and the record group dictionary is read from an
-   *   Avro file stored at pathName/_rgdict.avro. These files are pure Avro,
+   *   pathName/_references.avro and the read group dictionary is read from an
+   *   Avro file stored at pathName/_readGroups.avro. These files are pure Avro,
    *   not Parquet + Avro.
    *
    * @param pathName The path name to load alignment records from.
@@ -1879,7 +1879,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   Defaults to None.
    * @return Returns an AlignmentRecordDataset which wraps the genomic dataset of alignment records,
    *   sequence dictionary representing reference sequences the alignment records may be aligned to,
-   *   and the record group dictionary for the alignment records if one is available.
+   *   and the read group dictionary for the alignment records if one is available.
    */
   def loadParquetAlignments(
     pathName: String,
@@ -1889,8 +1889,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     // convert avro to sequence dictionary
     val sd = loadAvroSequenceDictionary(pathName)
 
-    // convert avro to sequence dictionary
-    val rgd = loadAvroRecordGroupDictionary(pathName)
+    // convert avro to read group dictionary
+    val rgd = loadAvroReadGroupDictionary(pathName)
 
     // load processing step descriptions
     val pgs = loadAvroPrograms(pathName)
@@ -1913,8 +1913,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * Load a path name with range binned partitioned Parquet format into an AlignmentRecordDataset.
    *
    * @note The sequence dictionary is read from an Avro file stored at
-   *   pathName/_references.avro and the record group dictionary is read from an
-   *   Avro file stored at pathName/_rgdict.avro. These files are pure Avro,
+   *   pathName/_references.avro and the read group dictionary is read from an
+   *   Avro file stored at pathName/_readGroups.avro. These files are pure Avro,
    *   not Parquet + Avro.
    *
    * @param pathName The path name to load alignment records from.
@@ -1933,7 +1933,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val reads = loadParquetAlignments(pathName)
     val alignmentsDatasetBound = DatasetBoundAlignmentRecordDataset(reads.dataset,
       reads.sequences,
-      reads.recordGroups,
+      reads.readGroups,
       reads.processingSteps,
       isPartitioned = true,
       Some(partitionBinSize),
@@ -1986,7 +1986,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   Globs/directories are supported.
    * @param optPathName2 The path name to load the second set of unaligned alignment records from,
    *   if provided. Globs/directories are supported.
-   * @param optRecordGroup The optional record group name to associate to the unaligned alignment
+   * @param optReadGroup The optional read group identifier to associate to the unaligned alignment
    *   records. Defaults to None.
    * @param stringency The validation stringency to use when validating (possibly paired) FASTQ format.
    *   Defaults to ValidationStringency.STRICT.
@@ -1995,17 +1995,17 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   def loadFastq(
     pathName1: String,
     optPathName2: Option[String],
-    optRecordGroup: Option[String] = None,
+    optReadGroup: Option[String] = None,
     stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordDataset = LoadFastq.time {
 
     optPathName2.fold({
       loadUnpairedFastq(pathName1,
-        optRecordGroup = optRecordGroup,
+        optReadGroup = optReadGroup,
         stringency = stringency)
     })(filePath2 => {
       loadPairedFastq(pathName1,
         filePath2,
-        optRecordGroup = optRecordGroup,
+        optReadGroup = optReadGroup,
         stringency = stringency)
     })
   }
@@ -2017,7 +2017,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   Globs/directories are supported.
    * @param pathName2 The path name to load the second set of unaligned alignment records from.
    *   Globs/directories are supported.
-   * @param optRecordGroup The optional record group name to associate to the unaligned alignment
+   * @param optReadGroup The optional read group identifier to associate to the unaligned alignment
    *   records. Defaults to None.
    * @param persistLevel An optional persistance level to set. If this level is
    *   set, then reads will be cached (at the given persistance) level as part of
@@ -2029,20 +2029,20 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   def loadPairedFastq(
     pathName1: String,
     pathName2: String,
-    optRecordGroup: Option[String] = None,
+    optReadGroup: Option[String] = None,
     persistLevel: Option[StorageLevel] = Some(StorageLevel.MEMORY_ONLY),
     stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordDataset = LoadPairedFastq.time {
 
     val reads1 = loadUnpairedFastq(
       pathName1,
       setFirstOfPair = true,
-      optRecordGroup = optRecordGroup,
+      optReadGroup = optReadGroup,
       stringency = stringency
     )
     val reads2 = loadUnpairedFastq(
       pathName2,
       setSecondOfPair = true,
-      optRecordGroup = optRecordGroup,
+      optReadGroup = optReadGroup,
       stringency = stringency
     )
 
@@ -2075,7 +2075,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   Defaults to false.
    * @param setSecondOfPair If true, sets the unaligned alignment record as second from the fragment.
    *   Defaults to false.
-   * @param optRecordGroup The optional record group name to associate to the unaligned alignment
+   * @param optReadGroup The optional read group identifier to associate to the unaligned alignment
    *   records. Defaults to None.
    * @param stringency The validation stringency to use when validating unpaired FASTQ format.
    *   Defaults to ValidationStringency.STRICT.
@@ -2085,7 +2085,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     pathName: String,
     setFirstOfPair: Boolean = false,
     setSecondOfPair: Boolean = false,
-    optRecordGroup: Option[String] = None,
+    optReadGroup: Option[String] = None,
     stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordDataset = LoadUnpairedFastq.time {
 
     val job = HadoopUtil.newJob(sc)
@@ -2108,11 +2108,11 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     AlignmentRecordDataset.unaligned(records.map(
       fastqRecordConverter.convertRead(
         _,
-        optRecordGroup.map(recordGroup =>
-          if (recordGroup.isEmpty)
+        optReadGroup.map(readGroup =>
+          if (readGroup.isEmpty)
             pathName.substring(pathName.lastIndexOf("/") + 1)
           else
-            recordGroup),
+            readGroup),
         setFirstOfPair,
         setSecondOfPair,
         stringency
@@ -2313,7 +2313,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     // load sequence info
     val sd = loadAvroSequenceDictionary(pathName)
 
-    // load avro record group dictionary and convert to samples
+    // load avro read group dictionary and convert to samples
     val samples = loadAvroSamples(pathName)
 
     (optPredicate, optProjection) match {
@@ -2392,7 +2392,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     // load sequence info
     val sd = loadAvroSequenceDictionary(pathName)
 
-    // load avro record group dictionary and convert to samples
+    // load avro read group dictionary and convert to samples
     val samples = loadAvroSamples(pathName)
 
     val sqlContext = SQLContext.getOrCreate(sc)
@@ -2571,7 +2571,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   Globs/directories are supported.
    * @param pathName2 The path name to load the second set of unaligned alignment records from.
    *   Globs/directories are supported.
-   * @param optRecordGroup The optional record group name to associate to the unaligned alignment
+   * @param optReadGroup The optional read group identifier to associate to the unaligned alignment
    *   records. Defaults to None.
    * @param persistLevel An optional persistance level to set. If this level is
    *   set, then reads will be cached (at the given persistance) level as part of
@@ -2584,11 +2584,11 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   def loadPairedFastqAsFragments(
     pathName1: String,
     pathName2: String,
-    optRecordGroup: Option[String] = None,
+    optReadGroup: Option[String] = None,
     persistLevel: Option[StorageLevel] = Some(StorageLevel.MEMORY_ONLY),
     stringency: ValidationStringency = ValidationStringency.STRICT): FragmentDataset = LoadPairedFastqFragments.time {
 
-    loadPairedFastq(pathName1, pathName2, optRecordGroup, persistLevel, stringency).toFragments()
+    loadPairedFastq(pathName1, pathName2, optReadGroup, persistLevel, stringency).toFragments()
   }
 
   /**
@@ -2947,8 +2947,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     // convert avro to sequence dictionary
     val sd = loadAvroSequenceDictionary(pathName)
 
-    // convert avro to sequence dictionary
-    val rgd = loadAvroRecordGroupDictionary(pathName)
+    // convert avro to read group dictionary
+    val rgd = loadAvroReadGroupDictionary(pathName)
 
     // load processing step descriptions
     val pgs = loadAvroPrograms(pathName)
@@ -3249,7 +3249,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @param optPathName2 The optional path name to load the second set of alignment
    *   records from, if loading paired FASTQ format. Globs/directories are supported,
    *   although file extension must be present. Defaults to None.
-   * @param optRecordGroup The optional record group name to associate to the alignment
+   * @param optReadGroup The optional read group identifier to associate to the alignment
    *   records. Defaults to None.
    * @param optPredicate An optional pushdown predicate to use when reading Parquet + Avro.
    *   Defaults to None.
@@ -3259,12 +3259,12 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   Defaults to ValidationStringency.STRICT.
    * @return Returns an AlignmentRecordDataset which wraps the genomic dataset of alignment records,
    *   sequence dictionary representing reference sequences the alignment records may be aligned to,
-   *   and the record group dictionary for the alignment records if one is available.
+   *   and the read group dictionary for the alignment records if one is available.
    */
   def loadAlignments(
     pathName: String,
     optPathName2: Option[String] = None,
-    optRecordGroup: Option[String] = None,
+    optReadGroup: Option[String] = None,
     optPredicate: Option[FilterPredicate] = None,
     optProjection: Option[Schema] = None,
     stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordDataset = LoadAlignments.time {
@@ -3282,7 +3282,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       loadInterleavedFastq(pathName)
     } else if (isFastqExt(trimmedPathName)) {
       log.info(s"Loading $pathName as unpaired FASTQ and converting to AlignmentRecords.")
-      loadFastq(pathName, optPathName2, optRecordGroup, stringency)
+      loadFastq(pathName, optPathName2, optReadGroup, stringency)
     } else if (isFastaExt(trimmedPathName)) {
       log.info(s"Loading $pathName as FASTA and converting to AlignmentRecords.")
       AlignmentRecordDataset.unaligned(loadFasta(pathName, maximumLength = 10000L).toReads)

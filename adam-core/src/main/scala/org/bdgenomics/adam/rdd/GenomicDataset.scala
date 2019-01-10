@@ -46,8 +46,8 @@ import org.apache.spark.sql.functions._
 import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models.{
-  RecordGroup,
-  RecordGroupDictionary,
+  ReadGroup,
+  ReadGroupDictionary,
   ReferenceRegion,
   SequenceDictionary,
   SequenceRecord
@@ -55,7 +55,7 @@ import org.bdgenomics.adam.models.{
 import org.bdgenomics.adam.util.{ ManualRegionPartitioner, TextRddWriter }
 import org.bdgenomics.formats.avro.{
   ProcessingStep,
-  RecordGroup => RecordGroupMetadata,
+  ReadGroup => ReadGroupMetadata,
   Reference,
   Sample
 }
@@ -3399,7 +3399,7 @@ trait GenomicDatasetWithLineage[T, U <: Product, V <: GenomicDatasetWithLineage[
    * Merges a new processing record with the extant computational lineage.
    *
    * @param newProcessingStep
-   * @return Returns a new GenomicDataset with new record groups merged in.
+   * @return Returns a new GenomicDataset with new read groups merged in.
    */
   def addProcessingStep(newProcessingStep: ProcessingStep): V = {
     replaceProcessingSteps(processingSteps :+ newProcessingStep)
@@ -3410,63 +3410,63 @@ trait GenomicDatasetWithLineage[T, U <: Product, V <: GenomicDatasetWithLineage[
  * An abstract class describing a GenomicDataset where:
  *
  * * The data are Avro IndexedRecords.
- * * The data are associated to record groups (i.e., they are reads or fragments).
+ * * The data are associated to read groups (i.e., they are reads or fragments).
  */
-abstract class AvroRecordGroupGenomicDataset[T <% IndexedRecord: Manifest, U <: Product, V <: AvroRecordGroupGenomicDataset[T, U, V]] extends AvroGenomicDataset[T, U, V]
+abstract class AvroReadGroupGenomicDataset[T <% IndexedRecord: Manifest, U <: Product, V <: AvroReadGroupGenomicDataset[T, U, V]] extends AvroGenomicDataset[T, U, V]
     with GenomicDatasetWithLineage[T, U, V] {
 
   override def toString = "%s with %d reference sequences, %d read groups, and %d processing steps"
-    .format(getClass.getSimpleName, sequences.size, recordGroups.size, processingSteps.size)
+    .format(getClass.getSimpleName, sequences.size, readGroups.size, processingSteps.size)
 
   /**
-   * A dictionary describing the record groups attached to this GenomicDataset.
+   * A dictionary describing the read groups attached to this GenomicDataset.
    */
-  val recordGroups: RecordGroupDictionary
+  val readGroups: ReadGroupDictionary
 
   /**
-   * Replaces the record groups attached to this genomic dataset.
+   * Replaces the read groups attached to this genomic dataset.
    *
-   * @param newRecordGroups The new record group dictionary to attach.
-   * @return Returns a new GenomicDataset with new record groups attached.
+   * @param newReadGroups The new read group dictionary to attach.
+   * @return Returns a new GenomicDataset with new read groups attached.
    */
-  def replaceRecordGroups(newRecordGroups: RecordGroupDictionary): V
+  def replaceReadGroups(newReadGroups: ReadGroupDictionary): V
 
   /**
-   * Merges a new set of record groups with the extant record groups.
+   * Merges a new set of read groups with the extant read groups.
    *
-   * @param recordGroupsToAdd The record group dictionary to append to the
-   *   extant record groups.
-   * @return Returns a new GenomicDataset with new record groups merged in.
+   * @param readGroupsToAdd The read group dictionary to append to the
+   *   extant read groups.
+   * @return Returns a new GenomicDataset with new read groups merged in.
    */
-  def addRecordGroups(recordGroupsToAdd: RecordGroupDictionary): V = {
-    replaceRecordGroups(recordGroups ++ recordGroupsToAdd)
+  def addReadGroups(readGroupsToAdd: ReadGroupDictionary): V = {
+    replaceReadGroups(readGroups ++ readGroupsToAdd)
   }
 
   /**
-   * Adds a single record group to the extant record groups.
+   * Adds a single read group to the extant read groups.
    *
-   * @param recordGroupToAdd The record group to append to the extant record
+   * @param readGroupToAdd The read group to append to the extant read
    *   groups.
-   * @return Returns a new GenomicDataset with the new record group added.
+   * @return Returns a new GenomicDataset with the new read group added.
    */
-  def addRecordGroup(recordGroupToAdd: RecordGroup): V = {
-    addRecordGroups(RecordGroupDictionary(Seq(recordGroupToAdd)))
+  def addReadGroup(readGroupToAdd: ReadGroup): V = {
+    addReadGroups(ReadGroupDictionary(Seq(readGroupToAdd)))
   }
 
   /**
-   * Save the record groups to disk.
+   * Save the read groups to disk.
    *
-   * @param pathName The path to save record groups to.
+   * @param pathName The path to save read groups to.
    */
-  protected def saveRecordGroups(pathName: String): Unit = {
+  protected def saveReadGroups(pathName: String): Unit = {
 
-    // convert record group to avro and save
-    val rgMetadata = recordGroups.recordGroups
+    // convert read group to avro and save
+    val rgMetadata = readGroups.readGroups
       .map(_.toMetadata)
 
-    saveAvro("%s/_rgdict.avro".format(pathName),
+    saveAvro("%s/_readGroups.avro".format(pathName),
       rdd.context,
-      RecordGroupMetadata.SCHEMA$,
+      ReadGroupMetadata.SCHEMA$,
       rgMetadata)
   }
 
@@ -3477,7 +3477,7 @@ abstract class AvroRecordGroupGenomicDataset[T <% IndexedRecord: Manifest, U <: 
    */
   protected def saveProcessingSteps(pathName: String) {
     // save processing metadata
-    saveAvro("%s/_processing.avro".format(pathName),
+    saveAvro("%s/_processingSteps.avro".format(pathName),
       rdd.context,
       ProcessingStep.SCHEMA$,
       processingSteps)
@@ -3487,7 +3487,7 @@ abstract class AvroRecordGroupGenomicDataset[T <% IndexedRecord: Manifest, U <: 
     savePartitionMap(pathName)
     saveProcessingSteps(pathName)
     saveSequences(pathName)
-    saveRecordGroups(pathName)
+    saveReadGroups(pathName)
   }
 }
 

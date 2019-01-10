@@ -100,7 +100,7 @@ test_that("transmute to coverage", {
     reads <- loadAlignments(ac, readsPath)
 
     readsAsCoverage = transmute(reads, function(df) {
-        select(df, df$referenceName, df$start, df$end, alias(cast(df$mapq, "double"), "count"), alias(cast(df$recordGroupSample, "string"), "optSampleId"))
+        select(df, df$referenceName, df$start, df$end, alias(cast(df$mapq, "double"), "count"), alias(cast(df$readGroupSampleId, "string"), "optSampleId"))
     }, "CoverageDataset")
 
     expect_true(is(readsAsCoverage, "CoverageDataset"))

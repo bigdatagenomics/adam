@@ -362,7 +362,7 @@ sealed abstract class VariantContextDataset extends MultisampleGenomicDataset[Va
     log.info(s"Writing $vcfFormat file to $filePath")
 
     // map samples to sample ids
-    val sampleIds = samples.map(_.getSampleId)
+    val sampleIds = samples.map(_.getId)
 
     // convert the variants to htsjdk VCs
     val converter = VariantContextConverter(headerLines,
@@ -380,7 +380,7 @@ sealed abstract class VariantContextDataset extends MultisampleGenomicDataset[Va
     // make header
     val header = new VCFHeader(
       headerLines.toSet,
-      samples.map(_.getSampleId))
+      samples.map(_.getId))
     header.setSequenceDictionary(sequences.toSAMSequenceDictionary)
 
     // write header

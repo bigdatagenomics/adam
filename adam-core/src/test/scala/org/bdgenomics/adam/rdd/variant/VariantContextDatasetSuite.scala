@@ -85,7 +85,7 @@ class VariantContextDatasetSuite extends ADAMFunSuite {
     VariantContextDataset(sc.parallelize(List(
       VariantContext(v0, Seq(g0))), 1),
       SequenceDictionary.fromAvro(Seq(reference)), Seq(Sample.newBuilder()
-        .setSampleId("NA12878")
+        .setId("NA12878")
         .build),
       DefaultHeaderLines.allHeaderLines)
   }
@@ -347,9 +347,9 @@ class VariantContextDatasetSuite extends ADAMFunSuite {
       assert(headerRdd.headerLines.exists(_.getKey == "ABC"))
 
       val sampleRdd = vRdd.addSample(Sample.newBuilder
-        .setSampleId("aSample")
+        .setId("aSample")
         .build)
-      assert(sampleRdd.samples.exists(_.getSampleId == "aSample"))
+      assert(sampleRdd.samples.exists(_.getId == "aSample"))
     }
 
     testMetadata(sc.loadVcf(testFile("small.vcf")))

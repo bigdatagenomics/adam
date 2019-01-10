@@ -23,7 +23,7 @@ using Apache Spark.
 
 All GenomicDatasets include a sequence dictionary which describes the
 reference genome that the data in the genomic dataset are aligned to, if one is
-known. Additionally, RecordGroupGenomicDataset store a dictionary with read
+known. Additionally, ReadGroupGenomicDataset store a dictionary with read
 groups that are attached to the reads/fragments. Similarly, the
 MultisampleGenomicDataset includes a list of samples who are present in the
 dataset.

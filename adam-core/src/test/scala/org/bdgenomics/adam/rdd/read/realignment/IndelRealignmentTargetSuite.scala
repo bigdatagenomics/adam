@@ -48,8 +48,8 @@ class IndelRealignmentTargetSuite extends ADAMFunSuite {
       .setEnd(start + refLength)
       .setSequence(sequence)
       .setReadNegativeStrand(false)
-      .setMapq(60)
-      .setQual(sequence) // no typo, we just don't care
+      .setMappingQuality(60)
+      .setQuality(sequence) // no typo, we just don't care
       .setReferenceName("1")
       .setMismatchingPositions(mdtag)
       .build())

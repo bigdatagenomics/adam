@@ -136,7 +136,7 @@ class AlignmentRecordDatasetTest(SparkTestCase):
                                                              x.start,
                                                              x.end,
                                                              x.mapq.cast(DoubleType()).alias("count"),
-                                                             x.recordGroupSample.alias("optSampleId")),
+                                                             x.readGroupSampleId.alias("optSampleId")),
                                         CoverageDataset)
 
         assert(isinstance(readsAsCoverage, CoverageDataset))

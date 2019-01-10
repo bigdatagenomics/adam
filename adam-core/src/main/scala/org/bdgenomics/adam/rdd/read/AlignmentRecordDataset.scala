@@ -137,7 +137,7 @@ object AlignmentRecordDataset extends Serializable {
   def unaligned(rdd: RDD[AlignmentRecord]): AlignmentRecordDataset = {
     RDDBoundAlignmentRecordDataset(rdd,
       SequenceDictionary.empty,
-      RecordGroupDictionary.empty,
+      ReadGroupDictionary.empty,
       Seq.empty,
       None)
   }
@@ -175,16 +175,16 @@ object AlignmentRecordDataset extends Serializable {
    *
    * @param rdd The underlying AlignmentRecord RDD.
    * @param sequences The sequence dictionary for the genomic dataset.
-   * @param recordGroups The record group dictionary for the genomic dataset.
+   * @param readGroups The read group dictionary for the genomic dataset.
    * @return A new AlignmentRecordDataset.
    */
   def apply(rdd: RDD[AlignmentRecord],
             sequences: SequenceDictionary,
-            recordGroups: RecordGroupDictionary,
+            readGroups: ReadGroupDictionary,
             processingSteps: Seq[ProcessingStep]): AlignmentRecordDataset = {
     RDDBoundAlignmentRecordDataset(rdd,
       sequences,
-      recordGroups,
+      readGroups,
       processingSteps,
       None)
   }
@@ -194,16 +194,16 @@ object AlignmentRecordDataset extends Serializable {
    *
    * @param ds The underlying AlignmentRecord Dataset.
    * @param sequences The sequence dictionary for the genomic dataset.
-   * @param recordGroups The record group dictionary for the genomic dataset.
+   * @param readGroups The read group dictionary for the genomic dataset.
    * @return A new AlignmentRecordDataset.
    */
   def apply(ds: Dataset[AlignmentRecordProduct],
             sequences: SequenceDictionary,
-            recordGroups: RecordGroupDictionary,
+            readGroups: ReadGroupDictionary,
             processingSteps: Seq[ProcessingStep]): AlignmentRecordDataset = {
     DatasetBoundAlignmentRecordDataset(ds,
       sequences,
-      recordGroups,
+      readGroups,
       processingSteps)
   }
 }
@@ -212,7 +212,7 @@ case class ParquetUnboundAlignmentRecordDataset private[rdd] (
     @transient private val sc: SparkContext,
     private val parquetFilename: String,
     sequences: SequenceDictionary,
-    recordGroups: RecordGroupDictionary,
+    readGroups: ReadGroupDictionary,
     @transient val processingSteps: Seq[ProcessingStep]) extends AlignmentRecordDataset {
 
   lazy val optPartitionMap = sc.extractPartitionMap(parquetFilename)
@@ -232,9 +232,8 @@ case class ParquetUnboundAlignmentRecordDataset private[rdd] (
     copy(sequences = newSequences)
   }
 
-  def replaceRecordGroups(
-    newRecordGroups: RecordGroupDictionary): AlignmentRecordDataset = {
-    copy(recordGroups = newRecordGroups)
+  def replaceReadGroups(newReadGroups: ReadGroupDictionary): AlignmentRecordDataset = {
+    copy(readGroups = newReadGroups)
   }
 
   def replaceProcessingSteps(
@@ -246,7 +245,7 @@ case class ParquetUnboundAlignmentRecordDataset private[rdd] (
 case class DatasetBoundAlignmentRecordDataset private[rdd] (
   dataset: Dataset[AlignmentRecordProduct],
   sequences: SequenceDictionary,
-  recordGroups: RecordGroupDictionary,
+  readGroups: ReadGroupDictionary,
   @transient val processingSteps: Seq[ProcessingStep],
   override val isPartitioned: Boolean = true,
   override val optPartitionBinSize: Option[Int] = Some(1000000),
@@ -286,9 +285,8 @@ case class DatasetBoundAlignmentRecordDataset private[rdd] (
     copy(sequences = newSequences)
   }
 
-  def replaceRecordGroups(
-    newRecordGroups: RecordGroupDictionary): AlignmentRecordDataset = {
-    copy(recordGroups = newRecordGroups)
+  def replaceReadGroups(newReadGroups: ReadGroupDictionary): AlignmentRecordDataset = {
+    copy(readGroups = newReadGroups)
   }
 
   def replaceProcessingSteps(
@@ -296,8 +294,8 @@ case class DatasetBoundAlignmentRecordDataset private[rdd] (
     copy(processingSteps = newProcessingSteps)
   }
 
-  override def filterByMapq(minimumMapq: Int): AlignmentRecordDataset = {
-    transformDataset(dataset => dataset.filter(dataset.col("mapq") >= minimumMapq))
+  override def filterByMappingQuality(minimumMappingQuality: Int): AlignmentRecordDataset = {
+    transformDataset(dataset => dataset.filter(dataset.col("mappingQuality") >= minimumMappingQuality))
   }
 
   override def filterUnalignedReads(): AlignmentRecordDataset = {
@@ -316,27 +314,27 @@ case class DatasetBoundAlignmentRecordDataset private[rdd] (
     transformDataset(dataset => dataset.filter(dataset.col("primaryAlignment")))
   }
 
-  override def filterToRecordGroup(recordGroupName: String): AlignmentRecordDataset = {
-    transformDataset(dataset => dataset.filter(dataset.col("recordGroupName") === recordGroupName))
+  override def filterToReadGroup(readGroupId: String): AlignmentRecordDataset = {
+    transformDataset(dataset => dataset.filter(dataset.col("readGroupId") === readGroupId))
   }
 
-  override def filterToRecordGroups(recordGroupNames: Seq[String]): AlignmentRecordDataset = {
-    transformDataset(dataset => dataset.filter(dataset.col("recordGroupName") isin (recordGroupNames: _*)))
+  override def filterToReadGroups(readGroupIds: Seq[String]): AlignmentRecordDataset = {
+    transformDataset(dataset => dataset.filter(dataset.col("readGroupId") isin (readGroupIds: _*)))
   }
 
-  override def filterToSample(recordGroupSample: String): AlignmentRecordDataset = {
-    transformDataset(dataset => dataset.filter(dataset.col("recordGroupSample") === recordGroupSample))
+  override def filterToSample(readGroupSampleId: String): AlignmentRecordDataset = {
+    transformDataset(dataset => dataset.filter(dataset.col("readGroupSampleId") === readGroupSampleId))
   }
 
-  override def filterToSamples(recordGroupSamples: Seq[String]): AlignmentRecordDataset = {
-    transformDataset(dataset => dataset.filter(dataset.col("recordGroupSample") isin (recordGroupSamples: _*)))
+  override def filterToSamples(readGroupSampleIds: Seq[String]): AlignmentRecordDataset = {
+    transformDataset(dataset => dataset.filter(dataset.col("readGroupSampleId") isin (readGroupSampleIds: _*)))
   }
 }
 
 case class RDDBoundAlignmentRecordDataset private[rdd] (
     rdd: RDD[AlignmentRecord],
     sequences: SequenceDictionary,
-    recordGroups: RecordGroupDictionary,
+    readGroups: ReadGroupDictionary,
     @transient val processingSteps: Seq[ProcessingStep],
     optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends AlignmentRecordDataset {
 
@@ -363,11 +361,11 @@ case class RDDBoundAlignmentRecordDataset private[rdd] (
         readMapped
       }).flatMap(r => {
         val positions: List[Long] = List.range(r.getStart, r.getEnd)
-        positions.map(n => ((r.getRecordGroupSample, ReferencePosition(r.getReferenceName, n)), 1))
+        positions.map(n => ((r.getReadGroupSampleId, ReferencePosition(r.getReferenceName, n)), 1))
       }).reduceByKey(_ + _)
         .map(r => Coverage(r._1._2, r._2.toDouble, Option(r._1._1)))
 
-    RDDBoundCoverageDataset(covCounts, sequences, recordGroups.toSamples, None)
+    RDDBoundCoverageDataset(covCounts, sequences, readGroups.toSamples, None)
   }
 
   def replaceSequences(
@@ -375,9 +373,8 @@ case class RDDBoundAlignmentRecordDataset private[rdd] (
     copy(sequences = newSequences)
   }
 
-  def replaceRecordGroups(
-    newRecordGroups: RecordGroupDictionary): AlignmentRecordDataset = {
-    copy(recordGroups = newRecordGroups)
+  def replaceReadGroups(newReadGroups: ReadGroupDictionary): AlignmentRecordDataset = {
+    copy(readGroups = newReadGroups)
   }
 
   def replaceProcessingSteps(
@@ -389,7 +386,7 @@ case class RDDBoundAlignmentRecordDataset private[rdd] (
 private case class AlignmentWindow(referenceName: String, start: Long, end: Long, sampleId: String) {
 }
 
-sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDataset[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordDataset] {
+sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordDataset] {
 
   protected val productFn = AlignmentRecordProduct.fromAvro(_)
   protected val unproductFn = (a: AlignmentRecordProduct) => a.toAvro
@@ -400,7 +397,7 @@ sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDatas
     tFn: Dataset[AlignmentRecordProduct] => Dataset[AlignmentRecordProduct]): AlignmentRecordDataset = {
     DatasetBoundAlignmentRecordDataset(dataset,
       sequences,
-      recordGroups,
+      readGroups,
       processingSteps)
       .transformDataset(tFn)
   }
@@ -409,7 +406,7 @@ sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDatas
     tFn: JFunction[Dataset[AlignmentRecordProduct], Dataset[AlignmentRecordProduct]]): AlignmentRecordDataset = {
     DatasetBoundAlignmentRecordDataset(dataset,
       sequences,
-      recordGroups,
+      readGroups,
       processingSteps)
       .transformDataset(tFn)
   }
@@ -426,7 +423,7 @@ sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDatas
                                        partitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): AlignmentRecordDataset = {
     RDDBoundAlignmentRecordDataset(newRdd,
       newSequences,
-      recordGroups,
+      readGroups,
       processingSteps,
       partitionMap)
   }
@@ -435,7 +432,7 @@ sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDatas
                            newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): AlignmentRecordDataset = {
     RDDBoundAlignmentRecordDataset(newRdd,
       sequences,
-      recordGroups,
+      readGroups,
       processingSteps,
       newPartitionMap)
   }
@@ -449,7 +446,7 @@ sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDatas
     val iterableDatasets = datasets.toSeq
     AlignmentRecordDataset(rdd.context.union(rdd, iterableDatasets.map(_.rdd): _*),
       iterableDatasets.map(_.sequences).fold(sequences)(_ ++ _),
-      iterableDatasets.map(_.recordGroups).fold(recordGroups)(_ ++ _),
+      iterableDatasets.map(_.readGroups).fold(readGroups)(_ ++ _),
       iterableDatasets.map(_.processingSteps).fold(processingSteps)(_ ++ _))
   }
 
@@ -462,12 +459,12 @@ sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDatas
   def toFragments(): FragmentDataset = {
     FragmentDataset(groupReadsByFragment().map(_.toFragment),
       sequences,
-      recordGroups,
+      readGroups,
       processingSteps)
   }
 
   /**
-   * Groups all reads by record group and read name.
+   * Groups all reads by read group and read name.
    *
    * @return SingleReadBuckets with primary, secondary and unmapped reads
    */
@@ -486,7 +483,7 @@ sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDatas
   private[rdd] def querynameSortedToFragments: FragmentDataset = {
     FragmentDataset(locallyGroupReadsByFragment().map(_.toFragment),
       sequences,
-      recordGroups,
+      readGroups,
       processingSteps)
   }
 
@@ -499,8 +496,8 @@ sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDatas
     import dataset.sqlContext.implicits._
     val covCounts = dataset.toDF
       .where($"readMapped")
-      .select($"referenceName", $"start", $"end", $"recordGroupSample")
-      .withColumnRenamed("recordGroupSample", "sampleId")
+      .select($"referenceName", $"start", $"end", $"readGroupSampleId")
+      .withColumnRenamed("readGroupSampleId", "sampleId")
       .as[AlignmentWindow]
       .flatMap(w => {
         val width = (w.end - w.start).toInt
@@ -521,7 +518,7 @@ sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDatas
       .withColumnRenamed("sum(count)", "count")
       .as[Coverage]
 
-    DatasetBoundCoverageDataset(covCounts, sequences, recordGroups.toSamples)
+    DatasetBoundCoverageDataset(covCounts, sequences, readGroups.toSamples)
   }
 
   /**
@@ -685,7 +682,7 @@ sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDatas
     val adamRecordConverter = new AlignmentRecordConverter
 
     // create header and set sort order if needed
-    val header = adamRecordConverter.createSAMHeader(sequences, recordGroups)
+    val header = adamRecordConverter.createSAMHeader(sequences, readGroups)
     header.setSortOrder(sortOrder)
 
     // get program records and attach to header
@@ -701,7 +698,7 @@ sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDatas
     val convertedRDD: RDD[SAMRecordWritable] = rdd.map(r => {
       // must wrap record for serializability
       val srw = new SAMRecordWritable()
-      srw.set(adamRecordConverter.convert(r, hdrBcast.value, recordGroups))
+      srw.set(adamRecordConverter.convert(r, hdrBcast.value, readGroups))
       srw
     })
 
@@ -1096,7 +1093,7 @@ sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDatas
     optSamplingSeed: Option[Long] = None): AlignmentRecordDataset = BQSRInDriver.time {
     replaceRdd(BaseQualityRecalibration(rdd,
       knownSnps,
-      recordGroups,
+      readGroups,
       minAcceptableQuality,
       optStorageLevel = optStorageLevel,
       optSamplingFraction = optSamplingFraction,
@@ -1308,7 +1305,7 @@ sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDatas
   }
 
   /**
-   * Groups all reads by record group and read name.
+   * Groups all reads by read group and read name.
    *
    * @return SingleReadBuckets with primary, secondary and unmapped reads
    */
@@ -1738,11 +1735,11 @@ sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDatas
   /**
    * Filter this AlignmentRecordDataset by mapping quality.
    *
-   * @param minimumMapq Minimum mapping quality to filter by, inclusive.
+   * @param minimumMappingQuality Minimum mapping quality to filter by, inclusive.
    * @return AlignmentRecordDataset filtered by mapping quality.
    */
-  def filterByMapq(minimumMapq: Int): AlignmentRecordDataset = {
-    transform(rdd => rdd.filter(g => Option(g.getMapq).exists(_ >= minimumMapq)))
+  def filterByMappingQuality(minimumMappingQuality: Int): AlignmentRecordDataset = {
+    transform(rdd => rdd.filter(g => Option(g.getMappingQuality).exists(_ >= minimumMappingQuality)))
   }
 
   /**
@@ -1782,62 +1779,62 @@ sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDatas
   }
 
   /**
-   * Filter this AlignmentRecordDataset by record group to those that match the specified record group.
+   * Filter this AlignmentRecordDataset by read group to those that match the specified read group.
    *
-   * @param recordGroupName Record group to filter by.
-   * @return AlignmentRecordDataset filtered by record group.
+   * @param readGroupId Read group to filter by.
+   * @return AlignmentRecordDataset filtered by read group.
    */
-  def filterToRecordGroup(recordGroupName: String): AlignmentRecordDataset = {
-    transform(rdd => rdd.filter(g => Option(g.getRecordGroupName).exists(_ == recordGroupName)))
+  def filterToReadGroup(readGroupId: String): AlignmentRecordDataset = {
+    transform(rdd => rdd.filter(g => Option(g.getReadGroupId).exists(_ == readGroupId)))
   }
 
   /**
-   * (Java-specific) Filter this AlignmentRecordDataset by record group to those that match the specified record groups.
+   * (Java-specific) Filter this AlignmentRecordDataset by read group to those that match the specified read groups.
    *
-   * @param recordGroupNames List of record groups to filter by.
-   * @return AlignmentRecordDataset filtered by one or more record groups.
+   * @param readGroupIds List of read groups to filter by.
+   * @return AlignmentRecordDataset filtered by one or more read groups.
    */
-  def filterToRecordGroups(recordGroupNames: java.util.List[String]): AlignmentRecordDataset = {
-    filterToRecordGroups(asScalaBuffer(recordGroupNames))
+  def filterToReadGroups(readGroupIds: java.util.List[String]): AlignmentRecordDataset = {
+    filterToReadGroups(asScalaBuffer(readGroupIds))
   }
 
   /**
-   * (Scala-specific) Filter this AlignmentRecordDataset by record group to those that match the specified record groups.
+   * (Scala-specific) Filter this AlignmentRecordDataset by read group to those that match the specified read groups.
    *
-   * @param recordGroupNames Sequence of record groups to filter by.
-   * @return AlignmentRecordDataset filtered by one or more record groups.
+   * @param readGroupIds Sequence of read groups to filter by.
+   * @return AlignmentRecordDataset filtered by one or more read groups.
    */
-  def filterToRecordGroups(recordGroupNames: Seq[String]): AlignmentRecordDataset = {
-    transform(rdd => rdd.filter(g => Option(g.getRecordGroupName).exists(recordGroupNames.contains(_))))
+  def filterToReadGroups(readGroupIds: Seq[String]): AlignmentRecordDataset = {
+    transform(rdd => rdd.filter(g => Option(g.getReadGroupId).exists(readGroupIds.contains(_))))
   }
 
   /**
    * Filter this AlignmentRecordDataset by sample to those that match the specified sample.
    *
-   * @param recordGroupSample Sample to filter by.
+   * @param readGroupSampleId Sample to filter by.
    * @return AlignmentRecordDataset filtered by the specified sample.
    */
-  def filterToSample(recordGroupSample: String): AlignmentRecordDataset = {
-    transform(rdd => rdd.filter(g => Option(g.getRecordGroupSample).exists(_ == recordGroupSample)))
+  def filterToSample(readGroupSampleId: String): AlignmentRecordDataset = {
+    transform(rdd => rdd.filter(g => Option(g.getReadGroupSampleId).exists(_ == readGroupSampleId)))
   }
 
   /**
    * (Java-specific) Filter this AlignmentRecordDataset by sample to those that match the specified samples.
    *
-   * @param recordGroupSamples List of samples to filter by.
+   * @param readGroupSampleIds List of samples to filter by.
    * @return AlignmentRecordDataset filtered by the specified samples.
    */
-  def filterToSamples(recordGroupSamples: java.util.List[String]): AlignmentRecordDataset = {
-    filterToSamples(asScalaBuffer(recordGroupSamples))
+  def filterToSamples(readGroupSampleIds: java.util.List[String]): AlignmentRecordDataset = {
+    filterToSamples(asScalaBuffer(readGroupSampleIds))
   }
 
   /**
    * (Scala-specific) Filter this AlignmentRecordDataset by sample to those that match the specified samples.
    *
-   * @param recordGroupSamples Sequence of samples to filter by.
+   * @param readGroupSampleIds Sequence of samples to filter by.
    * @return AlignmentRecordDataset filtered by the specified samples.
    */
-  def filterToSamples(recordGroupSamples: Seq[String]): AlignmentRecordDataset = {
-    transform(rdd => rdd.filter(g => Option(g.getRecordGroupSample).exists(recordGroupSamples.contains(_))))
+  def filterToSamples(readGroupSampleIds: Seq[String]): AlignmentRecordDataset = {
+    transform(rdd => rdd.filter(g => Option(g.getReadGroupSampleId).exists(readGroupSampleIds.contains(_))))
   }
 }

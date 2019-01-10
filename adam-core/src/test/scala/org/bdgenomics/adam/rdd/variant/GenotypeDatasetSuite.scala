@@ -360,9 +360,9 @@ class GenotypeDatasetSuite extends ADAMFunSuite {
       assert(headerRdd.headerLines.exists(_.getKey == "ABC"))
 
       val sampleRdd = gDataset.addSample(Sample.newBuilder
-        .setSampleId("aSample")
+        .setId("aSample")
         .build)
-      assert(sampleRdd.samples.exists(_.getSampleId == "aSample"))
+      assert(sampleRdd.samples.exists(_.getId == "aSample"))
     }
 
     val inputPath = testFile("small.vcf")

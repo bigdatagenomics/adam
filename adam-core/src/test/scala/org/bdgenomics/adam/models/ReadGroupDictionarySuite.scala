@@ -20,16 +20,16 @@ package org.bdgenomics.adam.models
 import htsjdk.samtools.SAMReadGroupRecord
 import org.scalatest.FunSuite
 
-class RecordGroupDictionarySuite extends FunSuite {
+class ReadGroupDictionarySuite extends FunSuite {
 
   test("simple conversion to and from sam read group") {
     val origSAMRGR = new SAMReadGroupRecord("myId")
     origSAMRGR.setSample("mySample")
-    val rg = RecordGroup(origSAMRGR)
+    val rg = ReadGroup(origSAMRGR)
 
     // sample and record name should be converted
-    assert(rg.sample == "mySample")
-    assert(rg.recordGroupName == "myId")
+    assert(rg.sampleId == "mySample")
+    assert(rg.id == "myId")
 
     val newSAMRGR = rg.toSAMReadGroupRecord
 
@@ -40,19 +40,19 @@ class RecordGroupDictionarySuite extends FunSuite {
   test("sample name must be set") {
     val samRGR = new SAMReadGroupRecord("myId")
     intercept[IllegalArgumentException] {
-      RecordGroup(samRGR)
+      ReadGroup(samRGR)
     }
   }
 
   test("simple equality checks") {
-    val rg1a = new RecordGroup("me", "rg1")
-    val rg1b = new RecordGroup("me", "rg1")
-    val rg2 = new RecordGroup("me", "rg2")
-    val rg3 = new RecordGroup("you", "rg1") // all hail the king!
+    val rg1a = new ReadGroup("me", "rg1")
+    val rg1b = new ReadGroup("me", "rg1")
+    val rg2 = new ReadGroup("me", "rg2")
+    val rg3 = new ReadGroup("you", "rg1") // all hail the king!
 
     assert(rg1a.equals(rg1a))
-    assert(rg1a.sample === rg1b.sample)
-    assert(rg1a.recordGroupName === rg1b.recordGroupName)
+    assert(rg1a.sampleId === rg1b.sampleId)
+    assert(rg1a.id === rg1b.id)
     assert(!rg1a.equals(rg2))
     assert(!rg1a.equals(rg3))
     assert(!rg1b.equals(rg2))
@@ -60,33 +60,33 @@ class RecordGroupDictionarySuite extends FunSuite {
     assert(!rg2.equals(rg3))
   }
 
-  test("get samples from record group dictionary") {
-    val rgd = RecordGroupDictionary(Seq(RecordGroup("sample1", "rg1"),
-      RecordGroup("sample1", "rg2"),
-      RecordGroup("sample1", "rg3"),
-      RecordGroup("sample1", "rg4"),
-      RecordGroup("sample1", "rg5"),
-      RecordGroup("sample2", "rgSample2"),
-      RecordGroup("sample3", "rg1Sample3"),
-      RecordGroup("sample3", "rg2Sample3")))
+  test("get samples from read group dictionary") {
+    val rgd = ReadGroupDictionary(Seq(ReadGroup("sample1", "rg1"),
+      ReadGroup("sample1", "rg2"),
+      ReadGroup("sample1", "rg3"),
+      ReadGroup("sample1", "rg4"),
+      ReadGroup("sample1", "rg5"),
+      ReadGroup("sample2", "rgSample2"),
+      ReadGroup("sample3", "rg1Sample3"),
+      ReadGroup("sample3", "rg2Sample3")))
     assert(!rgd.isEmpty)
     val samples = rgd.toSamples
 
     assert(samples.size === 3)
-    assert(samples.count(_.getSampleId == "sample1") === 1)
-    assert(samples.count(_.getSampleId == "sample2") === 1)
-    assert(samples.count(_.getSampleId == "sample3") === 1)
+    assert(samples.count(_.getId == "sample1") === 1)
+    assert(samples.count(_.getId == "sample2") === 1)
+    assert(samples.count(_.getId == "sample3") === 1)
   }
 
-  test("empty record group is empty") {
-    val emptyRgd = RecordGroupDictionary.empty
+  test("empty read group is empty") {
+    val emptyRgd = ReadGroupDictionary.empty
 
     assert(emptyRgd.isEmpty)
-    assert(emptyRgd.recordGroups.size === 0)
+    assert(emptyRgd.readGroups.size === 0)
   }
 
   test("merging a dictionary with itself should work") {
-    val rgd = RecordGroupDictionary(Seq(RecordGroup("sample1", "rg1")))
+    val rgd = ReadGroupDictionary(Seq(ReadGroup("sample1", "rg1")))
 
     val mergedRgd = rgd ++ rgd
     assert(rgd === mergedRgd)
@@ -103,7 +103,7 @@ class RecordGroupDictionarySuite extends FunSuite {
     rg.setSequencingCenter("BDG")
     rg.setDescription("TEST")
     rg.setPredictedMedianInsertSize(100)
-    val arg = RecordGroup(rg)
+    val arg = ReadGroup(rg)
     val htsjdkRg = arg.toSAMReadGroupRecord()
     assert(rg.equivalent(htsjdkRg))
   }

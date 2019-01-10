@@ -28,8 +28,8 @@ import org.bdgenomics.adam.converters.DefaultHeaderLines
 import org.bdgenomics.adam.io.FastqRecordReader
 import org.bdgenomics.adam.models.{
   Coverage,
-  RecordGroup,
-  RecordGroupDictionary,
+  ReadGroup,
+  ReadGroupDictionary,
   ReferenceRegion,
   SequenceDictionary,
   SequenceRecord,
@@ -176,7 +176,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
     val contigNames = rdd.flatMap(r => Option(r.getReferenceName)).distinct.collect
     val sd = new SequenceDictionary(contigNames.map(v => SequenceRecord(v, 1000000L)).toVector)
 
-    val sortedReads = AlignmentRecordDataset(rdd, sd, RecordGroupDictionary.empty, Seq.empty)
+    val sortedReads = AlignmentRecordDataset(rdd, sd, ReadGroupDictionary.empty, Seq.empty)
       .sortReadsByReferencePosition()
       .rdd
       .collect()
@@ -284,7 +284,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
       }).toVector)
 
     val rdd = sc.parallelize(reads)
-    val sortedReads = AlignmentRecordDataset(rdd, sd, RecordGroupDictionary.empty, Seq.empty)
+    val sortedReads = AlignmentRecordDataset(rdd, sd, ReadGroupDictionary.empty, Seq.empty)
       .sortReadsByReferencePositionAndIndex()
       .rdd
       .collect()
@@ -328,7 +328,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
       case i: Int =>
         val (readA, readB) = (reads12A(i), reads12B(i))
         assert(readA.getSequence === readB.getSequence)
-        assert(readA.getQual === readB.getQual)
+        assert(readA.getQuality === readB.getQuality)
         assert(readA.getCigar === readB.getCigar)
     }
   }
@@ -358,7 +358,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
       case i: Int =>
         val (readA, readB) = (readsA(i), readsB(i))
         assert(readA.getSequence === readB.getSequence)
-        assert(readA.getQual === readB.getQual)
+        assert(readA.getQuality === readB.getQuality)
         assert(readA.getCigar === readB.getCigar)
     }
   }
@@ -389,7 +389,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
       case i: Int =>
         val (readA, readB) = (readsA(i), readsB(i))
         assert(readA.getSequence === readB.getSequence)
-        assert(readA.getQual === readB.getQual)
+        assert(readA.getQuality === readB.getQuality)
         assert(readA.getCigar === readB.getCigar)
     }
   }
@@ -448,9 +448,9 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
     noqualA.indices.foreach {
       case i: Int =>
         val (readA, readB, readC) = (noqualA(i), noqualB(i), noqualC(i))
-        assert(readA.getQual != "*")
-        assert(readB.getQual == "B" * readB.getSequence.length)
-        assert(readB.getQual == readC.getQual)
+        assert(readA.getQuality != "*")
+        assert(readB.getQuality == "B" * readB.getSequence.length)
+        assert(readB.getQuality == readC.getQuality)
     }
   }
 
@@ -472,7 +472,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
       case i: Int =>
         val (readA, readB) = (reads12A(i), reads12B(i))
         assert(readA.getSequence === readB.getSequence)
-        assert(readA.getQual === readB.getQual)
+        assert(readA.getQuality === readB.getQuality)
         assert(readA.getReadName === readB.getReadName)
     }
   }
@@ -503,7 +503,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
       case i: Int =>
         val (readA, readB) = (readsA(i), readsB(i))
         assert(readA.getSequence === readB.getSequence)
-        assert(readA.getQual === readB.getQual)
+        assert(readA.getQuality === readB.getQuality)
         assert(readA.getReadName === readB.getReadName)
     }
   }
@@ -601,10 +601,10 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
         assert(p1.getReadInFragment === p2.getReadInFragment)
         assert(p1.getReadName === p2.getReadName)
         assert(p1.getSequence === p2.getSequence)
-        assert(p1.getQual === p2.getQual)
-        assert(p1.getOrigQual === p2.getOrigQual)
-        assert(p1.getRecordGroupSample === p2.getRecordGroupSample)
-        assert(p1.getRecordGroupName === p2.getRecordGroupName)
+        assert(p1.getQuality === p2.getQuality)
+        assert(p1.getOriginalQuality === p2.getOriginalQuality)
+        assert(p1.getReadGroupSampleId === p2.getReadGroupSampleId)
+        assert(p1.getReadGroupId === p2.getReadGroupId)
         assert(p1.getFailedVendorQualityChecks === p2.getFailedVendorQualityChecks)
         assert(p1.getBasesTrimmedFromStart === p2.getBasesTrimmedFromStart)
         assert(p1.getBasesTrimmedFromEnd === p2.getBasesTrimmedFromEnd)
@@ -620,7 +620,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
           assert(p1.getStart === p2.getStart)
           assert(p1.getEnd === p2.getEnd)
           assert(p1.getCigar === p2.getCigar)
-          assert(p1.getOldCigar === p2.getOldCigar)
+          assert(p1.getOriginalCigar === p2.getOriginalCigar)
           assert(p1.getPrimaryAlignment === p2.getPrimaryAlignment)
           assert(p1.getSecondaryAlignment === p2.getSecondaryAlignment)
           assert(p1.getSupplementaryAlignment === p2.getSupplementaryAlignment)
@@ -630,7 +630,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
         assert(p1.getReadPaired === p2.getReadPaired)
         // a variety of fields are undefined if the reads are not paired
         if (p1.getReadPaired && p2.getReadPaired) {
-          assert(p1.getInferredInsertSize === p2.getInferredInsertSize)
+          assert(p1.getInsertSize === p2.getInsertSize)
           assert(p1.getProperPair === p2.getProperPair)
 
           // same caveat about read alignment applies to mates
@@ -652,7 +652,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
     testBQSR(false, "bqsr1.bam")
   }
 
-  sparkTest("saveAsParquet with save args, sequence dictionary, and record group dictionary") {
+  sparkTest("saveAsParquet with save args, sequence dictionary, and read group dictionary") {
     val inputPath = testFile("small.sam")
     val reads: AlignmentRecordDataset = sc.loadAlignments(inputPath)
     val outputPath = tmpLocation()
@@ -670,8 +670,8 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
       val sequenceRdd = arRdd.addSequence(SequenceRecord("aSequence", 1000L))
       assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
 
-      val rgDataset = arRdd.addRecordGroup(RecordGroup("test", "aRg"))
-      assert(rgDataset.recordGroups("aRg").sample === "test")
+      val rgDataset = arRdd.addReadGroup(ReadGroup("test", "aRg"))
+      assert(rgDataset.readGroups("aRg").sampleId === "test")
     }
 
     val inputPath = testFile("small.sam")
@@ -706,8 +706,8 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
       val sequenceRdd = arRdd.addSequence(SequenceRecord("aSequence", 1000L))
       assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
 
-      val rgDataset = arRdd.addRecordGroup(RecordGroup("test", "aRg"))
-      assert(rgDataset.recordGroups("aRg").sample === "test")
+      val rgDataset = arRdd.addReadGroup(ReadGroup("test", "aRg"))
+      assert(rgDataset.readGroups("aRg").sampleId === "test")
     }
 
     val inputPath = testFile("multi_chr.sam")
@@ -1151,7 +1151,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
       .repartitionAndSortWithinPartitions(ManualRegionPartitioner(3))
       .map(_._2),
       sd,
-      RecordGroupDictionary.empty,
+      ReadGroupDictionary.empty,
       Seq.empty,
       Some(Array(
         Some(ReferenceRegion("chr1", 10L, 20L), ReferenceRegion("chr1", 10L, 20L)),
@@ -1390,7 +1390,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
     val reads = sc.loadAlignments(testFile("small.sam"))
     val binnedReads = reads.binQualityScores(Seq(QualityScoreBin(0, 20, 10)))
     val numQualities = binnedReads.rdd.flatMap(read => {
-      Option(read.getQual)
+      Option(read.getQuality)
     }).flatMap(s => s)
       .count
     assert(numQualities === 0)
@@ -1402,7 +1402,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
       QualityScoreBin(20, 40, 30),
       QualityScoreBin(40, 60, 50)))
     val qualityScoreCounts = binnedReads.rdd.flatMap(read => {
-      read.getQual
+      read.getQuality
     }).map(s => s.toInt - 33)
       .countByValue
 
@@ -1417,8 +1417,8 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
     assert(union.rdd.count === (reads1.rdd.count + reads2.rdd.count))
     // all of the contigs small.sam has are in bqsr1.sam
     assert(union.sequences.size === reads1.sequences.size)
-    // small.sam has no record groups
-    assert(union.recordGroups.size === reads1.recordGroups.size)
+    // small.sam has no read groups
+    assert(union.readGroups.size === reads1.readGroups.size)
   }
 
   sparkTest("test k-mer counter") {
@@ -1671,14 +1671,14 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
       AlignmentRecord.newBuilder()
         .setReadMapped(true)
         .setSequence("AAAAACCCCCGGGGGTTTTT")
-        .setStart(0)
+        .setStart(0L)
         .setCigar("10M2D10M")
         .setMismatchingPositions("10^CC10")
         .build(),
       AlignmentRecord.newBuilder()
         .setReadMapped(true)
         .setSequence("AAAAACCCCCGGGGGTTTTT")
-        .setStart(0)
+        .setStart(0L)
         .setCigar("10M10D10M")
         .setMismatchingPositions("10^ATATATATAT10")
         .build(),
@@ -1686,7 +1686,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
         .setSequence("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
         .setReadMapped(true)
         .setCigar("29M10D31M")
-        .setStart(5)
+        .setStart(5L)
         .setMismatchingPositions("29^GGGGGGGGGG10G0G0G0G0G0G0G0G0G0G11")
         .build())
 
@@ -1722,13 +1722,13 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
 
   sparkTest("filter RDD bound alignments by MAPQ") {
     val alignments = sc.loadAlignments(testFile("small.sam"))
-    assert(alignments.filterByMapq(40).rdd.count() === 17)
+    assert(alignments.filterByMappingQuality(40).rdd.count() === 17)
   }
 
   sparkTest("filter dataset bound alignments by MAPQ") {
     val alignments = sc.loadAlignments(testFile("small.sam"))
     val alignmentsDs = alignments.transformDataset(ds => ds)
-    assert(alignmentsDs.filterByMapq(40).dataset.count() === 17)
+    assert(alignmentsDs.filterByMappingQuality(40).dataset.count() === 17)
   }
 
   sparkTest("filter RDD bound unaligned alignments") {
@@ -1782,26 +1782,26 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
     assert(alignmentsDs.filterToPrimaryAlignments().dataset.count() === 20)
   }
 
-  sparkTest("filter RDD bound alignments to record group") {
+  sparkTest("filter RDD bound alignments to read group") {
     val alignments = sc.loadAlignments(testFile("NA12878.sam"))
-    assert(alignments.filterToRecordGroup("20FUK.1").rdd.count() === 31)
+    assert(alignments.filterToReadGroup("20FUK.1").rdd.count() === 31)
   }
 
-  sparkTest("filter dataset bound alignments to record group") {
+  sparkTest("filter dataset bound alignments to read group") {
     val alignments = sc.loadAlignments(testFile("NA12878.sam"))
     val alignmentsDs = alignments.transformDataset(ds => ds)
-    assert(alignmentsDs.filterToRecordGroup("20FUK.1").dataset.count() === 31)
+    assert(alignmentsDs.filterToReadGroup("20FUK.1").dataset.count() === 31)
   }
 
-  sparkTest("filter RDD bound alignments to record groups") {
+  sparkTest("filter RDD bound alignments to read groups") {
     val alignments = sc.loadAlignments(testFile("NA12878.sam"))
-    assert(alignments.filterToRecordGroups(Seq("20FUK.1", "20FUK.2")).rdd.count() === 62)
+    assert(alignments.filterToReadGroups(Seq("20FUK.1", "20FUK.2")).rdd.count() === 62)
   }
 
-  sparkTest("filter dataset bound alignments to record groups") {
+  sparkTest("filter dataset bound alignments to read groups") {
     val alignments = sc.loadAlignments(testFile("NA12878.sam"))
     val alignmentsDs = alignments.transformDataset(ds => ds)
-    assert(alignmentsDs.filterToRecordGroups(Seq("20FUK.1", "20FUK.2")).dataset.count() === 62)
+    assert(alignmentsDs.filterToReadGroups(Seq("20FUK.1", "20FUK.2")).dataset.count() === 62)
   }
 
   sparkTest("filter RDD bound alignments to sample") {

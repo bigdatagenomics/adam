@@ -67,9 +67,9 @@ class ADAM2Fastq(val args: ADAM2FastqArgs) extends BDGSparkCommand[ADAM2FastqArg
           Projection(
             AlignmentRecordField.readName,
             AlignmentRecordField.sequence,
-            AlignmentRecordField.qual,
+            AlignmentRecordField.quality,
             AlignmentRecordField.readInFragment,
-            AlignmentRecordField.origQual
+            AlignmentRecordField.originalQuality
           )
         )
       else
