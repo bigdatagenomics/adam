@@ -135,7 +135,7 @@ class AlignmentRecordDatasetTest(SparkTestCase):
         readsAsCoverage = reads.transmute(lambda x: x.select(x.referenceName,
                                                              x.start,
                                                              x.end,
-                                                             x.mapq.cast(DoubleType()).alias("count"),
+                                                             x.mappingQuality.cast(DoubleType()).alias("count"),
                                                              x.readGroupSampleId.alias("optSampleId")),
                                         CoverageDataset)
 
