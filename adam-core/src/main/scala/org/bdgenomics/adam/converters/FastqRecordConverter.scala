@@ -156,7 +156,7 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
                                               qual: String,
                                               readInFragment: Int,
                                               readPaired: Boolean = true,
-                                              readGroupOpt: Option[String] = None): AlignmentRecord = {
+                                              optReadGroup: Option[String] = None): AlignmentRecord = {
     val builder = AlignmentRecord.newBuilder
       .setReadName(readName)
       .setSequence(sequence)
@@ -164,7 +164,7 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
       .setReadPaired(readPaired)
       .setReadInFragment(readInFragment)
 
-    readGroupOpt.foreach(builder.setReadGroupId)
+    optReadGroup.foreach(builder.setReadGroupId)
 
     builder.build
   }
@@ -278,7 +278,7 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
    */
   def convertRead(
     element: (Void, Text),
-    readGroupOpt: Option[String] = None,
+    optReadGroup: Option[String] = None,
     setFirstOfPair: Boolean = false,
     setSecondOfPair: Boolean = false,
     stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecord = {
@@ -297,6 +297,6 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
 
     makeAlignmentRecord(
       readName, readSequence, readQualities,
-      readInFragment, readPaired, readGroupOpt)
+      readInFragment, readPaired, optReadGroup)
   }
 }
