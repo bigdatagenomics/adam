@@ -186,7 +186,7 @@ case class DatasetBoundVariantDataset private[rdd] (
   }
 
   override def filterByQuality(minimumQuality: Double): VariantDataset = {
-    transformDataset(dataset => dataset.filter(!dataset.col("splitFromMultiAllelic") && dataset.col("quality") >= minimumQuality))
+    transformDataset(dataset => dataset.filter(!dataset.col("splitFromMultiallelic") && dataset.col("quality") >= minimumQuality))
   }
 
   override def filterByReadDepth(minimumReadDepth: Int): VariantDataset = {
@@ -318,18 +318,18 @@ sealed abstract class VariantDataset extends AvroGenomicDataset[Variant, Variant
 
   /**
    * Filter this VariantDataset by quality (VCF column 6 "QUAL").  Variants split
-   * for multi-allelic sites will also be filtered out.
+   * for multiallelic sites will also be filtered out.
    *
    * @param minimumQuality Minimum quality to filter by, inclusive.
    * @return VariantDataset filtered by quality.
    */
   def filterByQuality(minimumQuality: Double): VariantDataset = {
-    transform(rdd => rdd.filter(v => !(Option(v.getSplitFromMultiAllelic).exists(_ == true)) && Option(v.getQuality).exists(_ >= minimumQuality)))
+    transform(rdd => rdd.filter(v => !(Option(v.getSplitFromMultiallelic).exists(_ == true)) && Option(v.getQuality).exists(_ >= minimumQuality)))
   }
 
   /**
    * Filter this VariantDataset by total read depth (VCF INFO reserved key AD, Number=R,
-   * split for multi-allelic sites into single integer values for the reference allele
+   * split for multiallelic sites into single integer values for the reference allele
    * (<code>filterByReferenceReadDepth</code>) and the alternate allele (this method)).
    *
    * @param minimumReadDepth Minimum total read depth to filter by, inclusive.
@@ -341,7 +341,7 @@ sealed abstract class VariantDataset extends AvroGenomicDataset[Variant, Variant
 
   /**
    * Filter this VariantDataset by reference total read depth (VCF INFO reserved key AD, Number=R,
-   * split for multi-allelic sites into single integer values for the alternate allele
+   * split for multiallelic sites into single integer values for the alternate allele
    * (<code>filterByReadDepth</code>) and the reference allele (this method)).
    *
    * @param minimumReferenceReadDepth Minimum reference total read depth to filter by, inclusive.

@@ -29,34 +29,35 @@ import org.bdgenomics.formats.avro.{ Genotype, Variant, VariantAnnotation }
 object VariantContext {
 
   /**
-   * Constructs an VariantContext from an Variant
+   * Create a new variant context from a variant.
    *
-   * @param v Variant which is used to construct the ReferencePosition
-   * @return VariantContext corresponding to the Variant
+   * @param v Variant to create a variant context from.
+   * @return Return a new variant context created from the specified variant.
    */
   def apply(v: Variant): VariantContext = {
     new VariantContext(ReferencePosition(v), RichVariant(v), Iterable.empty)
   }
 
   /**
-   * Constructs an VariantContext from an Variant and Seq[Genotype]
-   *  and DatabaseVariantAnnotation
+   * Create a new variant context from a variant and one or more genotypes.
    *
-   * @param v Variant which is used to construct the ReferencePosition
-   * @param genotypes Seq[Genotype]
-   * @return VariantContext corresponding to the Variant
+   * @param v Variant to create a variant context from.
+   * @param genotypes One or more genotypes.
+   * @return Return a new variant context created from the specified variant
+   *    and genotypes.
    */
   def apply(v: Variant, genotypes: Iterable[Genotype]): VariantContext = {
     new VariantContext(ReferencePosition(v), RichVariant(v), genotypes)
   }
 
   /**
-   * Builds a variant context off of a set of genotypes. Builds variants from the genotypes.
+   * Create a new variant context from a set of genotypes.
    *
    * @note Genotypes must be at the same position.
    *
-   * @param genotypes List of genotypes to build variant context from.
-   * @return A variant context corresponding to the variants and genotypes at this site.
+   * @param genotypes One or more genotypes to create a variant context from.
+   * @return Return a new variant context created from the specified set of
+   *    genotypes.
    */
   def buildFromGenotypes(genotypes: Seq[Genotype]): VariantContext = {
     val position = ReferencePosition(genotypes.head)
@@ -65,7 +66,15 @@ object VariantContext {
       "Genotypes do not all have the same position."
     )
 
-    val variant = genotypes.head.getVariant
+    val g = genotypes.head
+    val variant = Variant.newBuilder()
+      .setReferenceName(g.getReferenceName)
+      .setStart(g.getStart)
+      .setEnd(g.getEnd)
+      .setSplitFromMultiallelic(g.getSplitFromMultiallelic)
+      .setReferenceAllele(g.getReferenceAllele)
+      .setAlternateAllele(g.getAlternateAllele)
+      .build()
 
     new VariantContext(position, RichVariant(variant), genotypes)
   }

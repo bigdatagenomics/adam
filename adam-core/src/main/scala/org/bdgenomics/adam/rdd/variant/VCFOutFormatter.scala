@@ -50,8 +50,6 @@ case class VCFOutFormatter(
     val stringency: ValidationStringency,
     val optHeaderLines: Option[CollectionAccumulator[VCFHeaderLine]]) extends OutFormatter[VariantContext] with Logging {
 
-  private val nestAnn = VariantContextConverter.getNestAnnotationInGenotypesProperty(conf)
-
   /**
    * OutFormatter that reads streaming VCF. Defaults to ValidationStringency.LENIENT.
    * Java-friendly no-arg constructor.
@@ -110,9 +108,7 @@ case class VCFOutFormatter(
     optHeaderLines.map(accumulator => lines.foreach(line => accumulator.add(line)))
 
     // make converter
-    val converter = new VariantContextConverter(lines,
-      stringency,
-      nestAnn)
+    val converter = new VariantContextConverter(lines, stringency)
 
     @tailrec def convertIterator(iter: AsciiLineReaderIterator,
                                  records: ListBuffer[VariantContext] = ListBuffer.empty): Iterator[VariantContext] = {

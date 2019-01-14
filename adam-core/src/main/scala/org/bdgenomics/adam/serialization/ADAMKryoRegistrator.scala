@@ -233,6 +233,7 @@ class ADAMKryoRegistrator extends KryoRegistrator with Logging {
       new org.bdgenomics.adam.util.TwoBitFileSerializer)
 
     // org.bdgenomics.formats.avro
+    kryo.register(classOf[org.bdgenomics.formats.avro.Allele])
     kryo.register(classOf[org.bdgenomics.formats.avro.AlignmentRecord],
       new AvroSerializer[org.bdgenomics.formats.avro.AlignmentRecord])
     kryo.register(classOf[org.bdgenomics.formats.avro.Dbxref],
@@ -243,8 +244,8 @@ class ADAMKryoRegistrator extends KryoRegistrator with Logging {
       new AvroSerializer[org.bdgenomics.formats.avro.Fragment])
     kryo.register(classOf[org.bdgenomics.formats.avro.Genotype],
       new AvroSerializer[org.bdgenomics.formats.avro.Genotype])
-    kryo.register(classOf[org.bdgenomics.formats.avro.GenotypeAllele])
-    kryo.register(classOf[org.bdgenomics.formats.avro.GenotypeType])
+    kryo.register(classOf[org.bdgenomics.formats.avro.GenotypeAnnotation],
+      new AvroSerializer[org.bdgenomics.formats.avro.GenotypeAnnotation])
     kryo.register(classOf[org.bdgenomics.formats.avro.NucleotideContigFragment],
       new AvroSerializer[org.bdgenomics.formats.avro.NucleotideContigFragment])
     kryo.register(classOf[org.bdgenomics.formats.avro.OntologyTerm],
@@ -271,8 +272,6 @@ class ADAMKryoRegistrator extends KryoRegistrator with Logging {
     kryo.register(classOf[org.bdgenomics.formats.avro.VariantAnnotation],
       new AvroSerializer[org.bdgenomics.formats.avro.VariantAnnotation])
     kryo.register(classOf[org.bdgenomics.formats.avro.VariantAnnotationMessage])
-    kryo.register(classOf[org.bdgenomics.formats.avro.VariantCallingAnnotations],
-      new AvroSerializer[org.bdgenomics.formats.avro.VariantCallingAnnotations])
 
     // org.codehaus.jackson.node
     kryo.register(classOf[org.codehaus.jackson.node.NullNode])
@@ -312,12 +311,13 @@ class ADAMKryoRegistrator extends KryoRegistrator with Logging {
     kryo.register(classOf[scala.Array[org.apache.spark.sql.catalyst.InternalRow]])
     kryo.register(classOf[scala.Array[org.apache.spark.sql.types.StructField]])
     kryo.register(classOf[scala.Array[org.apache.spark.sql.types.StructType]])
+    kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.Allele]])
     kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.AlignmentRecord]])
     kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.Dbxref]])
     kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.Feature]])
     kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.Fragment]])
     kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.Genotype]])
-    kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.GenotypeAllele]])
+    kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.GenotypeAnnotation]])
     kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.OntologyTerm]])
     kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.NucleotideContigFragment]])
     kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.Read]])
@@ -330,7 +330,6 @@ class ADAMKryoRegistrator extends KryoRegistrator with Logging {
     kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.Variant]])
     kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.VariantAnnotation]])
     kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.VariantAnnotationMessage]])
-    kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.VariantCallingAnnotations]])
     kryo.register(classOf[scala.Array[org.bdgenomics.adam.algorithms.consensus.Consensus]])
     kryo.register(classOf[scala.Array[org.bdgenomics.adam.models.Coverage]])
     kryo.register(classOf[scala.Array[org.bdgenomics.adam.models.ReferencePosition]])

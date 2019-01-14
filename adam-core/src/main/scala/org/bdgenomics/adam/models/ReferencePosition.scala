@@ -90,24 +90,11 @@ object ReferencePosition extends Serializable {
    * @return The reference position of this genotype.
    */
   def apply(genotype: Genotype): ReferencePosition = {
-    val referenceNameSet = Seq(Option(genotype.getReferenceName), Option(genotype.getVariant.getReferenceName))
-      .flatten
-      .toSet
-    val startSet = Seq(Option(genotype.getStart), Option(genotype.getVariant.getStart))
-      .flatten
-      .toSet
-    require(referenceNameSet.nonEmpty, "Genotype has no reference name: %s".format(genotype))
-    require(referenceNameSet.size == 1, "Genotype has multiple reference names: %s, %s".format(
-      referenceNameSet, genotype))
-    require(startSet.nonEmpty, "Genotype has no start: %s".format(genotype))
-    require(startSet.size == 1, "Genotype has multiple starts: %s, %s".format(
-      startSet, genotype))
-
     // see ADAM-1959, VCF 0 = telomere
-    if (startSet.head != -1) {
-      new ReferencePosition(referenceNameSet.head, startSet.head)
+    if (genotype.getStart != -1) {
+      new ReferencePosition(genotype.getReferenceName, genotype.getStart)
     } else {
-      new ReferencePosition(referenceNameSet.head, 0L)
+      new ReferencePosition(genotype.getReferenceName, 0L)
     }
   }
 

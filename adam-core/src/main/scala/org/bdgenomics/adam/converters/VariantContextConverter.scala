@@ -21,7 +21,7 @@ import com.google.common.base.Splitter
 import com.google.common.collect.ImmutableList
 import htsjdk.samtools.ValidationStringency
 import htsjdk.variant.variantcontext.{
-  Allele,
+  Allele => HtsjdkAllele,
   Genotype => HtsjdkGenotype,
   GenotypeBuilder,
   GenotypesContext,
@@ -55,58 +55,23 @@ import scala.collection.mutable.{ Buffer, HashMap }
 
 /**
  * Object for converting between htsjdk and ADAM VariantContexts.
- *
- * Handles Variant, Genotype, Allele, and various genotype annotation
- * conversions. Does not handle Variant annotations. Genotype annotations are
- * annotations in the VCF GT field while Variant annotations are annotations
- * contained in the VCF INFO field.
  */
 object VariantContextConverter {
 
   /**
-   * If set to true, this property will ensure that the variant.annotation field
-   * in the Genotype record is populated after conversion from an htsjdk
-   * VariantContext. By default, this property is false.
-   */
-  val nestAnnotationInGenotypesProperty = "org.bdgenomics.adam.converters.VariantContextConverter.NEST_ANN_IN_GENOTYPES"
-
-  /**
-   * Sets the value of the nest annotation in genotypes property.
-   *
-   * @param conf Hadoop configuration to set the property in.
-   * @param populateNestedAnn If true, the nested field is populated.
-   */
-  def setNestAnnotationInGenotypesProperty(conf: Configuration,
-                                           populateNestedAnn: Boolean) {
-    conf.setBoolean(nestAnnotationInGenotypesProperty, populateNestedAnn)
-  }
-
-  /**
-   * Gets the value of the nest annotation in genotypes property.
-   *
-   * @param conf Hadoop configuration to set the property in.
-   * @return Returns whether or not to nest the variant annotation under each
-   *   genotype record.
-   */
-  private[adam] def getNestAnnotationInGenotypesProperty(
-    conf: Configuration): Boolean = {
-    conf.getBoolean(nestAnnotationInGenotypesProperty, false)
-  }
-
-  /**
    * Representation for an unknown non-ref/symbolic allele in VCF.
    */
-  private val NON_REF_ALLELE = Allele.create("<NON_REF>", false /* !Reference */ )
+  private val NON_REF_ALLELE = HtsjdkAllele.create("<NON_REF>", false /* !Reference */ )
 
   /**
-   * The index in the Avro genotype record for the splitFromMultiAllelec field.
+   * The index in the Avro genotype record for the splitFromMultiallelec field.
    *
    * This field is true if the VCF site was not biallelic.
    */
-  private lazy val splitFromMultiAllelicField = Genotype.SCHEMA$.getField("splitFromMultiAllelic")
+  private lazy val splitFromMultiallelicField = Genotype.SCHEMA$.getField("splitFromMultiallelic")
 
   /**
-   * One conversion method for each way of representing an Allele
+   * Convert a htsjdk allele to an Avro allele.
    *
    * An htsjdk Allele can represent a reference or alternate allele call, or a
    * site where no call could be made. If the allele is an alternate allele, we
@@ -117,11 +82,11 @@ object VariantContextConverter {
    * @param allele The allele we are converting.
    * @return The Avro representation for this allele.
    */
-  private def convertAllele(vc: HtsjdkVariantContext, allele: Allele): GenotypeAllele = {
-    if (allele.isNoCall) GenotypeAllele.NO_CALL
-    else if (allele.isReference) GenotypeAllele.REF
-    else if (allele == NON_REF_ALLELE || !vc.hasAlternateAllele(allele)) GenotypeAllele.OTHER_ALT
-    else GenotypeAllele.ALT
+  private def convertAllele(vc: HtsjdkVariantContext, allele: HtsjdkAllele): Allele = {
+    if (allele.isNoCall) Allele.NO_CALL
+    else if (allele.isReference) Allele.REF
+    else if (allele == NON_REF_ALLELE || !vc.hasAlternateAllele(allele)) Allele.OTHER_ALT
+    else Allele.ALT
   }
 
   /**
@@ -133,17 +98,17 @@ object VariantContextConverter {
    * @return If the allele is defined, returns a wrapped allele. Else, returns
    *   a None.
    */
-  private def convertAlleleOpt(allele: String, isRef: Boolean = false): Option[Allele] = {
+  private def convertAlleleOpt(allele: String, isRef: Boolean = false): Option[HtsjdkAllele] = {
     if (allele == null) {
       None
     } else {
-      Some(Allele.create(allele, isRef))
+      Some(HtsjdkAllele.create(allele, isRef))
     }
   }
 
-  private val OPT_NON_REF = Some(Allele.create("<NON_REF>", false))
+  private val OPT_NON_REF = Some(HtsjdkAllele.create("<NON_REF>", false))
 
-  private def optNonRef(v: Variant, hasNonRefModel: Boolean): Option[Allele] = {
+  private def optNonRef(v: Variant, hasNonRefModel: Boolean): Option[HtsjdkAllele] = {
     if (hasNonRefModel || v.getAlternateAllele == null) {
       OPT_NON_REF
     } else {
@@ -160,7 +125,7 @@ object VariantContextConverter {
    * @return Returns a Java collection representing the reference allele and any
    *   alternate allele at the site.
    */
-  private def convertAlleles(v: Variant, hasNonRefModel: Boolean): java.util.Collection[Allele] = {
+  private def convertAlleles(v: Variant, hasNonRefModel: Boolean): java.util.Collection[HtsjdkAllele] = {
     val asSeq = Seq(convertAlleleOpt(v.getReferenceAllele, true),
       convertAlleleOpt(v.getAlternateAllele),
       optNonRef(v, hasNonRefModel)).flatten
@@ -178,13 +143,13 @@ object VariantContextConverter {
    * @param g The genotype call at a site for a single sample.
    * @return Returns the called alleles at this site.
    */
-  private def convertAlleles(g: Genotype): java.util.List[Allele] = {
+  private def convertAlleles(g: Genotype): java.util.List[HtsjdkAllele] = {
     var alleles = g.getAlleles
-    if (alleles == null) return Collections.emptyList[Allele]
+    if (alleles == null) return Collections.emptyList[HtsjdkAllele]
     else g.getAlleles.map {
-      case GenotypeAllele.NO_CALL | GenotypeAllele.OTHER_ALT => Allele.NO_CALL
-      case GenotypeAllele.REF                                => Allele.create(g.getVariant.getReferenceAllele, true)
-      case GenotypeAllele.ALT                                => Allele.create(g.getVariant.getAlternateAllele)
+      case Allele.NO_CALL | Allele.OTHER_ALT => HtsjdkAllele.NO_CALL
+      case Allele.REF                        => HtsjdkAllele.create(g.getReferenceAllele, true)
+      case Allele.ALT                        => HtsjdkAllele.create(g.getAlternateAllele)
     }
   }
 
@@ -274,8 +239,7 @@ object VariantContextConverter {
             stringency: ValidationStringency,
             conf: Configuration): VariantContextConverter = {
     new VariantContextConverter(headerLines,
-      stringency,
-      getNestAnnotationInGenotypesProperty(conf))
+      stringency)
   }
 }
 
@@ -291,8 +255,7 @@ object VariantContextConverter {
  */
 class VariantContextConverter(
     headerLines: Seq[VCFHeaderLine],
-    stringency: ValidationStringency,
-    setNestedAnnotationInGenotype: Boolean) extends Serializable with Logging {
+    stringency: ValidationStringency) extends Serializable with Logging {
   import VariantContextConverter._
 
   // format fns gatk --> bdg, extract fns bdg --> gatk
@@ -300,6 +263,18 @@ class VariantContextConverter(
   private val variantExtractFn = makeVariantExtractFn(headerLines)
   private val genotypeFormatFn = makeGenotypeFormatFn(headerLines)
   private val genotypeExtractFn = makeGenotypeExtractFn(headerLines)
+  private val gvcfBlocks = extractGvcfBlocks(headerLines)
+
+  private val gvcfBlockRegex = """minGQ=([0-9+]).*maxGQ=([0-9]+).*""".r
+
+  private def extractGvcfBlocks(headerLines: Seq[VCFHeaderLine]): Seq[(Int, Int)] = {
+    headerLines
+      .find(_.getKey() == "##GVCFBlock")
+      .map(_.getValue() match {
+        case gvcfBlockRegex(minGQ, maxGQ) => (minGQ.toInt, maxGQ.toInt)
+      })
+      .toSeq
+  }
 
   /**
    * Converts a Scala float to a Java float.
@@ -317,15 +292,6 @@ class VariantContextConverter(
    */
   private def jDouble(f: Double): java.lang.Double = f
 
-  private def genotypeVariant(coreVariant: Variant,
-                              fullVariant: Variant): Variant = {
-    if (setNestedAnnotationInGenotype) {
-      fullVariant
-    } else {
-      coreVariant
-    }
-  }
-
   /**
    * Converts a GATK variant context into one or more ADAM variant context(s).
    *
@@ -338,10 +304,9 @@ class VariantContextConverter(
     try {
       vc.getAlternateAlleles.toList match {
         case List(NON_REF_ALLELE) | List() => {
-          val (coreVariant, variant) = variantFormatFn(vc, None, 0, false)
-          val v = genotypeVariant(coreVariant, variant)
+          val variant = variantFormatFn(vc, None, 0, false)
           val genotypes = vc.getGenotypes.map(g => {
-            genotypeFormatFn(g, v, NON_REF_ALLELE, 0, Some(1), false)
+            genotypeFormatFn(g, variant, NON_REF_ALLELE, 0, Some(1), false)
           })
           return Seq(ADAMVariantContext(variant, genotypes))
         }
@@ -350,10 +315,9 @@ class VariantContextConverter(
             allele.isNonReference,
             "Assertion failed when converting: " + vc.toString
           )
-          val (coreVariant, variant) = variantFormatFn(vc, Some(allele.getDisplayString), 0, false)
-          val v = genotypeVariant(coreVariant, variant)
+          val variant = variantFormatFn(vc, Some(allele.getDisplayString), 0, false)
           val genotypes = vc.getGenotypes.map(g => {
-            genotypeFormatFn(g, v, allele, 1, None, false)
+            genotypeFormatFn(g, variant, allele, 1, None, false)
           })
           return Seq(ADAMVariantContext(variant, genotypes))
         }
@@ -362,10 +326,9 @@ class VariantContextConverter(
             allele.isNonReference,
             "Assertion failed when converting: " + vc.toString
           )
-          val (coreVariant, variant) = variantFormatFn(vc, Some(allele.getDisplayString), 0, false)
-          val v = genotypeVariant(coreVariant, variant)
+          val variant = variantFormatFn(vc, Some(allele.getDisplayString), 0, false)
           val genotypes = vc.getGenotypes.map(g => {
-            genotypeFormatFn(g, v, allele, 1, Some(2), false)
+            genotypeFormatFn(g, variant, allele, 1, Some(2), false)
           })
           return Seq(ADAMVariantContext(variant, genotypes))
         }
@@ -392,13 +355,12 @@ class VariantContextConverter(
             // variant annotations only contain values for alternate alleles so
             // we need to subtract one from real index
             val variantIdx = idx - 1
-            val (coreVariant, variant) = variantFormatFn(vc,
+            val variant = variantFormatFn(vc,
               Some(allele.getDisplayString),
               variantIdx,
               true)
-            val v = genotypeVariant(coreVariant, variant)
             val genotypes = vc.getGenotypes.map(g => {
-              genotypeFormatFn(g, v, allele, idx, referenceModelIndex, true)
+              genotypeFormatFn(g, variant, allele, idx, referenceModelIndex, true)
             })
             ADAMVariantContext(variant, genotypes)
           })
@@ -857,92 +819,6 @@ class VariantContextConverter(
 
   // htsjdk --> genotype format functions
 
-  private[converters] def formatAllelicDepth(g: HtsjdkGenotype,
-                                             gb: Genotype.Builder,
-                                             gIdx: Int,
-                                             gIndices: Array[Int]): Genotype.Builder = {
-
-    // AD is an array type field
-    if (g.hasAD && gIdx < g.getAD.size) {
-      val ad = g.getAD
-      gb.setReferenceReadDepth(ad(0))
-        .setAlternateReadDepth(ad(gIdx))
-    } else {
-      gb
-    }
-  }
-
-  private[converters] def formatReadDepth(g: HtsjdkGenotype,
-                                          gb: Genotype.Builder,
-                                          gIdx: Int,
-                                          gIndices: Array[Int]): Genotype.Builder = {
-    if (g.hasDP) {
-      gb.setReadDepth(g.getDP)
-    } else {
-      gb
-    }
-  }
-
-  private[converters] def formatMinReadDepth(g: HtsjdkGenotype,
-                                             gb: Genotype.Builder,
-                                             gIdx: Int,
-                                             gIndices: Array[Int]): Genotype.Builder = {
-    Option(g.getExtendedAttribute("MIN_DP", null))
-      .map(attr => {
-        tryAndCatchStringCast(attr, attribute => {
-          gb.setMinReadDepth(attribute.asInstanceOf[java.lang.Integer])
-        }, attribute => {
-          gb.setMinReadDepth(attribute.toInt)
-        })
-      }).getOrElse(gb)
-  }
-
-  private[converters] def formatGenotypeQuality(g: HtsjdkGenotype,
-                                                gb: Genotype.Builder,
-                                                gIdx: Int,
-                                                gIndices: Array[Int]): Genotype.Builder = {
-    if (g.hasGQ) {
-      gb.setGenotypeQuality(g.getGQ)
-    } else {
-      gb
-    }
-  }
-
-  private[converters] def formatGenotypeLikelihoods(g: HtsjdkGenotype,
-                                                    gb: Genotype.Builder,
-                                                    gIdx: Int,
-                                                    gIndices: Array[Int]): Genotype.Builder = {
-    if (g.hasPL) {
-      val pl = g.getPL
-      try {
-        val likelihoods = gIndices.map(idx => {
-          jDouble(PhredUtils.phredToLogProbability(pl(idx)))
-        }).toList
-        gb.setGenotypeLikelihoods(likelihoods)
-      } catch {
-        case _: ArrayIndexOutOfBoundsException => {
-          log.warn("Ran into Array Out of Bounds when accessing indices %s of genotype %s.".format(gIndices.mkString(","), g))
-          gb
-        }
-      }
-    } else {
-      gb
-    }
-  }
-
-  private[converters] def formatNonRefGenotypeLikelihoods(g: HtsjdkGenotype,
-                                                          gb: Genotype.Builder,
-                                                          gIndices: Array[Int]): Genotype.Builder = {
-    if (g.hasPL) {
-      val pl = g.getPL
-      gb.setNonReferenceLikelihoods(gIndices.map(idx => {
-        jDouble(PhredUtils.phredToLogProbability(pl(idx)))
-      }).toList)
-    } else {
-      gb
-    }
-  }
-
   private def tryAndCatchStringCast[T](attr: java.lang.Object,
                                        tryFn: (java.lang.Object) => T,
                                        catchFn: (String) => T): T = {
@@ -962,50 +838,38 @@ class VariantContextConverter(
     }
   }
 
-  private[converters] def formatStrandBiasComponents(g: HtsjdkGenotype,
-                                                     gb: Genotype.Builder,
-                                                     gIdx: Int,
-                                                     gIndices: Array[Int]): Genotype.Builder = {
-    Option(g.getExtendedAttribute("SB"))
-      .map(attr => {
-        tryAndCatchStringCast(
-          attr,
-          attribute => {
-            gb.setStrandBiasComponents(attribute.asInstanceOf[Array[java.lang.Integer]].toSeq)
-          }, attribute => {
-            val components = attribute.split(",")
-            require(components.size == 4,
-              "Strand bias components must have 4 entries. Saw %s in %s.".format(
-                attr, g))
-
-            gb.setStrandBiasComponents(components.map(e => e.toInt: java.lang.Integer)
-              .toSeq)
-          })
-      }).getOrElse(gb)
+  private[converters] def formatFilters(g: HtsjdkGenotype,
+                                        gb: Genotype.Builder,
+                                        idx: Int,
+                                        indices: Array[Int]): Genotype.Builder = {
+    // see https://github.com/samtools/htsjdk/issues/741
+    val gtFiltersWereApplied = true
+    if (gtFiltersWereApplied) {
+      val filtersWereApplied = gb.setFiltersApplied(true)
+      if (g.isFiltered) {
+        filtersWereApplied.setFiltersPassed(false)
+          .setFiltersFailed(g.getFilters.split(";").toList)
+      } else {
+        filtersWereApplied.setFiltersPassed(true)
+      }
+    } else {
+      gb.setFiltersApplied(false)
+    }
   }
 
-  private[converters] def formatPhaseInfo(g: HtsjdkGenotype,
-                                          gb: Genotype.Builder,
-                                          gIdx: Int,
-                                          gIndices: Array[Int]): Genotype.Builder = {
+  private[converters] def formatPhaseSet(g: HtsjdkGenotype,
+                                         gb: Genotype.Builder,
+                                         gIdx: Int,
+                                         gIndices: Array[Int]): Genotype.Builder = {
     if (g.isPhased) {
       gb.setPhased(true)
 
-      Option(g.getExtendedAttribute(VCFConstants.PHASE_SET_KEY))
+      Option(g.getExtendedAttribute("PS"))
         .map(attr => {
           tryAndCatchStringCast(attr, attribute => {
-            gb.setPhaseSetId(attribute.asInstanceOf[java.lang.Integer])
+            gb.setPhaseSet(attribute.asInstanceOf[java.lang.Integer])
           }, attribute => {
-            gb.setPhaseSetId(attribute.toInt)
-          })
-        })
-
-      Option(g.getExtendedAttribute(VCFConstants.PHASE_QUALITY_KEY))
-        .map(attr => {
-          tryAndCatchStringCast(attr, attribute => {
-            gb.setPhaseQuality(attribute.asInstanceOf[java.lang.Integer])
-          }, attribute => {
-            gb.setPhaseQuality(attribute.toInt)
+            gb.setPhaseSet(attribute.toInt)
           })
         })
     }
@@ -1013,44 +877,356 @@ class VariantContextConverter(
   }
 
   private val genotypeFormatFns: Iterable[(HtsjdkGenotype, Genotype.Builder, Int, Array[Int]) => Genotype.Builder] = Iterable(
-    formatAllelicDepth(_, _, _, _),
-    formatReadDepth(_, _, _, _),
-    formatMinReadDepth(_, _, _, _),
-    formatGenotypeQuality(_, _, _, _),
-    formatGenotypeLikelihoods(_, _, _, _),
-    formatStrandBiasComponents(_, _, _, _),
-    formatPhaseInfo(_, _, _, _)
+    formatFilters(_, _, _, _),
+    formatPhaseSet(_, _, _, _)
   )
 
   // genotype --> htsjdk extract functions
 
-  private[converters] def extractAllelicDepth(g: Genotype,
-                                              gb: GenotypeBuilder): GenotypeBuilder = {
-    (Option(g.getReferenceReadDepth), Option(g.getAlternateReadDepth)) match {
+  private[converters] def extractFilters(g: Genotype,
+                                         gb: GenotypeBuilder): GenotypeBuilder = {
+
+    Option(g.getFiltersApplied)
+      .filter(ft => ft)
+      .map(applied => {
+        Option(g.getFiltersPassed).map(passed => {
+          if (passed) {
+            gb.filters("PASS")
+          } else {
+            val failedFilters = g.getFiltersFailed
+            require(failedFilters.nonEmpty,
+              "Genotype marked as filtered, but no failed filters listed in %s.".format(g))
+            gb.filters(failedFilters.mkString(";"))
+          }
+        }).getOrElse({
+          throw new IllegalArgumentException("Filters were applied but filters passed is null in %s.".format(g))
+        })
+      }).getOrElse(gb.unfiltered())
+  }
+
+  private[converters] def extractPhaseSet(g: Genotype,
+                                          gb: GenotypeBuilder): GenotypeBuilder = {
+
+    Option(g.getPhased)
+      .filter(p => p)
+      .map(p => {
+        Option(g.getPhaseSet).map(gb.attribute("PS", _))
+        gb.phased(true)
+      }).getOrElse(gb.phased(false))
+  }
+
+  private val genotypeExtractFns: Iterable[(Genotype, GenotypeBuilder) => GenotypeBuilder] = Iterable(
+    extractFilters(_, _),
+    extractPhaseSet(_, _)
+  )
+
+  // htsjdk --> genotype annotation format functions
+
+  private[converters] def formatReadDepths(g: HtsjdkGenotype,
+                                           gab: GenotypeAnnotation.Builder,
+                                           gIdx: Int,
+                                           gIndices: Array[Int]): GenotypeAnnotation.Builder = {
+    // AD is an array type field
+    if (g.hasAD && gIdx < g.getAD.size) {
+      val ad = g.getAD
+      gab.setReferenceReadDepth(ad(0))
+        .setAlternateReadDepth(ad(gIdx))
+    } else {
+      gab
+    }
+  }
+
+  private[converters] def formatForwardReadDepths(g: HtsjdkGenotype,
+                                                  gab: GenotypeAnnotation.Builder,
+                                                  gIdx: Int,
+                                                  gIndices: Array[Int]): GenotypeAnnotation.Builder = {
+    Option(g.getExtendedAttribute("ADF"))
+      .map(attr => {
+        val adf = toIntArray(attr)
+        try {
+          gab.setReferenceForwardReadDepth(adf(0))
+            .setAlternateForwardReadDepth(adf(gIdx))
+        } catch {
+          case _: ArrayIndexOutOfBoundsException => {
+            log.warn("Ran into Array Out of Bounds when accessing index %s for field ADF of genotype %s.".format(gIdx, g))
+            gab
+          }
+        }
+      }).getOrElse(gab)
+  }
+
+  private[converters] def formatReverseReadDepths(g: HtsjdkGenotype,
+                                                  gab: GenotypeAnnotation.Builder,
+                                                  gIdx: Int,
+                                                  gIndices: Array[Int]): GenotypeAnnotation.Builder = {
+    Option(g.getExtendedAttribute("ADR"))
+      .map(attr => {
+        val adr = toIntArray(attr)
+        try {
+          gab.setReferenceReverseReadDepth(adr(0))
+            .setAlternateReverseReadDepth(adr(gIdx))
+        } catch {
+          case _: ArrayIndexOutOfBoundsException => {
+            log.warn("Ran into Array Out of Bounds when accessing index %s for field ADR of genotype %s.".format(gIdx, g))
+            gab
+          }
+        }
+      }).getOrElse(gab)
+  }
+
+  private[converters] def formatReadDepth(g: HtsjdkGenotype,
+                                          gab: GenotypeAnnotation.Builder,
+                                          idx: Int,
+                                          indices: Array[Int]): GenotypeAnnotation.Builder = {
+    if (g.hasDP) {
+      gab.setReadDepth(g.getDP)
+    } else {
+      gab
+    }
+  }
+
+  private[converters] def formatLikelihoods(g: HtsjdkGenotype,
+                                            gab: GenotypeAnnotation.Builder,
+                                            idx: Int,
+                                            indices: Array[Int]): GenotypeAnnotation.Builder = {
+    // GL Number=G Type=Float
+    // Convert GL from log10 scale to log scale, optionally convert PL from phred scale to log scale
+
+    if (g.hasPL) {
+      val pl = g.getPL
+      try {
+        val likelihoods = indices.map(idx => {
+          jDouble(PhredUtils.phredToLogProbability(pl(idx)))
+        }).toList
+        gab.setLikelihoods(likelihoods)
+      } catch {
+        case _: ArrayIndexOutOfBoundsException => {
+          log.warn("Ran into Array Out of Bounds when accessing indices %s for field PL of genotype %s.".format(indices.mkString(","), g))
+          gab
+        }
+      }
+    } else {
+      gab
+    }
+  }
+
+  private[converters] def formatNonReferenceLikelihoods(g: HtsjdkGenotype,
+                                                        gab: GenotypeAnnotation.Builder,
+                                                        idx: Int,
+                                                        indices: Array[Int]): GenotypeAnnotation.Builder = {
+
+    /*
+
+     This looks correct, with the exception that nonReferenceLikelihoods shouldn't go into
+     a new VCF key, but that nonReferenceLikelihoods encodes the GL's for the symbolic non-ref
+     (*) alt in a gVCF line.
+
+     Handling this gets a bit complex, but the way to think of it is that if alternateAllele is
+     non-null, we get a VCF line with two alts (alternateAllele, and *). In the diploid case, we'd
+     get GL's:
+
+       likelihoods(0), likelihoods(1), likelihoods(2), nonRefLikelihoods(1), nonRefLikelihoods(2), 0?.
+
+     I'm not entirely sure what should go in the last spot, which would be the GT=1/2 likelihood,
+     which I feel is not well defined. If alternateAllele is null, then we get a VCF line with just *
+     as an alt and with GL=nonRefLikelihoods.
+
+     */
+    if (g.hasPL) {
+      val pl = g.getPL
+      gab.setNonReferenceLikelihoods(gIndices.map(idx => {
+        jDouble(PhredUtils.phredToLogProbability(pl(idx)))
+      }).toList)
+    } else {
+      gab
+    }
+  }
+
+  private[converters] def formatPriors(g: HtsjdkGenotype,
+                                       gab: GenotypeAnnotation.Builder,
+                                       idx: Int,
+                                       indices: Array[Int]): GenotypeAnnotation.Builder = {
+
+    Option(g.getExtendedAttribute("priors"))
+      .map(attr => {
+        val p = toFloatArray(attr)
+        try {
+          val priors = indices.map(idx => {
+            jFloat(p(idx))
+          }).toList
+          gab.setPriors(priors)
+        } catch {
+          case _: ArrayIndexOutOfBoundsException => {
+            log.warn("Ran into Array Out of Bounds when accessing indices %s for field priors of genotype %s.".format(indices.mkString(","), g))
+            gab
+          }
+        }
+      }).getOrElse(gab)
+  }
+
+  private[converters] def formatPosteriors(g: HtsjdkGenotype,
+                                           gab: GenotypeAnnotation.Builder,
+                                           idx: Int,
+                                           indices: Array[Int]): GenotypeAnnotation.Builder = {
+
+    Option(g.getExtendedAttribute("GP"))
+      .map(attr => {
+        val gp = toFloatArray(attr)
+        try {
+          val posteriors = indices.map(idx => {
+            // todo: convert GP from log10 to log scale
+            jFloat(gp(idx))
+          }).toList
+          gab.setPosteriors(posteriors)
+        } catch {
+          case _: ArrayIndexOutOfBoundsException => {
+            log.warn("Ran into Array Out of Bounds when accessing indices %s for field GP of genotype %s.".format(indices.mkString(","), g))
+            gab
+          }
+        }
+      }).getOrElse(gab)
+  }
+
+  private[converters] def formatQuality(g: HtsjdkGenotype,
+                                        gab: GenotypeAnnotation.Builder,
+                                        idx: Int,
+                                        indices: Array[Int]): GenotypeAnnotation.Builder = {
+    if (g.hasGQ) {
+      val gq = g.getGQ
+      gab.setQuality(gq)
+
+      gvcfBlocks.foreach(kv => {
+        val minGQ = kv._1
+        val maxGQ = kv._2
+        if (gq >= minGQ && gq < maxGQ) {
+          gab.setMinimumQuality(minGQ)
+          gab.setMaximumQuality(maxGQ)
+        }
+      })
+    }
+    gab
+  }
+
+  private[converters] def formatRmsMappingQuality(g: HtsjdkGenotype,
+                                                  gab: GenotypeAnnotation.Builder,
+                                                  idx: Int,
+                                                  indices: Array[Int]): GenotypeAnnotation.Builder = {
+
+    Option(g.getExtendedAttribute("MQ"))
+      .map(attr => {
+        tryAndCatchStringCast(attr, attribute => {
+          gab.setRmsMappingQuality(attribute.asInstanceOf[java.lang.Integer])
+        }, attribute => {
+          gab.setRmsMappingQuality(attribute.toInt)
+        })
+      }).getOrElse(gab)
+  }
+
+  private[converters] def formatPhaseSetQuality(g: HtsjdkGenotype,
+                                                gab: GenotypeAnnotation.Builder,
+                                                idx: Int,
+                                                indices: Array[Int]): GenotypeAnnotation.Builder = {
+
+    Option(g.getExtendedAttribute("PQ"))
+      .map(attr => {
+        tryAndCatchStringCast(attr, attribute => {
+          gab.setPhaseSetQuality(attribute.asInstanceOf[java.lang.Integer])
+        }, attribute => {
+          gab.setPhaseSetQuality(attribute.toInt)
+        })
+      }).getOrElse(gab)
+  }
+
+  private[converters] def formatMinimumReadDepth(g: HtsjdkGenotype,
+                                                 gab: GenotypeAnnotation.Builder,
+                                                 idx: Int,
+                                                 indices: Array[Int]): GenotypeAnnotation.Builder = {
+
+    Option(g.getExtendedAttribute("MIN_DP", null))
+      .map(attr => {
+        tryAndCatchStringCast(attr, attribute => {
+          gab.setMinimumReadDepth(attribute.asInstanceOf[java.lang.Integer])
+        }, attribute => {
+          gab.setMinimumReadDepth(attribute.toInt)
+        })
+      }).getOrElse(gab)
+  }
+
+  private[converters] def formatFisherStrandBiasPValue(g: HtsjdkGenotype,
+                                                       gab: GenotypeAnnotation.Builder,
+                                                       idx: Int,
+                                                       indices: Array[Int]): GenotypeAnnotation.Builder = {
+
+    Option(g.getExtendedAttribute("FS"))
+      .map(attr => {
+        tryAndCatchStringCast(attr, attribute => {
+          gab.setFisherStrandBiasPValue(attribute.asInstanceOf[java.lang.Float])
+        }, attribute => {
+          gab.setFisherStrandBiasPValue(toFloat(attribute))
+        })
+      }).getOrElse(gab)
+  }
+
+  private val genotypeAnnotationFormatFns: Iterable[(HtsjdkGenotype, GenotypeAnnotation.Builder, Int, Array[Int]) => GenotypeAnnotation.Builder] = Iterable(
+    formatReadDepths(_, _, _, _),
+    formatForwardReadDepths(_, _, _, _),
+    formatReverseReadDepths(_, _, _, _),
+    formatReadDepth(_, _, _, _),
+    formatLikelihoods(_, _, _, _),
+    formatNonReferenceLikelihoods(_, _, _, _),
+    formatPriors(_, _, _, _),
+    formatPosteriors(_, _, _, _),
+    formatQuality(_, _, _, _),
+    formatRmsMappingQuality(_, _, _, _),
+    formatPhaseSetQuality(_, _, _, _),
+    formatMinimumReadDepth(_, _, _, _),
+    formatFisherStrandBiasPValue(_, _, _, _)
+  )
+
+  // genotype annotation --> htsjdk extract functions
+
+  private[converters] def extractReadDepths(ga: GenotypeAnnotation,
+                                            gb: GenotypeBuilder): GenotypeBuilder = {
+
+    (Option(ga.getReferenceReadDepth), Option(ga.getAlternateReadDepth)) match {
       case (Some(ref), Some(alt)) => gb.AD(Array(ref, alt))
       case (Some(_), None) => {
-        throw new IllegalArgumentException("Had reference depth but no alternate depth in %s.".format(g))
+        throw new IllegalArgumentException("Had reference depth but no alternate depth in %s.".format(ga))
       }
       case (None, Some(_)) => {
-        throw new IllegalArgumentException("Had alternate depth but no reference depth in %s.".format(g))
+        throw new IllegalArgumentException("Had alternate depth but no reference depth in %s.".format(ga))
       }
       case _ => gb.noAD
     }
   }
 
-  private[converters] def extractReadDepth(g: Genotype,
+  private[converters] def extractForwardReadDepths(ga: GenotypeAnnotation,
+                                                   gb: GenotypeBuilder): GenotypeBuilder = {
+
+    (Option(ga.getReferenceForwardReadDepth), Option(ga.getAlternateForwardReadDepth)) match {
+      case (Some(ref), Some(alt)) => gb.attribute("ADF", ImmutableList.of(ref, alt))
+      case (None, Some(_))        => throw new IllegalArgumentException("Forward read depth specified without reference forward read depth")
+      case (Some(_), None)        => throw new IllegalArgumentException("Reference forward read depth specified without forward read depth")
+      case _                      =>
+    }
+    gb
+  }
+
+  private[converters] def extractReverseReadDepths(ga: GenotypeAnnotation,
+                                                   gb: GenotypeBuilder): GenotypeBuilder = {
+
+    (Option(ga.getReferenceReverseReadDepth), Option(ga.getAlternateReverseReadDepth)) match {
+      case (Some(ref), Some(alt)) => gb.attribute("ADR", ImmutableList.of(ref, alt))
+      case (None, Some(_))        => throw new IllegalArgumentException("Reverse read depth specified without reference reverse read depth")
+      case (Some(_), None)        => throw new IllegalArgumentException("Reference reverse read depth specified without reverse read depth")
+      case _                      =>
+    }
+    gb
+  }
+
+  private[converters] def extractReadDepth(ga: GenotypeAnnotation,
                                            gb: GenotypeBuilder): GenotypeBuilder = {
-    Option(g.getReadDepth).fold(gb.noDP)(dp => gb.DP(dp))
-  }
-
-  private[converters] def extractMinReadDepth(g: Genotype,
-                                              gb: GenotypeBuilder): GenotypeBuilder = {
-    Option(g.getMinReadDepth).fold(gb)(minDp => gb.attribute("MIN_DP", minDp))
-  }
-
-  private[converters] def extractGenotypeQuality(g: Genotype,
-                                                 gb: GenotypeBuilder): GenotypeBuilder = {
-    Option(g.getGenotypeQuality).fold(gb.noGQ)(gq => gb.GQ(gq))
+    Option(ga.getReadDepth).fold(gb.noDP)(gb.DP(_))
   }
 
   private[converters] def numPls(copyNumber: Int): Int = {
@@ -1089,6 +1265,7 @@ class VariantContextConverter(
     array
   }
 
+  /*
   private[converters] def extractGenotypeLikelihoods(g: Genotype,
                                                      gb: GenotypeBuilder): GenotypeBuilder = {
     val gls = g.getGenotypeLikelihoods
@@ -1113,167 +1290,67 @@ class VariantContextConverter(
       gb.PL(nonRefPls(gls, nls))
     }
   }
+   */
 
-  private[converters] def extractStrandBiasComponents(g: Genotype,
-                                                      gb: GenotypeBuilder): GenotypeBuilder = {
-
-    val components = g.getStrandBiasComponents
-
-    if (components.isEmpty) {
-      gb
-    } else {
-      require(components.size == 4,
-        "Illegal strand bias components length. Must be empty or 4. In:\n%s".format(g))
-      gb.attribute("SB", components.map(i => i: Int).toArray)
-    }
+  private[converters] def extractLikelihoods(ga: GenotypeAnnotation,
+                                             gb: GenotypeBuilder): GenotypeBuilder = {
+    gb
   }
 
-  private[converters] def extractPhaseInfo(g: Genotype,
-                                           gb: GenotypeBuilder): GenotypeBuilder = {
-    Option(g.getPhased)
-      .filter(p => p)
-      .map(p => {
-        val setFns: Iterable[Option[(GenotypeBuilder => GenotypeBuilder)]] = Iterable(
-          Option(g.getPhaseSetId).map(ps => {
-            (b: GenotypeBuilder) => b.attribute("PS", ps)
-          }),
-          Option(g.getPhaseQuality).map(pq => {
-            (b: GenotypeBuilder) => b.attribute("PQ", pq)
-          }))
-
-        setFns.flatten
-          .foldLeft(gb.phased(true))((b, fn) => fn(b))
-      }).getOrElse(gb.phased(false))
+  private[converters] def extractNonReferenceLikelihoods(ga: GenotypeAnnotation,
+                                                         gb: GenotypeBuilder): GenotypeBuilder = {
+    gb
   }
 
-  private val genotypeExtractFns: Iterable[(Genotype, GenotypeBuilder) => GenotypeBuilder] = Iterable(
-    extractAllelicDepth(_, _),
-    extractReadDepth(_, _),
-    extractMinReadDepth(_, _),
-    extractGenotypeQuality(_, _),
-    extractGenotypeLikelihoods(_, _),
-    extractStrandBiasComponents(_, _),
-    extractPhaseInfo(_, _)
-  )
-
-  // htsjdk --> genotype annotation format functions
-
-  private[converters] def formatFilters(g: HtsjdkGenotype,
-                                        vcab: VariantCallingAnnotations.Builder,
-                                        idx: Int,
-                                        indices: Array[Int]): VariantCallingAnnotations.Builder = {
-    // see https://github.com/samtools/htsjdk/issues/741
-    val gtFiltersWereApplied = true
-    if (gtFiltersWereApplied) {
-      val filtersWereApplied = vcab.setFiltersApplied(true)
-      if (g.isFiltered) {
-        filtersWereApplied.setFiltersPassed(false)
-          .setFiltersFailed(g.getFilters.split(";").toList)
-      } else {
-        filtersWereApplied.setFiltersPassed(true)
-      }
-    } else {
-      vcab.setFiltersApplied(false)
-    }
+  private[converters] def extractPriors(ga: GenotypeAnnotation,
+                                        gb: GenotypeBuilder): GenotypeBuilder = {
+    Option(ga.getPriors).fold(gb)(gb.attribute("priors", _))
   }
 
-  private[converters] def formatFisherStrandBias(g: HtsjdkGenotype,
-                                                 vcab: VariantCallingAnnotations.Builder,
-                                                 idx: Int,
-                                                 indices: Array[Int]): VariantCallingAnnotations.Builder = {
-    Option(g.getExtendedAttribute("FS"))
-      .map(attr => {
-        tryAndCatchStringCast(attr, attribute => {
-          vcab.setFisherStrandBiasPValue(attribute.asInstanceOf[java.lang.Float])
-        }, attribute => {
-          vcab.setFisherStrandBiasPValue(toFloat(attribute))
-        })
-      }).getOrElse(vcab)
+  private[converters] def extractPosteriors(ga: GenotypeAnnotation,
+                                            gb: GenotypeBuilder): GenotypeBuilder = {
+    gb
   }
 
-  private[converters] def formatRmsMapQ(g: HtsjdkGenotype,
-                                        vcab: VariantCallingAnnotations.Builder,
-                                        idx: Int,
-                                        indices: Array[Int]): VariantCallingAnnotations.Builder = {
-    Option(g.getExtendedAttribute("MQ"))
-      .map(attr => {
-        tryAndCatchStringCast(attr, attribute => {
-          vcab.setRmsMapQ(attribute.asInstanceOf[java.lang.Float])
-        }, attribute => {
-          vcab.setRmsMapQ(toFloat(attribute))
-        })
-      }).getOrElse(vcab)
-  }
-
-  private[converters] def formatMapQ0(g: HtsjdkGenotype,
-                                      vcab: VariantCallingAnnotations.Builder,
-                                      idx: Int,
-                                      indices: Array[Int]): VariantCallingAnnotations.Builder = {
-    Option(g.getExtendedAttribute("MQ0"))
-      .map(attr => {
-        tryAndCatchStringCast(attr, attribute => {
-          vcab.setMapq0Reads(attribute.asInstanceOf[java.lang.Integer])
-        }, attribute => {
-          vcab.setMapq0Reads(attribute.toInt)
-        })
-      }).getOrElse(vcab)
-  }
-
-  private val genotypeAnnotationFormatFns: Iterable[(HtsjdkGenotype, VariantCallingAnnotations.Builder, Int, Array[Int]) => VariantCallingAnnotations.Builder] = Iterable(
-    formatFilters(_, _, _, _),
-    formatFisherStrandBias(_, _, _, _),
-    formatRmsMapQ(_, _, _, _),
-    formatMapQ0(_, _, _, _)
-  )
-
-  // genotype annotation --> htsjdk extract functions
-
-  private[converters] def extractFilters(vca: VariantCallingAnnotations,
+  private[converters] def extractQuality(ga: GenotypeAnnotation,
                                          gb: GenotypeBuilder): GenotypeBuilder = {
-    Option(vca.getFiltersApplied)
-      .filter(ft => ft)
-      .map(applied => {
-        Option(vca.getFiltersPassed).map(passed => {
-          if (passed) {
-            gb.filters("PASS")
-          } else {
-            val failedFilters = vca.getFiltersFailed
-            require(failedFilters.nonEmpty,
-              "Genotype marked as filtered, but no failed filters listed in %s.".format(vca))
-            gb.filters(failedFilters.mkString(";"))
-          }
-        }).getOrElse({
-          throw new IllegalArgumentException("Filters were applied but filters passed is null in %s.".format(vca))
-        })
-      }).getOrElse(gb.unfiltered())
+    Option(ga.getQuality).fold(gb.noGQ)(gb.GQ(_))
   }
 
-  private[converters] def extractFisherStrandBias(vca: VariantCallingAnnotations,
+  private[converters] def extractRmsMappingQuality(ga: GenotypeAnnotation,
+                                                   gb: GenotypeBuilder): GenotypeBuilder = {
+    Option(ga.getRmsMappingQuality).fold(gb)(gb.attribute("MQ", _))
+  }
+
+  private[converters] def extractPhaseSetQuality(ga: GenotypeAnnotation,
+                                                 gb: GenotypeBuilder): GenotypeBuilder = {
+    Option(ga.getPhaseSetQuality).fold(gb)(gb.attribute("PQ", _))
+  }
+
+  private[converters] def extractMinimumReadDepth(ga: GenotypeAnnotation,
                                                   gb: GenotypeBuilder): GenotypeBuilder = {
-    Option(vca.getFisherStrandBiasPValue).map(fs => {
-      gb.attribute("FS", fs)
-    }).getOrElse(gb)
+    Option(ga.getMinimumReadDepth).fold(gb)(gb.attribute("MIN_DP", _))
   }
 
-  private[converters] def extractRmsMapQ(vca: VariantCallingAnnotations,
-                                         gb: GenotypeBuilder): GenotypeBuilder = {
-    Option(vca.getRmsMapQ).map(mq => {
-      gb.attribute("MQ", mq)
-    }).getOrElse(gb)
+  private[converters] def extractFisherStrandBiasPValue(ga: GenotypeAnnotation,
+                                                        gb: GenotypeBuilder): GenotypeBuilder = {
+    Option(ga.getFisherStrandBiasPValue).fold(gb)(gb.attribute("FS", _))
   }
 
-  private[converters] def extractMapQ0(vca: VariantCallingAnnotations,
-                                       gb: GenotypeBuilder): GenotypeBuilder = {
-    Option(vca.getMapq0Reads).map(mq0 => {
-      gb.attribute("MQ0", mq0)
-    }).getOrElse(gb)
-  }
-
-  private val genotypeAnnotationExtractFns: Iterable[(VariantCallingAnnotations, GenotypeBuilder) => GenotypeBuilder] = Iterable(
-    extractFilters(_, _),
-    extractFisherStrandBias(_, _),
-    extractRmsMapQ(_, _),
-    extractMapQ0(_, _)
+  private val genotypeAnnotationExtractFns: Iterable[(GenotypeAnnotation, GenotypeBuilder) => GenotypeBuilder] = Iterable(
+    extractReadDepths(_, _),
+    extractForwardReadDepths(_, _),
+    extractReverseReadDepths(_, _),
+    extractReadDepth(_, _),
+    extractLikelihoods(_, _),
+    extractNonReferenceLikelihoods(_, _),
+    extractPriors(_, _),
+    extractPosteriors(_, _),
+    extractQuality(_, _),
+    extractRmsMappingQuality(_, _),
+    extractPhaseSetQuality(_, _),
+    extractMinimumReadDepth(_, _),
+    extractFisherStrandBiasPValue(_, _)
   )
 
   // safe type conversions
@@ -1639,7 +1716,7 @@ class VariantContextConverter(
 
   private def makeVariantFormatFn(
     headerLines: Seq[VCFHeaderLine],
-    stringency: ValidationStringency = ValidationStringency.STRICT): (HtsjdkVariantContext, Option[String], Int, Boolean) => (Variant, Variant) = {
+    stringency: ValidationStringency = ValidationStringency.STRICT): (HtsjdkVariantContext, Option[String], Int, Boolean) => Variant = {
 
     val attributeFns: Iterable[(HtsjdkVariantContext, Int, Array[Int]) => Option[(String, String)]] = headerLines
       .flatMap(hl => hl match {
@@ -1675,7 +1752,7 @@ class VariantContextConverter(
     def convert(vc: HtsjdkVariantContext,
                 alt: Option[String],
                 alleleIdx: Int,
-                wasSplit: Boolean): (Variant, Variant) = {
+                wasSplit: Boolean): Variant = {
 
       // create the builder
       val variantBuilder = Variant.newBuilder
@@ -1686,7 +1763,7 @@ class VariantContextConverter(
 
       // was this split?
       if (wasSplit) {
-        variantBuilder.setSplitFromMultiAllelic(true)
+        variantBuilder.setSplitFromMultiallelic(true)
       }
 
       alt.foreach(variantBuilder.setAlternateAllele(_))
@@ -1713,7 +1790,7 @@ class VariantContextConverter(
         }
       })
 
-      val variant = variantBuilder.build
+      val variant = variantBuilder.build()
       val variantAnnotationBuilder = VariantAnnotation.newBuilder
 
       val boundAnnotationFns: Iterable[VariantAnnotation.Builder => VariantAnnotation.Builder] = variantAnnotationFormatFns
@@ -1752,14 +1829,14 @@ class VariantContextConverter(
       }
 
       variantBuilder.setAnnotation(convertedAnnotationWithAttrs.build)
-      (variant, variantBuilder.build)
+      variantBuilder.build
     }
 
     convert(_, _, _, _)
   }
 
   private def makeGenotypeFormatFn(
-    headerLines: Seq[VCFHeaderLine]): (HtsjdkGenotype, Variant, Allele, Int, Option[Int], Boolean) => Genotype = {
+    headerLines: Seq[VCFHeaderLine]): (HtsjdkGenotype, Variant, HtsjdkAllele, Int, Option[Int], Boolean) => Genotype = {
 
     val attributeFns: Iterable[(HtsjdkGenotype, Int, Array[Int]) => Option[(String, String)]] = headerLines
       .flatMap(hl => hl match {
@@ -1783,33 +1860,34 @@ class VariantContextConverter(
 
     def convert(g: HtsjdkGenotype,
                 variant: Variant,
-                allele: Allele,
+                allele: HtsjdkAllele,
                 alleleIdx: Int,
                 nonRefIndex: Option[Int],
                 wasSplit: Boolean): Genotype = {
 
       // create the builder
       val builder = Genotype.newBuilder()
-        .setVariant(variant)
         .setReferenceName(variant.getReferenceName)
         .setStart(variant.getStart)
         .setEnd(variant.getEnd)
+        .setReferenceAllele(variant.getReferenceAllele)
+        .setAlternateAllele(variant.getAlternateAllele)
         .setSampleId(g.getSampleName)
         .setAlleles(g.getAlleles.map(gtAllele => {
           if (gtAllele.isReference) {
-            GenotypeAllele.REF
+            Allele.REF
           } else if (gtAllele.isNoCall) {
-            GenotypeAllele.NO_CALL
+            Allele.NO_CALL
           } else if (gtAllele.equals(allele, true)) {
-            GenotypeAllele.ALT
+            Allele.ALT
           } else {
-            GenotypeAllele.OTHER_ALT
+            Allele.OTHER_ALT
           }
         }))
 
       // was this split?
       if (wasSplit) {
-        builder.setSplitFromMultiAllelic(true)
+        builder.setSplitFromMultiallelic(true)
       }
 
       // get array indices
@@ -1851,17 +1929,17 @@ class VariantContextConverter(
         formatNonRefGenotypeLikelihoods(g, convertedCore, nrIndices)
       })
 
-      val vcAnns = VariantCallingAnnotations.newBuilder
+      val gAnns = GenotypeAnnotation.newBuilder
 
       // bind the annotation conversion functions and fold
-      val boundAnnotationFns: Iterable[VariantCallingAnnotations.Builder => VariantCallingAnnotations.Builder] = genotypeAnnotationFormatFns
+      val boundAnnotationFns: Iterable[GenotypeAnnotation.Builder => GenotypeAnnotation.Builder] = genotypeAnnotationFormatFns
         .map(fn => {
-          fn(g, _: VariantCallingAnnotations.Builder, alleleIdx, indices)
+          fn(g, _: GenotypeAnnotation.Builder, alleleIdx, indices)
         })
-      val convertedAnnotations = boundAnnotationFns.foldLeft(vcAnns)(
-        (vcab: VariantCallingAnnotations.Builder, fn) => {
+      val convertedAnnotations = boundAnnotationFns.foldLeft(gAnns)(
+        (gab: GenotypeAnnotation.Builder, fn) => {
           try {
-            fn(vcab)
+            fn(gab)
           } catch {
             case t: Throwable => {
               if (stringency == ValidationStringency.STRICT) {
@@ -1871,7 +1949,7 @@ class VariantContextConverter(
                   log.warn("Converting genotype annotation field in %s with function %s failed: %s".format(
                     g, fn, t))
                 }
-                vcab
+                gab
               }
             }
           }
@@ -1890,7 +1968,7 @@ class VariantContextConverter(
 
       // build the annotations and attach
       val gtWithAnnotations = coreWithOptNonRefs
-        .setVariantCallingAnnotations(convertedAnnotationsWithAttrs.build)
+        .setAnnotation(convertedAnnotationsWithAttrs.build)
 
       // build and return
       gtWithAnnotations.build()
@@ -2307,21 +2385,21 @@ class VariantContextConverter(
         })
 
       // convert the annotations if they exist
-      val gtWithAnnotations = Option(g.getVariantCallingAnnotations)
-        .fold(convertedCore)(vca => {
+      val gtWithAnnotations = Option(g.getAnnotation)
+        .fold(convertedCore)(ga => {
 
           // bind the annotation conversion functions and fold
           val convertedAnnotations = genotypeAnnotationExtractFns.foldLeft(convertedCore)(
             (gb: GenotypeBuilder, fn) => {
               try {
-                fn(vca, gb)
+                fn(ga, gb)
               } catch {
                 case t: Throwable => {
                   if (stringency == ValidationStringency.STRICT) {
                     throw t
                   } else {
                     if (stringency == ValidationStringency.LENIENT) {
-                      log.warn("Applying annotation extraction function %s to %s failed with %s.".format(fn, vca, t))
+                      log.warn("Applying annotation extraction function %s to %s failed with %s.".format(fn, ga, t))
                     }
 
                     gb
@@ -2331,7 +2409,7 @@ class VariantContextConverter(
             })
 
           // get the attribute map
-          val attributes: Map[String, String] = vca.getAttributes.toMap
+          val attributes: Map[String, String] = ga.getAttributes.toMap
 
           // apply the attribute converters and return
           attributeFns.foldLeft(convertedAnnotations)((gb: GenotypeBuilder, fn) => {
@@ -2347,7 +2425,7 @@ class VariantContextConverter(
                   throw t
                 } else {
                   if (stringency == ValidationStringency.LENIENT) {
-                    log.warn("Applying attribute extraction function %s to %s failed with %s.".format(fn, vca, t))
+                    log.warn("Applying attribute extraction function %s to %s failed with %s.".format(fn, ga, t))
                   }
 
                   gb
