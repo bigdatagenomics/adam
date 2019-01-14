@@ -48,7 +48,7 @@ object VCFInFormatter extends InFormatterCompanion[VariantContext, VariantContex
    */
   def apply(gDataset: VariantContextDataset): VCFInFormatter = {
     VCFInFormatter(gDataset.sequences,
-      gDataset.samples.map(_.getSampleId),
+      gDataset.samples.map(_.getId),
       gDataset.headerLines,
       gDataset.rdd.context.hadoopConfiguration)
   }

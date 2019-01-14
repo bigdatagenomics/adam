@@ -87,8 +87,8 @@ object ADAMShell {
       a.getStart().toString,
       a.getEnd().toString,
       Option(a.getReadName()).getOrElse(""),
-      Option(a.getRecordGroupSample()).getOrElse(""),
-      Option(a.getRecordGroupName()).getOrElse("")
+      Option(a.getReadGroupSampleId()).getOrElse(""),
+      Option(a.getReadGroupId()).getOrElse("")
     ) ++ keys.map(key => findMatchingAttribute(key, a.getAttributes()))).toArray
 
     println("\nAlignment Attributes\n" + new ASCIITable(header, rows).toString)
@@ -243,7 +243,7 @@ object ADAMShell {
     ) ++ keys.map(key => new ASCIITableHeader(key)) ++ Array(new ASCIITableHeader("Processing Steps"))
 
     val rows: Array[Array[String]] = samples.map(s => Array[String](
-      s.getSampleId(),
+      s.getId(),
       s.getName()
     ) ++ keys.map(key => Option(s.getAttributes().get(key)).getOrElse("")) ++ Array(Option(s.getProcessingSteps().toString).getOrElse(""))).toArray
 

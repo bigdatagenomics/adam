@@ -118,8 +118,8 @@ class TransformAlignmentsArgs extends Args4jBase with ADAMSaveAnyArgs with Parqu
   var disableFastConcat: Boolean = false
   @Args4jOption(required = false, name = "-paired_fastq", usage = "When converting two (paired) FASTQ files to ADAM, pass the path to the second file here.")
   var pairedFastqFile: String = null
-  @Args4jOption(required = false, name = "-record_group", usage = "Set converted FASTQs' record-group names to this value; if empty-string is passed, use the basename of the input file, minus the extension.")
-  var fastqRecordGroup: String = null
+  @Args4jOption(required = false, name = "-read_group", usage = "Set converted FASTQs' read-group identifiers to this value; if empty-string is passed, use the basename of the input file, minus the extension.")
+  var fastqReadGroup: String = null
   @Args4jOption(required = false, name = "-concat", usage = "Concatenate this file with <INPUT> and write the result to <OUTPUT>")
   var concatFilename: String = null
   @Args4jOption(required = false, name = "-add_md_tags", usage = "Add MD Tags to reads based on the FASTA (or equivalent) file passed to this option.")
@@ -468,7 +468,7 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
           sc.loadBam(args.inputPath)
         }
       } else if (args.forceLoadFastq) {
-        sc.loadFastq(args.inputPath, Option(args.pairedFastqFile), Option(args.fastqRecordGroup), stringency)
+        sc.loadFastq(args.inputPath, Option(args.pairedFastqFile), Option(args.fastqReadGroup), stringency)
       } else if (args.forceLoadIFastq) {
         sc.loadInterleavedFastq(args.inputPath)
       } else if (args.forceLoadParquet ||
@@ -486,7 +486,7 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
 
         val proj = if (args.limitProjection) {
           Some(Filter(AlignmentRecordField.attributes,
-            AlignmentRecordField.origQual))
+            AlignmentRecordField.originalQuality))
         } else {
           None
         }
@@ -498,7 +498,7 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
         val loadedReads = sc.loadAlignments(
           args.inputPath,
           optPathName2 = Option(args.pairedFastqFile),
-          optRecordGroup = Option(args.fastqRecordGroup),
+          optReadGroup = Option(args.fastqReadGroup),
           stringency = stringency
         )
 
@@ -532,7 +532,7 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
 
     val rdd = aRdd.rdd
     val sd = aRdd.sequences
-    val rgd = aRdd.recordGroups
+    val rgd = aRdd.readGroups
     val pgs = aRdd.processingSteps
 
     // Optionally load a second RDD and concatenate it with the first.
@@ -549,13 +549,13 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
         } else {
           sc.loadAlignments(
             concatFilename,
-            optRecordGroup = Option(args.fastqRecordGroup)
+            optReadGroup = Option(args.fastqReadGroup)
           )
         })
 
     // if we have a second rdd that we are merging in, process the merger here
     val (mergedRdd, mergedSd, mergedRgd, mergedPgs) = concatOpt.fold((rdd, sd, rgd, pgs))(t => {
-      (rdd ++ t.rdd, sd ++ t.sequences, rgd ++ t.recordGroups, pgs ++ t.processingSteps)
+      (rdd ++ t.rdd, sd ++ t.sequences, rgd ++ t.readGroups, pgs ++ t.processingSteps)
     })
 
     // make a new aligned read rdd, that merges the two RDDs together

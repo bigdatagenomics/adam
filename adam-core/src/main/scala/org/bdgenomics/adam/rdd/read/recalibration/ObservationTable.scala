@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.rdd.read.recalibration
 
-import org.bdgenomics.adam.models.RecordGroupDictionary
+import org.bdgenomics.adam.models.ReadGroupDictionary
 
 /**
  * Table containing the empirical frequency of mismatches for each set of
@@ -31,13 +31,13 @@ private[adam] class ObservationTable(
   override def toString = entries.map { case (k, v) => "%s\t%s".format(k, v) }.mkString("\n")
 
   /**
-   * @param recordGroups The record groups that generated the reads in this table.
+   * @param readGroups The read groups that generated the reads in this table.
    * @return Return this table as CSV.
    */
-  def toCSV(recordGroups: RecordGroupDictionary): String = {
+  def toCSV(readGroups: ReadGroupDictionary): String = {
     val rows = entries.map {
       case (key, obs) =>
-        (CovariateSpace.toCSV(key, recordGroups) ++
+        (CovariateSpace.toCSV(key, readGroups) ++
           obs.toCSV ++
           (if (key.containsNone) Seq("**") else Seq()))
     }

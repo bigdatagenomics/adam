@@ -389,7 +389,7 @@ private[read] class RealignIndels(
                     val builder: AlignmentRecord.Builder = AlignmentRecord.newBuilder(r)
 
                     // bump up mapping quality by 10
-                    builder.setMapq(r.getMapq + 10)
+                    builder.setMappingQuality(r.getMappingQuality + 10)
 
                     // how many bases are clipped at the start/end of the read?
                     val (basesClippedAtStart, basesClippedAtEnd) = if (unclipReads) {
@@ -422,8 +422,8 @@ private[read] class RealignIndels(
                         reference.drop((newStart - refStart).toInt),
                         newStart).toString()
                       builder.setMismatchingPositions(newMdTag)
-                      builder.setOldPosition(r.getStart())
-                      builder.setOldCigar(r.getCigar())
+                      builder.setOriginalStart(r.getStart())
+                      builder.setOriginalCigar(r.getCigar())
                       val rec = builder.build()
 
                       new RichAlignmentRecord(rec)

@@ -44,11 +44,11 @@ private[recalibration] case class Recalibrator(
    */
   def apply(record: AlignmentRecord,
             covariates: Array[CovariateKey]): AlignmentRecord = RecalibrateRead.time {
-    if (record.getQual != null &&
+    if (record.getQuality != null &&
       covariates.nonEmpty) {
       AlignmentRecord.newBuilder(record)
-        .setQual(computeQual(record, covariates))
-        .setOrigQual(record.getQual)
+        .setQuality(computeQual(record, covariates))
+        .setOriginalQuality(record.getQuality)
         .build()
     } else {
       record
@@ -64,7 +64,7 @@ private[recalibration] case class Recalibrator(
    */
   private def computeQual(read: AlignmentRecord,
                           covariates: Array[CovariateKey]): String = ComputeQualityScore.time {
-    val origQuals = read.getQual
+    val origQuals = read.getQuality
     val quals = new StringBuilder(origQuals)
     val newQuals = table(covariates)
     var idx = 0

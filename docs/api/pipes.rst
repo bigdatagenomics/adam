@@ -95,7 +95,7 @@ The ``convFn`` implementations are provided as implicit values in the
 to adapt the metadata stored in a single ``GenomicDataset`` to the type of a
 different ``GenomicDataset`` (e.g., if piping an ``AlignmentRecordDataset``
 through a command that returns a ``VariantContextDataset``, we will need to
-convert the ``AlignmentRecordDataset``\ s ``RecordGroupDictionary`` into an
+convert the ``AlignmentRecordDataset``\ s ``ReadGroupDictionary`` into an
 array of ``Sample``\ s for the ``VariantContextDataset``). We provide four
 implementations:
 

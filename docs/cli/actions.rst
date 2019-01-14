@@ -69,7 +69,7 @@ fall into several general categories:
       FASTQ.
    -  ``-paired_fastq``: Forces ``-force_load_fastq``, and passes the
       path of a second-of-pair FASTQ file to load.
-   -  ``-record_group``: If loading FASTQ, sets the record group name on
+   -  ``-read_group``: If loading FASTQ, sets the read group name on
       each read to this value.
    -  ``-force_load_ifastq``: Forces ADAM to try to load the input as
       interleaved FASTQ.

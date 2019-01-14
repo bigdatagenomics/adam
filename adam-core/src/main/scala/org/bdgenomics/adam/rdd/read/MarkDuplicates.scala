@@ -20,7 +20,7 @@ package org.bdgenomics.adam.rdd.read
 import org.bdgenomics.utils.misc.Logging
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.instrumentation.Timers._
-import org.bdgenomics.adam.models.{ RecordGroupDictionary, ReferencePosition }
+import org.bdgenomics.adam.models.{ ReadGroupDictionary, ReferencePosition }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.fragment.FragmentDataset
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Fragment, Strand }
@@ -62,26 +62,26 @@ private[rdd] object MarkDuplicates extends Serializable with Logging {
 
   def apply(rdd: AlignmentRecordDataset): RDD[AlignmentRecord] = {
 
-    markBuckets(rdd.groupReadsByFragment(), rdd.recordGroups)
+    markBuckets(rdd.groupReadsByFragment(), rdd.readGroups)
       .flatMap(_.allReads)
   }
 
   def apply(rdd: FragmentDataset): RDD[Fragment] = {
 
-    markBuckets(rdd.rdd.map(f => SingleReadBucket(f)), rdd.recordGroups)
+    markBuckets(rdd.rdd.map(f => SingleReadBucket(f)), rdd.readGroups)
       .map(_.toFragment)
   }
 
-  private def checkRecordGroups(recordGroups: RecordGroupDictionary) {
-    // do we have record groups where the library name is not set? if so, print a warning message
-    // to the user, as all record groups without a library name will be treated as coming from
+  private def checkReadGroups(readGroups: ReadGroupDictionary) {
+    // do we have read groups where the library name is not set? if so, print a warning message
+    // to the user, as all read groups without a library name will be treated as coming from
     // a single library
-    val emptyRgs = recordGroups.recordGroups
+    val emptyRgs = readGroups.readGroups
       .filter(_.library.isEmpty)
 
     emptyRgs.foreach(rg => {
-      log.warn("Library ID is empty for record group %s from sample %s.".format(rg.recordGroupName,
-        rg.sample))
+      log.warn("Library ID is empty for read group %s from sample %s.".format(rg.id,
+        rg.sampleId))
     })
 
     if (emptyRgs.nonEmpty) {
@@ -90,8 +90,8 @@ private[rdd] object MarkDuplicates extends Serializable with Logging {
   }
 
   private def markBuckets(rdd: RDD[SingleReadBucket],
-                          recordGroups: RecordGroupDictionary): RDD[SingleReadBucket] = {
-    checkRecordGroups(recordGroups)
+                          readGroups: ReadGroupDictionary): RDD[SingleReadBucket] = {
+    checkReadGroups(readGroups)
 
     def positionForStrand(defaultPos: Option[ReferencePosition], otherPos: Option[ReferencePosition], strand: Strand) = {
       defaultPos.filter(_.strand == strand).orElse(otherPos.filter(_.strand == strand).orElse(defaultPos))
@@ -99,10 +99,10 @@ private[rdd] object MarkDuplicates extends Serializable with Logging {
 
     // Group by library and left position
     def leftPositionAndLibrary(p: (ReferencePositionPair, SingleReadBucket),
-                               rgd: RecordGroupDictionary): (Option[ReferencePosition], String) = {
+                               rgd: ReadGroupDictionary): (Option[ReferencePosition], String) = {
       val leftPosition = positionForStrand(p._1.read1refPos, p._1.read2refPos, Strand.FORWARD)
-      if (p._2.allReads.head.getRecordGroupName != null) {
-        (leftPosition, rgd(p._2.allReads.head.getRecordGroupName).library.orNull)
+      if (p._2.allReads.head.getReadGroupId != null) {
+        (leftPosition, rgd(p._2.allReads.head.getReadGroupId).library.orNull)
       } else {
         (leftPosition, null)
       }
@@ -114,7 +114,7 @@ private[rdd] object MarkDuplicates extends Serializable with Logging {
     }
 
     rdd.keyBy(ReferencePositionPair(_))
-      .groupBy(leftPositionAndLibrary(_, recordGroups))
+      .groupBy(leftPositionAndLibrary(_, readGroups))
       .flatMap(kv => PerformDuplicateMarking.time {
 
         val leftPos: Option[ReferencePosition] = kv._1._1

@@ -25,7 +25,7 @@ import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.bdgenomics.adam.converters.AlignmentRecordConverter
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models.{
-  RecordGroupDictionary,
+  ReadGroupDictionary,
   ReferenceRegion,
   ReferenceRegionSerializer,
   SequenceDictionary
@@ -33,7 +33,7 @@ import org.bdgenomics.adam.models.{
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.{
   DatasetBoundGenomicDataset,
-  AvroRecordGroupGenomicDataset,
+  AvroReadGroupGenomicDataset,
   JavaSaveArgs
 }
 import org.bdgenomics.adam.rdd.read.{
@@ -100,15 +100,15 @@ object FragmentDataset {
   val WRITE_SUFFIXES = "org.bdgenomics.adam.rdd.fragment.FragmentDataset.writeSuffixes"
 
   /**
-   * Creates a FragmentDataset where no record groups or sequence info are attached.
+   * Creates a FragmentDataset where no read groups or sequence info are attached.
    *
    * @param rdd RDD of fragments.
-   * @return Returns a FragmentDataset with an empty record group dictionary and sequence dictionary.
+   * @return Returns a FragmentDataset with an empty read group dictionary and sequence dictionary.
    */
   private[adam] def fromRdd(rdd: RDD[Fragment]): FragmentDataset = {
     FragmentDataset(rdd,
       SequenceDictionary.empty,
-      RecordGroupDictionary.empty,
+      ReadGroupDictionary.empty,
       Seq.empty)
   }
 
@@ -117,18 +117,18 @@ object FragmentDataset {
    *
    * @param rdd The underlying Fragment RDD.
    * @param sequences The sequence dictionary for the genomic dataset.
-   * @param recordGroupDictionary The record group dictionary for the genomic dataset.
+   * @param readGroups The read group dictionary for the genomic dataset.
    * @param processingSteps The processing steps that have been applied to this data.
    * @return A new FragmentDataset.
    */
   def apply(rdd: RDD[Fragment],
             sequences: SequenceDictionary,
-            recordGroupDictionary: RecordGroupDictionary,
+            readGroups: ReadGroupDictionary,
             processingSteps: Seq[ProcessingStep]): FragmentDataset = {
 
     new RDDBoundFragmentDataset(rdd,
       sequences,
-      recordGroupDictionary,
+      readGroups,
       processingSteps,
       None)
   }
@@ -138,15 +138,15 @@ object FragmentDataset {
    *
    * @param ds The underlying Dataset of Fragment data.
    * @param sequences The genomic sequences this data was aligned to, if any.
-   * @param recordGroups The record groups these Fragments came from.
+   * @param readGroups The read groups these Fragments came from.
    * @param processingSteps The processing steps that have been applied to this data.
    * @return A new FragmentDataset.
    */
   def apply(ds: Dataset[FragmentProduct],
             sequences: SequenceDictionary,
-            recordGroups: RecordGroupDictionary,
+            readGroups: ReadGroupDictionary,
             processingSteps: Seq[ProcessingStep]): FragmentDataset = {
-    DatasetBoundFragmentDataset(ds, sequences, recordGroups, processingSteps)
+    DatasetBoundFragmentDataset(ds, sequences, readGroups, processingSteps)
   }
 }
 
@@ -154,7 +154,7 @@ case class ParquetUnboundFragmentDataset private[rdd] (
     @transient private val sc: SparkContext,
     private val parquetFilename: String,
     sequences: SequenceDictionary,
-    recordGroups: RecordGroupDictionary,
+    readGroups: ReadGroupDictionary,
     @transient val processingSteps: Seq[ProcessingStep]) extends FragmentDataset {
 
   lazy val rdd: RDD[Fragment] = {
@@ -174,9 +174,8 @@ case class ParquetUnboundFragmentDataset private[rdd] (
     copy(sequences = newSequences)
   }
 
-  def replaceRecordGroups(
-    newRecordGroups: RecordGroupDictionary): FragmentDataset = {
-    copy(recordGroups = newRecordGroups)
+  def replaceReadGroups(newReadGroups: ReadGroupDictionary): FragmentDataset = {
+    copy(readGroups = newReadGroups)
   }
 
   def replaceProcessingSteps(
@@ -188,7 +187,7 @@ case class ParquetUnboundFragmentDataset private[rdd] (
 case class DatasetBoundFragmentDataset private[rdd] (
   dataset: Dataset[FragmentProduct],
   sequences: SequenceDictionary,
-  recordGroups: RecordGroupDictionary,
+  readGroups: ReadGroupDictionary,
   @transient val processingSteps: Seq[ProcessingStep],
   override val isPartitioned: Boolean = false,
   override val optPartitionBinSize: Option[Int] = None,
@@ -228,9 +227,8 @@ case class DatasetBoundFragmentDataset private[rdd] (
     copy(sequences = newSequences)
   }
 
-  def replaceRecordGroups(
-    newRecordGroups: RecordGroupDictionary): FragmentDataset = {
-    copy(recordGroups = newRecordGroups)
+  def replaceReadGroups(newReadGroups: ReadGroupDictionary): FragmentDataset = {
+    copy(readGroups = newReadGroups)
   }
 
   def replaceProcessingSteps(
@@ -242,7 +240,7 @@ case class DatasetBoundFragmentDataset private[rdd] (
 case class RDDBoundFragmentDataset private[rdd] (
     rdd: RDD[Fragment],
     sequences: SequenceDictionary,
-    recordGroups: RecordGroupDictionary,
+    readGroups: ReadGroupDictionary,
     @transient val processingSteps: Seq[ProcessingStep],
     optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends FragmentDataset {
 
@@ -260,9 +258,8 @@ case class RDDBoundFragmentDataset private[rdd] (
     copy(sequences = newSequences)
   }
 
-  def replaceRecordGroups(
-    newRecordGroups: RecordGroupDictionary): FragmentDataset = {
-    copy(recordGroups = newRecordGroups)
+  def replaceReadGroups(newReadGroups: ReadGroupDictionary): FragmentDataset = {
+    copy(readGroups = newReadGroups)
   }
 
   def replaceProcessingSteps(
@@ -271,7 +268,7 @@ case class RDDBoundFragmentDataset private[rdd] (
   }
 }
 
-sealed abstract class FragmentDataset extends AvroRecordGroupGenomicDataset[Fragment, FragmentProduct, FragmentDataset] {
+sealed abstract class FragmentDataset extends AvroReadGroupGenomicDataset[Fragment, FragmentProduct, FragmentDataset] {
 
   protected val productFn = FragmentProduct.fromAvro(_)
   protected val unproductFn = (f: FragmentProduct) => f.toAvro
@@ -294,7 +291,7 @@ sealed abstract class FragmentDataset extends AvroRecordGroupGenomicDataset[Frag
                            newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): FragmentDataset = {
     RDDBoundFragmentDataset(newRdd,
       sequences,
-      recordGroups,
+      readGroups,
       processingSteps,
       newPartitionMap)
   }
@@ -303,7 +300,7 @@ sealed abstract class FragmentDataset extends AvroRecordGroupGenomicDataset[Frag
     val iterableDatasets = datasets.toSeq
     FragmentDataset(rdd.context.union(rdd, iterableDatasets.map(_.rdd): _*),
       iterableDatasets.map(_.sequences).fold(sequences)(_ ++ _),
-      iterableDatasets.map(_.recordGroups).fold(recordGroups)(_ ++ _),
+      iterableDatasets.map(_.readGroups).fold(readGroups)(_ ++ _),
       iterableDatasets.map(_.processingSteps).fold(processingSteps)(_ ++ _))
   }
 
@@ -311,7 +308,7 @@ sealed abstract class FragmentDataset extends AvroRecordGroupGenomicDataset[Frag
     tFn: Dataset[FragmentProduct] => Dataset[FragmentProduct]): FragmentDataset = {
     DatasetBoundFragmentDataset(tFn(dataset),
       sequences,
-      recordGroups,
+      readGroups,
       processingSteps)
   }
 
@@ -319,7 +316,7 @@ sealed abstract class FragmentDataset extends AvroRecordGroupGenomicDataset[Frag
     tFn: JFunction[Dataset[FragmentProduct], Dataset[FragmentProduct]]): FragmentDataset = {
     DatasetBoundFragmentDataset(tFn.call(dataset),
       sequences,
-      recordGroups,
+      readGroups,
       processingSteps)
   }
 
@@ -337,7 +334,7 @@ sealed abstract class FragmentDataset extends AvroRecordGroupGenomicDataset[Frag
     // are we aligned?
     AlignmentRecordDataset(newRdd,
       sequences,
-      recordGroups,
+      readGroups,
       processingSteps)
   }
 

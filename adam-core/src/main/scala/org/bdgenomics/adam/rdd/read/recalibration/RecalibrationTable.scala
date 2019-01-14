@@ -71,7 +71,7 @@ private[adam] case class RecalibrationTable private[recalibration] (
  * map. Additionally, a virtue of this approach is that we don't need to throw
  * out any of the code used to compute the recalibration scores.
  *
- * @param table A table mapping record groups to error aggregates.
+ * @param table A table mapping read groups to error aggregates.
  * @param maxQualScore The maximum quality score to recalibrate to.
  */
 private case class TempRecalibrationTable(

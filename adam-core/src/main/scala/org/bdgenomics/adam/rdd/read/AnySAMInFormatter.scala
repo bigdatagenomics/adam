@@ -21,7 +21,7 @@ import htsjdk.samtools.{ SAMFileHeader, SAMFileWriter }
 import java.io.OutputStream
 import org.bdgenomics.adam.converters.AlignmentRecordConverter
 import org.bdgenomics.adam.models.{
-  RecordGroupDictionary,
+  ReadGroupDictionary,
   SAMFileHeaderWritable
 }
 import org.bdgenomics.adam.rdd.{ InFormatter, InFormatterCompanion }
@@ -36,13 +36,13 @@ import org.bdgenomics.formats.avro.AlignmentRecord
  */
 trait AnySAMInFormatterCompanion[T <: AnySAMInFormatter[T]] extends InFormatterCompanion[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordDataset, T] {
   protected def makeFormatter(header: SAMFileHeaderWritable,
-                              recordGroups: RecordGroupDictionary,
+                              readGroups: ReadGroupDictionary,
                               converter: AlignmentRecordConverter): T
 
   /**
    * Makes an AnySAMInFormatter from a GenomicDataset of AlignmentRecords.
    *
-   * @param gDataset AlignmentRecordDataset with reference build and record group info.
+   * @param gDataset AlignmentRecordDataset with reference build and read group info.
    * @return Returns an InFormatter that extends AnySAMInFormatter.
    */
   def apply(gDataset: AlignmentRecordDataset): T = {
@@ -51,11 +51,11 @@ trait AnySAMInFormatterCompanion[T <: AnySAMInFormatter[T]] extends InFormatterC
     val arc = new AlignmentRecordConverter
 
     // build a header and set the sort order
-    val header = arc.createSAMHeader(gDataset.sequences, gDataset.recordGroups)
+    val header = arc.createSAMHeader(gDataset.sequences, gDataset.readGroups)
     header.setSortOrder(SAMFileHeader.SortOrder.coordinate)
 
     // construct the in formatter
-    makeFormatter(SAMFileHeaderWritable(header), gDataset.recordGroups, arc)
+    makeFormatter(SAMFileHeaderWritable(header), gDataset.readGroups, arc)
   }
 }
 
@@ -74,7 +74,7 @@ trait AnySAMInFormatter[T <: AnySAMInFormatter[T]] extends InFormatter[Alignment
   /**
    * A dictionary describing the read groups these reads are from.
    */
-  val recordGroups: RecordGroupDictionary
+  val readGroups: ReadGroupDictionary
 
   /**
    * A converter from AlignmentRecord to SAMRecord.
@@ -96,7 +96,7 @@ trait AnySAMInFormatter[T <: AnySAMInFormatter[T]] extends InFormatter[Alignment
 
     // write the records
     iter.foreach(r => {
-      val samRecord = converter.convert(r, header, recordGroups)
+      val samRecord = converter.convert(r, header, readGroups)
       writer.addAlignment(samRecord)
     })
 

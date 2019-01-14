@@ -95,7 +95,7 @@ private[read] object SingleReadBucket extends Logging {
    * @return Returns an RDD of SingleReadBuckets.
    */
   def apply(rdd: RDD[AlignmentRecord]): RDD[SingleReadBucket] = {
-    rdd.groupBy(p => (p.getRecordGroupName, p.getReadName))
+    rdd.groupBy(p => (p.getReadGroupId, p.getReadName))
       .map(kv => {
         val (_, reads) = kv
 
@@ -148,14 +148,14 @@ private[adam] case class SingleReadBucket(
     // is an insert size defined for this fragment?
     primaryMapped.headOption
       .foreach(r => {
-        Option(r.getInferredInsertSize).foreach(is => {
+        Option(r.getInsertSize).foreach(is => {
           builder.setInsertSize(is.toInt)
         })
       })
 
-    // set record group name, if known
-    Option(unionReads.head.getRecordGroupName)
-      .foreach(n => builder.setRecordGroupName(n))
+    // set read group name, if known
+    Option(unionReads.head.getReadGroupId)
+      .foreach(n => builder.setReadGroupId(n))
 
     builder.build()
   }

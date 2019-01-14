@@ -20,8 +20,8 @@ package org.bdgenomics.adam.converters
 import htsjdk.samtools.SamReaderFactory
 import java.io.File
 import org.bdgenomics.adam.models.{
-  RecordGroupDictionary,
-  RecordGroup,
+  ReadGroupDictionary,
+  ReadGroup,
   SAMFileHeaderWritable,
   SequenceDictionary,
   SequenceRecord
@@ -47,13 +47,13 @@ class AlignmentRecordConverterSuite extends FunSuite {
       .setCigar(cigar)
       .setSequence(sequence)
       .setReadNegativeStrand(false)
-      .setMapq(60)
+      .setMappingQuality(60)
       .setMismatchingPositions(mdtag)
-      .setOldPosition(12)
-      .setOldCigar("2^AAA3")
+      .setOriginalStart(12L)
+      .setOriginalCigar("2^AAA3")
 
     if (!nullQuality) {
-      builder.setQual(sequence) // no typo, we just don't care
+      builder.setQuality(sequence) // no typo, we just don't care
     }
 
     builder.build()
@@ -63,8 +63,8 @@ class AlignmentRecordConverterSuite extends FunSuite {
     val adamRead = makeRead(3L, "2M3D2M", "2^AAA2", 4)
 
     // add reference details
-    adamRead.setRecordGroupName("record_group")
-    adamRead.setRecordGroupSample("sample")
+    adamRead.setReadGroupId("record_group")
+    adamRead.setReadGroupSampleId("sample")
     adamRead.setReferenceName("referencetest")
     adamRead.setMateReferenceName("matereferencetest")
     adamRead.setMateAlignmentStart(6L)
@@ -74,8 +74,8 @@ class AlignmentRecordConverterSuite extends FunSuite {
     val dict = SequenceDictionary(seqRecForDict)
 
     //make read group dictionary
-    val readGroup = new RecordGroup(adamRead.getRecordGroupSample(), adamRead.getRecordGroupName())
-    val readGroups = new RecordGroupDictionary(Seq(readGroup))
+    val readGroup = new ReadGroup(adamRead.getReadGroupSampleId(), adamRead.getReadGroupId())
+    val readGroups = new ReadGroupDictionary(Seq(readGroup))
 
     // convert read
     val toSAM = adamRecordConverter.convert(adamRead,
@@ -106,8 +106,8 @@ class AlignmentRecordConverterSuite extends FunSuite {
     val adamRead = makeRead(3L, "2M3D2M", "2^AAA2", 4, nullQuality = true)
 
     // add reference details
-    adamRead.setRecordGroupName("record_group")
-    adamRead.setRecordGroupSample("sample")
+    adamRead.setReadGroupId("record_group")
+    adamRead.setReadGroupSampleId("sample")
     adamRead.setReferenceName("referencetest")
     adamRead.setMateReferenceName("matereferencetest")
     adamRead.setMateAlignmentStart(6L)
@@ -117,8 +117,8 @@ class AlignmentRecordConverterSuite extends FunSuite {
     val dict = SequenceDictionary(seqRecForDict)
 
     //make read group dictionary
-    val readGroup = new RecordGroup(adamRead.getRecordGroupSample(), adamRead.getRecordGroupName())
-    val readGroups = new RecordGroupDictionary(Seq(readGroup))
+    val readGroup = new ReadGroup(adamRead.getReadGroupSampleId(), adamRead.getReadGroupId())
+    val readGroups = new ReadGroupDictionary(Seq(readGroup))
 
     // convert read
     val toSAM = adamRecordConverter.convert(adamRead,
@@ -148,7 +148,7 @@ class AlignmentRecordConverterSuite extends FunSuite {
   test("convert a read to fastq") {
     val adamRead = AlignmentRecord.newBuilder()
       .setSequence("ACACCAACATG")
-      .setQual(".+**.+;:**.")
+      .setQuality(".+**.+;:**.")
       .setReadName("thebestread")
       .build()
 
@@ -256,14 +256,14 @@ class AlignmentRecordConverterSuite extends FunSuite {
     val alignments = List(
       AlignmentRecord.newBuilder()
         .setSequence("ACCCACAGTA")
-        .setQual("**********")
+        .setQuality("**********")
         .setReadInFragment(0)
         .setReadName("testRead")
         .setReadPaired(true)
         .build(),
       AlignmentRecord.newBuilder()
         .setSequence("GGGAAACCCTTT")
-        .setQual(";;;;;;......")
+        .setQuality(";;;;;;......")
         .setReadName("testRead")
         .setReadInFragment(1)
         .setReadPaired(true)
@@ -280,7 +280,7 @@ class AlignmentRecordConverterSuite extends FunSuite {
     val read1 = reads.find(_.getReadInFragment == 0)
     assert(read1.isDefined)
     assert(read1.get.getSequence === "ACCCACAGTA")
-    assert(read1.get.getQual() === "**********")
+    assert(read1.get.getQuality() === "**********")
     assert(read1.get.getReadName === "testRead")
     assert(!read1.get.getReadMapped)
     assert(read1.get.getReadPaired)
@@ -288,7 +288,7 @@ class AlignmentRecordConverterSuite extends FunSuite {
     val read2 = reads.find(_.getReadInFragment == 1)
     assert(read2.isDefined)
     assert(read2.get.getSequence === "GGGAAACCCTTT")
-    assert(read2.get.getQual() === ";;;;;;......")
+    assert(read2.get.getQuality() === ";;;;;;......")
     assert(read2.get.getReadName === "testRead")
     assert(!read2.get.getReadMapped)
     assert(read2.get.getReadPaired)
@@ -304,7 +304,7 @@ class AlignmentRecordConverterSuite extends FunSuite {
       .setCigar("10M")
       .setReadNegativeStrand(true)
       .setSequence("TACTGTGGGT")
-      .setQual("?????*****")
+      .setQuality("?????*****")
       .build())
     val fragment = Fragment.newBuilder()
       .setName("testRead")
@@ -323,7 +323,7 @@ class AlignmentRecordConverterSuite extends FunSuite {
     assert(read.getEnd === 20L)
     assert(read.getCigar === "10M")
     assert(read.getSequence === "TACTGTGGGT")
-    assert(read.getQual === "?????*****")
+    assert(read.getQuality === "?????*****")
     assert(read.getReferenceName === "1")
   }
 

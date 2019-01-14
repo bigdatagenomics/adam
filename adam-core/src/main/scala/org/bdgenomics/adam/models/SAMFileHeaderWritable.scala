@@ -59,7 +59,7 @@ private[adam] class SAMFileHeaderWritable private (hdr: SAMFileHeader) extends S
     val cmts = hdr.getComments
     cmts.flatMap(Option(_)) // don't trust samtools to return non-nulls
   }
-  private val rgs = RecordGroupDictionary.fromSAMHeader(hdr)
+  private val rgs = ReadGroupDictionary.fromSAMHeader(hdr)
 
   /**
    * Recreate header when requested to get around header not being serializable.
@@ -72,7 +72,7 @@ private[adam] class SAMFileHeaderWritable private (hdr: SAMFileHeader) extends S
     h.setSequenceDictionary(sd.toSAMSequenceDictionary)
     pgl.foreach(p => h.addProgramRecord(AlignmentRecordDataset.processingStepToSam(p)))
     comments.foreach(h.addComment)
-    rgs.recordGroups.foreach(rg => h.addReadGroup(rg.toSAMReadGroupRecord))
+    rgs.readGroups.foreach(rg => h.addReadGroup(rg.toSAMReadGroupRecord))
 
     h
   }

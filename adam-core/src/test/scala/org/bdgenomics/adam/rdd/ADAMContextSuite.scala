@@ -123,7 +123,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     val path = testFile("small.sam")
     val reads: RDD[AlignmentRecord] = sc.loadAlignments(path)
       .rdd
-      .filter(a => (a.getReadMapped && a.getMapq > 30))
+      .filter(a => (a.getReadMapped && a.getMappingQuality > 30))
     assert(reads.count() === 18)
   }
 
@@ -307,7 +307,7 @@ class ADAMContextSuite extends ADAMFunSuite {
       }
 
       assert(reads.rdd.collect.forall(_.getSequence.toString.length === 250))
-      assert(reads.rdd.collect.forall(_.getQual.toString.length === 250))
+      assert(reads.rdd.collect.forall(_.getQuality.toString.length === 250))
     }
   }
 
@@ -340,7 +340,7 @@ class ADAMContextSuite extends ADAMFunSuite {
       }
 
       assert(reads.rdd.collect.forall(_.getSequence.toString.length === 250))
-      assert(reads.rdd.collect.forall(_.getQual.toString.length === 250))
+      assert(reads.rdd.collect.forall(_.getQuality.toString.length === 250))
     }
   }
 

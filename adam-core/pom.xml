@@ -137,7 +137,7 @@
                 <argument>org.bdgenomics.formats.avro.NucleotideContigFragment</argument>
                 <argument>org.bdgenomics.formats.avro.OntologyTerm</argument>
                 <argument>org.bdgenomics.formats.avro.Read</argument>
-                <argument>org.bdgenomics.formats.avro.RecordGroup</argument>
+                <argument>org.bdgenomics.formats.avro.ReadGroup</argument>
                 <argument>org.bdgenomics.formats.avro.Reference</argument>
                 <argument>org.bdgenomics.formats.avro.Sample</argument>
                 <argument>org.bdgenomics.formats.avro.Sequence</argument>

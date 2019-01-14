@@ -72,7 +72,7 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    *   for BAM/CRAM/SAM, FASTA, and FASTQ formats.
    * @return Returns an AlignmentRecordDataset which wraps the genomic dataset of alignment records,
    *   sequence dictionary representing contigs the alignment records may be aligned to,
-   *   and the record group dictionary for the alignment records if one is available.
+   *   and the read group dictionary for the alignment records if one is available.
    */
   def loadAlignments(pathName: java.lang.String): AlignmentRecordDataset = {
     ac.loadAlignments(pathName)
@@ -102,7 +102,7 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    *   BAM/CRAM/SAM or FASTQ formats.
    * @return Returns an AlignmentRecordDataset which wraps the genomic dataset of alignment records,
    *   sequence dictionary representing contigs the alignment records may be aligned to,
-   *   and the record group dictionary for the alignment records if one is available.
+   *   and the read group dictionary for the alignment records if one is available.
    */
   def loadAlignments(pathName: java.lang.String,
                      stringency: ValidationStringency): AlignmentRecordDataset = {
@@ -121,7 +121,7 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    *   BAM/CRAM/SAM format header. Defaults to ValidationStringency.STRICT.
    * @return Returns an AlignmentRecordDataset which wraps the genomic dataset of alignment records,
    *   sequence dictionary representing contigs the alignment records may be aligned to,
-   *   and the record group dictionary for the alignment records if one is available.
+   *   and the read group dictionary for the alignment records if one is available.
    */
   def loadIndexedBam(
     pathName: String,

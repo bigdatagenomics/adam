@@ -47,7 +47,7 @@ class SAMRecordConverterSuite extends FunSuite {
     assert(testAlignmentRecord.getCigar === testSAMRecord.getCigarString)
     assert(testAlignmentRecord.getDuplicateRead === testSAMRecord.getDuplicateReadFlag)
     assert(testAlignmentRecord.getEnd.toInt === testSAMRecord.getAlignmentEnd)
-    assert(testAlignmentRecord.getMapq.toInt === testSAMRecord.getMappingQuality)
+    assert(testAlignmentRecord.getMappingQuality.toInt === testSAMRecord.getMappingQuality)
     assert(testAlignmentRecord.getStart.toInt === (testSAMRecord.getAlignmentStart - 1))
     assert(testAlignmentRecord.getReadInFragment == 0)
     assert(testAlignmentRecord.getFailedVendorQualityChecks === testSAMRecord.getReadFailsVendorQualityCheckFlag)
@@ -58,10 +58,10 @@ class SAMRecordConverterSuite extends FunSuite {
     assert(!testAlignmentRecord.getReadPaired)
     assert(testAlignmentRecord.getReadInFragment != 1)
     assert(testAlignmentRecord.getSupplementaryAlignment === testSAMRecord.getSupplementaryAlignmentFlag)
-    assert(testAlignmentRecord.getOrigQual === "*****")
+    assert(testAlignmentRecord.getOriginalQuality === "*****")
     assert(testAlignmentRecord.getMismatchingPositions === "100")
-    assert(testAlignmentRecord.getOldCigar === "100M")
-    assert(testAlignmentRecord.getOldPosition === 0L)
+    assert(testAlignmentRecord.getOriginalCigar === "100M")
+    assert(testAlignmentRecord.getOriginalStart === 0L)
     assert(testAlignmentRecord.getAttributes === "XS:i:0\tAS:i:75\tNM:i:0")
   }
 
@@ -82,7 +82,7 @@ class SAMRecordConverterSuite extends FunSuite {
     assert(testAlignmentRecord.getCigar === testSAMRecord.getCigarString)
     assert(testAlignmentRecord.getDuplicateRead === testSAMRecord.getDuplicateReadFlag)
     assert(testAlignmentRecord.getEnd.toInt === testSAMRecord.getAlignmentEnd)
-    assert(testAlignmentRecord.getMapq.toInt === testSAMRecord.getMappingQuality)
+    assert(testAlignmentRecord.getMappingQuality.toInt === testSAMRecord.getMappingQuality)
     assert(testAlignmentRecord.getStart.toInt === (testSAMRecord.getAlignmentStart - 1))
     assert(testAlignmentRecord.getReadInFragment == 0)
     assert(testAlignmentRecord.getFailedVendorQualityChecks === testSAMRecord.getReadFailsVendorQualityCheckFlag)
@@ -115,7 +115,7 @@ class SAMRecordConverterSuite extends FunSuite {
     val newAlignmentRecord = newRecordConverter.convert(newSAMRecord)
 
     // Validating Conversion
-    assert(newAlignmentRecord.getQual === null)
+    assert(newAlignmentRecord.getQuality === null)
   }
 
   test("don't keep denormalized fields") {

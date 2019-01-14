@@ -102,7 +102,7 @@ class ADAMContext(object):
 
         :return Returns an AlignmentRecordDataset which wraps the RDD of alignment
         records, sequence dictionary representing contigs the alignment records
-        may be aligned to, and the record group dictionary for the alignment
+        may be aligned to, and the read group dictionary for the alignment
         records if one is available.
         :rtype: bdgenomics.adam.rdd.AlignmentRecordDataset
         """
