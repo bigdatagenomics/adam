@@ -338,7 +338,7 @@ class VariantContextConverter(
     try {
       vc.getAlternateAlleles.toList match {
         case List(NON_REF_ALLELE) | List() => {
-          val (coreVariant, variant) = variantFormatFn(vc, None, 0, false)
+          val (coreVariant, variant) = variantFormatFn(vc, None, 0, None, false)
           val v = genotypeVariant(coreVariant, variant)
           val genotypes = vc.getGenotypes.map(g => {
             genotypeFormatFn(g, v, NON_REF_ALLELE, 0, Some(1), false)
@@ -350,7 +350,7 @@ class VariantContextConverter(
             allele.isNonReference,
             "Assertion failed when converting: " + vc.toString
           )
-          val (coreVariant, variant) = variantFormatFn(vc, Some(allele.getDisplayString), 0, false)
+          val (coreVariant, variant) = variantFormatFn(vc, Some(allele.getDisplayString), 0, None, false)
           val v = genotypeVariant(coreVariant, variant)
           val genotypes = vc.getGenotypes.map(g => {
             genotypeFormatFn(g, v, allele, 1, None, false)
@@ -362,7 +362,7 @@ class VariantContextConverter(
             allele.isNonReference,
             "Assertion failed when converting: " + vc.toString
           )
-          val (coreVariant, variant) = variantFormatFn(vc, Some(allele.getDisplayString), 0, false)
+          val (coreVariant, variant) = variantFormatFn(vc, Some(allele.getDisplayString), 0, Some(1), false)
           val v = genotypeVariant(coreVariant, variant)
           val genotypes = vc.getGenotypes.map(g => {
             genotypeFormatFn(g, v, allele, 1, Some(2), false)
@@ -392,9 +392,11 @@ class VariantContextConverter(
             // variant annotations only contain values for alternate alleles so
             // we need to subtract one from real index
             val variantIdx = idx - 1
+            val variantRefModelIdx = referenceModelIndex - 1
             val (coreVariant, variant) = variantFormatFn(vc,
               Some(allele.getDisplayString),
               variantIdx,
+              variantRefModelIdx,
               true)
             val v = genotypeVariant(coreVariant, variant)
             val genotypes = vc.getGenotypes.map(g => {
@@ -1379,6 +1381,18 @@ class VariantContextConverter(
     }
   }
 
+  // Extension of GenotypeLikelihoods.getPLIndicesOfAlleles for the bi-allelic model with <NON_REF>
+  private def getPLIndicesOfThreeAlleles(a1Idx: Int, a2Idx: Int, a3Idx: Int): Array[Int] = {
+    Array(
+      GenotypeLikelihoods.calculatePLindex(a1Idx, a1Idx),
+      GenotypeLikelihoods.calculatePLindex(a1Idx, a2Idx),
+      GenotypeLikelihoods.calculatePLindex(a2Idx, a2Idx),
+      GenotypeLikelihoods.calculatePLindex(a1Idx, a3Idx),
+      GenotypeLikelihoods.calculatePLindex(a2Idx, a3Idx),
+      GenotypeLikelihoods.calculatePLindex(a3Idx, a3Idx)
+    )
+  }
+
   private def arrayFieldExtractor(g: HtsjdkGenotype,
                                   id: String,
                                   toFn: (java.lang.Object => Array[String]),
@@ -1441,11 +1455,11 @@ class VariantContextConverter(
   }
 
   private def lineToVariantContextExtractor(
-    headerLine: VCFInfoHeaderLine): Option[(HtsjdkVariantContext, Int, Array[Int]) => Option[(String, String)]] = {
+    headerLine: VCFInfoHeaderLine): Option[(HtsjdkVariantContext, Int, Option[Int], Array[Int]) => Option[(String, String)]] = {
     val id = headerLine.getID
 
     if (headerLine.isFixedCount && headerLine.getCount == 0 && headerLine.getType == VCFHeaderLineType.Flag) {
-      Some((vc: HtsjdkVariantContext, idx: Int, indices: Array[Int]) =>
+      Some((vc: HtsjdkVariantContext, idx: Int, nonRefIdx: Option[Int], indices: Array[Int]) =>
         {
           variantContextFieldExtractor(vc, id, toBoolean).map(kv => (kv._1, kv._2.toString))
         })
@@ -1453,31 +1467,31 @@ class VariantContextConverter(
       headerLine.getType match {
         // Flag header line types should be Number=0, but we'll allow Number=1
         case VCFHeaderLineType.Flag => {
-          Some((vc: HtsjdkVariantContext, idx: Int, indices: Array[Int]) =>
+          Some((vc: HtsjdkVariantContext, idx: Int, nonRefIdx: Option[Int], indices: Array[Int]) =>
             {
               variantContextFieldExtractor(vc, id, toBoolean).map(kv => (kv._1, kv._2.toString))
             })
         }
         case VCFHeaderLineType.Character => {
-          Some((vc: HtsjdkVariantContext, idx: Int, indices: Array[Int]) =>
+          Some((vc: HtsjdkVariantContext, idx: Int, nonRefIdx: Option[Int], indices: Array[Int]) =>
             {
               variantContextFieldExtractor(vc, id, toChar).map(kv => (kv._1, kv._2.toString))
             })
         }
         case VCFHeaderLineType.Float => {
-          Some((vc: HtsjdkVariantContext, idx: Int, indices: Array[Int]) =>
+          Some((vc: HtsjdkVariantContext, idx: Int, nonRefIdx: Option[Int], indices: Array[Int]) =>
             {
               variantContextFieldExtractor(vc, id, toFloat).map(kv => (kv._1, kv._2.toString))
             })
         }
         case VCFHeaderLineType.Integer => {
-          Some((vc: HtsjdkVariantContext, idx: Int, indices: Array[Int]) =>
+          Some((vc: HtsjdkVariantContext, idx: Int, nonRefIdx: Option[Int], indices: Array[Int]) =>
             {
               variantContextFieldExtractor(vc, id, toInt).map(kv => (kv._1, kv._2.toString))
             })
         }
         case VCFHeaderLineType.String => {
-          Some((vc: HtsjdkVariantContext, idx: Int, indices: Array[Int]) =>
+          Some((vc: HtsjdkVariantContext, idx: Int, nonRefIdx: Option[Int], indices: Array[Int]) =>
             {
               variantContextFieldExtractor(vc, id, asString).map(kv => (kv._1, kv._2.toString))
             })
@@ -1517,17 +1531,27 @@ class VariantContextConverter(
 
       (headerLine.isFixedCount, headerLine.getCountType) match {
         case (false, VCFHeaderLineCount.A) => {
-          Some((vc: HtsjdkVariantContext, idx: Int, indices: Array[Int]) =>
+          Some((vc: HtsjdkVariantContext, idx: Int, nonRefIdx: Option[Int], indices: Array[Int]) =>
             {
-              fromArrayExtractor(vc, id, toFn, idx)
-                .map(kv => (kv._1, kv._2.toString))
+              if (nonRefIdx.isDefined) {
+                arrayFieldExtractor(vc, id, toFn, List(idx, nonRefIdx.get))
+                  .map(kv => (kv._1, kv._2.mkString(",")))
+              } else {
+                fromArrayExtractor(vc, id, toFn, idx)
+                  .map(kv => (kv._1, kv._2.toString))
+              }
             })
         }
         case (false, VCFHeaderLineCount.R) => {
-          Some((vc: HtsjdkVariantContext, idx: Int, indices: Array[Int]) =>
+          Some((vc: HtsjdkVariantContext, idx: Int, nonRefIdx: Option[Int], indices: Array[Int]) =>
             {
-              arrayFieldExtractor(vc, id, toFn, List(0, idx + 1))
-                .map(kv => (kv._1, kv._2.mkString(",")))
+              if (nonRefIdx.isDefined) {
+                arrayFieldExtractor(vc, id, toFn, List(0, idx + 1, nonRefIdx.get + 1))
+                  .map(kv => (kv._1, kv._2.mkString(",")))
+              } else {
+                arrayFieldExtractor(vc, id, toFn, List(0, idx + 1))
+                  .map(kv => (kv._1, kv._2.mkString(",")))
+              }
             })
         }
         case (false, VCFHeaderLineCount.G) => {
@@ -1539,7 +1563,7 @@ class VariantContextConverter(
               headerLine))
         }
         case _ => {
-          Some((vc: HtsjdkVariantContext, idx: Int, indices: Array[Int]) =>
+          Some((vc: HtsjdkVariantContext, idx: Int, nonRefIdx: Option[Int], indices: Array[Int]) =>
             {
               arrayFieldExtractor(vc, id, toFn, List.empty)
                 .map(kv => (kv._1, kv._2.mkString(",")))
@@ -1550,7 +1574,7 @@ class VariantContextConverter(
   }
 
   private def lineToGenotypeExtractor(
-    headerLine: VCFFormatHeaderLine): ((HtsjdkGenotype, Int, Array[Int]) => Option[(String, String)]) = {
+    headerLine: VCFFormatHeaderLine): ((HtsjdkGenotype, Int, Option[Int], Array[Int]) => Option[(String, String)]) = {
     val id = headerLine.getID
 
     if (headerLine.isFixedCount && headerLine.getCount == 1) {
@@ -1560,25 +1584,25 @@ class VariantContextConverter(
             headerLine))
         }
         case VCFHeaderLineType.Character => {
-          (g: HtsjdkGenotype, idx: Int, indices: Array[Int]) =>
+          (g: HtsjdkGenotype, idx: Int, nonRefIdx: Option[Int], indices: Array[Int]) =>
             {
               fieldExtractor(g, id, toChar).map(kv => (kv._1, kv._2.toString))
             }
         }
         case VCFHeaderLineType.Float => {
-          (g: HtsjdkGenotype, idx: Int, indices: Array[Int]) =>
+          (g: HtsjdkGenotype, idx: Int, nonRefIdx: Option[Int], indices: Array[Int]) =>
             {
               fieldExtractor(g, id, toFloat).map(kv => (kv._1, kv._2.toString))
             }
         }
         case VCFHeaderLineType.Integer => {
-          (g: HtsjdkGenotype, idx: Int, indices: Array[Int]) =>
+          (g: HtsjdkGenotype, idx: Int, nonRefIdx: Option[Int], indices: Array[Int]) =>
             {
               fieldExtractor(g, id, toInt).map(kv => (kv._1, kv._2.toString))
             }
         }
         case VCFHeaderLineType.String => {
-          (g: HtsjdkGenotype, idx: Int, indices: Array[Int]) =>
+          (g: HtsjdkGenotype, idx: Int, nonRefIdx: Option[Int], indices: Array[Int]) =>
             {
               fieldExtractor(g, id, asString).map(kv => (kv._1, kv._2.toString))
             }
@@ -1606,28 +1630,39 @@ class VariantContextConverter(
 
       (headerLine.isFixedCount, headerLine.getCountType) match {
         case (false, VCFHeaderLineCount.A) => {
-          (g: HtsjdkGenotype, idx: Int, indices: Array[Int]) =>
+          (g: HtsjdkGenotype, idx: Int, nonRefIdx: Option[Int], indices: Array[Int]) =>
             {
-              fromArrayExtractor(g, id, toFn, idx - 1)
-                .map(kv => (kv._1, kv._2.toString))
+              if (nonRefIdx.isDefined) {
+                arrayFieldExtractor(g, id, toFn, List(idx - 1, nonRefIdx.get - 1))
+                  .map(kv => (kv._1, kv._2.mkString(",")))
+              } else {
+                fromArrayExtractor(g, id, toFn, idx - 1)
+                  .map(kv => (kv._1, kv._2.toString))
+              }
             }
         }
         case (false, VCFHeaderLineCount.R) => {
-          (g: HtsjdkGenotype, idx: Int, indices: Array[Int]) =>
+          (g: HtsjdkGenotype, idx: Int, nonRefIdx: Option[Int], indices: Array[Int]) =>
             {
-              arrayFieldExtractor(g, id, toFn, List(0, idx))
-                .map(kv => (kv._1, kv._2.mkString(",")))
+              if (nonRefIdx.isDefined) {
+                arrayFieldExtractor(g, id, toFn, List(0, idx, nonRefIdx.get))
+                  .map(kv => (kv._1, kv._2.mkString(",")))
+              } else {
+                arrayFieldExtractor(g, id, toFn, List(0, idx))
+                  .map(kv => (kv._1, kv._2.mkString(",")))
+              }
             }
         }
         case (false, VCFHeaderLineCount.G) => {
-          (g: HtsjdkGenotype, idx: Int, indices: Array[Int]) =>
+          (g: HtsjdkGenotype, idx: Int, nonRefIdx: Option[Int], indices: Array[Int]) =>
             {
+              // TODO: Indices should include the <NON_REF> genotype locations as well
               arrayFieldExtractor(g, id, toFn, indices.toList)
                 .map(kv => (kv._1, kv._2.mkString(",")))
             }
         }
         case _ => {
-          (g: HtsjdkGenotype, idx: Int, indices: Array[Int]) =>
+          (g: HtsjdkGenotype, idx: Int, nonRefIdx: Option[Int], indices: Array[Int]) =>
             {
               arrayFieldExtractor(g, id, toFn, List.empty)
                 .map(kv => (kv._1, kv._2.mkString(",")))
@@ -1639,9 +1674,9 @@ class VariantContextConverter(
 
   private def makeVariantFormatFn(
     headerLines: Seq[VCFHeaderLine],
-    stringency: ValidationStringency = ValidationStringency.STRICT): (HtsjdkVariantContext, Option[String], Int, Boolean) => (Variant, Variant) = {
+    stringency: ValidationStringency = ValidationStringency.STRICT): (HtsjdkVariantContext, Option[String], Int, Option[Int], Boolean) => (Variant, Variant) = {
 
-    val attributeFns: Iterable[(HtsjdkVariantContext, Int, Array[Int]) => Option[(String, String)]] = headerLines
+    val attributeFns: Iterable[(HtsjdkVariantContext, Int, Option[Int], Array[Int]) => Option[(String, String)]] = headerLines
       .flatMap(hl => hl match {
         case il: VCFInfoHeaderLine => {
           // get the id of this line
@@ -1675,6 +1710,7 @@ class VariantContextConverter(
     def convert(vc: HtsjdkVariantContext,
                 alt: Option[String],
                 alleleIdx: Int,
+                nonRefIndex: Option[Int],
                 wasSplit: Boolean): (Variant, Variant) = {
 
       // create the builder
@@ -1755,13 +1791,13 @@ class VariantContextConverter(
       (variant, variantBuilder.build)
     }
 
-    convert(_, _, _, _)
+    convert(_, _, _, _,_)
   }
 
   private def makeGenotypeFormatFn(
     headerLines: Seq[VCFHeaderLine]): (HtsjdkGenotype, Variant, Allele, Int, Option[Int], Boolean) => Genotype = {
 
-    val attributeFns: Iterable[(HtsjdkGenotype, Int, Array[Int]) => Option[(String, String)]] = headerLines
+    val attributeFns: Iterable[(HtsjdkGenotype, Int, Option[Int], Array[Int]) => Option[(String, String)]] = headerLines
       .flatMap(hl => hl match {
         case fl: VCFFormatHeaderLine => {
 
@@ -1814,7 +1850,11 @@ class VariantContextConverter(
 
       // get array indices
       val indices = if (alleleIdx > 0) {
-        GenotypeLikelihoods.getPLIndecesOfAlleles(0, alleleIdx)
+        if (nonRefIndex.isDefined) {
+          getPLIndicesOfThreeAlleles(0, alleleIdx, nonRefIndex.get)
+        } else {
+          GenotypeLikelihoods.getPLIndicesOfAlleles(0, alleleIdx)
+        }
       } else {
         Array.empty[Int]
       }
