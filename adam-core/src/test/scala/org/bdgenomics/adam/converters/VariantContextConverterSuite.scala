@@ -65,8 +65,20 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     .stop(1L)
     .chr("1")
 
+  def htsjdkSNVWithNonRefBuilder: VariantContextBuilder = new VariantContextBuilder()
+    .alleles(List(Allele.create("A", true), Allele.create("T"), Allele.NON_REF_ALLELE))
+    .start(1L)
+    .stop(1L)
+    .chr("1")
+
   def htsjdkMultiAllelicSNVBuilder: VariantContextBuilder = new VariantContextBuilder()
     .alleles(List(Allele.create("A", true), Allele.create("T"), Allele.create("G")))
+    .start(1L)
+    .stop(1L)
+    .chr("1")
+
+  def htsjdkMultiAllelicSNVWithNonRefBuilder: VariantContextBuilder = new VariantContextBuilder()
+    .alleles(List(Allele.create("A", true), Allele.create("T"), Allele.create("G"), Allele.NON_REF_ALLELE))
     .start(1L)
     .stop(1L)
     .chr("1")
@@ -1388,14 +1400,16 @@ class VariantContextConverterSuite extends ADAMFunSuite {
 
   def buildVariantAnnotation(
     objMap: Map[String, java.lang.Object],
-    extractor: (HtsjdkVariantContext, VariantAnnotation.Builder, Variant, Int) => VariantAnnotation.Builder,
+    extractor: (HtsjdkVariantContext, VariantAnnotation.Builder, Variant, Int, Option[Int]) => VariantAnnotation.Builder,
     fns: Iterable[VariantContextBuilder => VariantContextBuilder] = Iterable.empty,
-    idx: Int = 0): VariantAnnotation = {
+    idx: Int = 0,
+    nonRefIdx: Option[Int] = None): VariantAnnotation = {
     val vc = makeVariant(objMap, fns)
     extractor(vc,
       VariantAnnotation.newBuilder,
       emptyV,
-      idx).build
+      idx,
+      nonRefIdx).build
   }
 
   test("no ancestral allele set going htsjdk->adam") {
@@ -1535,11 +1549,13 @@ class VariantContextConverterSuite extends ADAMFunSuite {
 
   test("multiple allele frequencies going htsjdk->adam") {
     val acList: java.util.List[java.lang.Float] = List(
-      0.1f, 0.01f, 0.001f).map(i => i: java.lang.Float)
+      0.1f, 0.02f, 0.03f, 0.04f).map(i => i: java.lang.Float)
     val va = buildVariantAnnotation(Map(("AF", acList)),
       converter.formatAlleleFrequency,
-      idx = 2)
-    assert(va.getAlleleFrequency < 0.0011f && va.getAlleleFrequency > 0.0009f)
+      idx = 2,
+      nonRefIdx = Some(3))
+    assert(va.getAlleleFrequency < 0.031f && va.getAlleleFrequency > 0.029f)
+    assert(va.getAttributes.get("NON_REF_AF").contains("0.04"))
   }
 
   test("no CIGAR going htsjdk->adam") {
@@ -1556,11 +1572,13 @@ class VariantContextConverterSuite extends ADAMFunSuite {
   }
 
   test("multiple CIGARs going htsjdk->adam") {
-    val acList: java.util.List[String] = List("10D90M", "100M", "90M10D")
+    val acList: java.util.List[String] = List("10D90M", "100M", "90M10D", "100N")
     val va = buildVariantAnnotation(Map(("CIGAR", acList)),
       converter.formatCigar,
-      idx = 2)
+      idx = 2,
+      nonRefIdx = Some(3))
     assert(va.getCigar === "90M10D")
+    assert(va.getAttributes.get("NON_REF_CIGAR").contains("100N"))
   }
 
   test("no read depth going htsjdk->adam") {
@@ -1581,12 +1599,14 @@ class VariantContextConverterSuite extends ADAMFunSuite {
 
   test("multiple read depths going htsjdk->adam") {
     val acList: java.util.List[java.lang.Integer] = List(
-      5, 10, 13, 16).map(i => i: java.lang.Integer)
+      5, 10, 13, 16, 0).map(i => i: java.lang.Integer)
     val va = buildVariantAnnotation(Map(("AD", acList)),
       converter.formatReadDepth,
-      idx = 2)
+      idx = 2,
+      nonRefIdx = Some(3))
     assert(va.getReferenceReadDepth === 5)
     assert(va.getReadDepth === 16)
+    assert(va.getAttributes.get("NON_REF_AD").contains("0"))
   }
 
   test("no forward read depth going htsjdk->adam") {
@@ -1607,12 +1627,14 @@ class VariantContextConverterSuite extends ADAMFunSuite {
 
   test("multiple forward read depths going htsjdk->adam") {
     val acList: java.util.List[java.lang.Integer] = List(
-      5, 10, 13, 16).map(i => i: java.lang.Integer)
+      5, 10, 13, 16, 0).map(i => i: java.lang.Integer)
     val va = buildVariantAnnotation(Map(("ADF", acList)),
       converter.formatForwardReadDepth,
-      idx = 2)
+      idx = 2,
+      nonRefIdx = Some(3))
     assert(va.getReferenceForwardReadDepth === 5)
     assert(va.getForwardReadDepth === 16)
+    assert(va.getAttributes.get("NON_REF_ADF").contains("0"))
   }
 
   test("no reverse read depth going htsjdk->adam") {
@@ -1633,12 +1655,14 @@ class VariantContextConverterSuite extends ADAMFunSuite {
 
   test("multiple reverse read depths going htsjdk->adam") {
     val acList: java.util.List[java.lang.Integer] = List(
-      5, 10, 13, 16).map(i => i: java.lang.Integer)
+      5, 10, 13, 16, 0).map(i => i: java.lang.Integer)
     val va = buildVariantAnnotation(Map(("ADR", acList)),
       converter.formatReverseReadDepth,
-      idx = 2)
+      idx = 2,
+      nonRefIdx = Some(3))
     assert(va.getReferenceReverseReadDepth === 5)
     assert(va.getReverseReadDepth === 16)
+    assert(va.getAttributes.get("NON_REF_ADR").contains("0"))
   }
 
   val emptyVa = VariantAnnotation.newBuilder
@@ -1764,6 +1788,18 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     assert(vc.getAttributeAsList("AC").get(0) === "42")
   }
 
+  test("non-ref allele count set adam->htsjdk") {
+    val vc = converter.extractAlleleCount(VariantAnnotation.newBuilder
+      .setAlleleCount(42)
+      .setAttributes(Map("NON_REF_AC" -> "0"))
+      .build, htsjdkSNVWithNonRefBuilder)
+      .make
+
+    assert(vc.hasAttribute("AC"))
+    assert(vc.getAttributeAsList("AC").size === 2)
+    assert(vc.getAttributeAsList("AC").get(1) === "0")
+  }
+
   test("no allele frequency set adam->htsjdk") {
     val vc = converter.extractAlleleFrequency(emptyVa, htsjdkSNVBuilder)
       .make
@@ -1780,6 +1816,18 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     assert(vc.hasAttribute("AF"))
     assert(vc.getAttributeAsList("AF").size === 1)
     assert(vc.getAttributeAsList("AF").get(0) === "0.1")
+  }
+
+  test("non-ref allele frequency set adam->htsjdk") {
+    val vc = converter.extractAlleleFrequency(VariantAnnotation.newBuilder
+      .setAlleleFrequency(0.1f)
+      .setAttributes(Map("NON_REF_AF" -> "0"))
+      .build, htsjdkSNVWithNonRefBuilder)
+      .make
+
+    assert(vc.hasAttribute("AF"))
+    assert(vc.getAttributeAsList("AF").size === 2)
+    assert(vc.getAttributeAsList("AF").get(1) === "0")
   }
 
   test("no cigar set adam->htsjdk") {
@@ -1800,6 +1848,18 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     assert(vc.getAttributeAsList("CIGAR").get(0) === "10D10M")
   }
 
+  test("non-ref cigar set adam->htsjdk") {
+    val vc = converter.extractCigar(VariantAnnotation.newBuilder
+      .setCigar("10D10M")
+      .setAttributes(Map("NON_REF_CIGAR" -> "20N"))
+      .build, htsjdkSNVWithNonRefBuilder)
+      .make
+
+    assert(vc.hasAttribute("CIGAR"))
+    assert(vc.getAttributeAsList("CIGAR").size === 2)
+    assert(vc.getAttributeAsList("CIGAR").get(1) === "20N")
+  }
+
   test("no read depth set adam->htsjdk") {
     val vc = converter.extractReadDepth(emptyVa, htsjdkSNVBuilder)
       .make
@@ -1818,6 +1878,19 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     assert(vc.getAttributeAsList("AD").size === 2)
     assert(vc.getAttributeAsList("AD").get(0) === "5")
     assert(vc.getAttributeAsList("AD").get(1) === "10")
+  }
+
+  test("non-ref read depth set adam->htsjdk") {
+    val vc = converter.extractReadDepth(VariantAnnotation.newBuilder
+      .setReferenceReadDepth(5)
+      .setReadDepth(10)
+      .setAttributes(Map("NON_REF_AD" -> "0"))
+      .build, htsjdkSNVWithNonRefBuilder)
+      .make
+
+    assert(vc.hasAttribute("AD"))
+    assert(vc.getAttributeAsList("AD").size === 3)
+    assert(vc.getAttributeAsList("AD").get(2) === "0")
   }
 
   test("read depth without reference read depth") {
@@ -1856,6 +1929,19 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     assert(vc.getAttributeAsList("ADF").size === 2)
     assert(vc.getAttributeAsList("ADF").get(0) === "5")
     assert(vc.getAttributeAsList("ADF").get(1) === "10")
+  }
+
+  test("non-ref forward read depth set adam->htsjdk") {
+    val vc = converter.extractForwardReadDepth(VariantAnnotation.newBuilder
+      .setReferenceForwardReadDepth(5)
+      .setForwardReadDepth(10)
+      .setAttributes(Map("NON_REF_ADF" -> "0"))
+      .build, htsjdkSNVWithNonRefBuilder)
+      .make
+
+    assert(vc.hasAttribute("ADF"))
+    assert(vc.getAttributeAsList("ADF").size === 3)
+    assert(vc.getAttributeAsList("ADF").get(2) === "0")
   }
 
   test("reference forward read depth without forward read depth") {
@@ -2177,8 +2263,8 @@ class VariantContextConverterSuite extends ADAMFunSuite {
   }
 
   test("VCF INFO attribute Number=A Type=Integer htsjdk->adam") {
-    val vc = htsjdkSNVBuilder
-      .attribute("A_INT", ImmutableList.of("5", "10", "15", "20"))
+    val vc = htsjdkMultiAllelicSNVWithNonRefBuilder
+      .attribute("A_INT", ImmutableList.of("5", "10", "15"))
       .make
 
     val aIntHeader = new VCFInfoHeaderLine("A_INT",
@@ -2192,11 +2278,11 @@ class VariantContextConverterSuite extends ADAMFunSuite {
 
     val v = adamVc.variant.variant
     assert(v.getAnnotation.getAttributes.containsKey("A_INT"))
-    assert(v.getAnnotation.getAttributes.get("A_INT") === "5")
+    assert(v.getAnnotation.getAttributes.get("A_INT") === "5,15")
   }
 
   test("VCF INFO attribute Number=R Type=Integer htsjdk->adam") {
-    val vc = htsjdkSNVBuilder
+    val vc = htsjdkMultiAllelicSNVWithNonRefBuilder
       .attribute("R_INT", ImmutableList.of("5", "10", "15", "20"))
       .make
 
@@ -2211,12 +2297,12 @@ class VariantContextConverterSuite extends ADAMFunSuite {
 
     val v = adamVc.variant.variant
     assert(v.getAnnotation.getAttributes.containsKey("R_INT"))
-    assert(v.getAnnotation.getAttributes.get("R_INT") === "5,10")
+    assert(v.getAnnotation.getAttributes.get("R_INT") === "5,10,20")
   }
 
   test("VCF INFO attribute Number=R Type=String htsjdk->adam") {
-    val vc = htsjdkSNVBuilder
-      .attribute("R_STRING", ImmutableList.of("foo", "bar", "baz"))
+    val vc = htsjdkMultiAllelicSNVWithNonRefBuilder
+      .attribute("R_STRING", ImmutableList.of("foo", "bar", "baz", "quux"))
       .make
 
     val rStringHeader = new VCFInfoHeaderLine("R_STRING",
@@ -2230,7 +2316,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
 
     val v = adamVc.variant.variant
     assert(v.getAnnotation.getAttributes.containsKey("R_STRING"))
-    assert(v.getAnnotation.getAttributes.get("R_STRING") === "foo,bar")
+    assert(v.getAnnotation.getAttributes.get("R_STRING") === "foo,bar,quux")
   }
 
   test("VCF INFO attribute Number=G Type=String htsjdk->adam not supported") {
@@ -2499,7 +2585,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
   }
 
   test("VCF FORMAT attribute Number=A Type=Integer htsjdk->adam") {
-    val vcb = htsjdkSNVBuilder
+    val vcb = htsjdkMultiAllelicSNVWithNonRefBuilder
     val gt = GenotypeBuilder.create("NA12878",
       vcb.getAlleles(),
       Map[String, java.lang.Object](("A_INT", "10,15,20")))
@@ -2518,11 +2604,11 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     assert(adamVc.genotypes.size === 1)
     val adamGt = adamVc.genotypes.head
     assert(adamGt.getVariantCallingAnnotations.getAttributes.containsKey("A_INT"))
-    assert(adamGt.getVariantCallingAnnotations.getAttributes.get("A_INT") === "10")
+    assert(adamGt.getVariantCallingAnnotations.getAttributes.get("A_INT") === "10,20")
   }
 
   test("VCF FORMAT attribute Number=R Type=Integer htsjdk->adam") {
-    val vcb = htsjdkSNVBuilder
+    val vcb = htsjdkMultiAllelicSNVWithNonRefBuilder
     val gt = GenotypeBuilder.create("NA12878",
       vcb.getAlleles(),
       Map[String, java.lang.Object](("R_INT", "5,10,15,20")))
@@ -2541,14 +2627,14 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     assert(adamVc.genotypes.size === 1)
     val adamGt = adamVc.genotypes.head
     assert(adamGt.getVariantCallingAnnotations.getAttributes.containsKey("R_INT"))
-    assert(adamGt.getVariantCallingAnnotations.getAttributes.get("R_INT") === "5,10")
+    assert(adamGt.getVariantCallingAnnotations.getAttributes.get("R_INT") === "5,10,20")
   }
 
   test("VCF FORMAT attribute Number=R Type=String htsjdk->adam") {
-    val vcb = htsjdkSNVBuilder
+    val vcb = htsjdkMultiAllelicSNVWithNonRefBuilder
     val gt = GenotypeBuilder.create("NA12878",
       vcb.getAlleles(),
-      Map[String, java.lang.Object](("R_STRING", "foo,bar,baz")))
+      Map[String, java.lang.Object](("R_STRING", "foo,bar,baz,quux")))
     val vc = vcb.genotypes(gt)
       .make
 
@@ -2564,14 +2650,14 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     assert(adamVc.genotypes.size === 1)
     val adamGt = adamVc.genotypes.head
     assert(adamGt.getVariantCallingAnnotations.getAttributes.containsKey("R_STRING"))
-    assert(adamGt.getVariantCallingAnnotations.getAttributes.get("R_STRING") === "foo,bar")
+    assert(adamGt.getVariantCallingAnnotations.getAttributes.get("R_STRING") === "foo,bar,quux")
   }
 
   test("VCF FORMAT attribute Number=G Type=String htsjdk->adam") {
-    val vcb = htsjdkSNVBuilder
+    val vcb = htsjdkMultiAllelicSNVWithNonRefBuilder
     val gt = GenotypeBuilder.create("NA12878",
       vcb.getAlleles(),
-      Map[String, java.lang.Object](("STRING_G", "foo,bar,baz")))
+      Map[String, java.lang.Object](("STRING_G", "a1a1,a1a2,a2a2,a1a3,a2a3,a3a3,a1a4,a2a4,a3a4,a4a4")))
     val vc = vcb.genotypes(gt)
       .make
 
@@ -2587,7 +2673,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     assert(adamVc.genotypes.size === 1)
     val adamGt = adamVc.genotypes.head
     assert(adamGt.getVariantCallingAnnotations.getAttributes.containsKey("STRING_G"))
-    assert(adamGt.getVariantCallingAnnotations.getAttributes.get("STRING_G") === "foo,bar,baz")
+    assert(adamGt.getVariantCallingAnnotations.getAttributes.get("STRING_G") === "a1a1,a1a2,a2a2,a1a4,a2a4,a4a4")
   }
 
   sparkTest("respect end position for symbolic alts") {

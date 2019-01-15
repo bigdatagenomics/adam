@@ -392,7 +392,7 @@ class VariantContextConverter(
             // variant annotations only contain values for alternate alleles so
             // we need to subtract one from real index
             val variantIdx = idx - 1
-            val variantRefModelIdx = referenceModelIndex - 1
+            val variantRefModelIdx = referenceModelIndex.map(_ - 1)
             val (coreVariant, variant) = variantFormatFn(vc,
               Some(allele.getDisplayString),
               variantIdx,
@@ -540,11 +540,24 @@ class VariantContextConverter(
 
   // htsjdk --> variant annotation format functions
 
+  private def addVaAttribute(
+    vab: VariantAnnotation.Builder,
+    key: String,
+    value: String): VariantAnnotation.Builder = {
+
+    if (vab.hasAttributes) {
+      vab.setAttributes(vab.getAttributes ++ Map(key -> value))
+    } else {
+      vab.setAttributes(Map(key -> value))
+    }
+  }
+
   private[converters] def formatAncestralAllele(
     vc: HtsjdkVariantContext,
     vab: VariantAnnotation.Builder,
     v: Variant,
-    index: Int): VariantAnnotation.Builder = {
+    index: Int,
+    nonRefIdx: Option[Int]): VariantAnnotation.Builder = {
 
     Option(vc.getAttributeAsString("AA", null))
       .fold(vab)(vab.setAncestralAllele(_))
@@ -554,7 +567,8 @@ class VariantContextConverter(
     vc: HtsjdkVariantContext,
     vab: VariantAnnotation.Builder,
     v: Variant,
-    index: Int): VariantAnnotation.Builder = {
+    index: Int,
+    nonRefIdx: Option[Int]): VariantAnnotation.Builder = {
 
     Option(vc.getAttribute("DB").asInstanceOf[java.lang.Boolean])
       .fold(vab)(vab.setDbSnp(_))
@@ -564,7 +578,8 @@ class VariantContextConverter(
     vc: HtsjdkVariantContext,
     vab: VariantAnnotation.Builder,
     v: Variant,
-    index: Int): VariantAnnotation.Builder = {
+    index: Int,
+    nonRefIdx: Option[Int]): VariantAnnotation.Builder = {
 
     Option(vc.getAttribute("H2").asInstanceOf[java.lang.Boolean])
       .fold(vab)(vab.setHapMap2(_))
@@ -574,7 +589,8 @@ class VariantContextConverter(
     vc: HtsjdkVariantContext,
     vab: VariantAnnotation.Builder,
     v: Variant,
-    index: Int): VariantAnnotation.Builder = {
+    index: Int,
+    nonRefIdx: Option[Int]): VariantAnnotation.Builder = {
 
     Option(vc.getAttribute("H3").asInstanceOf[java.lang.Boolean])
       .fold(vab)(vab.setHapMap3(_))
@@ -584,7 +600,8 @@ class VariantContextConverter(
     vc: HtsjdkVariantContext,
     vab: VariantAnnotation.Builder,
     v: Variant,
-    index: Int): VariantAnnotation.Builder = {
+    index: Int,
+    nonRefIdx: Option[Int]): VariantAnnotation.Builder = {
 
     Option(vc.getAttribute("VALIDATED").asInstanceOf[java.lang.Boolean])
       .fold(vab)(vab.setValidated(_))
@@ -594,7 +611,8 @@ class VariantContextConverter(
     vc: HtsjdkVariantContext,
     vab: VariantAnnotation.Builder,
     v: Variant,
-    index: Int): VariantAnnotation.Builder = {
+    index: Int,
+    nonRefIdx: Option[Int]): VariantAnnotation.Builder = {
 
     Option(vc.getAttribute("1000G").asInstanceOf[java.lang.Boolean])
       .fold(vab)(vab.setThousandGenomes(_))
@@ -604,7 +622,8 @@ class VariantContextConverter(
     vc: HtsjdkVariantContext,
     vab: VariantAnnotation.Builder,
     v: Variant,
-    index: Int): VariantAnnotation.Builder = {
+    index: Int,
+    nonRefIdx: Option[Int]): VariantAnnotation.Builder = {
 
     // default somatic to false if unspecified
     Option(vc.getAttribute("SOMATIC").asInstanceOf[java.lang.Boolean])
@@ -615,11 +634,15 @@ class VariantContextConverter(
     vc: HtsjdkVariantContext,
     vab: VariantAnnotation.Builder,
     v: Variant,
-    index: Int): VariantAnnotation.Builder = {
+    index: Int,
+    nonRefIdx: Option[Int]): VariantAnnotation.Builder = {
 
     val ac = vc.getAttributeAsList("AC")
     if (ac.size > index) {
       vab.setAlleleCount(toInt(ac.get(index)))
+      if (nonRefIdx.isDefined && ac.size > nonRefIdx.get) {
+        addVaAttribute(vab, "NON_REF_AC", ac.get(nonRefIdx.get).toString)
+      }
     }
     vab
   }
@@ -628,11 +651,15 @@ class VariantContextConverter(
     vc: HtsjdkVariantContext,
     vab: VariantAnnotation.Builder,
     v: Variant,
-    index: Int): VariantAnnotation.Builder = {
+    index: Int,
+    nonRefIdx: Option[Int]): VariantAnnotation.Builder = {
 
     val af = vc.getAttributeAsList("AF")
     if (af.size > index) {
       vab.setAlleleFrequency(toFloat(af.get(index)))
+      if (nonRefIdx.isDefined && af.size > nonRefIdx.get) {
+        addVaAttribute(vab, "NON_REF_AF", af.get(nonRefIdx.get).toString)
+      }
     }
     vab
   }
@@ -641,11 +668,15 @@ class VariantContextConverter(
     vc: HtsjdkVariantContext,
     vab: VariantAnnotation.Builder,
     v: Variant,
-    index: Int): VariantAnnotation.Builder = {
+    index: Int,
+    nonRefIdx: Option[Int]): VariantAnnotation.Builder = {
 
     val cigar = vc.getAttributeAsList("CIGAR")
     if (cigar.size > index) {
       vab.setCigar(asString(cigar.get(index)))
+      if (nonRefIdx.isDefined && cigar.size > nonRefIdx.get) {
+        addVaAttribute(vab, "NON_REF_CIGAR", cigar.get(nonRefIdx.get).toString)
+      }
     }
     vab
   }
@@ -654,12 +685,16 @@ class VariantContextConverter(
     vc: HtsjdkVariantContext,
     vab: VariantAnnotation.Builder,
     v: Variant,
-    index: Int): VariantAnnotation.Builder = {
+    index: Int,
+    nonRefIdx: Option[Int]): VariantAnnotation.Builder = {
 
     val ad = vc.getAttributeAsList("AD")
     if (ad.size > (index + 1)) {
       vab.setReferenceReadDepth(toInt(ad.get(0)))
       vab.setReadDepth(toInt(ad.get(index + 1)))
+      if (nonRefIdx.isDefined && ad.size > (nonRefIdx.get + 1)) {
+        addVaAttribute(vab, "NON_REF_AD", ad.get(nonRefIdx.get + 1).toString)
+      }
     }
     vab
   }
@@ -668,12 +703,16 @@ class VariantContextConverter(
     vc: HtsjdkVariantContext,
     vab: VariantAnnotation.Builder,
     v: Variant,
-    index: Int): VariantAnnotation.Builder = {
+    index: Int,
+    nonRefIdx: Option[Int]): VariantAnnotation.Builder = {
 
     val adf = vc.getAttributeAsList("ADF")
     if (adf.size > (index + 1)) {
       vab.setReferenceForwardReadDepth(toInt(adf.get(0)))
       vab.setForwardReadDepth(toInt(adf.get(index + 1)))
+      if (nonRefIdx.isDefined && adf.size > (nonRefIdx.get + 1)) {
+        addVaAttribute(vab, "NON_REF_ADF", adf.get(nonRefIdx.get + 1).toString)
+      }
     }
     vab
   }
@@ -682,12 +721,16 @@ class VariantContextConverter(
     vc: HtsjdkVariantContext,
     vab: VariantAnnotation.Builder,
     v: Variant,
-    index: Int): VariantAnnotation.Builder = {
+    index: Int,
+    nonRefIdx: Option[Int]): VariantAnnotation.Builder = {
 
     val adr = vc.getAttributeAsList("ADR")
     if (adr.size > (index + 1)) {
       vab.setReferenceReverseReadDepth(toInt(adr.get(0)))
       vab.setReverseReadDepth(toInt(adr.get(index + 1)))
+      if (nonRefIdx.isDefined && adr.size > (nonRefIdx.get + 1)) {
+        addVaAttribute(vab, "NON_REF_ADR", adr.get(nonRefIdx.get + 1).toString)
+      }
     }
     vab
   }
@@ -696,27 +739,28 @@ class VariantContextConverter(
     vc: HtsjdkVariantContext,
     vab: VariantAnnotation.Builder,
     v: Variant,
-    index: Int): VariantAnnotation.Builder = {
+    index: Int,
+    nonRefIdx: Option[Int]): VariantAnnotation.Builder = {
 
     TranscriptEffectConverter.convertToTranscriptEffects(v, vc)
       .fold(vab)(vab.setTranscriptEffects(_))
   }
 
-  private val variantAnnotationFormatFns: Iterable[(HtsjdkVariantContext, VariantAnnotation.Builder, Variant, Int) => VariantAnnotation.Builder] = Iterable(
-    formatAncestralAllele(_, _, _, _),
-    formatDbSnp(_, _, _, _),
-    formatHapMap2(_, _, _, _),
-    formatHapMap3(_, _, _, _),
-    formatValidated(_, _, _, _),
-    formatThousandGenomes(_, _, _, _),
-    formatSomatic(_, _, _, _),
-    formatAlleleCount(_, _, _, _),
-    formatAlleleFrequency(_, _, _, _),
-    formatCigar(_, _, _, _),
-    formatReadDepth(_, _, _, _),
-    formatForwardReadDepth(_, _, _, _),
-    formatReverseReadDepth(_, _, _, _),
-    formatTranscriptEffects(_, _, _, _)
+  private val variantAnnotationFormatFns: Iterable[(HtsjdkVariantContext, VariantAnnotation.Builder, Variant, Int, Option[Int]) => VariantAnnotation.Builder] = Iterable(
+    formatAncestralAllele(_, _, _, _, _),
+    formatDbSnp(_, _, _, _, _),
+    formatHapMap2(_, _, _, _, _),
+    formatHapMap3(_, _, _, _, _),
+    formatValidated(_, _, _, _, _),
+    formatThousandGenomes(_, _, _, _, _),
+    formatSomatic(_, _, _, _, _),
+    formatAlleleCount(_, _, _, _, _),
+    formatAlleleFrequency(_, _, _, _, _),
+    formatCigar(_, _, _, _, _),
+    formatReadDepth(_, _, _, _, _),
+    formatForwardReadDepth(_, _, _, _, _),
+    formatReverseReadDepth(_, _, _, _, _),
+    formatTranscriptEffects(_, _, _, _, _)
   )
 
   // variant annotation --> htsjdk extract functions
@@ -774,32 +818,48 @@ class VariantContextConverter(
     va: VariantAnnotation,
     vcb: VariantContextBuilder): VariantContextBuilder = {
 
-    Option(va.getAlleleCount).fold(vcb)(i => vcb.attribute("AC", i.toString))
+    (Option(va.getAlleleCount), Option(va.getAttributes.get("NON_REF_AC"))) match {
+      case (Some(alt), Some(nonRef)) => vcb.attribute("AC", ImmutableList.of(alt.toString, nonRef))
+      case (Some(alt), None)         => vcb.attribute("AC", alt.toString)
+      case _                         =>
+    }
+    vcb
   }
 
   private[converters] def extractAlleleFrequency(
     va: VariantAnnotation,
     vcb: VariantContextBuilder): VariantContextBuilder = {
 
-    Option(va.getAlleleFrequency).fold(vcb)(f => vcb.attribute("AF", f.toString))
+    (Option(va.getAlleleFrequency), Option(va.getAttributes.get("NON_REF_AF"))) match {
+      case (Some(alt), Some(nonRef)) => vcb.attribute("AF", ImmutableList.of(alt.toString, nonRef))
+      case (Some(alt), None)         => vcb.attribute("AF", alt.toString)
+      case _                         =>
+    }
+    vcb
   }
 
   private[converters] def extractCigar(
     va: VariantAnnotation,
     vcb: VariantContextBuilder): VariantContextBuilder = {
 
-    Option(va.getCigar).fold(vcb)(vcb.attribute("CIGAR", _))
+    (Option(va.getCigar), Option(va.getAttributes.get("NON_REF_CIGAR"))) match {
+      case (Some(alt), Some(nonRef)) => vcb.attribute("CIGAR", ImmutableList.of(alt.toString, nonRef))
+      case (Some(alt), None)         => vcb.attribute("CIGAR", alt.toString)
+      case _                         =>
+    }
+    vcb
   }
 
   private[converters] def extractReadDepth(
     va: VariantAnnotation,
     vcb: VariantContextBuilder): VariantContextBuilder = {
 
-    (Option(va.getReferenceReadDepth), Option(va.getReadDepth)) match {
-      case (Some(ref), Some(alt)) => vcb.attribute("AD", ImmutableList.of(ref.toString, alt.toString))
-      case (None, Some(_))        => throw new IllegalArgumentException("Read depth specified without reference read depth")
-      case (Some(_), None)        => throw new IllegalArgumentException("Reference read depth specified without read depth")
-      case _                      =>
+    (Option(va.getReferenceReadDepth), Option(va.getReadDepth), Option(va.getAttributes.get("NON_REF_AD"))) match {
+      case (Some(ref), Some(alt), Some(nonRef)) => vcb.attribute("AD", ImmutableList.of(ref.toString, alt.toString, nonRef))
+      case (Some(ref), Some(alt), None)         => vcb.attribute("AD", ImmutableList.of(ref.toString, alt.toString))
+      case (None, Some(_), _)                   => throw new IllegalArgumentException("Read depth specified without reference read depth")
+      case (Some(_), None, _)                   => throw new IllegalArgumentException("Reference read depth specified without read depth")
+      case _                                    =>
     }
     vcb
   }
@@ -808,11 +868,12 @@ class VariantContextConverter(
     va: VariantAnnotation,
     vcb: VariantContextBuilder): VariantContextBuilder = {
 
-    (Option(va.getReferenceForwardReadDepth), Option(va.getForwardReadDepth)) match {
-      case (Some(ref), Some(alt)) => vcb.attribute("ADF", ImmutableList.of(ref.toString, alt.toString))
-      case (None, Some(_))        => throw new IllegalArgumentException("Forward read depth specified without reference forward read depth")
-      case (Some(_), None)        => throw new IllegalArgumentException("Reference forward read depth specified without forward read depth")
-      case _                      =>
+    (Option(va.getReferenceForwardReadDepth), Option(va.getForwardReadDepth), Option(va.getAttributes.get("NON_REF_ADF"))) match {
+      case (Some(ref), Some(alt), Some(nonRef)) => vcb.attribute("ADF", ImmutableList.of(ref.toString, alt.toString, nonRef))
+      case (Some(ref), Some(alt), None)         => vcb.attribute("ADF", ImmutableList.of(ref.toString, alt.toString))
+      case (None, Some(_), _)                   => throw new IllegalArgumentException("Forward read depth specified without reference forward read depth")
+      case (Some(_), None, _)                   => throw new IllegalArgumentException("Reference forward read depth specified without forward read depth")
+      case _                                    =>
     }
     vcb
   }
@@ -821,11 +882,12 @@ class VariantContextConverter(
     va: VariantAnnotation,
     vcb: VariantContextBuilder): VariantContextBuilder = {
 
-    (Option(va.getReferenceReverseReadDepth), Option(va.getReverseReadDepth)) match {
-      case (Some(ref), Some(alt)) => vcb.attribute("ADR", ImmutableList.of(ref.toString, alt.toString))
-      case (None, Some(_))        => throw new IllegalArgumentException("Reverse read depth specified without reference reverse read depth")
-      case (Some(_), None)        => throw new IllegalArgumentException("Reference reverse read depth specified without reverse read depth")
-      case _                      =>
+    (Option(va.getReferenceReverseReadDepth), Option(va.getReverseReadDepth), Option(va.getAttributes.get("NON_REF_ADR"))) match {
+      case (Some(ref), Some(alt), Some(nonRef)) => vcb.attribute("ADR", ImmutableList.of(ref.toString, alt.toString, nonRef))
+      case (Some(ref), Some(alt), None)         => vcb.attribute("ADR", ImmutableList.of(ref.toString, alt.toString))
+      case (None, Some(_), _)                   => throw new IllegalArgumentException("Reverse read depth specified without reference reverse read depth")
+      case (Some(_), None, _)                   => throw new IllegalArgumentException("Reference reverse read depth specified without reverse read depth")
+      case _                                    =>
     }
     vcb
   }
@@ -1754,7 +1816,7 @@ class VariantContextConverter(
 
       val boundAnnotationFns: Iterable[VariantAnnotation.Builder => VariantAnnotation.Builder] = variantAnnotationFormatFns
         .map(fn => {
-          fn(vc, _: VariantAnnotation.Builder, variant, alleleIdx)
+          fn(vc, _: VariantAnnotation.Builder, variant, alleleIdx, nonRefIndex)
         })
       val convertedAnnotation = boundAnnotationFns.foldLeft(variantAnnotationBuilder)(
         (vab: VariantAnnotation.Builder, fn) => {
@@ -1777,7 +1839,7 @@ class VariantContextConverter(
       val indices = Array.empty[Int]
 
       // pull out the attribute map and process
-      val attrMap = attributeFns.flatMap(fn => fn(vc, alleleIdx, indices))
+      val attrMap = attributeFns.flatMap(fn => fn(vc, alleleIdx, nonRefIndex, indices))
         .toMap
 
       // if the map has kv pairs, attach it
@@ -1791,7 +1853,7 @@ class VariantContextConverter(
       (variant, variantBuilder.build)
     }
 
-    convert(_, _, _, _,_)
+    convert(_, _, _, _, _)
   }
 
   private def makeGenotypeFormatFn(
@@ -1886,7 +1948,7 @@ class VariantContextConverter(
       val coreWithOptNonRefs = nonRefIndex.fold(convertedCore)(nonRefAllele => {
 
         // non-ref pl indices
-        val nrIndices = GenotypeLikelihoods.getPLIndecesOfAlleles(0, nonRefAllele)
+        val nrIndices = GenotypeLikelihoods.getPLIndicesOfAlleles(0, nonRefAllele)
 
         formatNonRefGenotypeLikelihoods(g, convertedCore, nrIndices)
       })
@@ -1918,7 +1980,7 @@ class VariantContextConverter(
         })
 
       // pull out the attribute map and process
-      val attrMap = attributeFns.flatMap(fn => fn(g, alleleIdx, indices))
+      val attrMap = attributeFns.flatMap(fn => fn(g, alleleIdx, nonRefIndex, indices))
         .toMap
 
       // if the map has kv pairs, attach it
