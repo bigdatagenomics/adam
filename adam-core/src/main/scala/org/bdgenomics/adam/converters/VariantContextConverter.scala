@@ -1119,7 +1119,7 @@ class VariantContextConverter(
     }
     (Option(g.getReferenceReadDepth), Option(g.getAlternateReadDepth), nonRefAd) match {
       case (Some(ref), Some(alt), Some(nonRef)) => gb.AD(Array(ref, alt, nonRef.toInt))
-      case (Some(ref), Some(alt), None) => gb.AD(Array(ref, alt))
+      case (Some(ref), Some(alt), None)         => gb.AD(Array(ref, alt))
       case (Some(_), None, _) => {
         throw new IllegalArgumentException("Had reference depth but no alternate depth in %s.".format(g))
       }
@@ -1986,7 +1986,6 @@ class VariantContextConverter(
       } else {
         VariantCallingAnnotations.newBuilder
       }
-
 
       // bind the annotation conversion functions and fold
       val boundAnnotationFns: Iterable[VariantCallingAnnotations.Builder => VariantCallingAnnotations.Builder] = genotypeAnnotationFormatFns

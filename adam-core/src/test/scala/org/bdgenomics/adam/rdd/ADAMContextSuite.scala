@@ -536,7 +536,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     val mleCounts = multiAllelicVariants.map(_.getAnnotation.getAttributes.get("MLEAC"))
     //ALT    T,TA,TAA,<NON_REF>
     //MLEAC  0,1,1,0
-    assert(mleCounts === Array("0", "1", "1"))
+    assert(mleCounts === Array("0,0", "1,0", "1,0"))
   }
 
   sparkTest("load parquet with globs") {
