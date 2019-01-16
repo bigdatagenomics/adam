@@ -545,11 +545,12 @@ class VariantContextConverter(
     key: String,
     value: String): VariantAnnotation.Builder = {
 
-    if (vab.hasAttributes) {
-      vab.setAttributes(vab.getAttributes ++ Map(key -> value))
+    val attributes = if (vab.hasAttributes) {
+      vab.getAttributes ++ Map(key -> value)
     } else {
-      vab.setAttributes(Map(key -> value))
+      Map(key -> value)
     }
+    vab.setAttributes(attributes)
   }
 
   private[converters] def formatAncestralAllele(
@@ -921,24 +922,42 @@ class VariantContextConverter(
 
   // htsjdk --> genotype format functions
 
+  private def addVcaAttribute(
+    gb: Genotype.Builder,
+    key: String,
+    value: String): Genotype.Builder = {
+
+    val vcab = gb.getVariantCallingAnnotationsBuilder
+    val attributes = if (vcab.hasAttributes) {
+      vcab.getAttributes ++ Map(key -> value)
+    } else {
+      Map(key -> value)
+    }
+    gb.setVariantCallingAnnotationsBuilder(vcab.setAttributes(attributes))
+  }
+
   private[converters] def formatAllelicDepth(g: HtsjdkGenotype,
                                              gb: Genotype.Builder,
                                              gIdx: Int,
+                                             nonRefIdx: Option[Int],
                                              gIndices: Array[Int]): Genotype.Builder = {
 
     // AD is an array type field
-    if (g.hasAD && gIdx < g.getAD.size) {
+    if (g.hasAD && gIdx < g.getAD.length) {
       val ad = g.getAD
       gb.setReferenceReadDepth(ad(0))
         .setAlternateReadDepth(ad(gIdx))
-    } else {
-      gb
+      if (nonRefIdx.isDefined && nonRefIdx.get < g.getAD.length) {
+        addVcaAttribute(gb, "NON_REF_AD", ad(nonRefIdx.get).toString)
+      }
     }
+    gb
   }
 
   private[converters] def formatReadDepth(g: HtsjdkGenotype,
                                           gb: Genotype.Builder,
                                           gIdx: Int,
+                                          nonRefIdx: Option[Int],
                                           gIndices: Array[Int]): Genotype.Builder = {
     if (g.hasDP) {
       gb.setReadDepth(g.getDP)
@@ -950,6 +969,7 @@ class VariantContextConverter(
   private[converters] def formatMinReadDepth(g: HtsjdkGenotype,
                                              gb: Genotype.Builder,
                                              gIdx: Int,
+                                             nonRefIdx: Option[Int],
                                              gIndices: Array[Int]): Genotype.Builder = {
     Option(g.getExtendedAttribute("MIN_DP", null))
       .map(attr => {
@@ -964,6 +984,7 @@ class VariantContextConverter(
   private[converters] def formatGenotypeQuality(g: HtsjdkGenotype,
                                                 gb: Genotype.Builder,
                                                 gIdx: Int,
+                                                nonRefIdx: Option[Int],
                                                 gIndices: Array[Int]): Genotype.Builder = {
     if (g.hasGQ) {
       gb.setGenotypeQuality(g.getGQ)
@@ -975,6 +996,7 @@ class VariantContextConverter(
   private[converters] def formatGenotypeLikelihoods(g: HtsjdkGenotype,
                                                     gb: Genotype.Builder,
                                                     gIdx: Int,
+                                                    nonRefIdx: Option[Int],
                                                     gIndices: Array[Int]): Genotype.Builder = {
     if (g.hasPL) {
       val pl = g.getPL
@@ -1029,6 +1051,7 @@ class VariantContextConverter(
   private[converters] def formatStrandBiasComponents(g: HtsjdkGenotype,
                                                      gb: Genotype.Builder,
                                                      gIdx: Int,
+                                                     nonRefIdx: Option[Int],
                                                      gIndices: Array[Int]): Genotype.Builder = {
     Option(g.getExtendedAttribute("SB"))
       .map(attr => {
@@ -1051,6 +1074,7 @@ class VariantContextConverter(
   private[converters] def formatPhaseInfo(g: HtsjdkGenotype,
                                           gb: Genotype.Builder,
                                           gIdx: Int,
+                                          nonRefIdx: Option[Int],
                                           gIndices: Array[Int]): Genotype.Builder = {
     if (g.isPhased) {
       gb.setPhased(true)
@@ -1076,26 +1100,30 @@ class VariantContextConverter(
     gb
   }
 
-  private val genotypeFormatFns: Iterable[(HtsjdkGenotype, Genotype.Builder, Int, Array[Int]) => Genotype.Builder] = Iterable(
-    formatAllelicDepth(_, _, _, _),
-    formatReadDepth(_, _, _, _),
-    formatMinReadDepth(_, _, _, _),
-    formatGenotypeQuality(_, _, _, _),
-    formatGenotypeLikelihoods(_, _, _, _),
-    formatStrandBiasComponents(_, _, _, _),
-    formatPhaseInfo(_, _, _, _)
+  private val genotypeFormatFns: Iterable[(HtsjdkGenotype, Genotype.Builder, Int, Option[Int], Array[Int]) => Genotype.Builder] = Iterable(
+    formatAllelicDepth(_, _, _, _, _),
+    formatReadDepth(_, _, _, _, _),
+    formatMinReadDepth(_, _, _, _, _),
+    formatGenotypeQuality(_, _, _, _, _),
+    formatGenotypeLikelihoods(_, _, _, _, _),
+    formatStrandBiasComponents(_, _, _, _, _),
+    formatPhaseInfo(_, _, _, _, _)
   )
 
   // genotype --> htsjdk extract functions
 
   private[converters] def extractAllelicDepth(g: Genotype,
                                               gb: GenotypeBuilder): GenotypeBuilder = {
-    (Option(g.getReferenceReadDepth), Option(g.getAlternateReadDepth)) match {
-      case (Some(ref), Some(alt)) => gb.AD(Array(ref, alt))
-      case (Some(_), None) => {
+    val nonRefAd = Option(g.getVariantCallingAnnotations).flatMap { vca =>
+      Option(vca.getAttributes.get("NON_REF_AD"))
+    }
+    (Option(g.getReferenceReadDepth), Option(g.getAlternateReadDepth), nonRefAd) match {
+      case (Some(ref), Some(alt), Some(nonRef)) => gb.AD(Array(ref, alt, nonRef.toInt))
+      case (Some(ref), Some(alt), None) => gb.AD(Array(ref, alt))
+      case (Some(_), None, _) => {
         throw new IllegalArgumentException("Had reference depth but no alternate depth in %s.".format(g))
       }
-      case (None, Some(_)) => {
+      case (None, Some(_), _) => {
         throw new IllegalArgumentException("Had alternate depth but no reference depth in %s.".format(g))
       }
       case _ => gb.noAD
@@ -1170,11 +1198,9 @@ class VariantContextConverter(
         gb.PL(nls.map(l => PhredUtils.logProbabilityToPhred(l))
           .toArray)
       }
-    } else if (nls.isEmpty) {
+    } else {
       gb.PL(gls.map(l => PhredUtils.logProbabilityToPhred(l))
         .toArray)
-    } else {
-      gb.PL(nonRefPls(gls, nls))
     }
   }
 
@@ -1915,7 +1941,7 @@ class VariantContextConverter(
         if (nonRefIndex.isDefined) {
           getPLIndicesOfThreeAlleles(0, alleleIdx, nonRefIndex.get)
         } else {
-          GenotypeLikelihoods.getPLIndicesOfAlleles(0, alleleIdx)
+          GenotypeLikelihoods.getPLIndecesOfAlleles(0, alleleIdx)
         }
       } else {
         Array.empty[Int]
@@ -1924,7 +1950,7 @@ class VariantContextConverter(
       // bind the conversion functions and fold
       val boundFns: Iterable[Genotype.Builder => Genotype.Builder] = genotypeFormatFns
         .map(fn => {
-          fn(g, _: Genotype.Builder, alleleIdx, indices)
+          fn(g, _: Genotype.Builder, alleleIdx, nonRefIndex, indices)
         })
       val convertedCore = boundFns.foldLeft(builder)((gb: Genotype.Builder, fn) => {
         try {
@@ -1948,12 +1974,12 @@ class VariantContextConverter(
       val coreWithOptNonRefs = nonRefIndex.fold(convertedCore)(nonRefAllele => {
 
         // non-ref pl indices
-        val nrIndices = GenotypeLikelihoods.getPLIndicesOfAlleles(0, nonRefAllele)
+        val nrIndices = GenotypeLikelihoods.getPLIndecesOfAlleles(0, nonRefAllele)
 
         formatNonRefGenotypeLikelihoods(g, convertedCore, nrIndices)
       })
 
-      val vcAnns = VariantCallingAnnotations.newBuilder
+      val vcAnns = VariantCallingAnnotations.newBuilder(coreWithOptNonRefs.build.getVariantCallingAnnotations)
 
       // bind the annotation conversion functions and fold
       val boundAnnotationFns: Iterable[VariantCallingAnnotations.Builder => VariantCallingAnnotations.Builder] = genotypeAnnotationFormatFns

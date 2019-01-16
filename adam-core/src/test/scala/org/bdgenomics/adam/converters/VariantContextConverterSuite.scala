@@ -388,6 +388,44 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     assert(gt2.getAllele(1).getBaseString === "G")
   }
 
+  test("Convert htsjdk multi-allelic SNVs with non-ref to ADAM and back to htsjdk") {
+    val gb = new GenotypeBuilder("NA12878", List(Allele.create("T"), Allele.create("G")))
+    gb.AD(Array(1, 2, 3, 4)).PL(Array(10, 11, 12, 13, 14, 15, 16, 17, 18, 19))
+
+    val vcb = htsjdkMultiAllelicSNVWithNonRefBuilder
+    vcb.genotypes(gb.make)
+
+    val adamVCs = converter.convert(vcb.make)
+
+    val adamGT1 = adamVCs(0).genotypes.head
+    val adamGT2 = adamVCs(1).genotypes.head
+    assert(adamGT1.getAlternateReadDepth === 2)
+    assert(adamGT1.getVariantCallingAnnotations.getAttributes.get("NON_REF_AD").contains("4"))
+    assert(adamGT1.getGenotypeLikelihoods
+      .map(d => d: scala.Double)
+      .map(PhredUtils.logProbabilityToPhred)
+      .sameElements(List(10, 11, 12, 16, 17, 19)))
+
+    assert(adamGT2.getAlternateReadDepth === 3)
+    assert(adamGT1.getVariantCallingAnnotations.getAttributes.get("NON_REF_AD").contains("4"))
+    assert(adamGT2.getGenotypeLikelihoods
+      .map(d => d: scala.Double)
+      .map(PhredUtils.logProbabilityToPhred)
+      .sameElements(List(10, 13, 15, 16, 18, 19)))
+
+    val optHtsjdkVC1 = converter.convert(adamVCs(0))
+    val optHtsjdkVC2 = converter.convert(adamVCs(1))
+    val htsjdkVC1 = optHtsjdkVC1.get
+    val htsjdkVC2 = optHtsjdkVC2.get
+    val gt1 = htsjdkVC1.getGenotype("NA12878")
+    val gt2 = htsjdkVC2.getGenotype("NA12878")
+
+    assert(gt1.getAD.sameElements(List(1, 2, 4)), gt1.getAD.mkString(","))
+    assert(gt2.getAD.sameElements(List(1, 3, 4)), gt2.getAD.mkString(","))
+    assert(gt1.getPL.sameElements(List(10, 11, 12, 16, 17, 19)), gt1.getPL.mkString(","))
+    assert(gt2.getPL.sameElements(List(10, 13, 15, 16, 18, 19)), gt2.getPL.mkString(","))
+  }
+
   test("Convert gVCF reference records to ADAM") {
     val gb = new GenotypeBuilder("NA12878", List(Allele.create("A", true), Allele.create("A", true)))
     gb.PL(Array(0, 1, 2)).DP(44).attribute("MIN_DP", 38)
@@ -548,8 +586,13 @@ class VariantContextConverterSuite extends ADAMFunSuite {
   }
 
   def makeGenotype(genotypeAttributes: Map[String, java.lang.Object],
-                   fns: Iterable[GenotypeBuilder => GenotypeBuilder]): HtsjdkGenotype = {
-    val vcb = htsjdkSNVBuilder
+                   fns: Iterable[GenotypeBuilder => GenotypeBuilder],
+                   withNonRef: Boolean = false): HtsjdkGenotype = {
+    val vcb = if (withNonRef) {
+      htsjdkSNVWithNonRefBuilder
+    } else {
+      htsjdkSNVBuilder
+    }
     val gb = fns.foldLeft(new GenotypeBuilder(GenotypeBuilder.create("NA12878",
       vcb.getAlleles(),
       genotypeAttributes)))((bldr, fn) => {
@@ -562,13 +605,26 @@ class VariantContextConverterSuite extends ADAMFunSuite {
 
   def buildGt(
     objMap: Map[String, java.lang.Object],
-    extractor: (HtsjdkGenotype, Genotype.Builder, Int, Array[Int]) => Genotype.Builder,
-    fns: Iterable[GenotypeBuilder => GenotypeBuilder] = Iterable.empty): Genotype = {
-    val htsjdkGenotype = makeGenotype(objMap, fns)
+    extractor: (HtsjdkGenotype, Genotype.Builder, Int, Option[Int], Array[Int]) => Genotype.Builder,
+    fns: Iterable[GenotypeBuilder => GenotypeBuilder] = Iterable.empty,
+    withNonRef: Boolean = false): Genotype = {
+
+    val htsjdkGenotype = makeGenotype(objMap, fns, withNonRef)
+    val nonRefIdx = if (withNonRef) {
+      Some(2)
+    } else {
+      None
+    }
+    val gtIndices = if (withNonRef) {
+      Array(0, 1, 2, 3, 4, 5)
+    } else {
+      Array(0, 1, 2)
+    }
     extractor(htsjdkGenotype,
       Genotype.newBuilder,
       1,
-      Array(0, 1, 2)).build
+      nonRefIdx,
+      gtIndices).build
   }
 
   test("no phasing set going htsjdk->adam") {
@@ -620,11 +676,13 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     val gt = buildGt(Map.empty,
       converter.formatAllelicDepth,
       fns = Iterable((gb: GenotypeBuilder) => {
-        gb.AD(Array(3, 6))
-      }))
+        gb.AD(Array(3, 6, 0))
+      }),
+      withNonRef = true)
 
     assert(gt.getReferenceReadDepth === 3)
     assert(gt.getAlternateReadDepth === 6)
+    assert(gt.getVariantCallingAnnotations.getAttributes.get("NON_REF_AD").contains("0"))
   }
 
   test("no gt read depth going htsjdk->adam") {
@@ -705,6 +763,24 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     assert(gls(0) < -0.99e-1 && gls(0) > -1.1e-1)
     assert(gls(1) < -0.99e-3 && gls(1) > -1.1e-3)
     assert(gls(2) < -0.99e-6 && gls(2) > -1.1e-6)
+  }
+
+  test("extract phred likelihoods with non-ref allele going htsjdk->adam") {
+    val gt = buildGt(Map.empty,
+      converter.formatGenotypeLikelihoods,
+      fns = Iterable((gb: GenotypeBuilder) => {
+        gb.PL(Array(10, 20, 30, 40, 50, 60))
+      }),
+      withNonRef = true)
+
+    val gls = gt.getGenotypeLikelihoods
+    assert(gls.size === 6)
+    assert(gls(0) < -0.99e-1 && gls(0) > -1.1e-1)
+    assert(gls(1) < -0.99e-2 && gls(1) > -1.1e-2)
+    assert(gls(2) < -0.99e-3 && gls(2) > -1.1e-3)
+    assert(gls(3) < -0.99e-4 && gls(3) > -1.1e-4)
+    assert(gls(4) < -0.99e-5 && gls(4) > -1.1e-5)
+    assert(gls(5) < -0.99e-6 && gls(5) > -1.1e-6)
   }
 
   test("no strand bias info going htsjdk->adam") {
