@@ -2764,4 +2764,46 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     assert(optHtsjdkVc.isDefined)
     assert(optHtsjdkVc.get.getEnd === 16157602)
   }
+
+  sparkTest("keep info for non-ref in biallelic case") {
+    val vcRdd = sc.loadVcf(testFile("gvcf_dir/gvcf_multiallelic.g.vcf"))
+    val vcRecords = vcRdd.rdd.collect
+    val vcc = new VariantContextConverter(vcRdd.headerLines, lenient, true)
+
+    val biallelic = vcRecords.filter(_.variant.variant.getStart == 16157602L).head
+    val biallelicOptHtsjdkVc = vcc.convert(biallelic)
+
+    assert(biallelicOptHtsjdkVc.isDefined)
+    val biallelicVc = biallelicOptHtsjdkVc.get
+    assert(biallelicVc.hasAttribute("MLEAC") &&
+      biallelicVc.getAttributeAsIntList("MLEAC", -1).sameElements(List(1, 0)),
+      biallelicVc)
+    assert(biallelicVc.hasAttribute("MLEAF") &&
+      biallelicVc.getAttributeAsDoubleList("MLEAF", -1).sameElements(List(0.500, 0.00)))
+
+    val biallelicGt = biallelicVc.getGenotype("NA12878i")
+    assert(biallelicGt.hasPL && biallelicGt.getPL.sameElements(List(41, 3, 0, 41, 3, 41)))
+  }
+
+  sparkTest("keep info for non-ref in multi-allelic case") {
+    val vcRdd = sc.loadVcf(testFile("gvcf_dir/gvcf_multiallelic.g.vcf"))
+    val vcRecords = vcRdd.rdd.collect
+    val vcc = new VariantContextConverter(vcRdd.headerLines, lenient, true)
+
+    val multiallelic = vcRecords.filter(_.variant.variant.getStart == 18030095L)
+      .filter(_.variant.variant.getAlternateAllele == "TA")
+      .head
+    val multiallelicOptHtsjdkVc = vcc.convert(multiallelic)
+
+    assert(multiallelicOptHtsjdkVc.isDefined)
+    val multiallelicVc = multiallelicOptHtsjdkVc.get
+    assert(multiallelicVc.hasAttribute("MLEAC") &&
+      multiallelicVc.getAttributeAsIntList("MLEAC", -1).sameElements(List(1, 0)))
+    assert(multiallelicVc.hasAttribute("MLEAF") &&
+      multiallelicVc.getAttributeAsDoubleList("MLEAF", -1).sameElements(List(0.500, 0.00)))
+
+    val multiallelicGt = multiallelicVc.getGenotype("NA12878i")
+    assert(multiallelicGt.hasAD && multiallelicGt.getAD.sameElements(List(13, 17, 0)))
+    assert(multiallelicGt.hasPL && multiallelicGt.getPL.sameElements(List(602, 86, 553, 467, 353, 659)))
+  }
 }

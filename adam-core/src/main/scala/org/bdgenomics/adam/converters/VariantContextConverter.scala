@@ -1979,7 +1979,14 @@ class VariantContextConverter(
         formatNonRefGenotypeLikelihoods(g, convertedCore, nrIndices)
       })
 
-      val vcAnns = VariantCallingAnnotations.newBuilder(coreWithOptNonRefs.build.getVariantCallingAnnotations)
+      val vcAnns = if (coreWithOptNonRefs.hasVariantCallingAnnotations) {
+        VariantCallingAnnotations.newBuilder(coreWithOptNonRefs.getVariantCallingAnnotations)
+      } else if (coreWithOptNonRefs.hasVariantCallingAnnotationsBuilder) {
+        VariantCallingAnnotations.newBuilder(coreWithOptNonRefs.getVariantCallingAnnotationsBuilder)
+      } else {
+        VariantCallingAnnotations.newBuilder
+      }
+
 
       // bind the annotation conversion functions and fold
       val boundAnnotationFns: Iterable[VariantCallingAnnotations.Builder => VariantCallingAnnotations.Builder] = genotypeAnnotationFormatFns
