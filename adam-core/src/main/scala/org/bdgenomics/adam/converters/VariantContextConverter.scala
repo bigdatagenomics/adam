@@ -1309,7 +1309,8 @@ class VariantContextConverter(
 
   private[converters] def extractPosteriors(ga: GenotypeAnnotation,
                                             gb: GenotypeBuilder): GenotypeBuilder = {
-    gb
+    // todo: convert back from log scale to log10 scale
+    Option(ga.getPosteriors).fold(gb)(gb.attribute("GP", _))
   }
 
   private[converters] def extractQuality(ga: GenotypeAnnotation,
