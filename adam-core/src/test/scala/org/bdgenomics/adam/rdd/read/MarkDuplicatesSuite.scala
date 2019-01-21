@@ -322,4 +322,16 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
     val (dups, nonDups) = marked.partition(_.getDuplicateRead)
     assert(dups.size == 2)
   }
+
+  sparkTest("supplemental reads") {
+    val supplementalPoorName = "supplementalPoor"
+    val supplementalRead = createMappedRead("ref0", 10, 110, "supplementalPoor", avgPhredScore = 10, isPrimaryAlignment = true)
+    supplementalRead.setSupplementaryAlignment(true)
+    val supplementalPoorPair = createPair("ref0", 10, 110, "ref1", 110, 210, avgPhredScore = 30, readName = supplementalPoorName) ++ Seq(supplementalRead)
+    val bestName = "best"
+    val bestPair = createPair("ref0", 10, 110, "ref1", 110, 210, avgPhredScore = 30, readName = bestName)
+    val marked = markDuplicateFragments(bestPair ++ supplementalPoorPair: _*)
+    val (dups, nonDups) = marked.partition(_.getDuplicateRead)
+    assert(nonDups.size == 2 && nonDups.forall(p => p.getReadName.toString == bestName))
+  }
 }

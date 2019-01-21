@@ -45,7 +45,7 @@ private[rdd] object MarkDuplicates extends Serializable with Logging {
   }
 
   private def scoreBucket(bucket: SingleReadBucket): Int = {
-    bucket.primaryMapped.map(score).sum
+    bucket.primaryMapped.filter(r => !r.getSupplementaryAlignment).map(score).sum
   }
 
   private def markReads(reads: Iterable[(ReferencePositionPair, SingleReadBucket)], areDups: Boolean) {
