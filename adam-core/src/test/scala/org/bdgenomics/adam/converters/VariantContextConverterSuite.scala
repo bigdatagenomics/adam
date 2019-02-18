@@ -55,9 +55,9 @@ class VariantContextConverterSuite extends ADAMFunSuite {
 
   val lenient = ValidationStringency.LENIENT
   val converter = new VariantContextConverter(DefaultHeaderLines.allHeaderLines,
-    lenient, false)
+    lenient)
   val strictConverter = new VariantContextConverter(DefaultHeaderLines.allHeaderLines,
-    ValidationStringency.STRICT, false)
+    ValidationStringency.STRICT)
 
   def htsjdkSNVBuilder: VariantContextBuilder = new VariantContextBuilder()
     .alleles(List(HtsjdkAllele.create("A", true), HtsjdkAllele.create("T")))
@@ -240,13 +240,17 @@ class VariantContextConverterSuite extends ADAMFunSuite {
   test("Convert ADAM SNV w/ genotypes to htsjdk") {
     val variant = adamSNVBuilder().build
     val genotype = Genotype.newBuilder
-      .setVariant(variant)
+      .setStart(variant.getStart)
+      .setEnd(variant.getEnd)
+      .setReferenceAllele(variant.getReferenceAllele)
+      .setAlternateAllele(variant.getAlternateAllele)
+      .setSplitFromMultiallelic(variant.getSplitFromMultiallelic)
       .setSampleId("NA12878")
       .setStrandBiasComponents(List(0, 2, 4, 6).map(i => i: java.lang.Integer))
       .setAlleles(List(Allele.REF, Allele.ALT))
       .setAnnotation(GenotypeAnnotation.newBuilder()
         .setFisherStrandBiasPValue(3.0f)
-        .setRmsMapQ(0.0f)
+        .setRmsMappingQuality(0.0f)
         .setMapq0Reads(5)
         .build)
       .build
@@ -274,7 +278,11 @@ class VariantContextConverterSuite extends ADAMFunSuite {
   test("Convert ADAM SNV w/ genotypes but bad SB to htsjdk with strict validation") {
     val variant = adamSNVBuilder().build
     val genotype = Genotype.newBuilder
-      .setVariant(variant)
+      .setStart(variant.getStart)
+      .setEnd(variant.getEnd)
+      .setReferenceAllele(variant.getReferenceAllele)
+      .setAlternateAllele(variant.getAlternateAllele)
+      .setSplitFromMultiallelic(variant.getSplitFromMultiallelic)
       .setSampleId("NA12878")
       .setStrandBiasComponents(List(0, 2).map(i => i: java.lang.Integer))
       .setAlleles(List(Allele.REF, Allele.ALT))
@@ -293,13 +301,17 @@ class VariantContextConverterSuite extends ADAMFunSuite {
   test("Convert ADAM SNV w/ genotypes but bad SB to htsjdk with lenient validation") {
     val variant = adamSNVBuilder().build
     val genotype = Genotype.newBuilder
-      .setVariant(variant)
+      .setStart(variant.getStart)
+      .setEnd(variant.getEnd)
+      .setReferenceAllele(variant.getReferenceAllele)
+      .setAlternateAllele(variant.getAlternateAllele)
+      .setSplitFromMultiallelic(variant.getSplitFromMultiallelic)
       .setSampleId("NA12878")
       .setStrandBiasComponents(List(0, 2).map(i => i: java.lang.Integer))
       .setAlleles(List(Allele.REF, Allele.ALT))
       .setAnnotation(GenotypeAnnotation.newBuilder()
         .setFisherStrandBiasPValue(3.0f)
-        .setRmsMapQ(0.0f)
+        .setRmsMappingQuality(0.0f)
         .setMapq0Reads(5)
         .build)
       .build
@@ -796,18 +808,18 @@ class VariantContextConverterSuite extends ADAMFunSuite {
 
   test("no rms mapping quality going htsjdk->adam") {
     val vca = buildVca(Map.empty,
-      converter.formatRmsMapQ,
+      converter.formatRmsMappingQuality,
       fns = Iterable.empty)
 
-    assert(vca.getRmsMapQ === null)
+    assert(vca.getRmsMappingQuality === null)
   }
 
   test("extract rms mapping quality going htsjdk->adam") {
     val vca = buildVca(Map(("MQ" -> (40.0f: java.lang.Float).asInstanceOf[java.lang.Object])),
-      converter.formatRmsMapQ,
+      converter.formatRmsMappingQuality,
       fns = Iterable.empty)
 
-    assert(vca.getRmsMapQ > 39.9f && vca.getRmsMapQ < 40.1f)
+    assert(vca.getRmsMappingQuality > 39.9f && vca.getRmsMappingQuality < 40.1f)
   }
 
   test("no mq0 going htsjdk->adam") {

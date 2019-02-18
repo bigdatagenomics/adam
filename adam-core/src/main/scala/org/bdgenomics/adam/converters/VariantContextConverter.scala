@@ -899,7 +899,7 @@ class VariantContextConverter(
             gb.filters(failedFilters.mkString(";"))
           }
         }).getOrElse({
-          throw new IllegalArgumentException("Filters were applied but filters passed is null in %s.".format(g))
+          throw new IllegalArgumentException("Genotype filters were applied but filters passed is null in %s.".format(g))
         })
       }).getOrElse(gb.unfiltered())
   }
@@ -1034,7 +1034,7 @@ class VariantContextConverter(
      */
     if (g.hasPL) {
       val pl = g.getPL
-      gab.setNonReferenceLikelihoods(gIndices.map(idx => {
+      gab.setNonReferenceLikelihoods(indices.map(idx => {
         jDouble(PhredUtils.phredToLogProbability(pl(idx)))
       }).toList)
     } else {
@@ -1921,15 +1921,6 @@ class VariantContextConverter(
         }
       })
 
-      // if we have a non-ref allele, fold and build
-      val coreWithOptNonRefs = nonRefIndex.fold(convertedCore)(nonRefAllele => {
-
-        // non-ref pl indices
-        val nrIndices = GenotypeLikelihoods.getPLIndecesOfAlleles(0, nonRefAllele)
-
-        formatNonRefGenotypeLikelihoods(g, convertedCore, nrIndices)
-      })
-
       val gAnns = GenotypeAnnotation.newBuilder
 
       // bind the annotation conversion functions and fold
@@ -1968,7 +1959,7 @@ class VariantContextConverter(
       }
 
       // build the annotations and attach
-      val gtWithAnnotations = coreWithOptNonRefs
+      val gtWithAnnotations = convertedCore
         .setAnnotation(convertedAnnotationsWithAttrs.build)
 
       // build and return
@@ -2259,7 +2250,7 @@ class VariantContextConverter(
     def convert(vc: ADAMVariantContext): HtsjdkVariantContext = {
       val v = vc.variant.variant
       val hasNonRefAlleles = vc.genotypes
-        .exists(_.getNonReferenceLikelihoods.length != 0)
+        .exists(_.getAnnotation.getNonReferenceLikelihoods.length != 0)
       val builder = new VariantContextBuilder()
         .chr(v.getReferenceName)
         .start(v.getStart + 1)
