@@ -1,5 +1,44 @@
 # ADAM Changelog #
 
+### Version 0.26.0 ###
+
+**Closed issues:**
+
+ - Bump Spark dependency to version 2.3.3 [\#2120](https://github.com/bigdatagenomics/adam/issues/2120)
+ - Update Spark version on Jenkins to 2.2.3 [\#2115](https://github.com/bigdatagenomics/adam/issues/2115)
+ - Inverted duplicates are not found in mark duplicates [\#2102](https://github.com/bigdatagenomics/adam/issues/2102)
+ - Py4JError: org.bdgenomics.adam.algorithms.consensus.ConsensusGenerator.fromKnowns does not exist in the JVM [\#2099](https://github.com/bigdatagenomics/adam/issues/2099)
+ - Update Bioconda recipe for ADAM 0.25.0 [\#2088](https://github.com/bigdatagenomics/adam/issues/2088)
+ - Update Homebrew formula for ADAM 0.25.0 [\#2087](https://github.com/bigdatagenomics/adam/issues/2087)
+ - Error: Dependency package(s) 'SparkR' not available [\#2086](https://github.com/bigdatagenomics/adam/issues/2086)
+ - Java-friendly indel realignment method doesn't allow passing reference [\#2013](https://github.com/bigdatagenomics/adam/issues/2013)
+ - Use consistent (Scala-specific) (Java-specific) qualifiers in method scaladoc [\#1986](https://github.com/bigdatagenomics/adam/issues/1986)
+ - Clarify GenomicRDD vs. GenomicDataset name [\#1954](https://github.com/bigdatagenomics/adam/issues/1954)
+ - Support validation stringency in out formatters [\#1949](https://github.com/bigdatagenomics/adam/issues/1949)
+ - Compute coverage by sample [\#1498](https://github.com/bigdatagenomics/adam/issues/1498)
+
+**Merged and closed pull requests:**
+
+ - Bump bdg-formats dependency to version 0.12.0. [\#2124](https://github.com/bigdatagenomics/adam/pull/2124) ([heuermh](https://github.com/heuermh))
+ - [ADAM-2120] Bump Spark dependency to version 2.3.3. [\#2121](https://github.com/bigdatagenomics/adam/pull/2121) ([heuermh](https://github.com/heuermh))
+ - Filter supplemental reads from scoring [\#2119](https://github.com/bigdatagenomics/adam/pull/2119) ([pauldwolfe](https://github.com/pauldwolfe))
+ - [ADAM-2115] Update Spark version on Jenkins to 2.2.3. [\#2118](https://github.com/bigdatagenomics/adam/pull/2118) ([heuermh](https://github.com/heuermh))
+ -  Refactor AlignmentRecord, RecordGroup, and ProcessingStep [\#2113](https://github.com/bigdatagenomics/adam/pull/2113) ([heuermh](https://github.com/heuermh))
+ - removed anaconda requirement for venv during jenkins test [\#2109](https://github.com/bigdatagenomics/adam/pull/2109) ([akmorrow13](https://github.com/akmorrow13))
+ - Propagate read negative flag to SAM records for unmapped reads [\#2105](https://github.com/bigdatagenomics/adam/pull/2105) ([henrydavidge](https://github.com/henrydavidge))
+ - Add consensus targets to realignment targets [\#2104](https://github.com/bigdatagenomics/adam/pull/2104) ([pauldwolfe](https://github.com/pauldwolfe))
+ - [ADAM-2099] Add python realignIndelsFromKnownIndels method [\#2103](https://github.com/bigdatagenomics/adam/pull/2103) ([heuermh](https://github.com/heuermh))
+ - [ADAM-2102] Inverted duplicates are not found in mark duplicates [\#2101](https://github.com/bigdatagenomics/adam/pull/2101) ([pauldwolfe](https://github.com/pauldwolfe))
+ - Rename contig to reference [\#2100](https://github.com/bigdatagenomics/adam/pull/2100) ([heuermh](https://github.com/heuermh))
+ - [ADAM-1986] Add java-specific methods where missing. [\#2097](https://github.com/bigdatagenomics/adam/pull/2097) ([heuermh](https://github.com/heuermh))
+ - [ADAM-2013] Add java-friendly indel realignment method that accepts reference. [\#2095](https://github.com/bigdatagenomics/adam/pull/2095) ([heuermh](https://github.com/heuermh))
+ - Use build-helper-maven-plugin for build timestamp [\#2093](https://github.com/bigdatagenomics/adam/pull/2093) ([heuermh](https://github.com/heuermh))
+ - bump adam-python version to 0.25.0a0 [\#2092](https://github.com/bigdatagenomics/adam/pull/2092) ([akmorrow13](https://github.com/akmorrow13))
+ - [ADAM-2085] Update R installation docs re: libgit2 and SparkR. [\#2090](https://github.com/bigdatagenomics/adam/pull/2090) ([heuermh](https://github.com/heuermh))
+ - [ADAM-1954] Complete refactoring GenomicRDD to GenomicDataset. [\#1981](https://github.com/bigdatagenomics/adam/pull/1981) ([heuermh](https://github.com/heuermh))
+ - [ADAM-1949] Support validation stringency in out formatters. [\#1969](https://github.com/bigdatagenomics/adam/pull/1969) ([heuermh](https://github.com/heuermh))
+
+
 ### Version 0.25.0 ###
 
 **Closed issues:**
