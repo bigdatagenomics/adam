@@ -25,14 +25,14 @@ rdd
 
    GenomicDataset
    VCFSupportingGenomicDataset
-   AlignmentRecordRDD
-   CoverageRDD
-   FeatureRDD
-   FragmentRDD
-   GenotypeRDD
-   NucleotideContigFragmentRDD
-   VariantRDD
-   VariantContextRDD
+   AlignmentRecordDataset
+   CoverageDataset
+   FeatureDataset
+   FragmentDataset
+   GenotypeDataset
+   NucleotideContigFragmentDataset
+   VariantDataset
+   VariantContextDataset
 """
 
 import logging
@@ -154,17 +154,17 @@ class GenomicDataset(object):
 
         return self._replaceRdd(self._jvmRdd.filterByOverlappingRegions(javaRrs))
 
-    def union(self, rdds):
+    def union(self, datasets):
         """
         Unions together multiple genomic datasets.
 
-        :param list rdds: The RDDs to union into this RDD.
-        :return: Returns a new RDD containing the union of this RDD and the other RDDs.
+        :param list datasets: The datasets to union into this dataset.
+        :return: Returns a new genomic dataset containing the union of this and the other datasets.
         """
 
 
         return self._replaceRdd(self._jvmRdd.union(map(lambda x: x._jvmRdd,
-                                                       rdds)))
+                                                       datasets)))
 
 
     def _wrapTransformation(self,
@@ -306,7 +306,7 @@ class GenomicDataset(object):
                                                   convFnInst))
 
 
-    def broadcastRegionJoin(self, genomicRdd, flankSize=0):
+    def broadcastRegionJoin(self, genomicDataset, flankSize=0):
         """
         Performs a broadcast inner join between this genomic dataset and another genomic dataset.
 
@@ -316,19 +316,19 @@ class GenomicDataset(object):
         is an inner join, all values who do not overlap a value from the other
         genomic dataset are dropped.
     
-        :param GenomicDataset genomicRdd: The right genomic dataset in the join.
+        :param GenomicDataset genomicDataset: The right genomic dataset in the join.
         :param int flankSize: Sets a flankSize for the distance between elements to be
           joined. If set to 0, an overlap is required to join two elements.
         :return: Returns a new genomic dataset containing all pairs of keys that
           overlapped in the genomic coordinate space.
         """
 
-        return GenomicDataset(self._jvmRdd.broadcastRegionJoin(genomicRdd._jvmRdd,
+        return GenomicDataset(self._jvmRdd.broadcastRegionJoin(genomicDataset._jvmRdd,
                                                                flankSize),
                               self.sc)
 
 
-    def rightOuterBroadcastRegionJoin(self, genomicRdd, flankSize=0):
+    def rightOuterBroadcastRegionJoin(self, genomicDataset, flankSize=0):
         """
         Performs a broadcast right outer join between this genomic dataset and another genomic dataset.
         
@@ -340,7 +340,7 @@ class GenomicDataset(object):
         not overlap any values in the left genomic dataset, it will be paired with a `None`
         in the product of the join.
 
-        :param GenomicDataset genomicRdd: The right genomic dataset in the join.
+        :param GenomicDataset genomicDataset: The right genomic dataset in the join.
         :param int flankSize: Sets a flankSize for the distance between elements to be
           joined. If set to 0, an overlap is required to join two elements.
         :return: Returns a new genomic dataset containing all pairs of keys that
@@ -348,12 +348,12 @@ class GenomicDataset(object):
           right genomic dataset that did not overlap a key in the left genomic dataset.
         """
 
-        return GenomicDataset(self._jvmRdd.rightOuterBroadcastRegionJoin(genomicRdd._jvmRdd,
+        return GenomicDataset(self._jvmRdd.rightOuterBroadcastRegionJoin(genomicDataset._jvmRdd,
                                                                          flankSize),
                               self.sc)
 
 
-    def broadcastRegionJoinAndGroupByRight(self, genomicRdd, flankSize=0):
+    def broadcastRegionJoinAndGroupByRight(self, genomicDataset, flankSize=0):
         """
         Performs a broadcast inner join between this genomic dataset and another genomic dataset.
 
@@ -363,19 +363,19 @@ class GenomicDataset(object):
         is an inner join, all values who do not overlap a value from the other
         genomic dataset are dropped.
 
-        :param GenomicDataset genomicRdd: The right genomic dataset in the join.
+        :param GenomicDataset genomicDataset: The right genomic dataset in the join.
         :param int flankSize: Sets a flankSize for the distance between elements to be
           joined. If set to 0, an overlap is required to join two elements.
         :return: Returns a new genomic dataset containing all pairs of keys that
           overlapped in the genomic coordinate space.
         """
 
-        return GenomicDataset(self._jvmRdd.broadcastRegionJoinAndGroupByRight(genomicRdd._jvmRdd,
+        return GenomicDataset(self._jvmRdd.broadcastRegionJoinAndGroupByRight(genomicDataset._jvmRdd,
                                                                               flankSize),
                               self.sc)
 
 
-    def rightOuterBroadcastRegionJoinAndGroupByRight(self, genomicRdd, flankSize=0):
+    def rightOuterBroadcastRegionJoinAndGroupByRight(self, genomicDataset, flankSize=0):
         """
         Performs a broadcast right outer join between this genomic dataset and another genomic dataset.
         In a broadcast join, the left side of the join (broadcastTree) is broadcast to
@@ -386,7 +386,7 @@ class GenomicDataset(object):
         not overlap any values in the left genomic dataset, it will be paired with a `None`
         in the product of the join.
 
-        :param GenomicDataset genomicRdd: The right genomic dataset in the join.
+        :param GenomicDataset genomicDataset: The right genomic dataset in the join.
         :param int flankSize: Sets a flankSize for the distance between elements to be
           joined. If set to 0, an overlap is required to join two elements.
         :return: Returns a new genomic dataset containing all pairs of keys that
@@ -394,12 +394,12 @@ class GenomicDataset(object):
           right genomic dataset that did not overlap a key in the left genomic dataset.
         """
 
-        return GenomicDataset(self._jvmRdd.rightOuterBroadcastRegionJoinAndGroupByRight(genomicRdd._jvmRdd,
+        return GenomicDataset(self._jvmRdd.rightOuterBroadcastRegionJoinAndGroupByRight(genomicDataset._jvmRdd,
                                                                                         flankSize),
                               self.sc)
 
 
-    def shuffleRegionJoin(self, genomicRdd, flankSize=0):
+    def shuffleRegionJoin(self, genomicDataset, flankSize=0):
         """
         Performs a sort-merge inner join between this genomic dataset and another genomic dataset.
 
@@ -409,18 +409,18 @@ class GenomicDataset(object):
         overlap function. Since this is an inner join, all values who do not
         overlap a value from the other genomic dataset are dropped.
 
-        :param GenomicDataset genomicRdd: The right genomic dataset in the join.
+        :param GenomicDataset genomicDataset: The right genomic dataset in the join.
         :param int flankSize: Sets a flankSize for the distance between elements to be
           joined. If set to 0, an overlap is required to join two elements.
         :return: Returns a new genomic dataset containing all pairs of keys that
           overlapped in the genomic coordinate space.
         """
 
-        return GenomicDataset(self._jvmRdd.shuffleRegionJoin(genomicRdd._jvmRdd, flankSize),
+        return GenomicDataset(self._jvmRdd.shuffleRegionJoin(genomicDataset._jvmRdd, flankSize),
                               self.sc)
 
 
-    def rightOuterShuffleRegionJoin(self, genomicRdd, flankSize=0):
+    def rightOuterShuffleRegionJoin(self, genomicDataset, flankSize=0):
         """
         Performs a sort-merge right outer join between this genomic dataset and another genomic dataset.
 
@@ -432,7 +432,7 @@ class GenomicDataset(object):
         If a value from the right genomic dataset does not overlap any values in the left
         genomic dataset, it will be paired with a `None` in the product of the join.
 
-        :param GenomicDataset genomicRdd: The right genomic dataset in the join.
+        :param GenomicDataset genomicDataset: The right genomic dataset in the join.
         :param int flankSize: Sets a flankSize for the distance between elements to be
           joined. If set to 0, an overlap is required to join two elements.
         :return: Returns a new genomic dataset containing all pairs of keys that
@@ -440,11 +440,11 @@ class GenomicDataset(object):
           right genomic dataset that did not overlap a key in the left genomic dataset.
         """
 
-        return GenomicDataset(self._jvmRdd.rightOuterShuffleRegionJoin(genomicRdd._jvmRdd, flankSize),
+        return GenomicDataset(self._jvmRdd.rightOuterShuffleRegionJoin(genomicDataset._jvmRdd, flankSize),
                               self.sc)
 
 
-    def leftOuterShuffleRegionJoin(self, genomicRdd, flankSize=0):
+    def leftOuterShuffleRegionJoin(self, genomicDataset, flankSize=0):
         """
         Performs a sort-merge left outer join between this genomic dataset and another genomic dataset.
 
@@ -456,7 +456,7 @@ class GenomicDataset(object):
         If a value from the left genomic dataset does not overlap any values in the right
         genomic dataset, it will be paired with a `None` in the product of the join.
 
-        :param GenomicDataset genomicRdd: The right genomic dataset in the join.
+        :param GenomicDataset genomicDataset: The right genomic dataset in the join.
         :param int flankSize: Sets a flankSize for the distance between elements to be
           joined. If set to 0, an overlap is required to join two elements.
         :return: Returns a new genomic dataset containing all pairs of keys that
@@ -464,11 +464,11 @@ class GenomicDataset(object):
           left genomic dataset that did not overlap a key in the left genomic dataset.
         """
 
-        return GenomicDataset(self._jvmRdd.leftOuterShuffleRegionJoin(genomicRdd._jvmRdd, flankSize),
+        return GenomicDataset(self._jvmRdd.leftOuterShuffleRegionJoin(genomicDataset._jvmRdd, flankSize),
                               self.sc)
 
 
-    def leftOuterShuffleRegionJoinAndGroupByLeft(self, genomicRdd, flankSize=0):
+    def leftOuterShuffleRegionJoinAndGroupByLeft(self, genomicDataset, flankSize=0):
         """
         Performs a sort-merge left outer join between this genomic dataset and another genomic dataset,
         followed by a groupBy on the left value.
@@ -481,7 +481,7 @@ class GenomicDataset(object):
         If a value from the left genomic dataset does not overlap any values in the right
         genomic dataset, it will be paired with an empty Iterable in the product of the join.
 
-        :param GenomicDataset genomicRdd: The right genomic dataset in the join.
+        :param GenomicDataset genomicDataset: The right genomic dataset in the join.
         :param int flankSize: Sets a flankSize for the distance between elements to be
           joined. If set to 0, an overlap is required to join two elements.
         :return: Returns a new genomic dataset containing all pairs of keys that
@@ -489,11 +489,11 @@ class GenomicDataset(object):
           left genomic dataset that did not overlap a key in the left genomic dataset.
         """
 
-        return GenomicDataset(self._jvmRdd.leftOuterShuffleRegionJoinAndGroupByLeft(genomicRdd._jvmRdd, flankSize),
+        return GenomicDataset(self._jvmRdd.leftOuterShuffleRegionJoinAndGroupByLeft(genomicDataset._jvmRdd, flankSize),
                               self.sc)
 
 
-    def fullOuterShuffleRegionJoin(self, genomicRdd, flankSize=0):
+    def fullOuterShuffleRegionJoin(self, genomicDataset, flankSize=0):
         """
         Performs a sort-merge full outer join between this genomic dataset and another genomic dataset.
 
@@ -504,7 +504,7 @@ class GenomicDataset(object):
         genomic dataset does not overlap any values in the other genomic dataset, it will be paired with
         a `None` in the product of the join.
 
-        :param GenomicDataset genomicRdd: The right genomic dataset in the join.
+        :param GenomicDataset genomicDataset: The right genomic dataset in the join.
         :param int flankSize: Sets a flankSize for the distance between elements to be
           joined. If set to 0, an overlap is required to join two elements.
         :return: Returns a new genomic dataset containing all pairs of keys that
@@ -512,11 +512,11 @@ class GenomicDataset(object):
           overlap will be paired with a `None`.
         """
 
-        return GenomicDataset(self._jvmRdd.fullOuterShuffleRegionJoin(genomicRdd._jvmRdd, flankSize),
+        return GenomicDataset(self._jvmRdd.fullOuterShuffleRegionJoin(genomicDataset._jvmRdd, flankSize),
                               self.sc)
 
 
-    def rightOuterShuffleRegionJoinAndGroupByLeft(self, genomicRdd, flankSize=0):
+    def rightOuterShuffleRegionJoinAndGroupByLeft(self, genomicDataset, flankSize=0):
         """
         Performs a sort-merge right outer join between this genomic dataset and another genomic dataset,
         followed by a groupBy on the left value, if not null.
@@ -529,7 +529,7 @@ class GenomicDataset(object):
         right genomic dataset who did not overlap a value from the left genomic dataset are placed into
         a length-1 Iterable with a `None` key.
 
-        :param GenomicDataset genomicRdd: The right genomic dataset in the join.
+        :param GenomicDataset genomicDataset: The right genomic dataset in the join.
         :param int flankSize: Sets a flankSize for the distance between elements to be
           joined. If set to 0, an overlap is required to join two elements.
         :return: Returns a new genomic dataset containing all pairs of keys that
@@ -538,11 +538,11 @@ class GenomicDataset(object):
           right genomic dataset that did not overlap an item in the left genomic dataset.
         """
 
-        return GenomicDataset(self._jvmRdd.rightOuterShuffleRegionJoinAndGroupByLeft(genomicRdd._jvmRdd, flankSize),
+        return GenomicDataset(self._jvmRdd.rightOuterShuffleRegionJoinAndGroupByLeft(genomicDataset._jvmRdd, flankSize),
                               self.sc)
 
 
-    def shuffleRegionJoinAndGroupByLeft(self, genomicRdd, flankSize=0):
+    def shuffleRegionJoinAndGroupByLeft(self, genomicDataset, flankSize=0):
         """
         Performs a sort-merge inner join between this genomic dataset and another genomic dataset,
         followed by a groupBy on the left value.
@@ -553,7 +553,7 @@ class GenomicDataset(object):
         overlap function. In the same operation, we group all values by the left
         item in the genomic dataset.
 
-        :param GenomicDataset genomicRdd: The right genomic dataset in the join.
+        :param GenomicDataset genomicDataset: The right genomic dataset in the join.
         :param int flankSize: Sets a flankSize for the distance between elements to be
           joined. If set to 0, an overlap is required to join two elements.
         :return: Returns a new genomic dataset containing all pairs of keys that
@@ -561,7 +561,7 @@ class GenomicDataset(object):
           the value they overlapped in the left genomic dataset.
         """
 
-        return GenomicDataset(self._jvmRdd.shuffleRegionJoinAndGroupByLeft(genomicRdd._jvmRdd, flankSize),
+        return GenomicDataset(self._jvmRdd.shuffleRegionJoinAndGroupByLeft(genomicDataset._jvmRdd, flankSize),
                               self.sc)
 
 
@@ -952,7 +952,7 @@ class AlignmentRecordDataset(GenomicDataset):
         Cuts reads into _k_-mers, and then counts the number of occurrences of each _k_-mer.
 
         :param int kmerLength: The value of _k_ to use for cutting _k_-mers.
-        :return: Returns an RDD containing k-mer/count pairs.
+        :return: Returns an DataFrame containing k-mer/count pairs.
         :rtype: DataFrame containing "kmer" string and "count" long.
         """
 
@@ -968,7 +968,7 @@ class AlignmentRecordDataset(GenomicDataset):
         put at the end and sorted by read name. Contigs are ordered
         lexicographically by name.
 
-        :return: Returns a new RDD containing sorted reads.
+        :return: Returns a new genomic dataset containing sorted reads.
         :rtype: bdgenomics.adam.rdd.AlignmentRecordDataset
         """
         return AlignmentRecordDataset(self._jvmRdd.sortReadsByReferencePosition(),
@@ -1070,7 +1070,7 @@ class AlignmentRecordDataset(GenomicDataset):
         """
         Realigns indels using a consensus-based heuristic from prior called INDELs.
 
-        :param bdgenomics.adam.rdd.VariantDataset knownIndels: An RDD of previously
+        :param bdgenomics.adam.rdd.VariantDataset knownIndels: A genomic dataset of previously
         called INDEL variants.
         :param bool isSorted: If the input data is sorted, setting this
         parameter to true avoids a second sort.
@@ -1175,8 +1175,8 @@ class AlignmentRecordDataset(GenomicDataset):
         Reassembles read pairs from two sets of unpaired reads.
 
         The assumption is that the two sets were _originally_ paired together.
-        The RDD that this is called on should be the RDD with the first read
-        from the pair.
+        The genomic dataset that this is called on should be the genomic dataset
+        with the first read from the pair.
 
         :param pyspark.rdd.RDD secondPairRdd: The rdd containing the second read
         from the pairs.
