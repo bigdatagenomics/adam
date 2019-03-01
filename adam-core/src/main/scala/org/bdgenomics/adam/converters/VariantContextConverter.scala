@@ -885,7 +885,6 @@ class VariantContextConverter(
 
   private[converters] def extractFilters(g: Genotype,
                                          gb: GenotypeBuilder): GenotypeBuilder = {
-
     Option(g.getFiltersApplied)
       .filter(ft => ft)
       .map(applied => {
@@ -906,7 +905,6 @@ class VariantContextConverter(
 
   private[converters] def extractPhaseSet(g: Genotype,
                                           gb: GenotypeBuilder): GenotypeBuilder = {
-
     Option(g.getPhased)
       .filter(p => p)
       .map(p => {
