@@ -195,7 +195,7 @@ then
     for python in ${pythons[*]}
     do
     	uuid=$(uuidgen)
-        conda create -q -n adam-build-${uuid} python=${python}
+        conda create -y -q -n adam-build-${uuid} python=${python}
         source activate adam-build-${uuid}
 
         # prepare adam python
@@ -237,7 +237,7 @@ then
     	
     	# deactivate and remove the conda env
     	source deactivate
-    	conda remove -n adam-build-${uuid} --all
+    	conda remove -y -n adam-build-${uuid} --all
 
     	# copy python targets back
     	cp -r adam-python/target ${PROJECT_ROOT}/adam-python/
