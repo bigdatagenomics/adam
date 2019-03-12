@@ -19,6 +19,7 @@ package org.bdgenomics.adam.cli
 
 import htsjdk.samtools.ValidationStringency
 import org.apache.spark.SparkContext
+import org.bdgenomics.adam.cli.FileSystemUtils._
 import org.bdgenomics.adam.converters.VariantContextConverter
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.{ ADAMSaveAnyArgs, GenomicDataset }
@@ -124,6 +125,8 @@ class TransformGenotypes(val args: TransformGenotypesArgs)
   }
 
   def run(sc: SparkContext) {
+    checkWriteablePath(args.outputPath, sc.hadoopConfiguration)
+
     require(!(args.sort && args.sortLexicographically),
       "Cannot set both -sort_on_save and -sort_lexicographically_on_save.")
 

@@ -18,6 +18,7 @@
 package org.bdgenomics.adam.cli
 
 import org.apache.spark.SparkContext
+import org.bdgenomics.adam.cli.FileSystemUtils._
 import org.bdgenomics.adam.projections.{ AlignmentRecordField, Projection }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.utils.cli._
@@ -50,6 +51,7 @@ class CountReadKmers(protected val args: CountReadKmersArgs) extends BDGSparkCom
   val companion = CountReadKmers
 
   def run(sc: SparkContext) {
+    checkWriteablePath(args.outputPath, sc.hadoopConfiguration)
 
     // read from disk
     var adamRecords = sc.loadAlignments(

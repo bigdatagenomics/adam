@@ -23,6 +23,7 @@ import org.apache.parquet.filter2.dsl.Dsl._
 import org.apache.spark.SparkContext
 import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.algorithms.consensus._
+import org.bdgenomics.adam.cli.FileSystemUtils._
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.io.FastqRecordReader
 import org.bdgenomics.adam.models.{ ReferenceRegion, SnpTable }
@@ -432,6 +433,8 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
   }
 
   def run(sc: SparkContext) {
+    checkWriteablePath(args.outputPath, sc.hadoopConfiguration)
+
     // throw exception if aligned read predicate or limit projection flags are used improperly
     if (args.useAlignedReadPredicate && forceNonParquet()) {
       throw new IllegalArgumentException(

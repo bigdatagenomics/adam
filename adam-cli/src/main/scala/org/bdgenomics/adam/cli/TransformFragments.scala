@@ -18,6 +18,7 @@
 package org.bdgenomics.adam.cli
 
 import org.apache.spark.SparkContext
+import org.bdgenomics.adam.cli.FileSystemUtils._
 import org.bdgenomics.adam.io.FastqRecordReader
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.ADAMSaveAnyArgs
@@ -95,6 +96,8 @@ class TransformFragments(protected val args: TransformFragmentsArgs) extends BDG
   }
 
   def run(sc: SparkContext) {
+    checkWriteablePath(args.outputPath, sc.hadoopConfiguration)
+
     if (args.loadAsReads && args.saveAsReads) {
       log.warn("If loading and saving as reads, consider using TransformAlignments instead.")
     }
