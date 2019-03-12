@@ -20,7 +20,6 @@ package org.bdgenomics.adam.rdd.read.realignment
 import com.esotericsoftware.kryo.io.{ Input, Output }
 import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import htsjdk.samtools.CigarOperator
-import org.bdgenomics.utils.misc.Logging
 import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.formats.avro.AlignmentRecord
@@ -149,7 +148,7 @@ private[adam] class IndelRealignmentTargetSerializer extends Serializer[IndelRea
 
 private[adam] class IndelRealignmentTarget(
     val variation: Option[ReferenceRegion],
-    val readRange: ReferenceRegion) extends Logging with Serializable {
+    val readRange: ReferenceRegion) extends Serializable {
 
   assert(variation.map(r => r.referenceName).forall(_ == readRange.referenceName))
 

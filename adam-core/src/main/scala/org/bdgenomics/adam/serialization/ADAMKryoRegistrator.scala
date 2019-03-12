@@ -24,12 +24,12 @@ import com.esotericsoftware.kryo.io.{
   Output
 }
 import com.esotericsoftware.kryo.{ Kryo, Serializer }
+import grizzled.slf4j.Logging
 import it.unimi.dsi.fastutil.io.{ FastByteArrayInputStream, FastByteArrayOutputStream }
 import org.apache.avro.io.{ BinaryDecoder, BinaryEncoder, DecoderFactory, EncoderFactory }
 import org.apache.avro.specific.{ SpecificDatumReader, SpecificDatumWriter, SpecificRecord }
 import org.apache.hadoop.io.Writable
 import org.apache.spark.serializer.KryoRegistrator
-import org.bdgenomics.utils.misc.Logging
 import scala.reflect.ClassTag
 
 case class InputStreamWithDecoder(size: Int) {
@@ -287,7 +287,7 @@ class ADAMKryoRegistrator extends KryoRegistrator with Logging {
       kryo.register(Class.forName("org.apache.spark.sql.execution.datasources.ExecutedWriteSummary"))
     } catch {
       case cnfe: java.lang.ClassNotFoundException => {
-        if (log.isDebugEnabled) log.debug("Did not find Spark internal class. This is expected for earlier Spark versions.")
+        debug("Did not find Spark internal class. This is expected for earlier Spark versions.")
       }
     }
     kryo.register(classOf[org.apache.spark.sql.catalyst.expressions.UnsafeRow])

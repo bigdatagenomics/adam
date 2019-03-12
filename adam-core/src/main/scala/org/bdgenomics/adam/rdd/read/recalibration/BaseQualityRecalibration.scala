@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.adam.rdd.read.recalibration
 
+import grizzled.slf4j.Logging
 import htsjdk.samtools.{
   CigarElement,
   CigarOperator,
@@ -34,7 +35,6 @@ import org.bdgenomics.adam.models.{
 }
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.formats.avro.AlignmentRecord
-import org.bdgenomics.utils.misc.Logging
 import scala.annotation.tailrec
 
 /**
@@ -81,7 +81,7 @@ private class BaseQualityRecalibration(
     })
 
     optStorageLevel.fold(covRdd)(sl => {
-      log.info("User requested %s persistance for covariate RDD.".format(sl))
+      info("User requested %s persistance for covariate RDD.".format(sl))
       covRdd.persist(sl)
     })
   }

@@ -17,10 +17,10 @@
  */
 package org.bdgenomics.adam.rdd.feature
 
+import grizzled.slf4j.Logging
 import htsjdk.samtools.ValidationStringency
 import org.bdgenomics.adam.models.SequenceRecord
 import org.bdgenomics.formats.avro.Feature
-import org.bdgenomics.utils.misc.Logging
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ArrayBuffer
 
@@ -42,7 +42,7 @@ private[rdd] sealed trait FeatureParser extends Serializable with Logging {
     if (stringency == ValidationStringency.STRICT) {
       throw new IllegalArgumentException(message.format(line))
     } else if (stringency == ValidationStringency.LENIENT) {
-      log.warn(message.format(line))
+      warn(message.format(line))
     }
     None
   }
@@ -251,7 +251,7 @@ private[rdd] class IntervalListParser extends FeatureParser {
               throw new Exception(s"Expected fields of the form 'key:value' in field $field but got: $x. Line:\n$line")
             } else {
               if (stringency == ValidationStringency.LENIENT) {
-                log.warn(s"Expected fields of the form 'key:value' in field $field but got: $x. Line:\n$line")
+                warn(s"Expected fields of the form 'key:value' in field $field but got: $x. Line:\n$line")
               }
               None
             }

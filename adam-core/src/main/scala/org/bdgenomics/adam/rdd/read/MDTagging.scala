@@ -17,12 +17,12 @@
  */
 package org.bdgenomics.adam.rdd.read
 
+import grizzled.slf4j.Logging
 import htsjdk.samtools.{ TextCigarCodec, ValidationStringency }
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.{ MdTag, ReferenceRegion }
 import org.bdgenomics.adam.util.ReferenceFile
 import org.bdgenomics.formats.avro.AlignmentRecord
-import org.bdgenomics.utils.misc.Logging
 
 private[read] case class MDTagging(
     reads: RDD[AlignmentRecord],
@@ -53,7 +53,7 @@ private[read] case class MDTagging(
           if (validationStringency == ValidationStringency.STRICT) {
             throw exception
           } else if (validationStringency == ValidationStringency.LENIENT) {
-            log.warn(exception.getMessage)
+            warn(exception.getMessage)
           }
         }
       }
@@ -79,7 +79,7 @@ private[read] case class MDTagging(
             if (validationStringency == ValidationStringency.STRICT) {
               throw t
             } else if (validationStringency == ValidationStringency.LENIENT) {
-              log.warn("Caught exception when processing read %s: %s".format(
+              warn("Caught exception when processing read %s: %s".format(
                 read.getReferenceName, t))
             }
             read

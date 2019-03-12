@@ -322,7 +322,7 @@ case class DatasetBoundFeatureDataset private[rdd] (
                              pageSize: Int = 1 * 1024 * 1024,
                              compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
                              disableDictionaryEncoding: Boolean = false) {
-    log.info("Saving directly as Parquet from SQL. Options other than compression codec are ignored.")
+    info("Saving directly as Parquet from SQL. Options other than compression codec are ignored.")
     dataset.toDF()
       .write
       .format("parquet")
@@ -519,7 +519,7 @@ sealed abstract class FeatureDataset extends AvroGenomicDataset[Feature, Feature
         disableFastConcat = disableFastConcat)
     } else {
       if (asSingleFile) {
-        log.warn("asSingleFile = true ignored when saving as Parquet.")
+        warn("asSingleFile = true ignored when saving as Parquet.")
       }
       saveAsParquet(new JavaSaveArgs(filePath))
     }

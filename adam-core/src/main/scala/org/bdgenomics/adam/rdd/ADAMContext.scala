@@ -18,6 +18,7 @@
 package org.bdgenomics.adam.rdd
 
 import java.io.{ File, FileNotFoundException, InputStream }
+import grizzled.slf4j.Logging
 import htsjdk.samtools.{ SAMFileHeader, SAMProgramRecord, ValidationStringency }
 import htsjdk.samtools.util.Locatable
 import htsjdk.variant.vcf.{
@@ -105,7 +106,7 @@ import org.bdgenomics.formats.avro.{
 }
 import org.bdgenomics.utils.instrumentation.Metrics
 import org.bdgenomics.utils.io.LocalFileByteAccess
-import org.bdgenomics.utils.misc.{ HadoopUtil, Logging }
+import org.bdgenomics.utils.misc.HadoopUtil
 import org.json4s.DefaultFormats
 import org.json4s.jackson.JsonMethods._
 import org.seqdoop.hadoop_bam._
@@ -1300,19 +1301,19 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       throw new IllegalArgumentException("Type inference failed; when loading please specify a specific type. " +
         "e.g.:\nval reads: RDD[AlignmentRecord] = ...\nbut not\nval reads = ...\nwithout a return type")
 
-    log.info("Reading the ADAM file at %s to create RDD".format(pathName))
+    info("Reading the ADAM file at %s to create RDD".format(pathName))
     val job = HadoopUtil.newJob(sc)
     ParquetInputFormat.setReadSupportClass(job, classOf[AvroReadSupport[T]])
     AvroParquetInputFormat.setAvroReadSchema(job,
       manifest[T].runtimeClass.newInstance().asInstanceOf[T].getSchema)
 
     optPredicate.foreach { (pred) =>
-      log.info("Using the specified push-down predicate")
+      info("Using the specified push-down predicate")
       ParquetInputFormat.setFilterPredicate(job.getConfiguration, pred)
     }
 
     if (optProjection.isDefined) {
-      log.info("Using the specified projection schema")
+      info("Using the specified projection schema")
       AvroParquetInputFormat.setRequestedProjection(job, optProjection.get)
     }
 
@@ -1473,7 +1474,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
             samHeader.getGroupOrder == SAMFileHeader.GroupOrder.query)
         } catch {
           case e: Throwable => {
-            log.error(
+            error(
               s"Loading header failed for $fp:n${e.getMessage}\n\t${e.getStackTrace.take(25).map(_.toString).mkString("\n\t")}"
             )
             false
@@ -1496,7 +1497,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     if (codec == null) {
       pathName
     } else {
-      log.info(s"Found compression codec $codec for $pathName in Hadoop configuration.")
+      info(s"Found compression codec $codec for $pathName in Hadoop configuration.")
       val extension = codec.getDefaultExtension()
       CompressionCodecFactory.removeSuffix(pathName, extension)
     }
@@ -1540,7 +1541,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
             // below).
             sc.hadoopConfiguration.set(SAMHeaderReader.VALIDATION_STRINGENCY_PROPERTY, stringency.toString)
             val samHeader = SAMHeaderReader.readSAMHeaderFrom(fp, sc.hadoopConfiguration)
-            log.info("Loaded header from " + fp)
+            info("Loaded header from " + fp)
             val sd = loadBamDictionary(samHeader)
             val rg = loadBamReadGroups(samHeader)
             val pgs = loadBamPrograms(samHeader)
@@ -1550,7 +1551,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
               if (stringency == ValidationStringency.STRICT) {
                 throw e
               } else if (stringency == ValidationStringency.LENIENT) {
-                log.error(
+                error(
                   s"Loading failed for $fp:\n${e.getMessage}\n\t${e.getStackTrace.take(25).map(_.toString).mkString("\n\t")}"
                 )
               }
@@ -1662,7 +1663,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
           sc.hadoopConfiguration.set(SAMHeaderReader.VALIDATION_STRINGENCY_PROPERTY, stringency.toString)
           val samHeader = SAMHeaderReader.readSAMHeaderFrom(fp, sc.hadoopConfiguration)
 
-          log.info("Loaded header from " + fp)
+          info("Loaded header from " + fp)
           val sd = loadBamDictionary(samHeader)
           val rg = loadBamReadGroups(samHeader)
           val pgs = loadBamPrograms(samHeader)
@@ -1673,7 +1674,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
             if (stringency == ValidationStringency.STRICT) {
               throw e
             } else if (stringency == ValidationStringency.LENIENT) {
-              log.error(
+              error(
                 s"Loading failed for $fp:\n${e.getMessage}\n\t${e.getStackTrace.take(25).map(_.toString).mkString("\n\t")}"
               )
             }
@@ -2057,7 +2058,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
             throw new IllegalArgumentException(msg)
           else {
             // ValidationStringency.LENIENT
-            logError(msg)
+            warn(msg)
           }
         }
       case ValidationStringency.SILENT =>
@@ -2175,7 +2176,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     VariantContextDataset(records.flatMap(p => vcc.convert(p._2.get)),
       sd,
       samples,
-      VariantContextConverter.cleanAndMixInSupportedLines(headers, stringency, log))
+      VariantContextConverter.cleanAndMixInSupportedLines(headers, stringency, logger.logger))
   }
 
   /**
@@ -2242,7 +2243,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     VariantContextDataset(records.flatMap(p => vcc.convert(p._2.get)),
       sd,
       samples,
-      VariantContextConverter.cleanAndMixInSupportedLines(headers, stringency, log))
+      VariantContextConverter.cleanAndMixInSupportedLines(headers, stringency, logger.logger))
   }
 
   /**
@@ -2288,7 +2289,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     VariantContextDataset(records.flatMap(p => vcc.convert(p._2.get)),
       sd,
       samples,
-      VariantContextConverter.cleanAndMixInSupportedLines(headers, stringency, log))
+      VariantContextConverter.cleanAndMixInSupportedLines(headers, stringency, logger.logger))
   }
 
   /**
@@ -3018,36 +3019,36 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
     val trimmedPathName = trimExtensionIfCompressed(pathName)
     if (isBedExt(trimmedPathName)) {
-      log.info(s"Loading $pathName as BED and converting to Features.")
+      info(s"Loading $pathName as BED and converting to Features.")
       loadBed(pathName,
         optSequenceDictionary = optSequenceDictionary,
         optMinPartitions = optMinPartitions,
         stringency = stringency)
     } else if (isGff3Ext(trimmedPathName)) {
-      log.info(s"Loading $pathName as GFF3 and converting to Features.")
+      info(s"Loading $pathName as GFF3 and converting to Features.")
       loadGff3(pathName,
         optSequenceDictionary = optSequenceDictionary,
         optMinPartitions = optMinPartitions,
         stringency = stringency)
     } else if (isGtfExt(trimmedPathName)) {
-      log.info(s"Loading $pathName as GTF/GFF2 and converting to Features.")
+      info(s"Loading $pathName as GTF/GFF2 and converting to Features.")
       loadGtf(pathName,
         optSequenceDictionary = optSequenceDictionary,
         optMinPartitions = optMinPartitions,
         stringency = stringency)
     } else if (isNarrowPeakExt(trimmedPathName)) {
-      log.info(s"Loading $pathName as NarrowPeak and converting to Features.")
+      info(s"Loading $pathName as NarrowPeak and converting to Features.")
       loadNarrowPeak(pathName,
         optSequenceDictionary = optSequenceDictionary,
         optMinPartitions = optMinPartitions,
         stringency = stringency)
     } else if (isIntervalListExt(trimmedPathName)) {
-      log.info(s"Loading $pathName as IntervalList and converting to Features.")
+      info(s"Loading $pathName as IntervalList and converting to Features.")
       loadIntervalList(pathName,
         optMinPartitions = optMinPartitions,
         stringency = stringency)
     } else {
-      log.info(s"Loading $pathName as Parquet containing Features.")
+      info(s"Loading $pathName as Parquet containing Features.")
       loadParquetFeatures(pathName,
         optPredicate = optPredicate,
         optProjection = optProjection)
@@ -3098,13 +3099,13 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   def loadSequenceDictionary(pathName: String): SequenceDictionary = LoadSequenceDictionary.time {
     val trimmedPathName = trimExtensionIfCompressed(pathName)
     if (isDictExt(trimmedPathName)) {
-      log.info(s"Loading $pathName as HTSJDK sequence dictionary.")
+      info(s"Loading $pathName as HTSJDK sequence dictionary.")
       SequenceDictionaryReader(pathName, sc)
     } else if (isGenomeExt(trimmedPathName)) {
-      log.info(s"Loading $pathName as Bedtools genome file sequence dictionary.")
+      info(s"Loading $pathName as Bedtools genome file sequence dictionary.")
       GenomeFileReader(pathName, sc)
     } else if (isTextExt(trimmedPathName)) {
-      log.info(s"Loading $pathName as UCSC Genome Browser chromInfo file sequence dictionary.")
+      info(s"Loading $pathName as UCSC Genome Browser chromInfo file sequence dictionary.")
       GenomeFileReader(pathName, sc)
     } else {
       throw new IllegalArgumentException("Path name file extension must be one of .dict, .genome, or .txt")
@@ -3142,13 +3143,13 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
     val trimmedPathName = trimExtensionIfCompressed(pathName)
     if (isFastaExt(trimmedPathName)) {
-      log.info(s"Loading $pathName as FASTA and converting to NucleotideContigFragment.")
+      info(s"Loading $pathName as FASTA and converting to NucleotideContigFragment.")
       loadFasta(
         pathName,
         maximumLength
       )
     } else {
-      log.info(s"Loading $pathName as Parquet containing NucleotideContigFragments.")
+      info(s"Loading $pathName as Parquet containing NucleotideContigFragments.")
       loadParquetContigFragments(pathName, optPredicate = optPredicate, optProjection = optProjection)
     }
   }
@@ -3180,10 +3181,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     stringency: ValidationStringency = ValidationStringency.STRICT): GenotypeDataset = LoadGenotypes.time {
 
     if (isVcfExt(pathName)) {
-      log.info(s"Loading $pathName as VCF and converting to Genotypes.")
+      info(s"Loading $pathName as VCF and converting to Genotypes.")
       loadVcf(pathName, stringency).toGenotypes
     } else {
-      log.info(s"Loading $pathName as Parquet containing Genotypes. Sequence dictionary for translation is ignored.")
+      info(s"Loading $pathName as Parquet containing Genotypes. Sequence dictionary for translation is ignored.")
       loadParquetGenotypes(pathName, optPredicate = optPredicate, optProjection = optProjection)
     }
   }
@@ -3214,10 +3215,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     stringency: ValidationStringency = ValidationStringency.STRICT): VariantDataset = LoadVariants.time {
 
     if (isVcfExt(pathName)) {
-      log.info(s"Loading $pathName as VCF and converting to Variants.")
+      info(s"Loading $pathName as VCF and converting to Variants.")
       loadVcf(pathName, stringency).toVariants
     } else {
-      log.info(s"Loading $pathName as Parquet containing Variants. Sequence dictionary for translation is ignored.")
+      info(s"Loading $pathName as Parquet containing Variants. Sequence dictionary for translation is ignored.")
       loadParquetVariants(pathName, optPredicate = optPredicate, optProjection = optProjection)
     }
   }
@@ -3275,19 +3276,19 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       classOf[BGZFEnhancedGzipCodec].getCanonicalName)
     val trimmedPathName = trimExtensionIfCompressed(pathName)
     if (isBamExt(trimmedPathName)) {
-      log.info(s"Loading $pathName as BAM/CRAM/SAM and converting to AlignmentRecords.")
+      info(s"Loading $pathName as BAM/CRAM/SAM and converting to AlignmentRecords.")
       loadBam(pathName, stringency)
     } else if (isInterleavedFastqExt(trimmedPathName)) {
-      log.info(s"Loading $pathName as interleaved FASTQ and converting to AlignmentRecords.")
+      info(s"Loading $pathName as interleaved FASTQ and converting to AlignmentRecords.")
       loadInterleavedFastq(pathName)
     } else if (isFastqExt(trimmedPathName)) {
-      log.info(s"Loading $pathName as unpaired FASTQ and converting to AlignmentRecords.")
+      info(s"Loading $pathName as unpaired FASTQ and converting to AlignmentRecords.")
       loadFastq(pathName, optPathName2, optReadGroup, stringency)
     } else if (isFastaExt(trimmedPathName)) {
-      log.info(s"Loading $pathName as FASTA and converting to AlignmentRecords.")
+      info(s"Loading $pathName as FASTA and converting to AlignmentRecords.")
       AlignmentRecordDataset.unaligned(loadFasta(pathName, maximumLength = 10000L).toReads)
     } else {
-      log.info(s"Loading $pathName as Parquet of AlignmentRecords.")
+      info(s"Loading $pathName as Parquet of AlignmentRecords.")
       loadParquetAlignments(pathName, optPredicate = optPredicate, optProjection = optProjection)
     }
   }
@@ -3334,18 +3335,18 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     if (isBamExt(trimmedPathName)) {
       // check to see if the input files are all queryname sorted
       if (filesAreQueryGrouped(pathName)) {
-        log.info(s"Loading $pathName as queryname sorted BAM/CRAM/SAM and converting to Fragments.")
+        info(s"Loading $pathName as queryname sorted BAM/CRAM/SAM and converting to Fragments.")
         loadBam(pathName, stringency).transform(RepairPartitions(_))
           .querynameSortedToFragments
       } else {
-        log.info(s"Loading $pathName as BAM/CRAM/SAM and converting to Fragments.")
+        info(s"Loading $pathName as BAM/CRAM/SAM and converting to Fragments.")
         loadBam(pathName, stringency).toFragments
       }
     } else if (isInterleavedFastqExt(trimmedPathName)) {
-      log.info(s"Loading $pathName as interleaved FASTQ and converting to Fragments.")
+      info(s"Loading $pathName as interleaved FASTQ and converting to Fragments.")
       loadInterleavedFastqAsFragments(pathName)
     } else {
-      log.info(s"Loading $pathName as Parquet containing Fragments.")
+      info(s"Loading $pathName as Parquet containing Fragments.")
       loadParquetFragments(pathName, optPredicate = optPredicate, optProjection = optProjection)
     }
   }

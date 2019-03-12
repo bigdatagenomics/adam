@@ -155,7 +155,7 @@ case class DatasetBoundNucleotideContigFragmentDataset private[rdd] (
                              pageSize: Int = 1 * 1024 * 1024,
                              compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
                              disableDictionaryEncoding: Boolean = false) {
-    log.info("Saving directly as Parquet from SQL. Options other than compression codec are ignored.")
+    info("Saving directly as Parquet from SQL. Options other than compression codec are ignored.")
     dataset.toDF()
       .write
       .format("parquet")
@@ -259,7 +259,7 @@ sealed abstract class NucleotideContigFragmentDataset extends AvroGenomicDataset
   override def saveAsPartitionedParquet(pathName: String,
                                         compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
                                         partitionSize: Int = 1000000) {
-    log.info("Saving directly as Hive-partitioned Parquet from SQL. " +
+    info("Saving directly as Hive-partitioned Parquet from SQL. " +
       "Options other than compression codec are ignored.")
     val df = toDF()
       .withColumnRenamed("contigName", "referenceName")

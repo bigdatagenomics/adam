@@ -17,8 +17,8 @@
  */
 package org.bdgenomics.adam.rdd
 
+import grizzled.slf4j.Logging
 import org.bdgenomics.adam.models.{ ReferenceRegion, ReferencePosition, SequenceDictionary }
-import org.bdgenomics.utils.misc.Logging
 import org.apache.spark.Partitioner
 import scala.math._
 
@@ -38,8 +38,10 @@ import scala.math._
  */
 case class GenomicPositionPartitioner(numParts: Int, seqLengths: Map[String, Long]) extends Partitioner with Logging {
 
-  log.info("Have genomic position partitioner with " + numParts + " partitions, and sequences:")
-  seqLengths.foreach(kv => log.info("Contig " + kv._1 + " with length " + kv._2))
+  info("Have genomic position partitioner with " + numParts + " partitions, and sequences:")
+  if (isInfoEnabled) {
+    seqLengths.foreach(kv => info("Contig " + kv._1 + " with length " + kv._2))
+  }
 
   private val names: Seq[String] = seqLengths.keys.toSeq.sortWith(_ < _)
   private val lengths: Seq[Long] = names.map(seqLengths(_))

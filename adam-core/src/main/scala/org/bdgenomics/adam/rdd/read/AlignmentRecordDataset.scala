@@ -261,7 +261,7 @@ case class DatasetBoundAlignmentRecordDataset private[rdd] (
                              pageSize: Int = 1 * 1024 * 1024,
                              compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
                              disableDictionaryEncoding: Boolean = false) {
-    log.info("Saving directly as Parquet from SQL. Options other than compression codec are ignored.")
+    info("Saving directly as Parquet from SQL. Options other than compression codec are ignored.")
     dataset.toDF()
       .write
       .format("parquet")
@@ -552,7 +552,7 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
     if (args.outputPath.endsWith(".sam") ||
       args.outputPath.endsWith(".bam") ||
       args.outputPath.endsWith(".cram")) {
-      log.info("Saving data in SAM/BAM/CRAM format")
+      info("Saving data in SAM/BAM/CRAM format")
       saveAsSam(
         args.outputPath,
         isSorted = isSorted,
@@ -882,7 +882,7 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
       // clean up the header after writing
       fs.delete(headPath, true)
     } else {
-      log.info(s"Writing single ${fileType} file (not Hadoop-style directory)")
+      info(s"Writing single ${fileType} file (not Hadoop-style directory)")
 
       val tailPath = new Path(filePath + "_tail")
       val outputPath = new Path(filePath)
@@ -942,7 +942,7 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
    * @return Returns a new RDD containing sorted reads.
    */
   def sortReadsByReadName(): AlignmentRecordDataset = SortReads.time {
-    log.info("Sorting reads by read name")
+    info("Sorting reads by read name")
 
     transformDataset(_.orderBy("readName", "readInFragment"))
   }
@@ -959,7 +959,7 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
    * @see sortReadsByReferencePositionAndIndex
    */
   def sortReadsByReferencePosition(): AlignmentRecordDataset = SortReads.time {
-    log.info("Sorting reads by reference position")
+    info("Sorting reads by reference position")
 
     // NOTE: In order to keep unmapped reads from swamping a single partition
     // we sort the unmapped reads by read name. We prefix with tildes ("~";
@@ -986,7 +986,7 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
    * @see sortReadsByReferencePosition
    */
   def sortReadsByReferencePositionAndIndex(): AlignmentRecordDataset = SortByIndex.time {
-    log.info("Sorting reads by reference index, using %s.".format(sequences))
+    info("Sorting reads by reference index, using %s.".format(sequences))
 
     import scala.math.Ordering.{ Int => ImplicitIntOrdering, _ }
 
@@ -1431,7 +1431,7 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
           if (validationStringency == ValidationStringency.STRICT)
             throw new IllegalArgumentException(msg)
           else if (validationStringency == ValidationStringency.LENIENT)
-            logError(msg)
+            warn(msg)
         }
       case ValidationStringency.SILENT =>
     }
@@ -1452,7 +1452,7 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
 
     maybeUnpersist(pairedRecords)
 
-    log.info(
+    info(
       "%d/%d records are properly paired: %d firsts, %d seconds".format(
         numPairedRecords,
         numRecords,
@@ -1558,7 +1558,7 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
     validationStringency: ValidationStringency = ValidationStringency.LENIENT,
     persistLevel: Option[StorageLevel] = None) {
 
-    log.info("Saving data in FASTQ format.")
+    info("Saving data in FASTQ format.")
     fileName2Opt match {
       case Some(fileName2) =>
         saveAsPairedFastq(

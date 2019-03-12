@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.adam.util
 
+import grizzled.slf4j.Logging
 import htsjdk.samtools.cram.build.CramIO
 import htsjdk.samtools.cram.common.CramVersions
 import htsjdk.samtools.util.BlockCompressedStreamConstants
@@ -24,7 +25,6 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{ FileSystem, Path }
 import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
-import org.bdgenomics.utils.misc.Logging
 import scala.annotation.tailrec
 import scala.math.min
 

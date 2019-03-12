@@ -20,12 +20,11 @@ package org.bdgenomics.adam.cli
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.mapred.FileAlreadyExistsException
-import org.bdgenomics.utils.misc.Logging
 
 /**
  * Utility methods for file systems.
  */
-private[cli] object FileSystemUtils extends Logging {
+private[cli] object FileSystemUtils {
   private def exists(pathName: String, conf: Configuration): Boolean = {
     val p = new Path(pathName)
     val fs = p.getFileSystem(conf)

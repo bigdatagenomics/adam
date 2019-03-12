@@ -95,7 +95,7 @@ class TransformGenotypes(val args: TransformGenotypesArgs)
    */
   private def maybeCoalesce[U <: GenomicDataset[_, _, U]](rdd: U): U = {
     if (args.coalesce != -1) {
-      log.info("Coalescing the number of partitions to '%d'".format(args.coalesce))
+      info("Coalescing the number of partitions to '%d'".format(args.coalesce))
       if (args.coalesce > rdd.rdd.partitions.length || args.forceShuffle) {
         rdd.transform(_.coalesce(args.coalesce, shuffle = true))
       } else {
@@ -114,10 +114,10 @@ class TransformGenotypes(val args: TransformGenotypesArgs)
    */
   private def maybeSort[U <: GenomicDataset[_, _, U]](rdd: U): U = {
     if (args.sort) {
-      log.info("Sorting before saving")
+      info("Sorting before saving")
       rdd.sort()
     } else if (args.sortLexicographically) {
-      log.info("Sorting lexicographically before saving")
+      info("Sorting lexicographically before saving")
       rdd.sortLexicographically()
     } else {
       rdd
@@ -131,7 +131,7 @@ class TransformGenotypes(val args: TransformGenotypesArgs)
       "Cannot set both -sort_on_save and -sort_lexicographically_on_save.")
 
     if (args.nestedAnnotations) {
-      log.info("Populating the variant.annotation field in the Genotype records")
+      info("Populating the variant.annotation field in the Genotype records")
       sc.hadoopConfiguration.setBoolean(VariantContextConverter.nestAnnotationInGenotypesProperty, true)
     }
 

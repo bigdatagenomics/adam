@@ -19,7 +19,6 @@ package org.bdgenomics.adam.rdd.read
 
 import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import com.esotericsoftware.kryo.io.{ Output, Input }
-import org.bdgenomics.utils.misc.Logging
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.serialization.AvroSerializer
 import org.bdgenomics.formats.avro.{
@@ -62,7 +61,7 @@ private class FragmentIterator(
 /**
  * Companion object for building SingleReadBuckets.
  */
-private[read] object SingleReadBucket extends Logging {
+private[read] object SingleReadBucket {
 
   private def fromGroupedReads(reads: Iterable[AlignmentRecord]): SingleReadBucket = {
     // split by mapping

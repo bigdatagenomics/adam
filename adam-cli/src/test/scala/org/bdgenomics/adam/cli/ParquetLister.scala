@@ -19,11 +19,11 @@ package org.bdgenomics.adam.cli
 
 import java.io.File
 
+import grizzled.slf4j.Logging
 import org.apache.avro.Schema
 import org.apache.avro.generic.IndexedRecord
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
-import org.bdgenomics.utils.misc.Logging
 import org.apache.parquet.avro.AvroReadSupport
 import org.apache.parquet.hadoop.ParquetReader
 
@@ -54,7 +54,7 @@ class ParquetLister[T <: IndexedRecord](projectionSchema: Option[Schema] = None)
             materialize(f)
           } catch {
             case e: IllegalArgumentException =>
-              logInfo("File %s doesn't appear to be a Parquet file; skipping".format(f))
+              info("File %s doesn't appear to be a Parquet file; skipping".format(f))
               Seq()
           }
       }.iterator
@@ -62,7 +62,7 @@ class ParquetLister[T <: IndexedRecord](projectionSchema: Option[Schema] = None)
   }
 
   private def materialize(file: File): Iterator[T] = {
-    logInfo("Materializing file %s".format(file))
+    info("Materializing file %s".format(file))
     val conf = new Configuration
     if (projectionSchema.isDefined) {
       AvroReadSupport.setRequestedProjection(conf, projectionSchema.get)

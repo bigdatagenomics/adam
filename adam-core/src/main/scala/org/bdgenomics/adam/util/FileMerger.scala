@@ -18,13 +18,13 @@
 package org.bdgenomics.adam.util
 
 import java.io.{ InputStream, OutputStream }
+import grizzled.slf4j.Logging
 import htsjdk.samtools.cram.build.CramIO
 import htsjdk.samtools.cram.common.CramVersions
 import htsjdk.samtools.util.BlockCompressedStreamConstants
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{ FileSystem, Path }
 import org.apache.spark.SparkContext
-import org.bdgenomics.utils.misc.Logging
 import scala.annotation.tailrec
 
 /**
@@ -184,7 +184,7 @@ private[adam] object FileMerger extends Logging {
 
     // optionally copy the header
     optHeaderPath.foreach(p => {
-      log.info("Copying header file (%s)".format(p))
+      info("Copying header file (%s)".format(p))
 
       // open our input file
       val is = fsIn.open(p)
@@ -202,7 +202,7 @@ private[adam] object FileMerger extends Logging {
     tailFiles.toSeq.foreach(p => {
 
       // print a bit of progress logging
-      log.info("Copying file %s, file %d of %d.".format(
+      info("Copying file %s, file %d of %d.".format(
         p.toString,
         filesCopied,
         numFiles))

@@ -17,7 +17,6 @@
  */
 package org.bdgenomics.adam.rdd.read.realignment
 
-import org.bdgenomics.utils.misc.Logging
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.algorithms.consensus.{ ConsensusGenerator, ConsensusGeneratorFromReads }
 import org.bdgenomics.adam.rich.RichAlignmentRecord
@@ -43,7 +42,7 @@ private[realignment] object RealignmentTargetFinder {
   }
 }
 
-private[realignment] class RealignmentTargetFinder extends Serializable with Logging {
+private[realignment] class RealignmentTargetFinder extends Serializable {
 
   /**
    * Joins two sorted sets of targets together. Is tail call recursive.
