@@ -19,6 +19,7 @@ package org.bdgenomics.adam.cli
 
 import org.apache.spark.SparkContext
 import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.cli.FileSystemUtils._
 import org.bdgenomics.utils.cli._
 import org.bdgenomics.utils.misc.Logging
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
@@ -47,6 +48,7 @@ class CountContigKmers(protected val args: CountContigKmersArgs) extends BDGSpar
   val companion = CountContigKmers
 
   def run(sc: SparkContext) {
+    checkWriteablePath(args.outputPath, sc.hadoopConfiguration)
 
     // read from disk
     val fragments = sc.loadContigFragments(args.inputPath)

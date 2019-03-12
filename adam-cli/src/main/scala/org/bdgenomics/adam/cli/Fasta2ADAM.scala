@@ -18,6 +18,7 @@
 package org.bdgenomics.adam.cli
 
 import org.apache.spark.SparkContext
+import org.bdgenomics.adam.cli.FileSystemUtils._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.utils.cli._
 import org.bdgenomics.utils.misc.Logging
@@ -51,6 +52,8 @@ class Fasta2ADAM(protected val args: Fasta2ADAMArgs) extends BDGSparkCommand[Fas
   val companion = Fasta2ADAM
 
   def run(sc: SparkContext) {
+    checkWriteablePath(args.outputPath, sc.hadoopConfiguration)
+
     log.info("Loading FASTA data from disk.")
     val adamFasta = sc.loadFasta(args.fastaFile, maximumLength = args.maximumLength)
 

@@ -18,6 +18,7 @@
 package org.bdgenomics.adam.cli
 
 import org.apache.spark.SparkContext
+import org.bdgenomics.adam.cli.FileSystemUtils._
 import org.bdgenomics.adam.projections.AlignmentRecordField._
 import org.bdgenomics.adam.projections.Projection
 import org.bdgenomics.adam.rdd.ADAMContext._
@@ -66,6 +67,8 @@ class Reads2Coverage(protected val args: Reads2CoverageArgs) extends BDGSparkCom
   val companion: BDGCommandCompanion = Reads2Coverage
 
   def run(sc: SparkContext): Unit = {
+    checkWriteablePath(args.outputPath, sc.hadoopConfiguration)
+
     if (args.sortLexicographically) {
       require(args.collapse,
         "-sort_lexicographically can only be provided when collapsing (-collapse).")

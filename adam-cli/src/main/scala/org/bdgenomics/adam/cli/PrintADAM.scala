@@ -21,6 +21,7 @@ import java.util
 import org.apache.avro.generic.{ GenericDatumWriter, IndexedRecord }
 import org.apache.avro.io.EncoderFactory
 import org.apache.spark.SparkContext
+import org.bdgenomics.adam.cli.FileSystemUtils._
 import org.bdgenomics.adam.util.ParquetFileTraversable
 import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
@@ -99,6 +100,7 @@ class PrintADAM(protected val args: PrintADAMArgs) extends BDGSparkCommand[Print
 
   def run(sc: SparkContext) {
     val output = Option(args.outputFile)
+    output.foreach(checkWriteablePath(_, sc.hadoopConfiguration))
     args.filesToPrint.foreach(file => {
       displayRaw(sc, file, pretty = args.prettyRaw, output = output)
     })

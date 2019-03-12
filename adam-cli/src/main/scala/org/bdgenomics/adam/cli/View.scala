@@ -19,6 +19,7 @@ package org.bdgenomics.adam.cli
 
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.cli.FileSystemUtils._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.ADAMSaveAnyArgs
 import org.bdgenomics.formats.avro.AlignmentRecord
@@ -167,6 +168,7 @@ class View(val args: ViewArgs) extends BDGSparkCommand[ViewArgs] {
   }
 
   def run(sc: SparkContext) = {
+    checkWriteablePath(args.outputPath, sc.hadoopConfiguration)
 
     val reads = sc.loadAlignments(args.inputPath)
       .transform(applyFilters(_))

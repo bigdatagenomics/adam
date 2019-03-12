@@ -18,6 +18,7 @@
 package org.bdgenomics.adam.cli
 
 import org.apache.spark.SparkContext
+import org.bdgenomics.adam.cli.FileSystemUtils._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.utils.cli._
 import org.bdgenomics.utils.misc.Logging
@@ -52,6 +53,7 @@ class ADAM2Fasta(val args: ADAM2FastaArgs) extends BDGSparkCommand[ADAM2FastaArg
   override val companion = ADAM2Fasta
 
   override def run(sc: SparkContext): Unit = {
+    checkWriteablePath(args.outputPath, sc.hadoopConfiguration)
 
     log.info("Loading ADAM nucleotide contig fragments from disk.")
     val contigFragments = sc.loadContigFragments(args.inputPath)

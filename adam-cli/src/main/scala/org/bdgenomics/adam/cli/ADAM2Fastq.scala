@@ -20,6 +20,7 @@ package org.bdgenomics.adam.cli
 import htsjdk.samtools.ValidationStringency
 import org.apache.spark.SparkContext
 import org.apache.spark.storage.StorageLevel
+import org.bdgenomics.adam.cli.FileSystemUtils._
 import org.bdgenomics.adam.projections.{ AlignmentRecordField, Projection }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.utils.cli._
@@ -60,6 +61,7 @@ class ADAM2Fastq(val args: ADAM2FastqArgs) extends BDGSparkCommand[ADAM2FastqArg
   override val companion = ADAM2Fastq
 
   override def run(sc: SparkContext): Unit = {
+    checkWriteablePath(args.outputPath, sc.hadoopConfiguration)
 
     val projectionOpt =
       if (!args.disableProjection)
