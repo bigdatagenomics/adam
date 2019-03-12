@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.adam.rdd.variant
 
+import grizzled.slf4j.Logging
 import htsjdk.samtools.ValidationStringency
 import htsjdk.variant.vcf.{
   VCFCodec,
@@ -34,7 +35,6 @@ import org.bdgenomics.adam.converters.VariantContextConverter._
 import org.bdgenomics.adam.converters.VariantContextConverter
 import org.bdgenomics.adam.models.VariantContext
 import org.bdgenomics.adam.rdd.OutFormatter
-import org.bdgenomics.utils.misc.Logging
 import scala.annotation.tailrec
 import scala.collection.mutable.ListBuffer
 
@@ -104,7 +104,7 @@ case class VCFOutFormatter(
     val header = codec.readActualHeader(lri).asInstanceOf[VCFHeader]
 
     // merge header lines with our supported header lines
-    val lines = cleanAndMixInSupportedLines(headerLines(header), stringency, log)
+    val lines = cleanAndMixInSupportedLines(headerLines(header), stringency, logger.logger)
 
     // accumulate header lines if desired
     optHeaderLines.map(accumulator => lines.foreach(line => accumulator.add(line)))

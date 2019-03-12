@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.adam.rdd.variant
 
+import grizzled.slf4j.Logging
 import htsjdk.samtools.ValidationStringency
 import htsjdk.samtools.util.BlockCompressedOutputStream
 import htsjdk.variant.vcf.{
@@ -60,7 +61,6 @@ import org.bdgenomics.adam.rdd.{
 import org.bdgenomics.adam.sql.{ VariantContext => VariantContextProduct }
 import org.bdgenomics.adam.util.{ FileMerger, FileExtensions }
 import org.bdgenomics.formats.avro.Sample
-import org.bdgenomics.utils.misc.Logging
 import org.bdgenomics.utils.interval.array.{
   IntervalArray,
   IntervalArraySerializer
@@ -224,7 +224,7 @@ sealed abstract class VariantContextDataset extends MultisampleGenomicDataset[Va
                     pageSize: Int = 1 * 1024 * 1024,
                     compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
                     disableDictionaryEncoding: Boolean = false) {
-    log.info("Saving directly as Parquet from SQL. Options other than compression codec are ignored.")
+    info("Saving directly as Parquet from SQL. Options other than compression codec are ignored.")
     dataset.toDF()
       .write
       .format("parquet")
@@ -359,7 +359,7 @@ sealed abstract class VariantContextDataset extends MultisampleGenomicDataset[Va
           .format(filePath))
     }
 
-    log.info(s"Writing $vcfFormat file to $filePath")
+    info(s"Writing $vcfFormat file to $filePath")
 
     // map samples to sample ids
     val sampleIds = samples.map(_.getId)

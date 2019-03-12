@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.adam.rdd.fragment
 
+import grizzled.slf4j.Logging
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.spark.SparkContext
 import org.apache.spark.api.java.function.{ Function => JFunction }
@@ -49,7 +50,6 @@ import org.bdgenomics.utils.interval.array.{
   IntervalArray,
   IntervalArraySerializer
 }
-import org.bdgenomics.utils.misc.Logging
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
@@ -203,7 +203,7 @@ case class DatasetBoundFragmentDataset private[rdd] (
                              pageSize: Int = 1 * 1024 * 1024,
                              compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
                              disableDictionaryEncoding: Boolean = false) {
-    log.info("Saving directly as Parquet from SQL. Options other than compression codec are ignored.")
+    info("Saving directly as Parquet from SQL. Options other than compression codec are ignored.")
     dataset.toDF()
       .write
       .format("parquet")

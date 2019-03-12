@@ -18,12 +18,12 @@
 package org.bdgenomics.adam.rdd.fragment
 
 import java.io.OutputStream
+import grizzled.slf4j.Logging
 import org.apache.hadoop.conf.Configuration
 import org.bdgenomics.adam.converters.AlignmentRecordConverter
 import org.bdgenomics.adam.rdd.{ InFormatter, InFormatterCompanion }
 import org.bdgenomics.adam.sql.{ Fragment => FragmentProduct }
 import org.bdgenomics.formats.avro.Fragment
-import org.bdgenomics.utils.misc.Logging
 
 /**
  * InFormatter companion that creates an InFormatter that writes Bowtie tab6 format.
@@ -69,7 +69,7 @@ class Tab6InFormatter private (
         reads
       } else {
         if (reads.size > 2) {
-          log.warn("More than two reads for %s. Taking first 2.".format(frag))
+          warn("More than two reads for %s. Taking first 2.".format(frag))
         }
         reads.take(2)
       }

@@ -80,7 +80,7 @@ class ADAM2Fastq(val args: ADAM2FastqArgs) extends BDGSparkCommand[ADAM2FastqArg
     var reads = sc.loadAlignments(args.inputPath, optProjection = projectionOpt)
 
     if (args.repartition != -1) {
-      log.info("Repartitioning reads to to '%d' partitions".format(args.repartition))
+      info("Repartitioning reads to to '%d' partitions".format(args.repartition))
       reads = reads.transform(_.repartition(args.repartition))
     }
 

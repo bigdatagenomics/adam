@@ -24,7 +24,6 @@ import org.bdgenomics.adam.rdd.{ InFormatter, InFormatterCompanion }
 import org.bdgenomics.adam.rdd.fragment.FragmentDataset
 import org.bdgenomics.adam.sql.{ AlignmentRecord => AlignmentRecordProduct }
 import org.bdgenomics.formats.avro.AlignmentRecord
-import org.bdgenomics.utils.misc.Logging
 
 /**
  * InFormatter companion that creates an InFormatter that writes FASTQ.
@@ -43,7 +42,7 @@ object FASTQInFormatter extends InFormatterCompanion[AlignmentRecord, AlignmentR
 }
 
 class FASTQInFormatter private (
-    conf: Configuration) extends InFormatter[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordDataset, FASTQInFormatter] with Logging {
+    conf: Configuration) extends InFormatter[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordDataset, FASTQInFormatter] {
 
   protected val companion = FASTQInFormatter
   private val converter = new AlignmentRecordConverter

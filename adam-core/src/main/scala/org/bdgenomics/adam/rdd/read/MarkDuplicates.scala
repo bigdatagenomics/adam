@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.rdd.read
 
-import org.bdgenomics.utils.misc.Logging
+import grizzled.slf4j.Logging
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models.{ ReadGroupDictionary, ReferencePosition }
@@ -80,12 +80,12 @@ private[rdd] object MarkDuplicates extends Serializable with Logging {
       .filter(_.library.isEmpty)
 
     emptyRgs.foreach(rg => {
-      log.warn("Library ID is empty for read group %s from sample %s.".format(rg.id,
+      warn("Library ID is empty for read group %s from sample %s.".format(rg.id,
         rg.sampleId))
     })
 
     if (emptyRgs.nonEmpty) {
-      log.warn("For duplicate marking, all reads whose library is unknown will be treated as coming from the same library.")
+      warn("For duplicate marking, all reads whose library is unknown will be treated as coming from the same library.")
     }
   }
 

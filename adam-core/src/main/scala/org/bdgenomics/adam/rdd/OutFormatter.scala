@@ -20,7 +20,7 @@ package org.bdgenomics.adam.rdd
 import java.io.InputStream
 import java.lang.Process
 import java.util.concurrent.{ Callable, TimeUnit }
-import org.bdgenomics.utils.misc.Logging
+import grizzled.slf4j.Logging
 
 private[rdd] class OutFormatterRunner[T, U <: OutFormatter[T]](formatter: U,
                                                                is: InputStream,
@@ -45,7 +45,7 @@ private[rdd] class OutFormatterRunner[T, U <: OutFormatter[T]](formatter: U,
 
   def hasNext: Boolean = {
     if (hasTimedOut()) {
-      log.warn("Piped command %s timed out after %d seconds.".format(
+      warn("Piped command %s timed out after %d seconds.".format(
         finalCmd, optTimeout.get))
       process.destroy()
       false
@@ -57,7 +57,7 @@ private[rdd] class OutFormatterRunner[T, U <: OutFormatter[T]](formatter: U,
         if (exited) {
           process.exitValue()
         } else {
-          log.warn("Piped command %s timed out after %d seconds.".format(
+          warn("Piped command %s timed out after %d seconds.".format(
             finalCmd, timeout))
           process.destroy()
           0

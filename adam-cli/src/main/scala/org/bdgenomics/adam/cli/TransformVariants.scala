@@ -85,7 +85,7 @@ class TransformVariants(val args: TransformVariantsArgs)
    */
   private def maybeCoalesce[U <: GenomicDataset[_, _, U]](rdd: U): U = {
     if (args.coalesce != -1) {
-      log.info("Coalescing the number of partitions to '%d'".format(args.coalesce))
+      info("Coalescing the number of partitions to '%d'".format(args.coalesce))
       if (args.coalesce > rdd.rdd.partitions.length || args.forceShuffle) {
         rdd.transform(_.coalesce(args.coalesce, shuffle = true))
       } else {
@@ -104,10 +104,10 @@ class TransformVariants(val args: TransformVariantsArgs)
    */
   private def maybeSort[U <: GenomicDataset[_, _, U]](rdd: U): U = {
     if (args.sort) {
-      log.info("Sorting before saving")
+      info("Sorting before saving")
       rdd.sort()
     } else if (args.sortLexicographically) {
-      log.info("Sorting lexicographically before saving")
+      info("Sorting lexicographically before saving")
       rdd.sortLexicographically()
     } else {
       rdd

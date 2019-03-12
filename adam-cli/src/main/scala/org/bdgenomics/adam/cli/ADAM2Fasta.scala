@@ -17,11 +17,11 @@
  */
 package org.bdgenomics.adam.cli
 
+import grizzled.slf4j.Logging
 import org.apache.spark.SparkContext
 import org.bdgenomics.adam.cli.FileSystemUtils._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.utils.cli._
-import org.bdgenomics.utils.misc.Logging
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
 class ADAM2FastaArgs extends Args4jBase {
@@ -55,10 +55,10 @@ class ADAM2Fasta(val args: ADAM2FastaArgs) extends BDGSparkCommand[ADAM2FastaArg
   override def run(sc: SparkContext): Unit = {
     checkWriteablePath(args.outputPath, sc.hadoopConfiguration)
 
-    log.info("Loading ADAM nucleotide contig fragments from disk.")
+    info("Loading ADAM nucleotide contig fragments from disk.")
     val contigFragments = sc.loadContigFragments(args.inputPath)
 
-    log.info("Merging fragments and writing FASTA to disk.")
+    info("Merging fragments and writing FASTA to disk.")
     val contigs = contigFragments.mergeFragments()
 
     val cc = if (args.coalesce > 0) {

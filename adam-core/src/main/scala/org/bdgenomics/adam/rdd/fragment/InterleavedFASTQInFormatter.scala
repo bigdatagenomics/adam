@@ -18,12 +18,12 @@
 package org.bdgenomics.adam.rdd.fragment
 
 import java.io.OutputStream
+import grizzled.slf4j.Logging
 import org.apache.hadoop.conf.Configuration
 import org.bdgenomics.adam.converters.AlignmentRecordConverter
 import org.bdgenomics.adam.rdd.{ InFormatter, InFormatterCompanion }
 import org.bdgenomics.adam.sql.{ Fragment => FragmentProduct }
 import org.bdgenomics.formats.avro.Fragment
-import org.bdgenomics.utils.misc.Logging
 
 /**
  * InFormatter companion that creates an InFormatter that writes interleaved
@@ -61,11 +61,11 @@ class InterleavedFASTQInFormatter private (
       val reads = converter.convertFragment(frag).toSeq
 
       if (reads.size < 2) {
-        log.warn("Fewer than two reads for %s. Dropping...".format(frag))
+        warn("Fewer than two reads for %s. Dropping...".format(frag))
         None
       } else {
         if (reads.size > 2) {
-          log.warn("More than two reads for %s. Taking first 2.".format(frag))
+          warn("More than two reads for %s. Taking first 2.".format(frag))
         }
         Some((reads(0), reads(1)))
       }
@@ -91,7 +91,7 @@ class InterleavedFASTQInFormatter private (
         os.write(fastq2.getBytes)
         os.write(fastq1.getBytes)
       } else {
-        log.warn("Improper pair of reads in fragment %s. Dropping...".format(p))
+        warn("Improper pair of reads in fragment %s. Dropping...".format(p))
       }
     })
   }

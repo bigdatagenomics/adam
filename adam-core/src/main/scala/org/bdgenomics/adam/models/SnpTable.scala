@@ -23,7 +23,6 @@ import org.apache.spark.rdd.MetricsContext._
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.rdd.variant.VariantDataset
-import org.bdgenomics.utils.misc.Logging
 import scala.annotation.tailrec
 import scala.math.{ max, min }
 
@@ -37,7 +36,7 @@ import scala.math.{ max, min }
  */
 class SnpTable private[models] (
     private[models] val indices: Map[String, (Int, Int)],
-    private[models] val sites: Array[Long]) extends Serializable with Logging {
+    private[models] val sites: Array[Long]) extends Serializable {
 
   private val midpoints: Map[String, Int] = {
     @tailrec def pow2ceil(length: Int, i: Int = 1): Int = {

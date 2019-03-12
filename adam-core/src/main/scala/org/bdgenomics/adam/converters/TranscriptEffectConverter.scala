@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.adam.converters
 
+import grizzled.slf4j.Logging
 import htsjdk.samtools.ValidationStringency
 import htsjdk.variant.vcf.VCFConstants
 import htsjdk.variant.variantcontext.VariantContext
@@ -26,7 +27,6 @@ import org.bdgenomics.formats.avro.{
   Variant,
   VariantAnnotationMessage
 }
-import org.bdgenomics.utils.misc.Logging
 import scala.collection.JavaConverters._
 
 /**
@@ -220,7 +220,7 @@ private[adam] object TranscriptEffectConverter extends Serializable with Logging
         if (stringency == ValidationStringency.STRICT) {
           throw t
         } else if (stringency == ValidationStringency.LENIENT) {
-          log.warn("Could not convert VCF INFO reserved key ANN value to TranscriptEffect, caught %s.".format(t))
+          warn("Could not convert VCF INFO reserved key ANN value to TranscriptEffect, caught %s.".format(t))
         }
         None
       }
@@ -248,7 +248,7 @@ private[adam] object TranscriptEffectConverter extends Serializable with Logging
           "%d".format(n)
         }
         case (None, Some(d)) => {
-          log.warn("Incorrect fractional value ?/%d, missing numerator".format(d))
+          warn("Incorrect fractional value ?/%d, missing numerator".format(d))
           ""
         }
         case (Some(n), Some(d)) => {

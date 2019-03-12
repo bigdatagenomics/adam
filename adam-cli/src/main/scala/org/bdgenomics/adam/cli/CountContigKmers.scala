@@ -17,11 +17,11 @@
  */
 package org.bdgenomics.adam.cli
 
+import grizzled.slf4j.Logging
 import org.apache.spark.SparkContext
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.cli.FileSystemUtils._
 import org.bdgenomics.utils.cli._
-import org.bdgenomics.utils.misc.Logging
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
 object CountContigKmers extends BDGCommandCompanion {

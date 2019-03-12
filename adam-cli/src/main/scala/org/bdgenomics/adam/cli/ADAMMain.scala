@@ -21,7 +21,7 @@ import java.util.logging.Level._
 import javax.inject.Inject
 import com.google.inject.AbstractModule
 import net.codingwell.scalaguice.ScalaModule
-import org.bdgenomics.utils.misc.Logging
+import grizzled.slf4j.Logging
 import org.bdgenomics.adam.util.ParquetLogger
 import org.bdgenomics.utils.cli._
 
@@ -106,7 +106,7 @@ class ADAMMain @Inject() (commandGroups: List[CommandGroup]) extends Logging {
   }
 
   def apply(args: Array[String]) {
-    log.info("ADAM invoked with args: %s".format(argsToString(args)))
+    info("ADAM invoked with args: %s".format(argsToString(args)))
     if (args.length < 1) {
       printCommands()
     } else if (args.contains("--version") || args.contains("-version")) {

@@ -17,12 +17,12 @@
  */
 package org.bdgenomics.adam.converters
 
+import grizzled.slf4j.Logging
 import htsjdk.samtools.{
   SAMReadGroupRecord,
   SAMRecord,
   SAMUtils
 }
-import org.bdgenomics.utils.misc.Logging
 import org.bdgenomics.adam.models.Attribute
 import org.bdgenomics.adam.util.AttributeUtils
 import org.bdgenomics.formats.avro.AlignmentRecord
@@ -212,7 +212,7 @@ private[adam] class SAMRecordConverter extends Serializable with Logging {
       builder.build
     } catch {
       case t: Throwable => {
-        log.error("Conversion of read: " + samRecord + " failed.")
+        error("Conversion of read: " + samRecord + " failed.")
         throw t
       }
     }

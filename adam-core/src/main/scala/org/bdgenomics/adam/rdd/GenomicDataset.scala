@@ -18,6 +18,7 @@
 package org.bdgenomics.adam.rdd
 
 import java.nio.file.Paths
+import grizzled.slf4j.Logging
 import htsjdk.samtools.ValidationStringency
 import htsjdk.variant.vcf.{
   VCFFilterHeaderLine,
@@ -61,7 +62,7 @@ import org.bdgenomics.formats.avro.{
 }
 import org.bdgenomics.utils.cli.SaveArgs
 import org.bdgenomics.utils.interval.array.IntervalArray
-import org.bdgenomics.utils.misc.{ HadoopUtil, Logging }
+import org.bdgenomics.utils.misc.HadoopUtil
 import org.json4s.JsonDSL._
 import org.json4s.jackson.JsonMethods._
 import scala.annotation.tailrec
@@ -376,7 +377,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   def saveAsPartitionedParquet(pathName: String,
                                compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
                                partitionSize: Int = 1000000) {
-    log.info("Saving directly as Hive-partitioned Parquet from SQL. " +
+    info("Saving directly as Hive-partitioned Parquet from SQL. " +
       "Options other than compression codec are ignored.")
     val df = toDF()
     df.withColumn("positionBin", floor(df("start") / partitionSize))
@@ -614,7 +615,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
       case ValidationStringency.STRICT => {
         throw new IllegalArgumentException(message)
       }
-      case ValidationStringency.LENIENT => log.warn(message)
+      case ValidationStringency.LENIENT => warn(message)
       case _                            =>
     }
     None
@@ -3102,7 +3103,7 @@ sealed abstract class GenericGenomicDataset[T, U <: Product] extends GenomicData
                     pageSize: Int = 1 * 1024 * 1024,
                     compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
                     disableDictionaryEncoding: Boolean = false) {
-    log.warn("Saving directly as Parquet from SQL. Options other than compression codec are ignored.")
+    warn("Saving directly as Parquet from SQL. Options other than compression codec are ignored.")
     dataset.toDF()
       .write
       .format("parquet")
@@ -3797,7 +3798,7 @@ abstract class AvroGenomicDataset[T <% IndexedRecord: Manifest, U <: Product, V 
     compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
     disableDictionaryEncoding: Boolean = false,
     optSchema: Option[Schema] = None): Unit = SaveAsADAM.time {
-    log.info("Saving data in ADAM format")
+    info("Saving data in ADAM format")
 
     val job = HadoopUtil.newJob(rdd.context)
     ParquetOutputFormat.setCompression(job, compressCodec)

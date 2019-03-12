@@ -25,7 +25,6 @@ import java.io.{
 import org.bdgenomics.adam.rdd.{ InFormatter, InFormatterCompanion }
 import org.bdgenomics.adam.sql.{ Feature => FeatureProduct }
 import org.bdgenomics.formats.avro.Feature
-import org.bdgenomics.utils.misc.Logging
 
 /**
  * InFormatter companion that builds a GTFInFormatter to write features in GTF format to a pipe.

@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.adam.cli
 
+import grizzled.slf4j.Logging
 import org.apache.spark.SparkContext
 import org.bdgenomics.adam.cli.FileSystemUtils._
 import org.bdgenomics.adam.io.FastqRecordReader
@@ -25,7 +26,6 @@ import org.bdgenomics.adam.rdd.ADAMSaveAnyArgs
 import org.bdgenomics.adam.rdd.read.QualityScoreBin
 import org.bdgenomics.adam.rdd.fragment.FragmentDataset
 import org.bdgenomics.utils.cli._
-import org.bdgenomics.utils.misc.Logging
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
 object TransformFragments extends BDGCommandCompanion {
@@ -99,7 +99,7 @@ class TransformFragments(protected val args: TransformFragmentsArgs) extends BDG
     checkWriteablePath(args.outputPath, sc.hadoopConfiguration)
 
     if (args.loadAsReads && args.saveAsReads) {
-      log.warn("If loading and saving as reads, consider using TransformAlignments instead.")
+      warn("If loading and saving as reads, consider using TransformAlignments instead.")
     }
     if (args.sortReads) {
       require(args.saveAsReads,

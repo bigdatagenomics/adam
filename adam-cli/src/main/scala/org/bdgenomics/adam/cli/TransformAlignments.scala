@@ -20,6 +20,7 @@ package org.bdgenomics.adam.cli
 import java.time.Instant
 import java.lang.{ Boolean => JBoolean }
 
+import grizzled.slf4j.Logging
 import htsjdk.samtools.ValidationStringency
 import org.apache.parquet.filter2.predicate.FilterApi
 import org.apache.parquet.filter2.predicate.Operators.BooleanColumn
@@ -37,7 +38,6 @@ import org.bdgenomics.adam.rdd.read.{ AlignmentRecordDataset, QualityScoreBin }
 import org.bdgenomics.adam.rich.RichVariant
 import org.bdgenomics.formats.avro.ProcessingStep
 import org.bdgenomics.utils.cli._
-import org.bdgenomics.utils.misc.Logging
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
 object TransformAlignments extends BDGCommandCompanion {
@@ -175,7 +175,7 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
    */
   private def maybeRepartition(rdd: AlignmentRecordDataset): AlignmentRecordDataset = {
     if (args.repartition != -1) {
-      log.info("Repartitioning reads to to '%d' partitions".format(args.repartition))
+      info("Repartitioning reads to to '%d' partitions".format(args.repartition))
       rdd.transform(_.repartition(args.repartition))
     } else {
       rdd
@@ -190,7 +190,7 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
    */
   private def maybeDedupe(rdd: AlignmentRecordDataset): AlignmentRecordDataset = {
     if (args.markDuplicates) {
-      log.info("Marking duplicates")
+      info("Marking duplicates")
       rdd.markDuplicates()
     } else {
       rdd
@@ -213,7 +213,7 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
                            sl: StorageLevel): AlignmentRecordDataset = {
     if (args.locallyRealign) {
 
-      log.info("Locally realigning indels.")
+      info("Locally realigning indels.")
 
       // has the user asked us to cache the rdd before multi-pass stages?
       if (args.cache) {
@@ -272,7 +272,7 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
                                sl: StorageLevel): AlignmentRecordDataset = {
     if (args.recalibrateBaseQualities) {
 
-      log.info("Recalibrating base qualities")
+      info("Recalibrating base qualities")
 
       // bqsr is a two pass algorithm, so cache the rdd if requested
       val optSl = if (args.cache) {
@@ -311,7 +311,7 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
    */
   private def maybeCoalesce(rdd: AlignmentRecordDataset): AlignmentRecordDataset = {
     if (args.coalesce != -1) {
-      log.info("Coalescing the number of partitions to '%d'".format(args.coalesce))
+      info("Coalescing the number of partitions to '%d'".format(args.coalesce))
       if (args.coalesce > rdd.rdd.partitions.length || args.forceShuffle) {
         rdd.transform(_.coalesce(args.coalesce, shuffle = true))
       } else {
@@ -341,7 +341,7 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
         rdd.rdd.persist(sl)
       }
 
-      log.info("Sorting reads")
+      info("Sorting reads")
 
       // are we sorting lexicographically or using legacy SAM sort order?
       val sortedRdd = if (args.sortLexicographically) {
@@ -373,7 +373,7 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
                          rdd: AlignmentRecordDataset,
                          stringencyOpt: Option[ValidationStringency]): AlignmentRecordDataset = {
     if (args.mdTagsReferenceFile != null) {
-      log.info(s"Adding MDTags to reads based on reference file ${args.mdTagsReferenceFile}")
+      info(s"Adding MDTags to reads based on reference file ${args.mdTagsReferenceFile}")
       val referenceFile = sc.loadReferenceFile(args.mdTagsReferenceFile,
         maximumLength = args.mdTagsFragmentSize)
       rdd.computeMismatchingPositions(
@@ -588,7 +588,7 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
 
     if (args.partitionByStartPos) {
       if (outputRdd.sequences.isEmpty) {
-        log.warn("This dataset is not aligned and therefore will not benefit from being saved as a partitioned dataset")
+        warn("This dataset is not aligned and therefore will not benefit from being saved as a partitioned dataset")
       }
       outputRdd.saveAsPartitionedParquet(args.outputPath, partitionSize = args.partitionedBinSize)
     } else {

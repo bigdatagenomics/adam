@@ -17,13 +17,13 @@
  */
 package org.bdgenomics.adam.converters
 
+import grizzled.slf4j.Logging
 import htsjdk.samtools.ValidationStringency
 import org.apache.hadoop.io.Text
 import org.bdgenomics.formats.avro.{
   AlignmentRecord,
   Fragment
 }
-import org.bdgenomics.utils.misc.Logging
 import scala.collection.JavaConversions._
 
 /**
@@ -91,7 +91,7 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
           if (stringency == ValidationStringency.STRICT) {
             throw e
           } else if (stringency == ValidationStringency.LENIENT) {
-            log.warn("Read had improper pair suffix: %s".format(e.getMessage))
+            warn("Read had improper pair suffix: %s".format(e.getMessage))
           }
         }
       }
