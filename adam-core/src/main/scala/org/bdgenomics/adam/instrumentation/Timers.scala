@@ -121,14 +121,14 @@ object Timers extends Metrics {
   val WriteSAMRecord = timer("Write SAM Record")
   val WriteCRAMRecord = timer("Write CRAM Record")
 
-  // org.bdgenomics.adam.rdd.TreeRegionJoin
+  // org.bdgenomics.adam.ds.TreeRegionJoin
   val TreeJoin = timer("Running broadcast join with interval tree")
   val BuildingTrees = timer("Building interval tree")
   val SortingRightSide = timer("Sorting right side of join")
   val GrowingTrees = timer("Growing forest of trees")
   val RunningMapSideJoin = timer("Running map-side join")
 
-  // org.bdgenomics.adam.rdd.GenomicDataset
+  // org.bdgenomics.adam.ds.GenomicDataset
   val InnerBroadcastJoin = timer("Inner broadcast region join")
   val RightOuterBroadcastJoin = timer("Right outer broadcast region join")
   val BroadcastJoinAndGroupByRight = timer("Broadcast join followed by group-by on right")

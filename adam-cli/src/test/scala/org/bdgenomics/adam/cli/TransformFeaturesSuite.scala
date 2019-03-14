@@ -19,7 +19,7 @@ package org.bdgenomics.adam.cli
 
 import java.io._
 import org.bdgenomics.adam.util.ADAMFunSuite
-import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.ds.ADAMContext._
 import org.bdgenomics.utils.cli.Args4j
 
 class TransformFeaturesSuite extends ADAMFunSuite {

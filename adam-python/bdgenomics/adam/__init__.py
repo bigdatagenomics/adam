@@ -26,7 +26,7 @@ The Python API is feature complete relative to ADAM's Java API.
 
 .. automodule:: bdgenomics.adam.adamContext
 .. automodule:: bdgenomics.adam.models
-.. automodule:: bdgenomics.adam.rdd
+.. automodule:: bdgenomics.adam.ds
 .. automodule:: bdgenomics.adam.stringency
 
 """

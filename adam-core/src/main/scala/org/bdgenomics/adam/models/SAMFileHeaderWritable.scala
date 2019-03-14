@@ -18,8 +18,8 @@
 package org.bdgenomics.adam.models
 
 import htsjdk.samtools.SAMFileHeader
-import org.bdgenomics.adam.rdd.ADAMContext
-import org.bdgenomics.adam.rdd.read.AlignmentRecordDataset
+import org.bdgenomics.adam.ds.ADAMContext
+import org.bdgenomics.adam.ds.read.AlignmentRecordDataset
 import scala.collection.JavaConversions._
 
 private[adam] object SAMFileHeaderWritable {

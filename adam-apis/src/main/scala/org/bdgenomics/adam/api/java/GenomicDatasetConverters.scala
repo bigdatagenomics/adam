@@ -19,16 +19,16 @@ package org.bdgenomics.adam.api.java
 
 import org.apache.spark.sql.Dataset
 import org.bdgenomics.adam.models.{ Coverage, VariantContext }
-import org.bdgenomics.adam.rdd.{
+import org.bdgenomics.adam.ds.{
   ADAMContext,
   GenomicDataset,
   GenomicDatasetConversion
 }
-import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentDataset
-import org.bdgenomics.adam.rdd.feature.{ CoverageDataset, FeatureDataset }
-import org.bdgenomics.adam.rdd.fragment.FragmentDataset
-import org.bdgenomics.adam.rdd.read.AlignmentRecordDataset
-import org.bdgenomics.adam.rdd.variant.{
+import org.bdgenomics.adam.ds.contig.NucleotideContigFragmentDataset
+import org.bdgenomics.adam.ds.feature.{ CoverageDataset, FeatureDataset }
+import org.bdgenomics.adam.ds.fragment.FragmentDataset
+import org.bdgenomics.adam.ds.read.AlignmentRecordDataset
+import org.bdgenomics.adam.ds.variant.{
   VariantDataset,
   GenotypeDataset,
   VariantContextDataset

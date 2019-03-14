@@ -20,8 +20,8 @@ package org.bdgenomics.adam.api.java;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.bdgenomics.adam.rdd.ADAMContext;
-import org.bdgenomics.adam.rdd.read.AlignmentRecordDataset;
+import org.bdgenomics.adam.ds.ADAMContext;
+import org.bdgenomics.adam.ds.read.AlignmentRecordDataset;
 
 /**
  * A simple test class for the JavaADAMRDD/Context. Writes an RDD of reads to

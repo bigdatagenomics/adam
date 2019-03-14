@@ -106,8 +106,8 @@ class AlignmentRecordDatasetTest(SparkTestCase):
         reads = ac.loadAlignments(reads12Path)
 
         pipedRdd = reads.pipe(["tee", "/dev/null"],
-                              "org.bdgenomics.adam.rdd.read.SAMInFormatter",
-                              "org.bdgenomics.adam.rdd.read.AnySAMOutFormatter",
+                              "org.bdgenomics.adam.ds.read.SAMInFormatter",
+                              "org.bdgenomics.adam.ds.read.AnySAMOutFormatter",
                               "org.bdgenomics.adam.api.java.AlignmentRecordsToAlignmentRecordsConverter")
 
         self.assertEqual(reads.toDF().count(), pipedRdd.toDF().count())

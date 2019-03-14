@@ -115,14 +115,14 @@ standard output:
 .. code:: scala
 
     // import genomic dataset load functions and conversion functions
-    import org.bdgenomics.adam.rdd.ADAMContext._
+    import org.bdgenomics.adam.ds.ADAMContext._
 
     // import functionality for piping SAM into pipe
-    import org.bdgenomics.adam.rdd.read.SAMInFormatter
+    import org.bdgenomics.adam.ds.read.SAMInFormatter
 
     // import functionality for reading VCF from pipe
     import org.bdgenomics.adam.converters.DefaultHeaderLines
-    import org.bdgenomics.adam.rdd.variant.{
+    import org.bdgenomics.adam.ds.variant.{
       VariantContextDataset,
       VCFOutFormatter
     }
@@ -185,10 +185,10 @@ To run the Scala example code above using Java, we would write:
     import java.util.List;
     import java.util.Map;
     import org.bdgenomics.adam.models.VariantContext
-    import org.bdgenomics.adam.rdd.read.AlignmentRecordDataset;
-    import org.bdgenomics.adam.rdd.read.SAMInFormatter;
-    import org.bdgenomics.adam.rdd.variant.VariantContextDataset;
-    import org.bdgenomics.adam.rdd.variant.VCFOutFormatter;
+    import org.bdgenomics.adam.ds.read.AlignmentRecordDataset;
+    import org.bdgenomics.adam.ds.read.SAMInFormatter;
+    import org.bdgenomics.adam.ds.variant.VariantContextDataset;
+    import org.bdgenomics.adam.ds.variant.VCFOutFormatter;
     import org.bdgenomics.adam.api.java.AlignmentRecordToVariantContextConverter;
 
     class PipeRunner {
@@ -234,8 +234,8 @@ from above in Python, we would write:
     reads = ac.loadAlignments("hdfs://mynamenode/my/read/file.bam")
 
     variants = reads.pipe(["my_variant_caller", "-R", "$0"],
-                          "org.bdgenomics.adam.rdd.read.SAMInFormatter",
-                          "org.bdgenomics.adam.rdd.variant.VCFOutFormatter",
+                          "org.bdgenomics.adam.ds.read.SAMInFormatter",
+                          "org.bdgenomics.adam.ds.variant.VCFOutFormatter",
                           "org.bdgenomics.adam.api.java.AlignmentRecordToVariantContextConverter",
                           files=[ "hdfs://mynamenode/my/reference/genome.fa" ])
 
@@ -254,8 +254,8 @@ In R, we would write:
 
     variants <- pipe(reads,
                      cmd=cmd,
-                     "org.bdgenomics.adam.rdd.read.SAMInFormatter",
-                     "org.bdgenomics.adam.rdd.variant.VCFOutFormatter",
+                     "org.bdgenomics.adam.ds.read.SAMInFormatter",
+                     "org.bdgenomics.adam.ds.variant.VCFOutFormatter",
                      "org.bdgenomics.adam.api.java.AlignmentRecordToVariantContextConverter",
                      files=files)
 

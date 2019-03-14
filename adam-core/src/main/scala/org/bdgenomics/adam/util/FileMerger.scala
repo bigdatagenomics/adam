@@ -37,7 +37,7 @@ private[adam] object FileMerger extends Logging {
   /**
    * The config entry for the buffer size in bytes.
    */
-  val BUFFER_SIZE_CONF = "org.bdgenomics.adam.rdd.FileMerger.bufferSize"
+  val BUFFER_SIZE_CONF = "org.bdgenomics.adam.ds.FileMerger.bufferSize"
 
   private def isHdfs(fs: FileSystem): Boolean = {
     try {

@@ -63,7 +63,7 @@ elif len(JARS_PATH) == 0 and not os.path.exists(TEMP_PATH):
     print(incorrect_invocation_message, file=sys.stderr)
     sys.exit(-1)
 
-in_adam = os.path.isfile("../adam-core/src/main/scala/org/bdgenomics/adam/rdd/ADAMContext.scala")
+in_adam = os.path.isfile("../adam-core/src/main/scala/org/bdgenomics/adam/ds/ADAMContext.scala")
 
 if in_adam:
     try:

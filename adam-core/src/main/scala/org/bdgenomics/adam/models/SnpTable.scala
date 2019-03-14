@@ -22,7 +22,7 @@ import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import org.apache.spark.rdd.MetricsContext._
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.instrumentation.Timers._
-import org.bdgenomics.adam.rdd.variant.VariantDataset
+import org.bdgenomics.adam.ds.variant.VariantDataset
 import org.bdgenomics.utils.misc.Logging
 import scala.annotation.tailrec
 import scala.math.{ max, min }

@@ -20,10 +20,10 @@ package org.bdgenomics.adam.cli
 import org.apache.spark.SparkContext
 import org.bdgenomics.adam.cli.FileSystemUtils._
 import org.bdgenomics.adam.io.FastqRecordReader
-import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.ADAMSaveAnyArgs
-import org.bdgenomics.adam.rdd.read.QualityScoreBin
-import org.bdgenomics.adam.rdd.fragment.FragmentDataset
+import org.bdgenomics.adam.ds.ADAMContext._
+import org.bdgenomics.adam.ds.ADAMSaveAnyArgs
+import org.bdgenomics.adam.ds.read.QualityScoreBin
+import org.bdgenomics.adam.ds.fragment.FragmentDataset
 import org.bdgenomics.utils.cli._
 import org.bdgenomics.utils.misc.Logging
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
@@ -127,7 +127,7 @@ class TransformFragments(protected val args: TransformFragmentsArgs) extends BDG
     val maybeDedupedReads = maybeDedupe(maybeBinnedReads)
 
     if (args.saveAsReads) {
-      // save rdd as reads
+      // save ds as reads
       val readRdd = maybeDedupedReads.toReads
 
       // prep to save

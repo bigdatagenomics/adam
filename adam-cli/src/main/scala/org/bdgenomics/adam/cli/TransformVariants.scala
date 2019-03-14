@@ -20,8 +20,8 @@ package org.bdgenomics.adam.cli
 import htsjdk.samtools.ValidationStringency
 import org.apache.spark.SparkContext
 import org.bdgenomics.adam.cli.FileSystemUtils._
-import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.{ ADAMSaveAnyArgs, GenomicDataset }
+import org.bdgenomics.adam.ds.ADAMContext._
+import org.bdgenomics.adam.ds.{ ADAMSaveAnyArgs, GenomicDataset }
 import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option ⇒ Args4jOption }
 

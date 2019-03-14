@@ -20,7 +20,7 @@ package org.bdgenomics.adam.models
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.algorithms.consensus.Consensus
-import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.ds.ADAMContext._
 import org.bdgenomics.formats.avro.Variant
 import org.bdgenomics.utils.misc.Logging
 

@@ -75,13 +75,13 @@ containing INDELs:
 .. code:: scala
 
     // pick up implicits from ADAMContext
-    import org.bdgenomics.adam.rdd.ADAMContext._
+    import org.bdgenomics.adam.ds.ADAMContext._
 
     val reads = sc.loadAlignments("path/to/my/reads.adam")
 
     // the type of the transmuted RDD normally needs to be specified
     // import the FeatureDataset, which is the output type
-    import org.bdgenomics.adam.rdd.feature.FeatureDataset
+    import org.bdgenomics.adam.ds.feature.FeatureDataset
     import org.bdgenomics.formats.avro.Feature
 
     val features: FeatureDataset = reads.transmute(rdd => {
@@ -100,7 +100,7 @@ containing INDELs:
 
 ``ADAMContext`` provides the implicit functions needed to run the
 ``transmute`` function between all ``GenomicDataset``\ s contained within
-the ``org.bdgenomics.adam.rdd`` package hierarchy. Any custom
+the ``org.bdgenomics.adam.ds`` package hierarchy. Any custom
 ``GenomicDataset`` can be supported by providing a user defined conversion
 function.
 

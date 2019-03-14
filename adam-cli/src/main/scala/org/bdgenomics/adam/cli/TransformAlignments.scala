@@ -31,9 +31,9 @@ import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.io.FastqRecordReader
 import org.bdgenomics.adam.models.{ ReferenceRegion, SnpTable }
 import org.bdgenomics.adam.projections.{ AlignmentRecordField, Filter }
-import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.ADAMSaveAnyArgs
-import org.bdgenomics.adam.rdd.read.{ AlignmentRecordDataset, QualityScoreBin }
+import org.bdgenomics.adam.ds.ADAMContext._
+import org.bdgenomics.adam.ds.ADAMSaveAnyArgs
+import org.bdgenomics.adam.ds.read.{ AlignmentRecordDataset, QualityScoreBin }
 import org.bdgenomics.adam.rich.RichVariant
 import org.bdgenomics.formats.avro.ProcessingStep
 import org.bdgenomics.utils.cli._
@@ -215,7 +215,7 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
 
       log.info("Locally realigning indels.")
 
-      // has the user asked us to cache the rdd before multi-pass stages?
+      // has the user asked us to cache the ds before multi-pass stages?
       if (args.cache) {
         rdd.rdd.persist(sl)
       }
@@ -246,7 +246,7 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
       )
 
       // unpersist our input, if persisting was requested
-      // we don't reference said rdd again, so unpersisting is ok
+      // we don't reference said ds again, so unpersisting is ok
       if (args.cache) {
         rdd.rdd.unpersist()
       }
@@ -274,7 +274,7 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
 
       log.info("Recalibrating base qualities")
 
-      // bqsr is a two pass algorithm, so cache the rdd if requested
+      // bqsr is a two pass algorithm, so cache the ds if requested
       val optSl = if (args.cache) {
         Some(sl)
       } else {
@@ -350,7 +350,7 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
         rdd.sortReadsByReferencePositionAndIndex()
       }
 
-      // unpersist the cached rdd, if caching was requested
+      // unpersist the cached ds, if caching was requested
       if (args.cache) {
         rdd.rdd.unpersist()
       }
@@ -560,12 +560,12 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
           )
         })
 
-    // if we have a second rdd that we are merging in, process the merger here
+    // if we have a second ds that we are merging in, process the merger here
     val (mergedRdd, mergedSd, mergedRgd, mergedPgs) = concatOpt.fold((rdd, sd, rgd, pgs))(t => {
       (rdd ++ t.rdd, sd ++ t.sequences, rgd ++ t.readGroups, pgs ++ t.processingSteps)
     })
 
-    // make a new aligned read rdd, that merges the two RDDs together
+    // make a new aligned read ds, that merges the two RDDs together
     val newRdd = AlignmentRecordDataset(mergedRdd, mergedSd, mergedRgd, mergedPgs)
 
     // run our transformation
