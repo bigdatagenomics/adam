@@ -2515,7 +2515,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
     val remapData = fastaData.map(kv => (kv._1.get, kv._2.toString))
 
-    // convert ds and cache
+    // convert RDD and cache
     val fragmentRdd = FastaConverter(remapData, maximumLength)
       .cache()
 

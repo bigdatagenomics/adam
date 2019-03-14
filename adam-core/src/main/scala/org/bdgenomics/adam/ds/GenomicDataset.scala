@@ -564,14 +564,14 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   def isSorted: Boolean = optPartitionMap.isDefined
 
   /**
-   * Repartitions all data in ds and distributes it as evenly as possible
+   * Repartitions all data and distributes them as evenly as possible
    * into the number of partitions provided.
    *
    * @param partitions the number of partitions to repartition this dataset into
    * @return a new repartitioned GenomicDataset
    */
   private[ds] def evenlyRepartition(partitions: Int)(implicit tTag: ClassTag[T]): V = {
-    require(isSorted, "Cannot evenly repartition an unsorted RDD.")
+    require(isSorted, "Cannot evenly repartition an unsorted genomic dataset.")
     val count = rdd.count
     // we don't want a bunch of empty partitions, so we will just use count in
     // the case the user wants more partitions than records.

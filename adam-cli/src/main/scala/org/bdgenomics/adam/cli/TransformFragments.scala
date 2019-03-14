@@ -127,7 +127,7 @@ class TransformFragments(protected val args: TransformFragmentsArgs) extends BDG
     val maybeDedupedReads = maybeDedupe(maybeBinnedReads)
 
     if (args.saveAsReads) {
-      // save ds as reads
+      // save dataset as reads
       val readRdd = maybeDedupedReads.toReads
 
       // prep to save
