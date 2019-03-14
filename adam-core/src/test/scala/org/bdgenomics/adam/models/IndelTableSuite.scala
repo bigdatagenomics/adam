@@ -38,7 +38,7 @@ class IndelTableSuite extends ADAMFunSuite {
     assert(indelTable.getIndelsInRegion(ReferenceRegion("1", 1002L, 1005L)).length === 0)
   }
 
-  sparkTest("build indel table from ds of variants") {
+  sparkTest("build indel table from RDD of variants") {
     val ins = Variant.newBuilder()
       .setReferenceName("1")
       .setStart(1000L)

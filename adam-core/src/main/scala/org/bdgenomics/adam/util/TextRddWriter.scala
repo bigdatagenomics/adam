@@ -42,7 +42,7 @@ object TextRddWriter {
                       optHeaderPath: Option[String] = None) {
     if (asSingleFile) {
 
-      // write ds to disk
+      // write RDD to disk
       val tailPath = "%s_tail".format(outputPath)
       rdd.saveAsTextFile(tailPath)
 

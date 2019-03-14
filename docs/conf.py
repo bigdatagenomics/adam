@@ -25,7 +25,7 @@ MOCK_MODULES = [
     "py4j.java_gateway",
     "py4j.protocol",
     "pyspark",
-    "pyspark.ds",
+    "pyspark.rdd",
     "pyspark.sql"
 ]
 

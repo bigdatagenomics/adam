@@ -894,7 +894,7 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
         case SAMFormat.CRAM => classOf[InstrumentedADAMCRAMOutputFormatHeaderLess[LongWritable]]
       }
 
-      // save ds
+      // save RDD
       withKey.saveAsNewAPIHadoopFile(
         tailPath.toString,
         classOf[LongWritable],
@@ -1573,14 +1573,14 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
       case _ =>
         val arc = new AlignmentRecordConverter
 
-        // sort the ds if desired
+        // sort the RDD if desired
         val outputRdd = if (sort || fileName2Opt.isDefined) {
           rdd.sortBy(_.getReadName)
         } else {
           rdd
         }
 
-        // convert the ds and save as a text file
+        // convert the RDD and save as a text file
         val toWrite = outputRdd
           .map(record => arc.convertToFastq(record, outputOriginalBaseQualities = outputOriginalBaseQualities))
 
@@ -1597,7 +1597,7 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
    * were _originally_ paired together.
    *
    * @note The RDD that this is called on should be the RDD with the first read from the pair.
-   * @param secondPairRdd The ds containing the second read from the pairs.
+   * @param secondPairRdd The RDD containing the second read from the pairs.
    * @param validationStringency How stringently to validate the reads.
    * @return Returns a genomic dataset with the pair information recomputed.
    */
@@ -1613,7 +1613,7 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
    * were _originally_ paired together.
    *
    * @note The RDD that this is called on should be the RDD with the first read from the pair.
-   * @param secondPairRdd The ds containing the second read from the pairs.
+   * @param secondPairRdd The RDD containing the second read from the pairs.
    * @param validationStringency How stringently to validate the reads.
    * @return Returns a genomic dataset with the pair information recomputed.
    */

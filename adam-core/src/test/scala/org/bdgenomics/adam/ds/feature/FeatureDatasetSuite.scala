@@ -962,7 +962,7 @@ class FeatureDatasetSuite extends ADAMFunSuite {
     val outputPath = tmpLocation()
     val rrdd = sc.loadFeatures(inputPath)
     testMetadata(rrdd)
-    val rdd = rrdd.transformDataset(ds => ds) // no-op but force to ds
+    val rdd = rrdd.transformDataset(ds => ds) // no-op but force to RDD
     testMetadata(rdd)
     assert(rdd.dataset.count === 4)
     assert(rdd.rdd.count === 4)
@@ -972,7 +972,7 @@ class FeatureDatasetSuite extends ADAMFunSuite {
     assert(rdd2.rdd.count === 4)
     assert(rdd2.dataset.count === 4)
     val outputPath2 = tmpLocation()
-    rdd.transform(rdd => rdd) // no-op but force to ds
+    rdd.transform(rdd => rdd) // no-op but force to RDD
       .saveAsParquet(outputPath2)
     val rdd3 = sc.loadFeatures(outputPath2)
     assert(rdd3.rdd.count === 4)
@@ -1002,7 +1002,7 @@ class FeatureDatasetSuite extends ADAMFunSuite {
     assert(rdd3.dataset.count === 4)
   }
 
-  sparkTest("transform features to contig ds") {
+  sparkTest("transform features to contig dataset") {
     val features = sc.loadFeatures(testFile("sample_coverage.bed"))
 
     def checkSave(contigs: NucleotideContigFragmentDataset) {
@@ -1033,7 +1033,7 @@ class FeatureDatasetSuite extends ADAMFunSuite {
     checkSave(contigsDs)
   }
 
-  sparkTest("transform features to coverage ds") {
+  sparkTest("transform features to coverage dataset") {
     val features = sc.loadFeatures(testFile("sample_coverage.bed"))
 
     def checkSave(coverage: CoverageDataset) {
@@ -1061,7 +1061,7 @@ class FeatureDatasetSuite extends ADAMFunSuite {
     checkSave(coverageDs)
   }
 
-  sparkTest("transform features to fragment ds") {
+  sparkTest("transform features to fragment dataset") {
     val features = sc.loadFeatures(testFile("sample_coverage.bed"))
 
     def checkSave(fragments: FragmentDataset) {
@@ -1092,7 +1092,7 @@ class FeatureDatasetSuite extends ADAMFunSuite {
     checkSave(fragmentsDs)
   }
 
-  sparkTest("transform features to read ds") {
+  sparkTest("transform features to read dataset") {
     val features = sc.loadFeatures(testFile("sample_coverage.bed"))
 
     def checkSave(reads: AlignmentRecordDataset) {
@@ -1123,7 +1123,7 @@ class FeatureDatasetSuite extends ADAMFunSuite {
     checkSave(readsDs)
   }
 
-  sparkTest("transform features to genotype ds") {
+  sparkTest("transform features to genotype dataset") {
     val features = sc.loadFeatures(testFile("sample_coverage.bed"))
 
     def checkSave(genotypes: GenotypeDataset) {
@@ -1154,7 +1154,7 @@ class FeatureDatasetSuite extends ADAMFunSuite {
     checkSave(genotypesDs)
   }
 
-  sparkTest("transform features to variant ds") {
+  sparkTest("transform features to variant dataset") {
     val features = sc.loadFeatures(testFile("sample_coverage.bed"))
 
     def checkSave(variants: VariantDataset) {
@@ -1185,7 +1185,7 @@ class FeatureDatasetSuite extends ADAMFunSuite {
     checkSave(variantsDs)
   }
 
-  sparkTest("transform features to variant context ds") {
+  sparkTest("transform features to variant context dataset") {
     val features = sc.loadFeatures(testFile("sample_coverage.bed"))
 
     def checkSave(variantContexts: VariantContextDataset) {

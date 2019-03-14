@@ -567,14 +567,14 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
    * Repartitions all data in ds and distributes it as evenly as possible
    * into the number of partitions provided.
    *
-   * @param partitions the number of partitions to repartition this ds into
+   * @param partitions the number of partitions to repartition this dataset into
    * @return a new repartitioned GenomicDataset
    */
   private[ds] def evenlyRepartition(partitions: Int)(implicit tTag: ClassTag[T]): V = {
     require(isSorted, "Cannot evenly repartition an unsorted RDD.")
     val count = rdd.count
     // we don't want a bunch of empty partitions, so we will just use count in
-    // the case the user wants more partitions than ds records.
+    // the case the user wants more partitions than records.
     val finalPartitionNumber = min(count, partitions)
     // the average number of records on each node will help us evenly repartition
     val average = count.toDouble / finalPartitionNumber
@@ -803,7 +803,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
     val totalLength = seqLengths.values.sum
     val bins = GenomeBins(totalLength / rdd.partitions.size, seqLengths)
 
-    // if the input ds is mapped, then we need to repartition
+    // if the input dataset is mapped, then we need to repartition
     val partitionedRdd = if (sequences.records.size > 0) {
       // get region covered, expand region by flank size, and tag with bins
       val binKeyedRdd = rdd.flatMap(r => {
@@ -885,7 +885,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
     // build the new GenomicDataset
     val newRdd = convFn(this.asInstanceOf[V], pipedRdd)
 
-    // if the original ds was aligned and the final ds is aligned, then we must filter
+    // if the original dataset was aligned and the final dataset is aligned, then we must filter
     if (newRdd.sequences.isEmpty ||
       sequences.isEmpty) {
       newRdd
@@ -2905,7 +2905,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
    *
    * @note This is best used under the condition that (repeatedly)
    *   repartitioning is more expensive than calculating the proper location
-   *   of the records of this.ds. It requires a pass through the co-located
+   *   of the records of this.rdd. It requires a pass through the co-located
    *   genomic dataset to get the correct partition(s) for each record. It will assign a
    *   record to multiple partitions if necessary.
    *

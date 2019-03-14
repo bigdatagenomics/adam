@@ -694,7 +694,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
     assert(rdd2.rdd.count === 20)
     assert(rdd2.dataset.count === 20)
     val outputPath2 = tmpLocation()
-    rdd.transform(rdd => rdd) // no-op but force to ds
+    rdd.transform(rdd => rdd) // no-op but force to RDD
       .saveAsParquet(outputPath2)
     val rdd3 = sc.loadAlignments(outputPath2)
     assert(rdd3.rdd.count === 20)

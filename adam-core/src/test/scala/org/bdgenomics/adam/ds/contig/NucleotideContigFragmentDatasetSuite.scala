@@ -136,7 +136,7 @@ class NucleotideContigFragmentDatasetSuite extends ADAMFunSuite {
     assert(fragments2.rdd.count === 8L)
     assert(fragments2.dataset.count === 8L)
 
-    // save using ds path
+    // save using RDD path
     val output2 = tmpFile("ctg.adam")
     val rddBound = fragments2.transform(rdd => rdd)
     testMetadata(rddBound)
@@ -167,7 +167,7 @@ class NucleotideContigFragmentDatasetSuite extends ADAMFunSuite {
     assert(fragments2.rdd.count === 8L)
     assert(fragments2.dataset.count === 8L)
 
-    // save using ds path
+    // save using RDD path
     val output2 = tmpFile("ctg.adam")
     val rddBound = fragments2.transform(rdd => rdd)
     testMetadata(rddBound)

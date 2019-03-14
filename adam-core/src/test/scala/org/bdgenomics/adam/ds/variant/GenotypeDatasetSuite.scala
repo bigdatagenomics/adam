@@ -369,7 +369,7 @@ class GenotypeDatasetSuite extends ADAMFunSuite {
     val outputPath = tmpLocation()
     val rrdd = sc.loadGenotypes(inputPath)
     testMetadata(rrdd)
-    val rdd = rrdd.transformDataset(ds => ds) // no-op but force to sql
+    val rdd = rrdd.transformDataset(ds => ds) // no-op but force to dataset
     testMetadata(rdd)
     assert(rdd.dataset.count === 18)
     assert(rdd.rdd.count === 18)
@@ -379,7 +379,7 @@ class GenotypeDatasetSuite extends ADAMFunSuite {
     assert(rdd2.rdd.count === 18)
     assert(rdd2.dataset.count === 18)
     val outputPath2 = tmpLocation()
-    rdd.transform(rdd => rdd) // no-op but force to ds
+    rdd.transform(rdd => rdd) // no-op but force to RDD
       .saveAsParquet(outputPath2)
     val rdd3 = sc.loadGenotypes(outputPath2)
     assert(rdd3.rdd.count === 18)
@@ -691,7 +691,7 @@ class GenotypeDatasetSuite extends ADAMFunSuite {
     assert(genotypesDs.filterNoCalls().dataset.count() === 3)
   }
 
-  sparkTest("round trip gVCF END attribute without nested variant annotations ds bound") {
+  sparkTest("round trip gVCF END attribute without nested variant annotations RDD bound") {
     val genotypes = sc.loadGenotypes(testFile("gvcf_multiallelic/multiallelic.vcf"))
     val first = genotypes.sort.rdd.collect.head
     assert(first.end === 16157602L)
@@ -737,7 +737,7 @@ class GenotypeDatasetSuite extends ADAMFunSuite {
     assert(first.variant.get.annotation.isEmpty)
   }
 
-  sparkTest("round trip gVCF END attribute with nested variant annotations ds bound") {
+  sparkTest("round trip gVCF END attribute with nested variant annotations RDD bound") {
     VariantContextConverter.setNestAnnotationInGenotypesProperty(sc.hadoopConfiguration, true)
 
     val genotypes = sc.loadGenotypes(testFile("gvcf_multiallelic/multiallelic.vcf"))

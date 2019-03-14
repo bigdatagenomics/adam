@@ -168,7 +168,7 @@ class CoverageDatasetSuite extends ADAMFunSuite {
     assert(features2.rdd.count == 3)
     assert(features2.dataset.count == 3)
 
-    // go to ds and save as parquet
+    // go to RDD and save as parquet
     val outputFile3 = tmpLocation(".adam")
     coverageDs.transform(rdd => rdd).save(outputFile3, false, false)
     val coverage3 = sc.loadCoverage(outputFile3)
@@ -289,7 +289,7 @@ class CoverageDatasetSuite extends ADAMFunSuite {
     assert(collapsed.rdd.count == 8)
   }
 
-  sparkTest("transform coverage to contig ds") {
+  sparkTest("transform coverage to contig dataset") {
     val coverage = sc.loadCoverage(testFile("sample_coverage.bed"))
 
     def checkSave(contigs: NucleotideContigFragmentDataset) {
@@ -320,7 +320,7 @@ class CoverageDatasetSuite extends ADAMFunSuite {
     checkSave(contigsDs)
   }
 
-  sparkTest("transform coverage to feature ds") {
+  sparkTest("transform coverage to feature dataset") {
     val coverage = sc.loadCoverage(testFile("sample_coverage.bed"))
 
     def checkSave(features: FeatureDataset) {
@@ -351,7 +351,7 @@ class CoverageDatasetSuite extends ADAMFunSuite {
     checkSave(featuresDs)
   }
 
-  sparkTest("transform coverage to fragment ds") {
+  sparkTest("transform coverage to fragment dataset") {
     val coverage = sc.loadCoverage(testFile("sample_coverage.bed"))
 
     def checkSave(fragments: FragmentDataset) {
@@ -382,7 +382,7 @@ class CoverageDatasetSuite extends ADAMFunSuite {
     checkSave(fragmentsDs)
   }
 
-  sparkTest("transform coverage to read ds") {
+  sparkTest("transform coverage to read dataset") {
     val coverage = sc.loadCoverage(testFile("sample_coverage.bed"))
 
     def checkSave(reads: AlignmentRecordDataset) {
@@ -413,7 +413,7 @@ class CoverageDatasetSuite extends ADAMFunSuite {
     checkSave(readsDs)
   }
 
-  sparkTest("transform coverage to genotype ds") {
+  sparkTest("transform coverage to genotype dataset") {
     val coverage = sc.loadCoverage(testFile("sample_coverage.bed"))
 
     def checkSave(genotypes: GenotypeDataset) {
@@ -444,7 +444,7 @@ class CoverageDatasetSuite extends ADAMFunSuite {
     checkSave(genotypesDs)
   }
 
-  sparkTest("transform coverage to variant ds") {
+  sparkTest("transform coverage to variant dataset") {
     val coverage = sc.loadCoverage(testFile("sample_coverage.bed"))
 
     def checkSave(variants: VariantDataset) {
@@ -475,7 +475,7 @@ class CoverageDatasetSuite extends ADAMFunSuite {
     checkSave(variantsDs)
   }
 
-  sparkTest("transform coverage to variant context ds") {
+  sparkTest("transform coverage to variant context dataset") {
     val coverage = sc.loadCoverage(testFile("sample_coverage.bed"))
 
     def checkSave(variantContexts: VariantContextDataset) {
@@ -490,7 +490,7 @@ class CoverageDatasetSuite extends ADAMFunSuite {
     checkSave(variantContexts)
   }
 
-  sparkTest("copy coverage ds") {
+  sparkTest("copy coverage RDD") {
     val sd = sc.loadSequenceDictionary(testFile("hg19.genome"))
     val coverage = sc.loadCoverage(testFile("sample_coverage.bed"), optSequenceDictionary = Some(sd))
     assert(coverage.sequences.containsReferenceName("chr1"))
@@ -510,7 +510,7 @@ class CoverageDatasetSuite extends ADAMFunSuite {
     assert(copy.sequences.containsReferenceName("chr1"))
   }
 
-  sparkTest("copy coverage ds without sequence dictionary") {
+  sparkTest("copy coverage RDD without sequence dictionary") {
     val sd = sc.loadSequenceDictionary(testFile("hg19.genome"))
     val coverage = sc.loadCoverage(testFile("sample_coverage.bed"), optSequenceDictionary = Some(sd))
     assert(coverage.sequences.containsReferenceName("chr1"))

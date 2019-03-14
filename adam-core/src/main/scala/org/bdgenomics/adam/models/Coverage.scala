@@ -63,7 +63,7 @@ private[adam] object Coverage {
    * Creates an RDD of Coverage from RDD of Features.
    *
    * @param rdd RDD of Features to extract Coverage from
-   * @return RDD of Coverage spanning all features in ds
+   * @return RDD of Coverage spanning all features in RDD
    */
   def apply(rdd: RDD[Feature]): RDD[Coverage] = {
     rdd.map(f => Coverage(f))
