@@ -120,7 +120,7 @@ object GenotypeDataset extends Serializable {
   }
 }
 
-case class ParquetUnboundGenotypeDataset private[ds](
+case class ParquetUnboundGenotypeDataset private[ds] (
     @transient private val sc: SparkContext,
     private val parquetFilename: String,
     sequences: SequenceDictionary,
@@ -153,7 +153,7 @@ case class ParquetUnboundGenotypeDataset private[ds](
   }
 }
 
-case class DatasetBoundGenotypeDataset private[ds](
+case class DatasetBoundGenotypeDataset private[ds] (
   dataset: Dataset[GenotypeProduct],
   sequences: SequenceDictionary,
   @transient samples: Seq[Sample],
@@ -251,7 +251,7 @@ case class DatasetBoundGenotypeDataset private[ds](
   }
 }
 
-case class RDDBoundGenotypeDataset private[ds](
+case class RDDBoundGenotypeDataset private[ds] (
     rdd: RDD[Genotype],
     sequences: SequenceDictionary,
     @transient samples: Seq[Sample],

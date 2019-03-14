@@ -124,7 +124,7 @@ object VariantContextDataset extends Serializable {
   }
 }
 
-case class DatasetBoundVariantContextDataset private[ds](
+case class DatasetBoundVariantContextDataset private[ds] (
   dataset: Dataset[VariantContextProduct],
   sequences: SequenceDictionary,
   @transient samples: Seq[Sample],
@@ -162,7 +162,7 @@ case class DatasetBoundVariantContextDataset private[ds](
   }
 }
 
-case class RDDBoundVariantContextDataset private[ds](
+case class RDDBoundVariantContextDataset private[ds] (
     rdd: RDD[VariantContext],
     sequences: SequenceDictionary,
     @transient samples: Seq[Sample],

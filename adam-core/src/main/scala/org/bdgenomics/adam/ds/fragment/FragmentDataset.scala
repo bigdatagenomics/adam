@@ -150,7 +150,7 @@ object FragmentDataset {
   }
 }
 
-case class ParquetUnboundFragmentDataset private[ds](
+case class ParquetUnboundFragmentDataset private[ds] (
     @transient private val sc: SparkContext,
     private val parquetFilename: String,
     sequences: SequenceDictionary,
@@ -184,7 +184,7 @@ case class ParquetUnboundFragmentDataset private[ds](
   }
 }
 
-case class DatasetBoundFragmentDataset private[ds](
+case class DatasetBoundFragmentDataset private[ds] (
   dataset: Dataset[FragmentProduct],
   sequences: SequenceDictionary,
   readGroups: ReadGroupDictionary,
@@ -237,7 +237,7 @@ case class DatasetBoundFragmentDataset private[ds](
   }
 }
 
-case class RDDBoundFragmentDataset private[ds](
+case class RDDBoundFragmentDataset private[ds] (
     rdd: RDD[Fragment],
     sequences: SequenceDictionary,
     readGroups: ReadGroupDictionary,

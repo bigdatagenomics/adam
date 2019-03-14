@@ -119,7 +119,7 @@ object CoverageDataset {
   }
 }
 
-case class ParquetUnboundCoverageDataset private[ds](
+case class ParquetUnboundCoverageDataset private[ds] (
     @transient private val sc: SparkContext,
     private val parquetFilename: String,
     sequences: SequenceDictionary,
@@ -155,7 +155,7 @@ case class ParquetUnboundCoverageDataset private[ds](
   }
 }
 
-case class DatasetBoundCoverageDataset private[ds](
+case class DatasetBoundCoverageDataset private[ds] (
   dataset: Dataset[Coverage],
   sequences: SequenceDictionary,
   @transient samples: Seq[Sample],
@@ -184,7 +184,7 @@ case class DatasetBoundCoverageDataset private[ds](
   }
 }
 
-case class RDDBoundCoverageDataset private[ds](
+case class RDDBoundCoverageDataset private[ds] (
     rdd: RDD[Coverage],
     sequences: SequenceDictionary,
     @transient samples: Seq[Sample],

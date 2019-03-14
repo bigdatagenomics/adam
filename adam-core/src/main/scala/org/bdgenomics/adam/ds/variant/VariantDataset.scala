@@ -107,7 +107,7 @@ object VariantDataset extends Serializable {
   }
 }
 
-case class ParquetUnboundVariantDataset private[ds](
+case class ParquetUnboundVariantDataset private[ds] (
     @transient private val sc: SparkContext,
     private val parquetFilename: String,
     sequences: SequenceDictionary,
@@ -135,7 +135,7 @@ case class ParquetUnboundVariantDataset private[ds](
   }
 }
 
-case class DatasetBoundVariantDataset private[ds](
+case class DatasetBoundVariantDataset private[ds] (
   dataset: Dataset[VariantProduct],
   sequences: SequenceDictionary,
   @transient headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines,
@@ -222,7 +222,7 @@ case class DatasetBoundVariantDataset private[ds](
   }
 }
 
-case class RDDBoundVariantDataset private[ds](
+case class RDDBoundVariantDataset private[ds] (
     rdd: RDD[Variant],
     sequences: SequenceDictionary,
     @transient headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines,

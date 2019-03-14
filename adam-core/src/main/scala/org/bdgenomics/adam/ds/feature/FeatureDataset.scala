@@ -274,7 +274,7 @@ object FeatureDataset {
   }
 }
 
-case class ParquetUnboundFeatureDataset private[ds](
+case class ParquetUnboundFeatureDataset private[ds] (
     @transient private val sc: SparkContext,
     private val parquetFilename: String,
     sequences: SequenceDictionary,
@@ -305,7 +305,7 @@ case class ParquetUnboundFeatureDataset private[ds](
   }
 }
 
-case class DatasetBoundFeatureDataset private[ds](
+case class DatasetBoundFeatureDataset private[ds] (
   dataset: Dataset[FeatureProduct],
   sequences: SequenceDictionary,
   @transient samples: Seq[Sample],
@@ -407,7 +407,7 @@ case class DatasetBoundFeatureDataset private[ds](
   }
 }
 
-case class RDDBoundFeatureDataset private[ds](
+case class RDDBoundFeatureDataset private[ds] (
     rdd: RDD[Feature],
     sequences: SequenceDictionary,
     @transient samples: Seq[Sample],

@@ -21,7 +21,7 @@ import org.apache.spark.broadcast.Broadcast
 import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.utils.interval.array.IntervalArray
 
-case class GenomicBroadcast[T, U <: Product, V <: GenomicDataset[T, U, V]] private[ds](
+case class GenomicBroadcast[T, U <: Product, V <: GenomicDataset[T, U, V]] private[ds] (
     backingDataset: V,
     broadcastTree: Broadcast[IntervalArray[ReferenceRegion, T]]) {
 }

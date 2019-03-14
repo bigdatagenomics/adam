@@ -208,7 +208,7 @@ object AlignmentRecordDataset extends Serializable {
   }
 }
 
-case class ParquetUnboundAlignmentRecordDataset private[ds](
+case class ParquetUnboundAlignmentRecordDataset private[ds] (
     @transient private val sc: SparkContext,
     private val parquetFilename: String,
     sequences: SequenceDictionary,
@@ -242,7 +242,7 @@ case class ParquetUnboundAlignmentRecordDataset private[ds](
   }
 }
 
-case class DatasetBoundAlignmentRecordDataset private[ds](
+case class DatasetBoundAlignmentRecordDataset private[ds] (
   dataset: Dataset[AlignmentRecordProduct],
   sequences: SequenceDictionary,
   readGroups: ReadGroupDictionary,
@@ -331,7 +331,7 @@ case class DatasetBoundAlignmentRecordDataset private[ds](
   }
 }
 
-case class RDDBoundAlignmentRecordDataset private[ds](
+case class RDDBoundAlignmentRecordDataset private[ds] (
     rdd: RDD[AlignmentRecord],
     sequences: SequenceDictionary,
     readGroups: ReadGroupDictionary,

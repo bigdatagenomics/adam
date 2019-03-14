@@ -115,7 +115,7 @@ object NucleotideContigFragmentDataset extends Serializable {
   }
 }
 
-case class ParquetUnboundNucleotideContigFragmentDataset private[ds](
+case class ParquetUnboundNucleotideContigFragmentDataset private[ds] (
     @transient private val sc: SparkContext,
     private val parquetFilename: String,
     sequences: SequenceDictionary) extends NucleotideContigFragmentDataset {
@@ -138,7 +138,7 @@ case class ParquetUnboundNucleotideContigFragmentDataset private[ds](
   }
 }
 
-case class DatasetBoundNucleotideContigFragmentDataset private[ds](
+case class DatasetBoundNucleotideContigFragmentDataset private[ds] (
   dataset: Dataset[NucleotideContigFragmentProduct],
   sequences: SequenceDictionary,
   override val isPartitioned: Boolean = true,
@@ -176,7 +176,7 @@ case class DatasetBoundNucleotideContigFragmentDataset private[ds](
  * @param rdd Underlying RDD
  * @param sequences Sequence dictionary computed from ds
  */
-case class RDDBoundNucleotideContigFragmentDataset private[ds](
+case class RDDBoundNucleotideContigFragmentDataset private[ds] (
     rdd: RDD[NucleotideContigFragment],
     sequences: SequenceDictionary,
     optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends NucleotideContigFragmentDataset {
