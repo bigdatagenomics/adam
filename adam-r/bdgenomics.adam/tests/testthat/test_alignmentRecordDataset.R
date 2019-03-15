@@ -75,8 +75,8 @@ test_that("pipe as sam", {
 
     pipedRdd <- pipe(reads,
                      cmd=cmd,
-                     "org.bdgenomics.adam.rdd.read.SAMInFormatter",
-                     "org.bdgenomics.adam.rdd.read.AnySAMOutFormatter",
+                     "org.bdgenomics.adam.ds.read.SAMInFormatter",
+                     "org.bdgenomics.adam.ds.read.AnySAMOutFormatter",
                      "org.bdgenomics.adam.api.java.AlignmentRecordsToAlignmentRecordsConverter")
 
     expect_equal(count(toDF(reads)),

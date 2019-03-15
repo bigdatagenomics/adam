@@ -52,7 +52,7 @@ createADAMContext <- function() {
 #' @export
 ADAMContext <- function(ss) {
     ssc = sparkR.callJMethod(ss, "sparkContext")
-    ac = sparkR.newJObject("org.bdgenomics.adam.rdd.ADAMContext", ssc)
+    ac = sparkR.newJObject("org.bdgenomics.adam.ds.ADAMContext", ssc)
     jac = sparkR.newJObject("org.bdgenomics.adam.api.java.JavaADAMContext", ac)
     
     new("ADAMContext", jac = jac)
