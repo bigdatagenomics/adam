@@ -16,7 +16,6 @@
 # limitations under the License.
 #
 
-
 import os
 import sys
 import tempfile
@@ -25,7 +24,6 @@ import unittest
 from pyspark.sql import SparkSession
 
 class SparkTestCase(unittest.TestCase):
-
 
     def resourceFile(self, filename, module='adam-core'):
 

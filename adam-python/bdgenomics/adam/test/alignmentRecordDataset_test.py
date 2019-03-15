@@ -16,14 +16,13 @@
 # limitations under the License.
 #
 
-
 from bdgenomics.adam.adamContext import ADAMContext
 from bdgenomics.adam.models import ReferenceRegion
-from bdgenomics.adam.rdd import AlignmentRecordDataset, CoverageDataset
+from bdgenomics.adam.ds import AlignmentRecordDataset, CoverageDataset
 from bdgenomics.adam.test import SparkTestCase
 
 from pyspark.sql.types import DoubleType
-from  pyspark.storagelevel import StorageLevel
+from pyspark.storagelevel import StorageLevel
 
 class AlignmentRecordDatasetTest(SparkTestCase):
 

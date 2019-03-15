@@ -26,7 +26,7 @@ adamContext
    ADAMContext
 """
 
-from bdgenomics.adam.rdd import AlignmentRecordDataset, \
+from bdgenomics.adam.ds import AlignmentRecordDataset, \
     CoverageDataset, \
     FeatureDataset, \
     FragmentDataset, \
@@ -52,7 +52,7 @@ class ADAMContext(object):
 
         self._sc = ss.sparkContext
         self._jvm = self._sc._jvm
-        c = self._jvm.org.bdgenomics.adam.rdd.ADAMContext.ADAMContextFromSession(ss._jsparkSession)
+        c = self._jvm.org.bdgenomics.adam.ds.ADAMContext.ADAMContextFromSession(ss._jsparkSession)
         self.__jac = self._jvm.org.bdgenomics.adam.api.java.JavaADAMContext(c)
 
 

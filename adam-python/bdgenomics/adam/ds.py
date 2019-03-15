@@ -47,7 +47,7 @@ _log = logging.getLogger(__name__)
 
 class GenomicDataset(object):
     """
-    Wraps an RDD of genomic data with helpful metadata.
+    Wraps an RDD, DataFrame, or Dataset of genomic data with helpful metadata.
     """
 
     def __init__(self, jvmRdd, sc):
@@ -576,7 +576,7 @@ class GenomicDataset(object):
 
 class VCFSupportingGenomicDataset(GenomicDataset):
     """
-    Wraps an GenomicDataset with VCF metadata.
+    Wraps a GenomicDataset with VCF metadata.
     """
 
     def __init__(self, jvmRdd, sc):
@@ -839,7 +839,7 @@ class VCFSupportingGenomicDataset(GenomicDataset):
 
 class AlignmentRecordDataset(GenomicDataset):
     """
-    Wraps an GenomicDataset with Alignment Record metadata and functions.
+    Wraps a GenomicDataset with Alignment Record metadata and functions.
     """
 
     def __init__(self, jvmRdd, sc):
@@ -936,7 +936,7 @@ class AlignmentRecordDataset(GenomicDataset):
         """
         Converts a genomic dataset into the SAM spec string it represents.
 
-        This method converts an genomic dataset of AlignmentRecords back to an RDD of
+        This method converts a genomic dataset of AlignmentRecords back to an RDD of
         SAMRecordWritables and a SAMFileHeader, and then maps this RDD into a
         string on the driver that represents this file in SAM.
 
@@ -1042,7 +1042,7 @@ class AlignmentRecordDataset(GenomicDataset):
         :param int maxReadsPerTarget: Maximum number of reads per target.
         :param boolean unclipReads: If true, unclips reads prior to realignment.
         Else, omits clipped bases during realignment.
-        :return: Returns an genomic dataset of mapped reads which have been realigned.
+        :return: Returns a genomic dataset of mapped reads which have been realigned.
         :rtype: bdgenomics.adam.ds.AlignmentRecordDataset
         """
 
@@ -1192,7 +1192,7 @@ class AlignmentRecordDataset(GenomicDataset):
 
 class CoverageDataset(GenomicDataset):
     """
-    Wraps an GenomicDataset with Coverage metadata and functions.
+    Wraps a GenomicDataset with Coverage metadata and functions.
     """
 
 
@@ -1305,7 +1305,7 @@ class CoverageDataset(GenomicDataset):
 
 class FeatureDataset(GenomicDataset):
     """
-    Wraps an GenomicDataset with Feature metadata and functions.
+    Wraps a GenomicDataset with Feature metadata and functions.
     """
 
     def _replaceRdd(self, newRdd):
@@ -1364,7 +1364,7 @@ class FeatureDataset(GenomicDataset):
 
 class FragmentDataset(GenomicDataset):
     """
-    Wraps an GenomicDataset with Fragment metadata and functions.
+    Wraps a GenomicDataset with Fragment metadata and functions.
     """
 
     def _replaceRdd(self, newRdd):
@@ -1425,7 +1425,7 @@ class FragmentDataset(GenomicDataset):
 
 class GenotypeDataset(VCFSupportingGenomicDataset):
     """
-    Wraps an GenomicDataset with Genotype metadata and functions.
+    Wraps a GenomicDataset with Genotype metadata and functions.
     """
 
     def _replaceRdd(self, newRdd):
@@ -1486,7 +1486,7 @@ class GenotypeDataset(VCFSupportingGenomicDataset):
 
 class NucleotideContigFragmentDataset(GenomicDataset):
     """
-    Wraps an GenomicDataset with Nucleotide Contig Fragment metadata and functions.
+    Wraps a GenomicDataset with Nucleotide Contig Fragment metadata and functions.
     """
 
     def _replaceRdd(self, newRdd):
@@ -1555,7 +1555,7 @@ class NucleotideContigFragmentDataset(GenomicDataset):
 
 class VariantDataset(VCFSupportingGenomicDataset):
     """
-    Wraps an GenomicDataset with Variant metadata and functions.
+    Wraps a GenomicDataset with Variant metadata and functions.
     """
 
     def _replaceRdd(self, newRdd):
@@ -1602,7 +1602,7 @@ class VariantDataset(VCFSupportingGenomicDataset):
     
 class VariantContextDataset(VCFSupportingGenomicDataset):
     """
-    Wraps an GenomicDataset with Variant Context metadata and functions.
+    Wraps a GenomicDataset with Variant Context metadata and functions.
     """
 
     def _replaceRdd(self, newRdd):

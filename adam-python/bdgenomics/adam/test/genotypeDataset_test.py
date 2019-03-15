@@ -16,10 +16,8 @@
 # limitations under the License.
 #
 
-
 from bdgenomics.adam.adamContext import ADAMContext
 from bdgenomics.adam.test import SparkTestCase
-
 
 class GenotypeDatasetTest(SparkTestCase):
 

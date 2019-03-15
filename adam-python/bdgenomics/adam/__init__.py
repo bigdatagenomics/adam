@@ -21,7 +21,7 @@ bdgenomics.adam Package
 =======================
 .. currentmodule:: bdgenomics.adam
 
-ADAM's Python API wraps the ADAMContext and GenomicRDD APIs so they can be used from PySpark.
+ADAM's Python API wraps the ADAMContext and GenomicDataset APIs so they can be used from PySpark.
 The Python API is feature complete relative to ADAM's Java API.
 
 .. automodule:: bdgenomics.adam.adamContext
