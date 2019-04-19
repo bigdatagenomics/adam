@@ -23,10 +23,11 @@ import htsjdk.samtools.{
   ValidationStringency
 }
 import java.io.{ File, FileNotFoundException }
+import java.lang.{ Long => JLong }
 import com.google.common.io.Files
 import org.apache.hadoop.fs.Path
-import org.apache.parquet.filter2.dsl.Dsl._
-import org.apache.parquet.filter2.predicate.FilterPredicate
+import org.apache.parquet.filter2.predicate.Operators.LongColumn
+import org.apache.parquet.filter2.predicate.{ FilterApi, FilterPredicate }
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models._
@@ -355,7 +356,8 @@ class ADAMContextSuite extends ADAMFunSuite {
     val loc = tmpLocation()
     variants.saveAsParquet(loc, 1024, 1024) // force more than one row group (block)
 
-    val pred: FilterPredicate = (LongColumn("start") === 16097631L)
+    val pred: FilterPredicate = FilterApi.eq[JLong, LongColumn](
+      FilterApi.longColumn("start"), 16097631L)
     // the following only reads one row group
     val adamVariants = sc.loadParquetVariants(loc, optPredicate = Some(pred))
     assert(adamVariants.rdd.count === 1)

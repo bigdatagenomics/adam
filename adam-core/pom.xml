@@ -243,11 +243,6 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
-      <groupId>org.apache.parquet</groupId>
-      <artifactId>parquet-scala_2.10</artifactId>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
       <groupId>org.seqdoop</groupId>
       <artifactId>hadoop-bam</artifactId>
       <scope>compile</scope>

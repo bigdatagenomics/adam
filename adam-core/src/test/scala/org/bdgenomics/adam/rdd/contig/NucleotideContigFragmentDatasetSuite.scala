@@ -18,10 +18,12 @@
 package org.bdgenomics.adam.rdd.contig
 
 import java.io.File
+import java.lang.{ Long => JLong }
 
 import com.google.common.io.Files
-import org.apache.parquet.filter2.dsl.Dsl._
-import org.apache.parquet.filter2.predicate.FilterPredicate
+import org.apache.parquet.filter2.predicate.Operators.{ BinaryColumn, LongColumn }
+import org.apache.parquet.filter2.predicate.{ FilterApi, FilterPredicate }
+import org.apache.parquet.io.api.Binary
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.bdgenomics.adam.models._
@@ -703,9 +705,13 @@ class NucleotideContigFragmentDatasetSuite extends ADAMFunSuite {
     val fragments3 = sc.loadContigFragments(output,
       optPredicate = Some(
         // ReferenceRegion.toPredicate uses referenceName instead of contigName
-        (BinaryColumn("contigName") === "HLA-DQB1*05:01:01:02") &&
-          (LongColumn("end") > 500L) &&
-          (LongColumn("start") <= 1500L)
+        FilterApi.and(
+          FilterApi.and(
+            FilterApi.eq[Binary, BinaryColumn](
+              FilterApi.binaryColumn("contigName"),
+              Binary.fromString("HLA-DQB1*05:01:01:02")),
+            FilterApi.gt[JLong, LongColumn](FilterApi.longColumn("end"), 500L)),
+          FilterApi.ltEq[JLong, LongColumn](FilterApi.longColumn("start"), 1500L))
       )
     )
     assert(fragments3.rdd.count === 2)
