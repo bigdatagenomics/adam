@@ -17,10 +17,13 @@
  */
 package org.bdgenomics.adam.models
 
+import java.lang.{ Long => JLong }
+
 import com.esotericsoftware.kryo.io.{ Input, Output }
 import com.esotericsoftware.kryo.{ Kryo, Serializer }
-import org.apache.parquet.filter2.dsl.Dsl._
-import org.apache.parquet.filter2.predicate.FilterPredicate
+import org.apache.parquet.filter2.predicate.{ FilterApi, FilterPredicate }
+import org.apache.parquet.filter2.predicate.Operators.{ BinaryColumn, LongColumn }
+import org.apache.parquet.io.api.Binary
 import org.bdgenomics.formats.avro._
 import org.bdgenomics.utils.interval.array.Interval
 import scala.math.{ max, min }
@@ -373,7 +376,7 @@ object ReferenceRegion {
       "Cannot create a predicate from an empty set of regions.")
     regions.toIterable
       .map(_.toPredicate)
-      .reduce(_ || _)
+      .reduce(FilterApi.or)
   }
 }
 
@@ -745,9 +748,12 @@ case class ReferenceRegion(
    *   region.
    */
   def toPredicate: FilterPredicate = {
-    ((LongColumn("end") > start) &&
-      (LongColumn("start") <= end) &&
-      (BinaryColumn("referenceName") === referenceName))
+    FilterApi.and(
+      FilterApi.and(
+        FilterApi.gt[JLong, LongColumn](FilterApi.longColumn("end"), start),
+        FilterApi.ltEq[JLong, LongColumn](FilterApi.longColumn("start"), end)),
+      FilterApi.eq[Binary, BinaryColumn](
+        FilterApi.binaryColumn("referenceName"), Binary.fromString(referenceName)))
   }
 
   override def hashCode: Int = {

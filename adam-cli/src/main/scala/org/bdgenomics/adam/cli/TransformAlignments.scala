@@ -19,7 +19,6 @@ package org.bdgenomics.adam.cli
 
 import htsjdk.samtools.ValidationStringency
 import java.time.Instant
-import org.apache.parquet.filter2.dsl.Dsl._
 import org.apache.spark.SparkContext
 import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.algorithms.consensus._
