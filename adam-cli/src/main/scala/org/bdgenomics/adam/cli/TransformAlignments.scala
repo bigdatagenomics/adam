@@ -17,8 +17,12 @@
  */
 package org.bdgenomics.adam.cli
 
-import htsjdk.samtools.ValidationStringency
 import java.time.Instant
+import java.lang.{ Boolean => JBoolean }
+
+import htsjdk.samtools.ValidationStringency
+import org.apache.parquet.filter2.predicate.FilterApi
+import org.apache.parquet.filter2.predicate.Operators.BooleanColumn
 import org.apache.spark.SparkContext
 import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.algorithms.consensus._
@@ -477,7 +481,8 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
         args.useAlignedReadPredicate ||
         args.limitProjection) {
         val pred = if (args.useAlignedReadPredicate) {
-          Some(BooleanColumn("readMapped") === true)
+          Some(FilterApi.eq[JBoolean, BooleanColumn](
+            FilterApi.booleanColumn("readMapped"), true))
         } else if (args.regionPredicate != null) {
           Some(ReferenceRegion.createPredicate(
             ReferenceRegion.fromString(args.regionPredicate).toSeq: _*
