@@ -209,7 +209,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(vc.genotypes.size === 3)
 
     val gt = vc.genotypes.head
-    assert(gt.getVariantCallingAnnotations != null)
+    assert(gt.getAnnotation != null)
     assert(gt.getReadDepth === 20)
   }
 
@@ -244,7 +244,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(vcs.rdd.filter(_.variant.variant.getAnnotation().getAttributes().containsKey("NS"))
       .count === 7)
     assert(vcs.rdd.flatMap(_.genotypes)
-      .filter(_.getVariantCallingAnnotations().getAttributes().containsKey("HQ"))
+      .filter(_.getAnnotation().getAttributes().containsKey("HQ"))
       .count === 0)
   }
 

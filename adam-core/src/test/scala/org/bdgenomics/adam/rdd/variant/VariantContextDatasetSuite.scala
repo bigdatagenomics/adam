@@ -79,7 +79,7 @@ class VariantContextDatasetSuite extends ADAMFunSuite {
 
     val g0 = Genotype.newBuilder().setVariant(v0)
       .setSampleId("NA12878")
-      .setAlleles(List(GenotypeAllele.REF, GenotypeAllele.ALT))
+      .setAlleles(List(Allele.REF, Allele.ALT))
       .build
 
     VariantContextDataset(sc.parallelize(List(
@@ -97,7 +97,7 @@ class VariantContextDatasetSuite extends ADAMFunSuite {
       v.getAnnotation.getAttributes().containsKey("MQA")
     }).count === 1)
     assert(vc1.toGenotypes.rdd.filter(gt => {
-      gt.getVariantCallingAnnotations().getAttributes().containsKey("MQA")
+      gt.getAnnotation().getAttributes().containsKey("MQA")
     }).count === 1)
     assert(vc1.rdd.count === 6)
   }
@@ -186,7 +186,7 @@ class VariantContextDatasetSuite extends ADAMFunSuite {
     assert(alternateReadDepths.forall(rd => (rd == 0 || rd == null)))
 
     // ADALL should be zeros or null after splitting ref=GAAGAAAGAAAGA alt=GAAGAAAGA,GAAGA,G ADALL 0,0,0
-    val netAlleleDepths = filtered.map(_.getVariantCallingAnnotations.getAttributes.get("ADALL")).collect()
+    val netAlleleDepths = filtered.map(_.getAnnotation.getAttributes.get("ADALL")).collect()
 
     assert(netAlleleDepths.forall(adall => (adall == "0,0" || adall == "")))
   }
@@ -200,9 +200,9 @@ class VariantContextDatasetSuite extends ADAMFunSuite {
     assert(variant.getAnnotation.getAttributes.get("BaseQRankSum") === "-Infinity")
 
     val genotype = vcs.toGenotypes().rdd.filter(_.getStart == 14396L).first()
-    assert(genotype.getVariantCallingAnnotations.getRmsMapQ === Float.NegativeInfinity)
+    assert(genotype.getAnnotation.getRmsMapQ === Float.NegativeInfinity)
     // +Inf FORMAT value --> Infinity after conversion
-    assert(genotype.getVariantCallingAnnotations.getAttributes.get("float") === "Infinity")
+    assert(genotype.getAnnotation.getAttributes.get("float") === "Infinity")
   }
 
   sparkTest("support VCFs with `nan` instead of `NaN` float values") {
@@ -214,8 +214,8 @@ class VariantContextDatasetSuite extends ADAMFunSuite {
     assert(variant.getAnnotation.getAttributes.get("ClippingRankSum") === "NaN")
 
     val genotype = vcs.toGenotypes().rdd.filter(_.getStart == 14396L).first()
-    assert(genotype.getVariantCallingAnnotations.getRmsMapQ.isNaN)
-    assert(genotype.getVariantCallingAnnotations.getAttributes.get("float") === "NaN")
+    assert(genotype.getAnnotation.getRmsMapQ.isNaN)
+    assert(genotype.getAnnotation.getAttributes.get("float") === "NaN")
   }
 
   sparkTest("don't lose any variants when piping as VCF") {
@@ -268,7 +268,7 @@ class VariantContextDatasetSuite extends ADAMFunSuite {
     // check for freebayes-specific VCF FORMAT keys
     val genotype = pipedRdd.toGenotypes.rdd.first
     for (freebayesFormatKey <- Seq("RO", "QR", "AO", "QA")) {
-      assert(genotype.getVariantCallingAnnotations.getAttributes.containsKey(freebayesFormatKey))
+      assert(genotype.getAnnotation.getAttributes.containsKey(freebayesFormatKey))
     }
 
     // retrieve accumulated VCF header lines

@@ -19,7 +19,7 @@ package org.bdgenomics.adam.models
 
 import htsjdk.samtools.ValidationStringency
 import htsjdk.variant.variantcontext.{
-  Allele,
+  Allele => HtsjdkAllele,
   GenotypeBuilder,
   VariantContextBuilder
 }
@@ -675,7 +675,7 @@ class ReferenceRegionSuite extends FunSuite {
       ValidationStringency.LENIENT,
       false)
     val vcb = new VariantContextBuilder()
-      .alleles(List(Allele.create("A", true), Allele.create("T")))
+      .alleles(List(HtsjdkAllele.create("A", true), HtsjdkAllele.create("T")))
       .start(1L)
       .stop(1L)
       .chr("1")

@@ -179,11 +179,11 @@ object ADAMShell {
       g.getReferenceName(),
       g.getStart().toString,
       g.getEnd().toString,
-      g.getVariant().getReferenceAllele(),
-      g.getVariant().getAlternateAllele(),
+      g.getReferenceAllele(),
+      g.getAlternateAllele(),
       g.getAlleles().toString,
       g.getSampleId()
-    ) ++ keys.map(key => Option(g.getVariantCallingAnnotations().getAttributes().get(key)).getOrElse(""))).toArray
+    ) ++ keys.map(key => Option(g.getAnnotation().getAttributes().get(key)).getOrElse(""))).toArray
 
     println("\nGenotype Format Fields\n" + new ASCIITable(header, rows).toString)
   }
@@ -218,13 +218,13 @@ object ADAMShell {
       g.getReferenceName(),
       g.getStart().toString,
       g.getEnd().toString,
-      g.getVariant().getReferenceAllele(),
-      g.getVariant().getAlternateAllele(),
+      g.getReferenceAllele(),
+      g.getAlternateAllele(),
       g.getAlleles().toString,
       g.getSampleId(),
-      g.getVariantCallingAnnotations().getFiltersApplied().toString,
-      g.getVariantCallingAnnotations().getFiltersPassed().toString,
-      g.getVariantCallingAnnotations().getFiltersFailed().toString
+      g.getFiltersApplied().toString,
+      g.getFiltersPassed().toString,
+      g.getFiltersFailed().toString
     )).toArray
 
     println("\nGenotype Filters\n" + new ASCIITable(header, rows).toString)

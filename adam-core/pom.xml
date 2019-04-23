@@ -106,6 +106,7 @@
                 <argument>org.bdgenomics.formats.avro.Feature</argument>
                 <argument>org.bdgenomics.formats.avro.Fragment</argument>
                 <argument>org.bdgenomics.formats.avro.Genotype</argument>
+                <argument>org.bdgenomics.formats.avro.GenotypeAnnotation</argument>
                 <argument>org.bdgenomics.formats.avro.NucleotideContigFragment</argument>
                 <argument>org.bdgenomics.formats.avro.OntologyTerm</argument>
                 <argument>org.bdgenomics.formats.avro.ProcessingStep</argument>
@@ -113,7 +114,6 @@
                 <argument>org.bdgenomics.formats.avro.TranscriptEffect</argument>
                 <argument>org.bdgenomics.formats.avro.Variant</argument>
                 <argument>org.bdgenomics.formats.avro.VariantAnnotation</argument>
-                <argument>org.bdgenomics.formats.avro.VariantCallingAnnotations</argument>
                 <argument>${project.basedir}/target/generated-sources/src/main/scala/org/bdgenomics/adam/sql/Schemas.scala</argument>
               </arguments>
               <classpathScope>compile</classpathScope>
@@ -134,6 +134,7 @@
                 <argument>org.bdgenomics.formats.avro.Feature</argument>
                 <argument>org.bdgenomics.formats.avro.Fragment</argument>
                 <argument>org.bdgenomics.formats.avro.Genotype</argument>
+                <argument>org.bdgenomics.formats.avro.GenotypeAnnotation</argument>
                 <argument>org.bdgenomics.formats.avro.NucleotideContigFragment</argument>
                 <argument>org.bdgenomics.formats.avro.OntologyTerm</argument>
                 <argument>org.bdgenomics.formats.avro.Read</argument>
@@ -145,7 +146,6 @@
                 <argument>org.bdgenomics.formats.avro.TranscriptEffect</argument>
                 <argument>org.bdgenomics.formats.avro.Variant</argument>
                 <argument>org.bdgenomics.formats.avro.VariantAnnotation</argument>
-                <argument>org.bdgenomics.formats.avro.VariantCallingAnnotations</argument>
                 <argument>${project.basedir}/target/generated-sources/src/main/scala/org/bdgenomics/adam/projections/Enums.scala</argument>
               </arguments>
               <classpathScope>compile</classpathScope>
