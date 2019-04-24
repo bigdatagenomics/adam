@@ -525,18 +525,6 @@
         </exclusions>
       </dependency>
       <dependency>
-        <groupId>org.apache.parquet</groupId>
-        <!-- This library has no Scala 2.11 version, but using the 2 dot 10 version seems to work. -->
-        <artifactId>parquet-scala_2.10</artifactId>
-        <version>${parquet.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>org.scala-lang</groupId>
-            <artifactId>scala-library</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-      <dependency>
         <groupId>org.seqdoop</groupId>
         <artifactId>hadoop-bam</artifactId>
         <version>${hadoop-bam.version}</version>
