@@ -98,6 +98,14 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(reads.dataset.rdd.count === 20)
   }
 
+  sparkTest("can read a small .SAM file with a bad header with lenient validation") {
+    val path = testFile("small.badheader.sam")
+    val reads = sc.loadAlignments(path, stringency = ValidationStringency.SILENT)
+    assert(reads.rdd.count() === 20)
+    assert(reads.dataset.count === 20)
+    assert(reads.dataset.rdd.count === 20)
+  }
+
   sparkTest("loading a sam file with a bad header and strict stringency should fail") {
     val path = testFile("badheader.sam")
     intercept[SAMFormatException] {
