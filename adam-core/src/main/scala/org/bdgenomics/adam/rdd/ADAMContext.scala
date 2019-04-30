@@ -1558,7 +1558,9 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
               None
             }
           }
-        }).reduce((kv1, kv2) => {
+        }).fold((SequenceDictionary.empty,
+          ReadGroupDictionary.empty,
+          Seq[ProcessingStep]()))((kv1, kv2) => {
           (kv1._1 ++ kv2._1, kv1._2 ++ kv2._2, kv1._3 ++ kv2._3)
         })
 
