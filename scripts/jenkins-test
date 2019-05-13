@@ -39,19 +39,6 @@ fi
 
 set -e
 
-if [ ${SPARK_VERSION} == 2.3.3 ];
-then
-    # shouldn't be able to move to spark 2 twice
-    set +e
-    ./scripts/move_to_spark_2.sh
-    if [[ $? == 0 ]];
-    then
-        echo "We have already moved to Spark 2, so running move_to_spark_2.sh a second time should fail, but error code was 0 (success)."
-        exit 1
-    fi
-    set -e
-fi
-
 if [ ${SCALAVER} == 2.11 ];
 then
     # shouldn't be able to move to scala 2.11 twice
