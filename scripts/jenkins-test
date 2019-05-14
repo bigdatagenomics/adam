@@ -39,6 +39,7 @@ fi
 
 set -e
 
+# build defaults to Scala 2.11
 if [ ${SCALAVER} == 2.11 ];
 then
     # shouldn't be able to move to scala 2.11 twice
@@ -52,6 +53,7 @@ then
     set -e
 fi
 
+# move to Scala 2.12 if requested
 if [ ${SCALAVER} == 2.12 ];
 then
     set +e
@@ -269,7 +271,15 @@ echo "Printing read statistics"
 ${ADAM} flagstat -print_metrics ${READS}
 rm -rf ${ADAM_TMP_DIR}
 popd
-    
+
+# move back to Scala 2.11 as default
+if [ ${SCALAVER} == 2.12 ];
+then
+    set +e
+    ./scripts/move_to_scala_2.11.sh
+    set -e
+fi
+
 # test that the source is formatted correctly
 # we had modified the poms to add a temp dir, so back out that modification first
 pushd ${PROJECT_ROOT}
