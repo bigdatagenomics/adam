@@ -117,6 +117,14 @@ find . -name pom.xml \
     {} \;
 find . -name "*.bak" -exec rm -f {} \;
 
+# move back to Scala 2.11 as default
+if [ ${SCALAVER} == 2.12 ];
+then
+    set +e
+    ./scripts/move_to_scala_2.11.sh
+    set -e
+fi
+
 if test -n "$(git status --porcelain)"
 then
     echo "Applying move_to_xyz script marred a pom.xml file."
@@ -271,14 +279,6 @@ echo "Printing read statistics"
 ${ADAM} flagstat -print_metrics ${READS}
 rm -rf ${ADAM_TMP_DIR}
 popd
-
-# move back to Scala 2.11 as default
-if [ ${SCALAVER} == 2.12 ];
-then
-    set +e
-    ./scripts/move_to_scala_2.11.sh
-    set -e
-fi
 
 # test that the source is formatted correctly
 # we had modified the poms to add a temp dir, so back out that modification first
