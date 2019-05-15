@@ -161,6 +161,13 @@ then
 
     tar xzvf ${SPARK}-bin-without-hadoop-scala-2.12.tgz
     export SPARK_HOME=${ADAM_TMP_DIR}/${SPARK}-bin-without-hadoop-scala-2.12
+
+    curl \
+        -L "http://www-us.apache.org/dist/hadoop/common/hadoop-2.7.7/hadoop-2.7.7.tar.gz" \
+        -o hadoop-2.7.7.tar.gz
+
+    tar xzvf hadoop-2.7.7.tar.gz
+    export SPARK_DIST_CLASSPATH=$(hadoop-2.7.7/bin/hadoop classpath)
 else
     curl \
         -L "https://www.apache.org/dyn/mirrors/mirrors.cgi?action=download&filename=spark/${SPARK}/${SPARK}-bin-${HADOOP}.tgz" \
@@ -169,8 +176,6 @@ else
     tar xzvf ${SPARK}-bin-${HADOOP}.tgz
     export SPARK_HOME=${ADAM_TMP_DIR}/${SPARK}-bin-${HADOOP}
 fi
-
-
 
 # set the path to the adam submit script
 ADAM=./bin/adam-submit
