@@ -157,15 +157,20 @@ if [ ${SCALAVER} == 2.12 ];
 then
     curl \
         -L "https://www.apache.org/dyn/mirrors/mirrors.cgi?action=download&filename=spark/${SPARK}/${SPARK}-bin-without-hadoop-scala-2.12.tgz" \
-        -o ${SPARK}-bin-${HADOOP}.tgz
+        -o ${SPARK}-bin-without-hadoop-scala-2.12.tgz
+
+    tar xzvf ${SPARK}-bin-without-hadoop-scala-2.12.tgz
+    export SPARK_HOME=${ADAM_TMP_DIR}/${SPARK}-bin-without-hadoop-scala-2.12
 else
     curl \
         -L "https://www.apache.org/dyn/mirrors/mirrors.cgi?action=download&filename=spark/${SPARK}/${SPARK}-bin-${HADOOP}.tgz" \
         -o ${SPARK}-bin-${HADOOP}.tgz
+
+    tar xzvf ${SPARK}-bin-${HADOOP}.tgz
+    export SPARK_HOME=${ADAM_TMP_DIR}/${SPARK}-bin-${HADOOP}
 fi
 
-tar xzvf ${SPARK}-bin-${HADOOP}.tgz
-export SPARK_HOME=${ADAM_TMP_DIR}/${SPARK}-bin-${HADOOP}
+
 
 # set the path to the adam submit script
 ADAM=./bin/adam-submit
