@@ -588,6 +588,11 @@
         <artifactId>adam-codegen-spark2_${scala.version.prefix}</artifactId>
         <version>${project.version}</version>
       </dependency>
+      <dependency>
+        <groupId>com.thoughtworks.paranamer</groupId>
+        <artifactId>paranamer</artifactId>
+        <version>2.8</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
