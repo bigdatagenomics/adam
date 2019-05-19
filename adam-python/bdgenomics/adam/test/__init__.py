@@ -60,7 +60,6 @@ class SparkTestCase(unittest.TestCase):
         self.ss = SparkSession.builder \
                               .master('local[4]') \
                               .appName(class_name) \
-                              .config('spark.executor.memory', '8g') \
                               .getOrCreate()
         self.sc = self.ss.sparkContext
 
