@@ -81,8 +81,8 @@ clean_sdist:
 
 test: check_build_reqs
 	mkdir -p target
-	export PYSPARK_SUBMIT_ARGS="--conf spark.executor.memory 4g --conf spark.driver.memory 4g $PYSPARK_SUBMIT_ARGS"
-	$(python) -m pytest -vv --junitxml target/pytest-reports/tests.xml $(tests)
+	PYSPARK_SUBMIT_ARGS="--conf spark.executor.memory 4g --conf spark.driver.memory 4g $PYSPARK_SUBMIT_ARGS" \
+		$(python) -m pytest -vv --junitxml target/pytest-reports/tests.xml $(tests)
 
 
 pypi: check_clean_working_copy
