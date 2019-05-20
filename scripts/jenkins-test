@@ -167,6 +167,8 @@ then
         -o hadoop-2.7.7.tar.gz
 
     tar xzvf hadoop-2.7.7.tar.gz
+    # remove references to avro 1.7.x
+    find hadoop-2.7.7 -name *.jar | grep avro | xargs rm
     export SPARK_DIST_CLASSPATH=$(hadoop-2.7.7/bin/hadoop classpath)
 else
     curl \
