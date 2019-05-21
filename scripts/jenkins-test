@@ -167,8 +167,15 @@ then
         -o hadoop-2.7.7.tar.gz
 
     tar xzvf hadoop-2.7.7.tar.gz
+
     # remove references to avro 1.7.x
     find hadoop-2.7.7 -name *.jar | grep avro | xargs rm
+
+    # download avro 1.8.x
+    curl \
+        -L "http://repo1.maven.org/maven2/org/apache/avro/avro/1.8.2/avro-1.8.2.jar" \
+        -o hadoop-2.7.7/share/hadoop/common/avro-1.8.2.jar
+
     export SPARK_DIST_CLASSPATH=$(hadoop-2.7.7/bin/hadoop classpath)
 else
     curl \
