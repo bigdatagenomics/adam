@@ -1,5 +1,50 @@
 # ADAM Changelog #
 
+### Version 0.27.0 ###
+
+**Closed issues:**
+
+ - Add Scala 2.12 artifacts to release script [\#2153](https://github.com/bigdatagenomics/adam/issues/2153)
+ - Tried to access method org.apache.avro.specific.SpecificData.<init>()V from class ProcessingStep [\#2151](https://github.com/bigdatagenomics/adam/issues/2151)
+ - Update maven-jar-plugin dependency version to 3.1.2 [\#2147](https://github.com/bigdatagenomics/adam/issues/2147)
+ - Homebrew and Bioconda packages fail against Spark 2.4.2 [\#2146](https://github.com/bigdatagenomics/adam/issues/2146)
+ - Add Spark 2.4.3 and Scala 2.12 to Jenkins build [\#2145](https://github.com/bigdatagenomics/adam/issues/2145)
+ - Can encounter empty reduce when BAM header fails validation [\#2143](https://github.com/bigdatagenomics/adam/issues/2143)
+ - Build failing in jenkins from Spark 2.2.3 [\#2139](https://github.com/bigdatagenomics/adam/issues/2139)
+ - Make SamRecordConverter public [\#2138](https://github.com/bigdatagenomics/adam/issues/2138)
+ - python API does not match API [\#2127](https://github.com/bigdatagenomics/adam/issues/2127)
+ - Error when run : mvn install [\#2123](https://github.com/bigdatagenomics/adam/issues/2123)
+ - Always use Spark SQL in GenomicDataset read path [\#2114](https://github.com/bigdatagenomics/adam/issues/2114)
+ - Update bdg-utils dependency version to 0.2.14 [\#2106](https://github.com/bigdatagenomics/adam/issues/2106)
+ - NoSuchMethodError: org.apache.parquet.column.ParquetProperties.getAllocator()Lorg/apache/parquet/bytes/ByteBufferAllocator [\#2098](https://github.com/bigdatagenomics/adam/issues/2098)
+ - ClassNotFoundException: org.apache.avro.message.BinaryMessageEncoder [\#2091](https://github.com/bigdatagenomics/adam/issues/2091)
+ - Release script needs to touch Version in R DESCRIPTION file [\#2089](https://github.com/bigdatagenomics/adam/issues/2089)
+ - org.apache.avro.SchemaParseException: Can't redefine: list [\#2058](https://github.com/bigdatagenomics/adam/issues/2058)
+ - Support Spark 2.4 and Scala 2.12 [\#2044](https://github.com/bigdatagenomics/adam/issues/2044)
+ - Fail early when output directory already exists [\#2034](https://github.com/bigdatagenomics/adam/issues/2034)
+ - NoClassDefFoundError o.a.parquet.hadoop.metadata.CompressionCodecName [\#1742](https://github.com/bigdatagenomics/adam/issues/1742)
+ - Log with parameterized messages consistently for performance [\#1712](https://github.com/bigdatagenomics/adam/issues/1712)
+
+**Merged and closed pull requests:**
+
+ - [ADAM-2153] Add Scala 2.12 artifacts to release script [\#2154](https://github.com/bigdatagenomics/adam/pull/2154) ([heuermh](https://github.com/heuermh))
+ - [ADAM-2089] Bump Version in R DESCRIPTION file [\#2152](https://github.com/bigdatagenomics/adam/pull/2152) ([heuermh](https://github.com/heuermh))
+ - [ADAM-2145] Add Spark 2.4.3 and Scala 2.12 to Jenkins build [\#2149](https://github.com/bigdatagenomics/adam/pull/2149) ([heuermh](https://github.com/heuermh))
+ - [ADAM-2147] Update maven-jar-plugin dependency version to 3.1.2. [\#2148](https://github.com/bigdatagenomics/adam/pull/2148) ([heuermh](https://github.com/heuermh))
+ - [ADAM-2143] Use fold instead of reduce when loading SAM/BAM/CRAM headers [\#2144](https://github.com/bigdatagenomics/adam/pull/2144) ([fnothaft](https://github.com/fnothaft))
+ - Remove parquet-scala dependency from dependencyManagement. [\#2142](https://github.com/bigdatagenomics/adam/pull/2142) ([heuermh](https://github.com/heuermh))
+ - [ADAM-2139] Update Spark version to 2.3.3 for Jenkins test [\#2141](https://github.com/bigdatagenomics/adam/pull/2141) ([heuermh](https://github.com/heuermh))
+ - [ADAM-1712] Replace utils.Logger with grizzled.slf4j.Logger [\#2136](https://github.com/bigdatagenomics/adam/pull/2136) ([heuermh](https://github.com/heuermh))
+ - [ADAM-2034] Check output path is writeable before running transformations [\#2135](https://github.com/bigdatagenomics/adam/pull/2135) ([heuermh](https://github.com/heuermh))
+ - jenkins scripts deletes conda envs [\#2133](https://github.com/bigdatagenomics/adam/pull/2133) ([akmorrow13](https://github.com/akmorrow13))
+ - Update htsjdk dependency version to 2.18.2 [\#2132](https://github.com/bigdatagenomics/adam/pull/2132) ([heuermh](https://github.com/heuermh))
+ - [ADAM-2127] Update python doc per GenomicRdd --> GenomicDataset change [\#2128](https://github.com/bigdatagenomics/adam/pull/2128) ([heuermh](https://github.com/heuermh))
+ - Update python and R versions. [\#2126](https://github.com/bigdatagenomics/adam/pull/2126) ([heuermh](https://github.com/heuermh))
+ - use parquet-scala_2.11 fork [\#2108](https://github.com/bigdatagenomics/adam/pull/2108) ([ryan-williams](https://github.com/ryan-williams))
+ - [ADAM-2106] Update bdg-utils dependency version to 0.2.14 [\#2107](https://github.com/bigdatagenomics/adam/pull/2107) ([heuermh](https://github.com/heuermh))
+ - [ADAM-2044] Update Spark version to 2.4.3, add move to Scala 2.12 script [\#2056](https://github.com/bigdatagenomics/adam/pull/2056) ([heuermh](https://github.com/heuermh))
+
+
 ### Version 0.26.0 ###
 
 **Closed issues:**
