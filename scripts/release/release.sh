@@ -96,8 +96,26 @@ if [ $? != 0 ]; then
   exit 1
 fi
 
-# publish docs
-./scripts/publish-scaladoc.sh ${release}
+# do spark 2, scala 2.12 release
+git checkout -b maint_spark2_2.12-${release} ${branch}
+
+git commit -a -m "Modifying pom.xml files for Spark 2, Scala 2.12 release."
+./scripts/move_to_scala_2.12.sh
+mvn --batch-mode \
+  -P distribution \
+  -Dresume=false \
+  -Dtag=adam-parent-spark2_2.12-${release} \
+  -DreleaseVersion=${release} \
+  -DdevelopmentVersion=${devel} \
+  -DbranchName=adam-spark2_2.12-${release} \
+  release:clean \
+  release:prepare \
+  release:perform
+
+if [ $? != 0 ]; then
+  echo "Releasing Spark 2, Scala 2.12 version failed."
+  exit 1
+fi
 
 if [ $branch = "master" ]; then
   # if original branch was master, update versions on original branch
