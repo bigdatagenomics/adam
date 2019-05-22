@@ -20,6 +20,10 @@ branch=$(git status -bs | awk '{ print $2 }' | awk -F'.' '{ print $1 }' | head -
 mvn com.github.heuermh.maven.plugin.changes:github-changes-maven-plugin:1.0:github-changes -DmilestoneId=${milestone}
 git commit -a -m "Modifying changelog."
 
+# update R version
+sed -i -e "s/Version: [0-9.]*/Version: $1/g" adam-r/bdgenomics.adam/DESCRIPTION
+git commit -a -m "Bumping R version to $1."
+
 commit=$(git log --pretty=format:"%H" | head -n 1)
 echo "releasing from ${commit} on branch ${branch}"
 
