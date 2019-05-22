@@ -36,11 +36,11 @@ object FlagStat extends BDGCommandCompanion {
 
 class FlagStatArgs extends Args4jBase {
   @Argument(required = true, metaVar = "INPUT", usage = "The ADAM data to return stats for", index = 0)
-  val inputPath: String = null
+  var inputPath: String = null
   @Args4jOption(required = false, name = "-o", usage = "Optionally write the stats to this file.")
-  val outputPath: String = null
+  var outputPath: String = null
   @Args4jOption(required = false, name = "-stringency", usage = "Set the parsing stringency: SILENT, LENIENT, STRICT.")
-  val stringency: String = "SILENT"
+  var stringency: String = "SILENT"
 }
 
 class FlagStat(protected val args: FlagStatArgs) extends BDGSparkCommand[FlagStatArgs] {
