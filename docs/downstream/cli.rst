@@ -54,8 +54,8 @@ method. The ``MyCommandArgs`` class defined above is provided in the
 constructor and specifies the CLI command for ``BDGSparkCommand``. We
 must define a companion object because the command cannot run without
 being added to the list of accepted commands described below. For access
-to an `slf4j <http://www.slf4j.org/>`__ Logger via the ``log`` field,
-mix in the org.bdgenomics.utils.misc.Logging trait by adding
+to `slf4j <http://www.slf4j.org/>`__ Logger methods, such as ``info``,
+mix in the grizzled.slf4j.Logging trait by adding
 ``with Logging`` to the class definition.
 
 .. code:: scala
@@ -64,7 +64,7 @@ mix in the org.bdgenomics.utils.misc.Logging trait by adding
       val companion = MyCommand
 
       def run(sc: SparkContext) {
-        log.info("Doing something...")
+        info("Doing something...")
         // do something
       }
     }

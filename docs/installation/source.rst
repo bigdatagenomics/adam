@@ -4,7 +4,7 @@ Building ADAM from Source
 You will need to have `Apache Maven <http://maven.apache.org/>`__
 version 3.1.1 or later installed in order to build ADAM.
 
-    **Note:** The default configuration is for Hadoop 2.7.3. If building
+    **Note:** The default configuration is for Hadoop 2.7.5. If building
     against a different version of Hadoop, please pass
     ``-Dhadoop.version=<HADOOP_VERSION>`` to the Maven command.
 

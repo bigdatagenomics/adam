@@ -58,12 +58,9 @@
   </scm>
   <developers>
     <developer>
-      <id>massie</id>
-      <name>Matt Massie</name>
-      <email>massie@cs.berkeley.edu</email>
-      <url>http://www.cs.berkeley.edu/~massie</url>
-      <organization>U.C. Berkeley Computer Science</organization>
-      <organizationUrl>http://www.cs.berkeley.edu/</organizationUrl>
+      <id>heuermh</id>
+      <name>Michael L Heuer</name>
+      <organization>University of California Berkeley</organization>
     </developer>
   </developers>
   <issueManagement>

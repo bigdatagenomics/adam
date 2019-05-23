@@ -5,7 +5,7 @@ To use ADAM as a library in new applications:
 
 Create an object with a ``main(args: Array[String])`` method and handle
 command line arguments. Feel free to use the `args4j
-library <http://www.slf4j.org/>`__ or any other argument parsing
+library <https://args4j.kohsuke.org>`__ or any other argument parsing
 library.
 
 .. code:: scala
