@@ -18,22 +18,20 @@
 package org.bdgenomics.adam.rdd.read
 
 import htsjdk.samtools.{
+  SAMFileHeader,
   SAMFileWriter,
   SAMFileWriterFactory
 }
 import java.io.OutputStream
 import org.bdgenomics.adam.converters.AlignmentRecordConverter
-import org.bdgenomics.adam.models.{
-  ReadGroupDictionary,
-  SAMFileHeaderWritable
-}
+import org.bdgenomics.adam.models.ReadGroupDictionary
 
 /**
  * InFormatter companion for building an InFormatter that streams SAM.
  */
 object SAMInFormatter extends AnySAMInFormatterCompanion[SAMInFormatter] {
 
-  protected def makeFormatter(header: SAMFileHeaderWritable,
+  protected def makeFormatter(header: SAMFileHeader,
                               readGroups: ReadGroupDictionary,
                               converter: AlignmentRecordConverter): SAMInFormatter = {
     SAMInFormatter(header, readGroups, converter)
@@ -41,7 +39,7 @@ object SAMInFormatter extends AnySAMInFormatterCompanion[SAMInFormatter] {
 }
 
 case class SAMInFormatter private (
-    header: SAMFileHeaderWritable,
+    header: SAMFileHeader,
     readGroups: ReadGroupDictionary,
     converter: AlignmentRecordConverter) extends AnySAMInFormatter[SAMInFormatter] {
 
@@ -53,6 +51,6 @@ case class SAMInFormatter private (
 
   protected def makeWriter(os: OutputStream): SAMFileWriter = {
     new SAMFileWriterFactory()
-      .makeSAMWriter(header.header, true, os)
+      .makeSAMWriter(header, true, os)
   }
 }

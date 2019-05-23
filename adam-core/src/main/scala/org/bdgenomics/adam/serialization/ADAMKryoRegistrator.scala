@@ -111,9 +111,13 @@ class ADAMKryoRegistrator extends KryoRegistrator with Logging {
     kryo.register(classOf[htsjdk.samtools.CigarElement])
     kryo.register(classOf[htsjdk.samtools.CigarOperator])
     kryo.register(classOf[htsjdk.samtools.Cigar])
+    kryo.register(classOf[htsjdk.samtools.SAMProgramRecord])
+    kryo.register(classOf[htsjdk.samtools.SAMReadGroupRecord])
     kryo.register(classOf[htsjdk.samtools.SAMSequenceDictionary])
     kryo.register(classOf[htsjdk.samtools.SAMFileHeader])
     kryo.register(classOf[htsjdk.samtools.SAMSequenceRecord])
+    registerByName(kryo, "htsjdk.samtools.SAMFileHeader$GroupOrder")
+    registerByName(kryo, "htsjdk.samtools.SAMFileHeader$SortOrder")
 
     // htsjdk.variant.vcf
     kryo.register(classOf[htsjdk.variant.vcf.VCFContigHeaderLine])

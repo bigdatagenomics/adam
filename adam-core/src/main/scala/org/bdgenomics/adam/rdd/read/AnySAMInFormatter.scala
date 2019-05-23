@@ -20,10 +20,7 @@ package org.bdgenomics.adam.rdd.read
 import htsjdk.samtools.{ SAMFileHeader, SAMFileWriter }
 import java.io.OutputStream
 import org.bdgenomics.adam.converters.AlignmentRecordConverter
-import org.bdgenomics.adam.models.{
-  ReadGroupDictionary,
-  SAMFileHeaderWritable
-}
+import org.bdgenomics.adam.models.ReadGroupDictionary
 import org.bdgenomics.adam.rdd.{ InFormatter, InFormatterCompanion }
 import org.bdgenomics.adam.sql.{ AlignmentRecord => AlignmentRecordProduct }
 import org.bdgenomics.formats.avro.AlignmentRecord
@@ -35,7 +32,7 @@ import org.bdgenomics.formats.avro.AlignmentRecord
  * @tparam T The type of the underlying InFormatter.
  */
 trait AnySAMInFormatterCompanion[T <: AnySAMInFormatter[T]] extends InFormatterCompanion[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordDataset, T] {
-  protected def makeFormatter(header: SAMFileHeaderWritable,
+  protected def makeFormatter(header: SAMFileHeader,
                               readGroups: ReadGroupDictionary,
                               converter: AlignmentRecordConverter): T
 
@@ -55,7 +52,7 @@ trait AnySAMInFormatterCompanion[T <: AnySAMInFormatter[T]] extends InFormatterC
     header.setSortOrder(SAMFileHeader.SortOrder.coordinate)
 
     // construct the in formatter
-    makeFormatter(SAMFileHeaderWritable(header), gDataset.readGroups, arc)
+    makeFormatter(header, gDataset.readGroups, arc)
   }
 }
 
@@ -69,7 +66,7 @@ trait AnySAMInFormatter[T <: AnySAMInFormatter[T]] extends InFormatter[Alignment
   /**
    * A serializable form of the SAM File Header.
    */
-  val header: SAMFileHeaderWritable
+  val header: SAMFileHeader
 
   /**
    * A dictionary describing the read groups these reads are from.

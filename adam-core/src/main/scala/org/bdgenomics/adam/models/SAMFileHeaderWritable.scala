@@ -22,6 +22,9 @@ import org.bdgenomics.adam.rdd.ADAMContext
 import org.bdgenomics.adam.rdd.read.AlignmentRecordDataset
 import scala.collection.JavaConversions._
 
+/**
+ * @deprecated no longer necessary, SAMFileHeader implements Serializable
+ */
 private[adam] object SAMFileHeaderWritable {
 
   /**
