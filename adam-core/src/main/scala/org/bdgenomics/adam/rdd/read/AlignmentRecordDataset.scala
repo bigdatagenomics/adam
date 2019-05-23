@@ -725,7 +725,7 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
     header.setProgramRecords(pgRecords.asJava)
 
     // broadcast for efficiency
-    val hdrBcast = rdd.context.broadcast(SAMFileHeaderWritable(header))
+    val hdrBcast = rdd.context.broadcast(header)
 
     // map across RDD to perform conversion
     val convertedRDD: RDD[SAMRecordWritable] = rdd.map(r => {
