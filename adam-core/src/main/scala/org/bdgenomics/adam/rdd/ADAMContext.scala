@@ -43,7 +43,12 @@ import org.apache.parquet.hadoop.util.ContextUtil
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.MetricsContext._
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{ Dataset, SparkSession, SQLContext }
+import org.apache.spark.sql.{
+  DataFrame,
+  Dataset,
+  SparkSession,
+  SQLContext
+}
 import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.converters._
 import org.bdgenomics.adam.instrumentation.Timers._
@@ -1123,6 +1128,8 @@ private class NoPrefixFileFilter(private val prefix: String) extends PathFilter 
  * @param sc The SparkContext to wrap.
  */
 class ADAMContext(@transient val sc: SparkContext) extends Serializable with Logging {
+  @transient val spark = SQLContext.getOrCreate(sc).sparkSession
+  import spark.implicits._
 
   /**
    * @param samHeader The header to extract a sequence dictionary from.
@@ -1211,7 +1218,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   Globs/directories are supported.
    * @return Returns a seq of processing steps.
    */
-  private[rdd] def loadAvroPrograms(pathName: String): Seq[ProcessingStep] = {
+  private[rdd] def loadAvroProcessingSteps(pathName: String): Seq[ProcessingStep] = {
     getFsAndFilesWithFilter(pathName, new FileFilter("_processingSteps.avro"))
       .map(p => {
         loadAvro[ProcessingStep](p.toString, ProcessingStep.SCHEMA$)
@@ -1896,7 +1903,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val rgd = loadAvroReadGroupDictionary(pathName)
 
     // load processing step descriptions
-    val pgs = loadAvroPrograms(pathName)
+    val pgs = loadAvroProcessingSteps(pathName)
 
     (optPredicate, optProjection) match {
       case (None, None) => {
@@ -2954,7 +2961,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val rgd = loadAvroReadGroupDictionary(pathName)
 
     // load processing step descriptions
-    val pgs = loadAvroPrograms(pathName)
+    val pgs = loadAvroProcessingSteps(pathName)
 
     (optPredicate, optProjection) match {
       case (None, None) => {
@@ -3391,5 +3398,332 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     } catch {
       case e: FileNotFoundException => false
     }
+  }
+
+  // alignments
+
+  /**
+   * Load the specified data frame into a AlignmentRecordDataset, with empty metadata.
+   *
+   * @param df Data frame to load from.
+   * @return Returns a new AlignmentRecordDataset loaded from the specified data frame, with empty metadata.
+   */
+  def loadAlignments(df: DataFrame): AlignmentRecordDataset = {
+    AlignmentRecordDataset(df.as[AlignmentRecordProduct])
+  }
+
+  /**
+   * Load the specified data frame into a AlignmentRecordDataset, with metadata loaded from the specified
+   * metadata path name.
+   *
+   * @param df Data frame to load from.
+   * @param metadataPathName Path name to load metadata from.
+   * @return Returns a new AlignmentRecordDataset loaded from the specified data frame, with metadata loaded
+   *    from the specified metadata path name.
+   */
+  def loadAlignments(df: DataFrame, metadataPathName: String): AlignmentRecordDataset = {
+    info(s"Loading metadata from path name $metadataPathName")
+    val references = loadAvroSequenceDictionary(metadataPathName)
+    val readGroups = loadAvroReadGroupDictionary(metadataPathName)
+    val processingSteps = loadAvroProcessingSteps(metadataPathName)
+    loadAlignments(df, references, readGroups, processingSteps)
+  }
+
+  /**
+   * Load the specified data frame, references, read groups, and processing steps into a AlignmentRecordDataset.
+   *
+   * @param df Data frame to load from.
+   * @param references References for the AlignmentRecordDataset, may be empty.
+   * @param readGroups Read groups for the AlignmentRecordDataset, may be empty.
+   * @param processingSteps Processing steps for the AlignmentRecordDataset, may be empty.
+   * @return Returns a new AlignmentRecordDataset loaded from the specified data frame, references,
+   *    read groups, and processing steps.
+   */
+  def loadAlignments(df: DataFrame,
+                     references: SequenceDictionary,
+                     readGroups: ReadGroupDictionary,
+                     processingSteps: Seq[ProcessingStep]): AlignmentRecordDataset = {
+    AlignmentRecordDataset(df.as[AlignmentRecordProduct], references, readGroups, processingSteps)
+  }
+
+  // features
+
+  /**
+   * Load the specified data frame into a FeatureDataset, with empty metadata.
+   *
+   * @param df Data frame to load from.
+   * @return Returns a new FeatureDataset loaded from the specified data frame, with empty metadata.
+   */
+  def loadFeatures(df: DataFrame): FeatureDataset = {
+    FeatureDataset(df.as[FeatureProduct])
+  }
+
+  /**
+   * Load the specified data frame into a FeatureDataset, with metadata loaded from the specified
+   * metadata path name.
+   *
+   * @param df Data frame to load from.
+   * @param metadataPathName Path name to load metadata from.
+   * @return Returns a new FeatureDataset loaded from the specified data frame, with metadata loaded
+   *    from the specified metadata path name.
+   */
+  def loadFeatures(df: DataFrame, metadataPathName: String): FeatureDataset = {
+    info(s"Loading metadata from path name $metadataPathName")
+    val references = loadAvroSequenceDictionary(metadataPathName)
+    val samples = loadAvroSamples(metadataPathName)
+    loadFeatures(df, references, samples)
+  }
+
+  /**
+   * Load the specified data frame, references, and samples into a FeatureDataset.
+   *
+   * @param df Data frame to load from.
+   * @param references References for the FeatureDataset, may be empty.
+   * @param samples Samples for the FeatureDataset, may be empty.
+   * @return Returns a new FeatureDataset loaded from the specified data frame, references,
+   *    and samples.
+   */
+  def loadFeatures(df: DataFrame, references: SequenceDictionary, samples: Seq[Sample]): FeatureDataset = {
+    FeatureDataset(df.as[FeatureProduct], references, samples)
+  }
+
+  // fragments
+
+  /**
+   * Load the specified data frame into a FragmentDataset, with empty metadata.
+   *
+   * @param df Data frame to load from.
+   * @return Returns a new FragmentDataset loaded from the specified data frame, with empty metadata.
+   */
+  def loadFragments(df: DataFrame): FragmentDataset = {
+    FragmentDataset(df.as[FragmentProduct])
+  }
+
+  /**
+   * Load the specified data frame into a FragmentDataset, with metadata loaded from the specified
+   * metadata path name.
+   *
+   * @param df Data frame to load from.
+   * @param metadataPathName Path name to load metadata from.
+   * @return Returns a new FragmentDataset loaded from the specified data frame, with metadata loaded
+   *    from the specified metadata path name.
+   */
+  def loadFragments(df: DataFrame, metadataPathName: String): FragmentDataset = {
+    info(s"Loading metadata from path name $metadataPathName")
+    val references = loadAvroSequenceDictionary(metadataPathName)
+    val readGroups = loadAvroReadGroupDictionary(metadataPathName)
+    val processingSteps = loadAvroProcessingSteps(metadataPathName)
+    loadFragments(df, references, readGroups, processingSteps)
+  }
+
+  /**
+   * Load the specified data frame, references, read groups, and processing steps into a FragmentDataset.
+   *
+   * @param df Data frame to load from.
+   * @param references References for the FragmentDataset, may be empty.
+   * @param readGroups Read groups for the FragmentDataset, may be empty.
+   * @param processingSteps Processing steps for the FragmentDataset, may be empty.
+   * @return Returns a new FragmentDataset loaded from the specified data frame, references,
+   *    read groups, and processing steps.
+   */
+  def loadFragments(
+    df: DataFrame,
+    references: SequenceDictionary,
+    readGroups: ReadGroupDictionary,
+    processingSteps: Seq[ProcessingStep]): FragmentDataset = {
+    FragmentDataset(df.as[FragmentProduct], references, readGroups, processingSteps)
+  }
+
+  // genotypes
+
+  /**
+   * Load the specified data frame into a GenotypeDataset, with empty metadata
+   * and the default header lines.
+   *
+   * @param df Data frame to load from.
+   * @return Returns a new GenotypeDataset loaded from the specified data frame,
+   *    with empty metadata and the default header lines.
+   */
+  def loadGenotypes(df: DataFrame): GenotypeDataset = {
+    GenotypeDataset(df.as[GenotypeProduct])
+  }
+
+  /**
+   * Load the specified data frame into a GenotypeDataset, with metadata loaded from the specified
+   * metadata path name.
+   *
+   * @param df Data frame to load from.
+   * @param metadataPathName Path name to load metadata from.
+   * @return Returns a new GenotypeDataset loaded from the specified data frame, with metadata loaded
+   *    from the specified metadata path name.
+   */
+  def loadGenotypes(df: DataFrame, metadataPathName: String): GenotypeDataset = {
+    info(s"Loading metadata from path name $metadataPathName")
+    val references = loadAvroSequenceDictionary(metadataPathName)
+    val samples = loadAvroSamples(metadataPathName)
+    val headerLines = loadHeaderLines(metadataPathName)
+    loadGenotypes(df, references, samples, headerLines)
+  }
+
+  /**
+   * Load the specified data frame, references, samples, and header lines into a GenotypeDataset,
+   * with the default header lines.
+   *
+   * @param df Data frame to load from.
+   * @param references References for the GenotypeDataset, may be empty.
+   * @param samples Samples for the GenotypeDataset, may be empty.
+   * @return Returns a new GenotypeDataset loaded from the specified data frame, references,
+   *    and samples, with the default header lines.
+   */
+  def loadGenotypes(
+    df: DataFrame,
+    references: SequenceDictionary,
+    samples: Seq[Sample]): GenotypeDataset = {
+    loadGenotypes(df, references, samples, DefaultHeaderLines.allHeaderLines)
+  }
+
+  /**
+   * Load the specified data frame, references, samples, and header lines into a GenotypeDataset.
+   *
+   * @param df Data frame to load from.
+   * @param references References for the GenotypeDataset, may be empty.
+   * @param samples Samples for the GenotypeDataset, may be empty.
+   * @param headerLines Header lines for the GenotypeDataset, may be empty.
+   * @return Returns a new GenotypeDataset loaded from the specified data frame, references,
+   *    samples, and header lines.
+   */
+  def loadGenotypes(
+    df: DataFrame,
+    references: SequenceDictionary,
+    samples: Seq[Sample],
+    headerLines: Seq[VCFHeaderLine]): GenotypeDataset = {
+    GenotypeDataset(df.as[GenotypeProduct], references, samples, headerLines)
+  }
+
+  // variant contexts
+
+  /**
+   * Load the specified data frame into a VariantContextDataset, with empty metadata
+   * and the default header lines.
+   *
+   * @param df Data frame to load from.
+   * @return Returns a new VariantContextDataset loaded from the specified data frame,
+   *    with empty metadata and the default header lines.
+   */
+  def loadVariantContexts(df: DataFrame): VariantContextDataset = {
+    VariantContextDataset(df.as[VariantContextProduct])
+  }
+
+  /**
+   * Load the specified data frame into a VariantContextDataset, with metadata loaded from the specified
+   * metadata path name.
+   *
+   * @param df Data frame to load from.
+   * @param metadataPathName Path name to load metadata from.
+   * @return Returns a new VariantContextDataset loaded from the specified data frame, with metadata loaded
+   *    from the specified metadata path name.
+   */
+  def loadVariantContexts(df: DataFrame, metadataPathName: String): VariantContextDataset = {
+    info(s"Loading metadata from path name $metadataPathName")
+    val references = loadAvroSequenceDictionary(metadataPathName)
+    val samples = loadAvroSamples(metadataPathName)
+    val headerLines = loadHeaderLines(metadataPathName)
+    loadVariantContexts(df, references, samples, headerLines)
+  }
+
+  /**
+   * Load the specified data frame, references, and samples into a VariantContextDataset, with the
+   * default header lines.
+   *
+   * @param df Data frame to load from.
+   * @param references References for the VariantContextDataset, may be empty.
+   * @param samples Samples for the GenotypeDataset, may be empty.
+   * @return Returns a new VariantContextDataset loaded from the specified data frame,
+   *    references, and samples, with the default header lines.
+   */
+  def loadVariantContexts(
+    df: DataFrame,
+    references: SequenceDictionary,
+    samples: Seq[Sample]): VariantContextDataset = {
+    loadVariantContexts(df, references, samples, DefaultHeaderLines.allHeaderLines)
+  }
+
+  /**
+   * Load the specified data frame, references, samples, and header lines into a VariantContextDataset.
+   *
+   * @param df Data frame to load from.
+   * @param references References for the VariantContextDataset, may be empty.
+   * @param samples Samples for the VariantContextDataset, may be empty.
+   * @param headerLines Header lines for the VariantContextDataset, may be empty.
+   * @return Returns a new VariantContextDataset loaded from the specified data frame, references,
+   *    samples, and header lines.
+   */
+  def loadVariantContexts(
+    df: DataFrame,
+    references: SequenceDictionary,
+    samples: Seq[Sample],
+    headerLines: Seq[VCFHeaderLine]): VariantContextDataset = {
+    VariantContextDataset(df.as[VariantContextProduct], references, samples, headerLines)
+  }
+
+  // variants
+
+  /**
+   * Load the specified data frame into a VariantDataset, with empty metadata
+   * and the default header lines.
+   *
+   * @param df Data frame to load from.
+   * @return Returns a new VariantDataset loaded from the specified data frame,
+   *    with empty metadata and the default header lines.
+   */
+  def loadVariants(df: DataFrame): VariantDataset = {
+    VariantDataset(df.as[VariantProduct])
+  }
+
+  /**
+   * Load the specified data frame into a VariantDataset, with metadata loaded from the specified
+   * metadata path name.
+   *
+   * @param df Data frame to load from.
+   * @param metadataPathName Path name to load metadata from.
+   * @return Returns a new VariantDataset loaded from the specified data frame, with metadata loaded
+   *    from the specified metadata path name.
+   */
+  def loadVariants(df: DataFrame, metadataPathName: String): VariantDataset = {
+    info(s"Loading metadata from path name $metadataPathName")
+    val references = loadAvroSequenceDictionary(metadataPathName)
+    val headerLines = loadHeaderLines(metadataPathName)
+    loadVariants(df, references, headerLines)
+  }
+
+  /**
+   * Load the specified data frame and references into a VariantDataset, with the
+   * default header lines.
+   *
+   * @param df Data frame to load from.
+   * @param references References for the VariantDataset, may be empty.
+   * @return Returns a new VariantDataset loaded from the specified data frame and
+   *    references, with the default header lines.
+   */
+  def loadVariants(
+    df: DataFrame,
+    references: SequenceDictionary): VariantDataset = {
+    loadVariants(df, references, DefaultHeaderLines.allHeaderLines)
+  }
+
+  /**
+   * Load the specified data frame, references, and header lines into a VariantDataset.
+   *
+   * @param df Data frame to load from.
+   * @param references References for the VariantDataset, may be empty.
+   * @param headerLines Header lines for the VariantDataset, may be empty.
+   * @return Returns a new VariantDataset loaded from the specified data frame, references,
+   *    and header lines.
+   */
+  def loadVariants(
+    df: DataFrame,
+    references: SequenceDictionary,
+    headerLines: Seq[VCFHeaderLine]): VariantDataset = {
+    VariantDataset(df.as[VariantProduct], references, headerLines)
   }
 }

@@ -112,6 +112,20 @@ object GenotypeDataset extends Serializable {
    * @param headerLines The VCF header lines that cover all INFO/FORMAT fields
    *   needed to represent this genomic dataset of Genotypes.
    */
+  def apply(ds: Dataset[GenotypeProduct]): GenotypeDataset = {
+    GenotypeDataset(ds, SequenceDictionary.empty, Seq.empty, DefaultHeaderLines.allHeaderLines)
+  }
+
+  /**
+   * An genomic dataset containing genotypes called in a set of samples against a given
+   * reference genome, populated from a SQL Dataset.
+   *
+   * @param ds Called genotypes.
+   * @param sequences A dictionary describing the reference genome.
+   * @param samples The samples called.
+   * @param headerLines The VCF header lines that cover all INFO/FORMAT fields
+   *   needed to represent this genomic dataset of Genotypes.
+   */
   def apply(ds: Dataset[GenotypeProduct],
             sequences: SequenceDictionary,
             samples: Iterable[Sample],

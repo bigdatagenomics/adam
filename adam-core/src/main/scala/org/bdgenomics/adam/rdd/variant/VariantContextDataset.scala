@@ -122,6 +122,32 @@ object VariantContextDataset extends Serializable {
             samples: Iterable[Sample]): VariantContextDataset = {
     RDDBoundVariantContextDataset(rdd, sequences, samples.toSeq, null)
   }
+
+  /**
+   * Builds a VariantContextDataset without a partition map.
+   *
+   * @param ds The underlying VariantContext dataset.
+   * @return A new VariantContextDataset.
+   */
+  def apply(ds: Dataset[VariantContextProduct]): VariantContextDataset = {
+    DatasetBoundVariantContextDataset(ds, SequenceDictionary.empty, Seq.empty, DefaultHeaderLines.allHeaderLines)
+  }
+
+  /**
+   * Builds a VariantContextDataset without a partition map.
+   *
+   * @param ds The underlying VariantContext dataset.
+   * @param sequences The sequence dictionary for the genomic dataset.
+   * @param samples The samples for the genomic dataset.
+   * @param headerLines The header lines for the genomic dataset.
+   * @return A new VariantContextDataset.
+   */
+  def apply(ds: Dataset[VariantContextProduct],
+            sequences: SequenceDictionary,
+            samples: Iterable[Sample],
+            headerLines: Seq[VCFHeaderLine]): VariantContextDataset = {
+    DatasetBoundVariantContextDataset(ds, sequences, samples.toSeq, headerLines)
+  }
 }
 
 case class DatasetBoundVariantContextDataset private[rdd] (

@@ -30,8 +30,11 @@ import org.apache.parquet.filter2.predicate.Operators.LongColumn
 import org.apache.parquet.filter2.predicate.{ FilterApi, FilterPredicate }
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.SQLContext
+import org.bdgenomics.adam.converters.DefaultHeaderLines
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.sql.{ VariantContext => VariantContextProduct }
 import org.bdgenomics.adam.util.PhredUtils._
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro._
@@ -797,5 +800,196 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(secondPg.head.getProgramName === "myProg")
     assert(secondPg.head.getCommandLine === "\"myProg 456\"")
     assert(secondPg.head.getVersion === "1.0.0")
+  }
+
+  sparkTest("load alignments from data frame") {
+    val path = testFile("bqsr1-r1.fq")
+    val alignments = sc.loadAlignments(path)
+    val outputDir = tmpLocation()
+    alignments.saveAsParquet(outputDir)
+    val df = SQLContext.getOrCreate(sc).read.parquet(outputDir)
+    val reloaded = sc.loadAlignments(df)
+    assert(reloaded.sequences.isEmpty)
+    assert(reloaded.readGroups.isEmpty)
+    assert(reloaded.processingSteps.isEmpty)
+    assert(reloaded.rdd.collect().deep == alignments.rdd.collect().deep)
+  }
+
+  sparkTest("load features from data frame") {
+    val path = testFile("dvl1.200.bed")
+    val features = sc.loadFeatures(path)
+    val outputDir = tmpLocation()
+    features.saveAsParquet(outputDir)
+    val df = SQLContext.getOrCreate(sc).read.parquet(outputDir)
+    val reloaded = sc.loadFeatures(df)
+    assert(reloaded.sequences.isEmpty)
+    assert(reloaded.samples.isEmpty)
+    assert(reloaded.rdd.collect().deep == features.rdd.collect().deep)
+  }
+
+  sparkTest("load fragments from data frame") {
+    val path = testFile("sample1.query.sam")
+    val fragments = sc.loadFragments(path)
+    val outputDir = tmpLocation()
+    fragments.saveAsParquet(outputDir)
+    val df = SQLContext.getOrCreate(sc).read.parquet(outputDir)
+    val reloaded = sc.loadFragments(df)
+    assert(reloaded.sequences.isEmpty)
+    assert(reloaded.readGroups.isEmpty)
+    assert(reloaded.processingSteps.isEmpty)
+    assert(reloaded.rdd.collect().deep == fragments.rdd.collect().deep)
+  }
+
+  sparkTest("load genotypes from data frame with default header lines") {
+    val path = testFile("small.vcf")
+    val genotypes = sc.loadGenotypes(path)
+    val outputDir = tmpLocation()
+    genotypes.saveAsParquet(outputDir)
+    val df = SQLContext.getOrCreate(sc).read.parquet(outputDir)
+    val reloaded = sc.loadGenotypes(df)
+    assert(reloaded.sequences.isEmpty)
+    assert(reloaded.samples.isEmpty)
+    assert(reloaded.headerLines === DefaultHeaderLines.allHeaderLines)
+    assert(reloaded.rdd.collect().deep == genotypes.rdd.collect().deep)
+  }
+
+  sparkTest("load genotypes from data frame with empty header lines") {
+    val path = testFile("small.vcf")
+    val genotypes = sc.loadGenotypes(path)
+    val outputDir = tmpLocation()
+    genotypes.saveAsParquet(outputDir)
+    val df = SQLContext.getOrCreate(sc).read.parquet(outputDir)
+    val reloaded = sc.loadGenotypes(df, genotypes.sequences, genotypes.samples, headerLines = Seq.empty)
+    assert(reloaded.sequences == genotypes.sequences)
+    assert(reloaded.samples == genotypes.samples)
+    assert(reloaded.headerLines.isEmpty)
+    assert(reloaded.rdd.collect().deep == genotypes.rdd.collect().deep)
+  }
+
+  sparkTest("load variant contexts from data frame with default header lines") {
+    val path = testFile("small.vcf")
+    val vcs = sc.loadVcf(path)
+    val outputDir = tmpLocation()
+    vcs.saveAsParquet(outputDir)
+    val df = SQLContext.getOrCreate(sc).read.parquet(outputDir)
+    val reloaded = sc.loadVariantContexts(df)
+    assert(reloaded.sequences.isEmpty)
+    assert(reloaded.samples.isEmpty)
+    assert(reloaded.headerLines == DefaultHeaderLines.allHeaderLines)
+    // note: weaker assertion than other types, vc models don't equal each other
+    assert(reloaded.rdd.collect().size == vcs.rdd.collect().size)
+  }
+
+  sparkTest("load variant contexts from data frame with empty header lines") {
+    val path = testFile("small.vcf")
+    val vcs = sc.loadVcf(path)
+    val outputDir = tmpLocation()
+    vcs.saveAsParquet(outputDir)
+    val df = SQLContext.getOrCreate(sc).read.parquet(outputDir)
+    val reloaded = sc.loadVariantContexts(df, vcs.sequences, vcs.samples, headerLines = Seq.empty)
+    assert(reloaded.sequences == vcs.sequences)
+    assert(reloaded.samples == vcs.samples)
+    assert(reloaded.headerLines.isEmpty)
+    assert(reloaded.rdd.collect().size == vcs.rdd.collect().size)
+  }
+
+  sparkTest("load variants from data frame with default header lines") {
+    val path = testFile("gvcf_dir/gvcf_multiallelic.g.vcf")
+    val variants = sc.loadVcf(path).toVariants()
+    val outputDir = tmpLocation()
+    variants.saveAsParquet(outputDir)
+    val df = SQLContext.getOrCreate(sc).read.parquet(outputDir)
+    val reloaded = sc.loadVariants(df)
+    assert(reloaded.sequences.isEmpty)
+    assert(reloaded.headerLines === DefaultHeaderLines.allHeaderLines)
+    assert(reloaded.rdd.collect().deep == variants.rdd.collect().deep)
+  }
+
+  sparkTest("load variants from data frame with empty header lines") {
+    val path = testFile("gvcf_dir/gvcf_multiallelic.g.vcf")
+    val variants = sc.loadVcf(path).toVariants()
+    val outputDir = tmpLocation()
+    variants.saveAsParquet(outputDir)
+    val df = SQLContext.getOrCreate(sc).read.parquet(outputDir)
+    val reloaded = sc.loadVariants(df, variants.sequences, headerLines = Seq.empty)
+    assert(reloaded.sequences == variants.sequences)
+    assert(reloaded.headerLines.isEmpty)
+    assert(reloaded.rdd.collect().deep == variants.rdd.collect().deep)
+  }
+
+  sparkTest("load alignments with metadata from data frame") {
+    val path = testFile("bqsr1-r1.fq")
+    val alignments = sc.loadAlignments(path)
+    val outputDir = tmpLocation()
+    alignments.saveAsParquet(outputDir)
+    val df = SQLContext.getOrCreate(sc).read.parquet(outputDir)
+    val reloaded = sc.loadAlignments(df, outputDir)
+    assert(reloaded.sequences == alignments.sequences)
+    assert(reloaded.readGroups == alignments.readGroups)
+    assert(reloaded.processingSteps == alignments.processingSteps)
+    assert(reloaded.rdd.collect().deep == alignments.rdd.collect().deep)
+  }
+
+  sparkTest("load features with metadata from data frame") {
+    val path = testFile("dvl1.200.bed")
+    val features = sc.loadFeatures(path)
+    val outputDir = tmpLocation()
+    features.saveAsParquet(outputDir)
+    val df = SQLContext.getOrCreate(sc).read.parquet(outputDir)
+    val reloaded = sc.loadFeatures(df, outputDir)
+    assert(reloaded.sequences == features.sequences)
+    assert(reloaded.samples.isEmpty)
+    assert(reloaded.rdd.collect().deep == features.rdd.collect().deep)
+  }
+
+  sparkTest("load fragments with metadata from data frame") {
+    val path = testFile("sample1.query.sam")
+    val fragments = sc.loadFragments(path)
+    val outputDir = tmpLocation()
+    fragments.saveAsParquet(outputDir)
+    val df = SQLContext.getOrCreate(sc).read.parquet(outputDir)
+    val reloaded = sc.loadFragments(df, outputDir)
+    assert(reloaded.sequences == fragments.sequences)
+    assert(reloaded.readGroups == fragments.readGroups)
+    assert(reloaded.processingSteps == fragments.processingSteps)
+    assert(reloaded.rdd.collect().deep == fragments.rdd.collect().deep)
+  }
+
+  sparkTest("load genotypes with metadata from data frame") {
+    val path = testFile("small.vcf")
+    val gts = sc.loadGenotypes(path)
+    val outputDir = tmpLocation()
+    gts.saveAsParquet(outputDir)
+    val df = SQLContext.getOrCreate(sc).read.parquet(outputDir)
+    val reloaded = sc.loadGenotypes(df, outputDir)
+    assert(reloaded.sequences == gts.sequences)
+    assert(reloaded.headerLines.toSet == gts.headerLines.toSet)
+    assert(reloaded.samples == gts.samples)
+    assert(reloaded.rdd.collect().deep == gts.rdd.collect().deep)
+  }
+
+  sparkTest("load variant contexts with metadata from data frame") {
+    val path = testFile("small.vcf")
+    val vcs = sc.loadVcf(path)
+    val outputDir = tmpLocation()
+    vcs.saveAsParquet(outputDir)
+    val df = SQLContext.getOrCreate(sc).read.parquet(outputDir)
+    val reloaded = sc.loadVariantContexts(df, outputDir)
+    assert(reloaded.sequences == vcs.sequences)
+    assert(reloaded.headerLines.toSet == vcs.headerLines.toSet)
+    assert(reloaded.samples == vcs.samples)
+    assert(reloaded.rdd.collect().size == vcs.rdd.collect().size)
+  }
+
+  sparkTest("load variants with metadata from data frame") {
+    val path = testFile("gvcf_dir/gvcf_multiallelic.g.vcf")
+    val variants = sc.loadVcf(path).toVariants()
+    val outputDir = tmpLocation()
+    variants.saveAsParquet(outputDir)
+    val df = SQLContext.getOrCreate(sc).read.parquet(outputDir)
+    val reloaded = sc.loadVariants(df, outputDir)
+    assert(reloaded.sequences == variants.sequences)
+    assert(reloaded.headerLines.toSet == variants.headerLines.toSet)
+    assert(reloaded.rdd.collect().deep == variants.rdd.collect().deep)
   }
 }
