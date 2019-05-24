@@ -97,6 +97,16 @@ object VariantDataset extends Serializable {
    *
    * @param ds Variants.
    * @param sequences A dictionary describing the reference genome.
+   */
+  def apply(ds: Dataset[VariantProduct]): VariantDataset = {
+    VariantDataset(ds, SequenceDictionary.empty, DefaultHeaderLines.allHeaderLines)
+  }
+
+  /**
+   * An dataset containing variants called against a given reference genome.
+   *
+   * @param ds Variants.
+   * @param sequences A dictionary describing the reference genome.
    * @param headerLines The VCF header lines that cover all INFO/FORMAT fields
    *   needed to represent this RDD of Variants.
    */

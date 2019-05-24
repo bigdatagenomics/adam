@@ -141,6 +141,19 @@ object FragmentDataset {
    * A genomic dataset that supports Datasets of Fragments.
    *
    * @param ds The underlying Dataset of Fragment data.
+   * @return A new FragmentDataset.
+   */
+  def apply(ds: Dataset[FragmentProduct]): FragmentDataset = {
+    FragmentDataset(ds,
+      SequenceDictionary.empty,
+      ReadGroupDictionary.empty,
+      Seq.empty)
+  }
+
+  /**
+   * A genomic dataset that supports Datasets of Fragments.
+   *
+   * @param ds The underlying Dataset of Fragment data.
    * @param sequences The genomic sequences this data was aligned to, if any.
    * @param readGroups The read groups these Fragments came from.
    * @param processingSteps The processing steps that have been applied to this data.
