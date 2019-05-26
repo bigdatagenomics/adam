@@ -23,6 +23,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.api.java.function.{ Function => JFunction }
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Dataset, SQLContext }
+import org.apache.spark.sql.functions._
 import org.bdgenomics.adam.converters.AlignmentRecordConverter
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models.{
@@ -40,11 +41,15 @@ import org.bdgenomics.adam.rdd.{
 import org.bdgenomics.adam.rdd.read.{
   AlignmentRecordDataset,
   BinQualities,
+  DatasetBoundAlignmentRecordDataset,
   MarkDuplicates,
   QualityScoreBin
 }
 import org.bdgenomics.adam.serialization.AvroSerializer
-import org.bdgenomics.adam.sql.{ Fragment => FragmentProduct }
+import org.bdgenomics.adam.sql.{
+  Fragment => FragmentProduct,
+  AlignmentRecord => AlignmentRecordProduct
+}
 import org.bdgenomics.formats.avro._
 import org.bdgenomics.utils.interval.array.{
   IntervalArray,
@@ -219,6 +224,15 @@ case class DatasetBoundFragmentDataset private[rdd] (
   override def transformDataset(
     tFn: JFunction[Dataset[FragmentProduct], Dataset[FragmentProduct]]): FragmentDataset = {
     copy(dataset = tFn.call(dataset))
+  }
+
+  override def toReads(): AlignmentRecordDataset = {
+    import dataset.sparkSession.implicits._
+    val df = dataset.select(explode(col("alignments")).as("rec")).select("rec.*")
+    DatasetBoundAlignmentRecordDataset(df.as[AlignmentRecordProduct],
+      sequences,
+      readGroups,
+      processingSteps)
   }
 
   def replaceSequences(
