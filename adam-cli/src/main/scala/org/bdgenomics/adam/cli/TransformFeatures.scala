@@ -35,11 +35,15 @@ object TransformFeatures extends BDGCommandCompanion {
 class TransformFeaturesArgs extends Args4jBase with ParquetSaveArgs {
   @Argument(required = true, metaVar = "INPUT",
     usage = "The feature file to convert (e.g., .bed, .gff/.gtf, .gff3, .interval_list, .narrowPeak). If extension is not detected, Parquet is assumed.", index = 0)
-  var featuresFile: String = _
+  var featuresPath: String = _
 
   @Argument(required = true, metaVar = "OUTPUT",
     usage = "Location to write ADAM feature data. If extension is not detected, Parquet is assumed.", index = 1)
   var outputPath: String = null
+
+  @Args4jOption(required = false, name = "-reference",
+    usage = "Load reference for features; .dict as HTSJDK sequence dictionary format, .genome as Bedtools genome file format, .txt as UCSC Genome Browser chromInfo files.")
+  var referencePath: String = null
 
   @Args4jOption(required = false, name = "-num_partitions",
     usage = "Number of partitions to load a text file using.")
@@ -62,10 +66,12 @@ class TransformFeatures(val args: TransformFeaturesArgs)
   def run(sc: SparkContext) {
     checkWriteablePath(args.outputPath, sc.hadoopConfiguration)
 
+    val optSequenceDictionary = Option(args.referencePath).map(sc.loadSequenceDictionary(_))
+
     sc.loadFeatures(
-      args.featuresFile,
-      optMinPartitions = Option(args.numPartitions),
-      optProjection = None
+      args.featuresPath,
+      optSequenceDictionary = optSequenceDictionary,
+      optMinPartitions = Option(args.numPartitions)
     ).save(args.outputPath, args.single, args.disableFastConcat)
   }
 }
