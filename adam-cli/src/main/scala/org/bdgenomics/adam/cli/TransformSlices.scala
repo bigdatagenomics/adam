@@ -44,6 +44,10 @@ class TransformSlicesArgs extends Args4jBase with ParquetSaveArgs {
     usage = "Maximum slice length. Defaults to 10000L.")
   var maximumLength: Long = 10000L
 
+  @Args4jOption(required = false, name = "-create_reference",
+    usage = "Create reference from sequence names and lengths. Defaults to false.")
+  var createReference: Boolean = false
+
   @Args4jOption(required = false, name = "-single",
     usage = "Save as a single file, for the text formats.")
   var single: Boolean = false
@@ -59,11 +63,13 @@ class TransformSlices(val args: TransformSlicesArgs)
   val companion = TransformSlices
 
   def run(sc: SparkContext) {
-    sc.loadSlices(
+    val slices = sc.loadSlices(
       args.slicesFile,
       maximumLength = args.maximumLength,
       optPredicate = None,
       optProjection = None
-    ).save(args.outputPath, args.single, args.disableFastConcat)
+    )
+    val maybeCreateReference = if (args.createReference) slices.createSequenceDictionary() else slices
+    maybeCreateReference.save(args.outputPath, args.single, args.disableFastConcat)
   }
 }
