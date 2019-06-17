@@ -171,8 +171,7 @@ class ADAMKryoRegistrator extends KryoRegistrator with Logging {
     kryo.register(classOf[org.bdgenomics.adam.algorithms.consensus.Consensus])
 
     // org.bdgenomics.adam.converters
-    kryo.register(classOf[org.bdgenomics.adam.converters.FastaSequenceConverter.FastaDescriptionLine])
-    kryo.register(classOf[org.bdgenomics.adam.converters.FastaSliceConverter.FastaDescriptionLine])
+    kryo.register(classOf[org.bdgenomics.adam.converters.FastaDescriptionLine])
     kryo.register(classOf[org.bdgenomics.adam.converters.FragmentCollector])
 
     // org.bdgenomics.adam.models
