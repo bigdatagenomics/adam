@@ -437,6 +437,25 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(last.getEnd === 251930L)
   }
 
+  sparkTest("read a fasta file with comments, gaps, and translation stops") {
+    val inputPath = testFile("legacy.fa")
+    val sequences = sc.loadFastaProtein(inputPath)
+      .rdd
+      .sortBy(_.getLength)
+      .collect
+
+    assert(sequences.length === 3)
+
+    assert(sequences(0).getLength === 148)
+    assert(!sequences(0).getSequence.contains("*"))
+
+    assert(sequences(1).getLength === 229)
+    assert(!sequences(1).getSequence.contains("*"))
+
+    assert(sequences(2).getLength === 284)
+    assert(sequences(2).getSequence.contains("-"))
+  }
+
   sparkTest("loadIndexedBam with 1 ReferenceRegion") {
     val refRegion = ReferenceRegion("chr2", 100, 101)
     val path = testFile("indexed_bams/sorted.bam")

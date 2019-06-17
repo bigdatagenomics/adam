@@ -154,8 +154,13 @@ private[rdd] object GFF3Parser {
  */
 private[rdd] class GFF3Parser extends FeatureParser {
 
-  // nucleotide + amino acid + ambiguity codes covers a-z
-  private val fastaRegex = "^[a-zA-Z]+$".r
+  /**
+   * Regular expression to identify valid FASTA format lines, primarly of use when
+   * reading FASTA formatted sequences from GFF3 files.  Nucleotide symbols, amino acid
+   * symbols, and ambiguity code symbols cover a-z. Also valid are whitespace, gap
+   * symbol -, and translation stop *.
+   */
+  private val fastaRegex = "^[a-zA-Z-*\\s]+$".r
 
   def isHeader(line: String): Boolean = {
     line.isEmpty || line.startsWith("#") || line.startsWith(">")
