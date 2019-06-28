@@ -346,19 +346,19 @@ This command does not support Parquet output, so the only `default
 options <#default-args>`__ that this command supports is
 ``-print_metrics``.
 
-reads2coverage
+coverage
 ~~~~~~~~~~~~~~
 
-The ``reads2coverage`` command computes per-locus coverage from reads
+The ``coverage`` command computes per-locus coverage from reads
 and saves the coverage counts as features. Takes two required arguments:
 
-1. ``INPUT``: The input path. A file containing reads in any of the
-   supported ADAM read input formats.
+1. ``INPUT``: The input path. A file containing alignments in any of the
+   supported ADAM alignment input formats.
 2. ``OUTPUT``: The path to save the coverage counts to. Saves in any of
    the ADAM supported feature file formats.
 
 In addition to the `default options <#default-args>`__,
-``reads2coverage`` takes the following options:
+``coverage`` takes the following options:
 
 -  ``-collapse``: If two (or more) neighboring sites have the same
    coverage, we collapse them down into a single genomic feature.

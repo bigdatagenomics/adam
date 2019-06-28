@@ -41,7 +41,7 @@ object ADAMMain {
           TransformSlices,
           TransformVariants,
           MergeShards,
-          Reads2Coverage
+          Coverage
         )
       ),
       CommandGroup(
