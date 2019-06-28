@@ -275,12 +275,12 @@ ${ADAM} transformAlignments ${BAM} ${READS}
 # then, sort the BAM
 echo "Converting BAM to ADAM read format with sorting"
 rm -rf ${SORTED_READS}
-${ADAM} transformAlignments -sort_reads ${READS} ${SORTED_READS}
+${ADAM} transformAlignments -sort_by_reference_position ${READS} ${SORTED_READS}
 
 # convert the reads to fragments to re-pair the reads
 echo "Converting read file to fragments"
 rm -rf ${FRAGMENTS}
-${ADAM} transformFragments -load_as_reads ${READS} ${FRAGMENTS}
+${ADAM} transformFragments -load_as_alignments ${READS} ${FRAGMENTS}
 
 # test that printing works
 echo "Printing reads and fragments"
