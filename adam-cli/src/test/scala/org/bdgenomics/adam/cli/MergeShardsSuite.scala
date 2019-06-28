@@ -39,8 +39,7 @@ class MergeShardsSuite extends ADAMFunSuite {
     val expectedPath = copyResource("ordered.sam")
     TransformAlignments(Array("-single",
       "-disable_pg",
-      "-sort_reads",
-      "-sort_lexicographically",
+      "-sort_by_reference_position",
       "-defer_merging",
       inputPath, actualPath)).run(sc)
     MergeShards(Array(actualPath + "_tail", actualPath,
@@ -68,8 +67,7 @@ class MergeShardsSuite extends ADAMFunSuite {
 
     val actualPath = tmpFile("artificial.cram")
     TransformAlignments(Array("-single",
-      "-sort_reads",
-      "-sort_lexicographically",
+      "-sort_by_reference_position",
       "-defer_merging",
       inputPath, actualPath)).run(sc)
     MergeShards(Array(actualPath + "_tail", actualPath,

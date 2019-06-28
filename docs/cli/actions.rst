@@ -185,12 +185,14 @@ fall into several general categories:
       number of partitions to fewer than the number of Spark executors.
       This may have a substantial performance cost, and will invalidate
       any sort order.
-   -  ``-sort_reads``: Sorts reads by alignment position. Unmapped reads
-      are placed at the end of all reads. Contigs are ordered by
-      sequence record index.
-   -  ``-sort_lexicographically``: Sorts reads by alignment position.
-      Unmapped reads are placed at the end of all reads. Contigs are
-      ordered lexicographically.
+   -  ``-sort_by_read_name``: Sorts alignments by read name.
+   -  ``-sort_by_reference_position``: Sorts alignments by the location
+      where the reads are aligned. Unaligned reads are put at the end and
+      sorted by read name. References are ordered lexicographically.
+   -  ``-sort_by_reference_position_and_index``: Sorts alignments by the
+      location where the reads are aligned. Unaligned reads are put at the
+      end and sorted by read name. References are ordered by index that they
+      are ordered in the SequenceDictionary.
    -  ``-sort_fastq_output``: Ignored if not saving to FASTQ. If saving
       to FASTQ, sorts the output reads by read name.
 

@@ -33,7 +33,7 @@ class TransformAlignmentsSuite extends ADAMFunSuite {
     val inputPath = copyResource("unordered.sam")
     val actualPath = tmpFile("ordered.sam")
     val expectedPath = copyResource("ordered.sam")
-    TransformAlignments(Array("-single", "-disable_pg", "-sort_reads", "-sort_lexicographically", inputPath, actualPath)).run(sc)
+    TransformAlignments(Array("-single", "-disable_pg", "-sort_by_reference_position", inputPath, actualPath)).run(sc)
     checkFiles(expectedPath, actualPath)
   }
 
@@ -53,7 +53,7 @@ class TransformAlignmentsSuite extends ADAMFunSuite {
     val actualPath = tmpFile("ordered.sam")
     val expectedPath = copyResource("ordered.sam")
     TransformAlignments(Array("-disable_pg", inputPath, intermediateAdamPath)).run(sc)
-    TransformAlignments(Array("-single", "-disable_pg", "-sort_reads", "-sort_lexicographically", intermediateAdamPath, actualPath)).run(sc)
+    TransformAlignments(Array("-single", "-disable_pg", "-sort_by_reference_position", intermediateAdamPath, actualPath)).run(sc)
     checkFiles(expectedPath, actualPath)
   }
 
