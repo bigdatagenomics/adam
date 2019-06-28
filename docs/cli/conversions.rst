@@ -65,16 +65,18 @@ Additionally, ``transformFragments`` takes the following options:
    ``0,20,10:20,50,30``, all quality scores between 0–19 will be
    rewritten to 10, and all quality scores between 20–49 will be
    rewritten to 30.
--  ``-load_as_reads``: Treats the input as a read file (uses
+-  ``-load_as_alignments``: Treats the input as an alignment file (uses
    ``loadAlignments`` instead of ``loadFragments``), which behaves
    differently for unpaired FASTQ.
--  ``-save_as_reads``: Saves the output as a Parquet file of
+-  ``-save_as_alignments``: Saves the output as a Parquet file of
    ``AlignmentRecord``\ s, as SAM/BAM/CRAM, or as FASTQ, depending on
    the output file extension. If this option is specified, the output
    can also be sorted:
--  ``-sort_reads``: Sorts reads by alignment position. Unmapped reads
-   are placed at the end of all reads. Contigs are ordered by sequence
-   record index.
--  ``-sort_lexicographically``: Sorts reads by alignment position.
-   Unmapped reads are placed at the end of all reads. Contigs are
-   ordered lexicographically.
+-  ``-sort_by_read_name``: Sorts alignments by read name.
+-  ``-sort_by_reference_position``: Sorts alignments by the location
+   where the reads are aligned. Unaligned reads are put at the end and
+   sorted by read name. References are ordered lexicographically.
+-  ``-sort_by_reference_position_and_index``: Sorts alignments by the
+   location where the reads are aligned. Unaligned reads are put at the
+   end and sorted by read name. References are ordered by index that they
+   are ordered in the SequenceDictionary.

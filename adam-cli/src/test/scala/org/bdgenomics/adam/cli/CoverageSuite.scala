@@ -21,14 +21,14 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.utils.cli.Args4j
 
-class Reads2CoverageSuite extends ADAMFunSuite {
+class CoverageSuite extends ADAMFunSuite {
 
   sparkTest("correctly calculates coverage from small sam file") {
     val inputPath = copyResource("artificial.sam")
     val outputPath = tmpFile("coverage.adam")
 
     val args: Array[String] = Array(inputPath, outputPath)
-    new Reads2Coverage(Args4j[Reads2CoverageArgs](args)).run(sc)
+    new Coverage(Args4j[CoverageArgs](args)).run(sc)
     val coverage = sc.loadCoverage(outputPath)
 
     val pointCoverage = coverage.flatten.rdd.filter(_.start == 30).first

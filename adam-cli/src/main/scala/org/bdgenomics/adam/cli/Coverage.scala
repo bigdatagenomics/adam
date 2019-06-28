@@ -29,44 +29,52 @@ import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
 /**
- * Reads2Coverage (accessible as the command 'reads2coverage' through the CLI) takes two arguments,
+ * Coverage (accessible as the command 'coverage' through the CLI) takes two arguments,
  * an INPUT and OUTPUT, and calculates the number of reads from INPUT at every location in
  * the file. Optional arguments are only_negative_strands, only_positive_strands and collapse.
  * only_negative_strands and only_positive_strands save coverage computed from only negative and positive strands,
  * respectively. Collapse specifies whether saved coverage should merge neighboring coverage with the same counts
  * to one record.
  */
-object Reads2Coverage extends BDGCommandCompanion {
-  val commandName: String = "reads2coverage"
+object Coverage extends BDGCommandCompanion {
+  val commandName: String = "coverage"
   val commandDescription: String = "Calculate the coverage from a given ADAM file"
 
   def apply(cmdLine: Array[String]): BDGCommand = {
-    new Reads2Coverage(Args4j[Reads2CoverageArgs](cmdLine))
+    new Coverage(Args4j[CoverageArgs](cmdLine))
   }
 }
 
-class Reads2CoverageArgs extends Args4jBase with ParquetArgs {
-  @Argument(required = true, metaVar = "INPUT", usage = "The reads file to use to calculate depths", index = 0)
+class CoverageArgs extends Args4jBase with ParquetArgs {
+
+  @Argument(required = true, metaVar = "INPUT", usage = "The alignments file to use to calculate depths", index = 0)
   var inputPath: String = null
+
   @Argument(required = true, metaVar = "OUTPUT", usage = "Location to write the coverage data to", index = 1)
   var outputPath: String = null
+
   @Args4jOption(required = false, name = "-collapse", usage = "Collapses neighboring coverage records " +
     "of equal counts into the same record")
   var collapse: Boolean = false
+
   @Args4jOption(required = false, name = "-only_negative_strands", usage = "Compute coverage for negative strands")
   var onlyNegativeStrands: Boolean = false
+
   @Args4jOption(required = false, name = "-only_positive_strands", usage = "Compute coverage for positive strands")
   var onlyPositiveStrands: Boolean = false
+
   @Args4jOption(required = false, name = "-single", usage = "Saves OUTPUT as single file")
   var asSingleFile: Boolean = false
+
   @Args4jOption(required = false, name = "-disable_fast_concat", usage = "Disables the parallel file concatenation engine.")
   var disableFastConcat: Boolean = false
+
   @Args4jOption(required = false, name = "-sort_lexicographically", usage = "Sort the reads lexicographically by contig name, instead of by index.")
   var sortLexicographically: Boolean = false
 }
 
-class Reads2Coverage(protected val args: Reads2CoverageArgs) extends BDGSparkCommand[Reads2CoverageArgs] {
-  val companion: BDGCommandCompanion = Reads2Coverage
+class Coverage(protected val args: CoverageArgs) extends BDGSparkCommand[CoverageArgs] {
+  val companion: BDGCommandCompanion = Coverage
 
   def run(sc: SparkContext): Unit = {
     checkWriteablePath(args.outputPath, sc.hadoopConfiguration)
@@ -80,18 +88,18 @@ class Reads2Coverage(protected val args: Reads2CoverageArgs) extends BDGSparkCom
     require(!(args.onlyNegativeStrands && args.onlyPositiveStrands),
       "Cannot compute coverage for both negative and positive strands separately")
 
-    // load reads
-    val readsRdd: AlignmentRecordDataset = sc.loadAlignments(args.inputPath)
+    // load alignments
+    val alignmentsRdd: AlignmentRecordDataset = sc.loadAlignments(args.inputPath)
 
-    val finalReads = if (args.onlyNegativeStrands && !args.onlyPositiveStrands) {
-      readsRdd.transform((rdd: RDD[AlignmentRecord]) => rdd.filter(_.getReadNegativeStrand))
+    val finalAlignments = if (args.onlyNegativeStrands && !args.onlyPositiveStrands) {
+      alignmentsRdd.transform((rdd: RDD[AlignmentRecord]) => rdd.filter(_.getReadNegativeStrand))
     } else if (!args.onlyNegativeStrands && args.onlyPositiveStrands) {
-      readsRdd.transform((rdd: RDD[AlignmentRecord]) => rdd.filter(!_.getReadNegativeStrand))
+      alignmentsRdd.transform((rdd: RDD[AlignmentRecord]) => rdd.filter(!_.getReadNegativeStrand))
     } else {
-      readsRdd
+      alignmentsRdd
     }
 
-    val coverage = finalReads.toCoverage()
+    val coverage = finalAlignments.toCoverage()
 
     val maybeCollapsedCoverage = if (args.collapse) {
       val sortedCoverage = if (args.sortLexicographically) {
