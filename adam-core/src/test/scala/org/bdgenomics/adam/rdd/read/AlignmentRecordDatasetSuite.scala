@@ -177,7 +177,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
     val sd = new SequenceDictionary(contigNames.map(v => SequenceRecord(v, 1000000L)).toVector)
 
     val sortedReads = AlignmentRecordDataset(rdd, sd, ReadGroupDictionary.empty, Seq.empty)
-      .sortReadsByReferencePosition()
+      .sortByReferencePosition()
       .rdd
       .collect()
       .zipWithIndex
@@ -193,7 +193,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
   sparkTest("unmapped reads go at the end when sorting") {
     val inputPath = testFile("reads13.sam")
     val reads = sc.loadAlignments(inputPath)
-    val sortedReads = reads.sortReadsByReferencePosition()
+    val sortedReads = reads.sortByReferencePosition()
       .rdd
       .collect()
     assert(!sortedReads.last.getReadMapped)
@@ -286,7 +286,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
 
     val rdd = sc.parallelize(reads)
     val sortedReads = AlignmentRecordDataset(rdd, sd, ReadGroupDictionary.empty, Seq.empty)
-      .sortReadsByReferencePositionAndIndex()
+      .sortByReferencePositionAndIndex()
       .rdd
       .collect()
       .zipWithIndex
@@ -536,7 +536,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
     val reads = ardd.rdd
 
     val actualSortedPath = tmpFile("sorted.sam")
-    ardd.sortReadsByReferencePosition()
+    ardd.sortByReferencePosition()
       .saveAsSam(actualSortedPath,
         isSorted = true,
         asSingleFile = true)
@@ -560,7 +560,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
   sparkTest("writing ordered sam from unordered sam") {
     val unsortedPath = testFile("unordered.sam")
     val ardd = sc.loadBam(unsortedPath)
-    val reads = ardd.sortReadsByReferencePosition
+    val reads = ardd.sortByReferencePosition
 
     val actualSortedPath = tmpFile("ordered.sam")
     reads.saveAsSam(actualSortedPath,
@@ -1838,7 +1838,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
     val reads = ardd.rdd
 
     val actualSortedPath = tmpFile("readname_sorted.sam")
-    ardd.sortReadsByReadName()
+    ardd.sortByReadName()
       .saveAsSam(actualSortedPath,
         asType = None,
         asSingleFile = true,
