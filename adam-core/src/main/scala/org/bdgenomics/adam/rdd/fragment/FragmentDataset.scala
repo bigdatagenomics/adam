@@ -239,7 +239,7 @@ case class DatasetBoundFragmentDataset private[rdd] (
     copy(dataset = tFn.call(dataset))
   }
 
-  override def toReads(): AlignmentRecordDataset = {
+  override def toAlignments(): AlignmentRecordDataset = {
     import dataset.sparkSession.implicits._
     val df = dataset.select(explode(col("alignments")).as("rec")).select("rec.*")
     DatasetBoundAlignmentRecordDataset(df.as[AlignmentRecordProduct],
@@ -347,17 +347,16 @@ sealed abstract class FragmentDataset extends AvroReadGroupGenomicDataset[Fragme
   }
 
   /**
-   * Essentially, splits up the reads in a Fragment.
+   * Splits up the reads in a Fragment back into alignments.
    *
-   * @return Returns this genomic dataset converted back to reads.
+   * @return Returns this genomic dataset converted to alignments.
    */
-  def toReads(): AlignmentRecordDataset = {
+  def toAlignments(): AlignmentRecordDataset = {
     val converter = new AlignmentRecordConverter
 
-    // convert the fragments to reads
+    // convert the fragments to alignments
     val newRdd = rdd.flatMap(converter.convertFragment)
 
-    // are we aligned?
     AlignmentRecordDataset(newRdd,
       sequences,
       readGroups,

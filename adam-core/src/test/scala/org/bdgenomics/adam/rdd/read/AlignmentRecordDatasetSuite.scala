@@ -1014,7 +1014,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
     sc.hadoopConfiguration.setBoolean(AlignmentRecordDataset.WRITE_SUFFIXES, true)
 
     val fragmentsPath = testFile("interleaved_fastq_sample1.ifq")
-    val ardd = sc.loadFragments(fragmentsPath).toReads
+    val ardd = sc.loadFragments(fragmentsPath).toAlignments
     val records = ardd.rdd.count
     assert(records === 6)
     assert(ardd.dataset.count === 6)
