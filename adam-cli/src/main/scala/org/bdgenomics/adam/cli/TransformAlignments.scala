@@ -346,9 +346,9 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
 
       // are we sorting lexicographically or using legacy SAM sort order?
       val sortedDs = if (args.sortLexicographically) {
-        ds.sortReadsByReferencePosition()
+        ds.sortByReferencePosition()
       } else {
-        ds.sortReadsByReferencePositionAndIndex()
+        ds.sortByReferencePositionAndIndex()
       }
 
       // unpersist the cached rdd, if caching was requested

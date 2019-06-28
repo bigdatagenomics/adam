@@ -56,7 +56,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
       .realignIndels(consensusModel = cg,
         maxReadsPerTarget = maxCoverage,
         optReferenceFile = optRefFile)
-      .sortReadsByReferencePosition()
+      .sortByReferencePosition()
       .rdd
   }
 

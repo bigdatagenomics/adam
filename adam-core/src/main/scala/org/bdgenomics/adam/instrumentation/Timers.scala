@@ -26,7 +26,6 @@ object Timers extends Metrics {
 
   // Load methods
   val LoadAlignments = timer("Load Alignments")
-  val LoadContigFragments = timer("Load Contig Fragments")
   val LoadCoverage = timer("Load Coverage")
   val LoadFeatures = timer("Load Features")
   val LoadFragments = timer("Load Fragments")
@@ -110,9 +109,9 @@ object Timers extends Metrics {
   val SweepReadOverReferenceForQuality = timer("Sweep Read Over Reference For Quality")
   val FinalizingRealignments = timer("Finalizing Realignments")
 
-  // Sort Reads
-  val SortReads = timer("Sort Reads")
-  val SortByIndex = timer("Sort Reads By Index")
+  // Sort Alignments
+  val SortAlignments = timer("Sort Alignments")
+  val SortAlignmentsByIndex = timer("Sort Alignments By Index")
 
   // File Saving
   val SAMSave = timer("SAM Save")

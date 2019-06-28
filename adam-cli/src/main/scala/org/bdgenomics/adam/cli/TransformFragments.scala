@@ -132,9 +132,9 @@ class TransformFragments(protected val args: TransformFragmentsArgs) extends BDG
 
       // prep to save
       val finalRdd = if (args.sortReads) {
-        readRdd.sortReadsByReferencePosition()
+        readRdd.sortByReferencePosition()
       } else if (args.sortLexicographically) {
-        readRdd.sortReadsByReferencePositionAndIndex()
+        readRdd.sortByReferencePositionAndIndex()
       } else {
         readRdd
       }

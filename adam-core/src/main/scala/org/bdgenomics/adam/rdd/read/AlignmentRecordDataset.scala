@@ -970,29 +970,29 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
   }
 
   /**
-   * Sorts our read data by read name.
+   * Sorts our alignments by read name.
    *
-   * @return Returns a new RDD containing sorted reads.
+   * @return Returns a new genomic dataset containing sorted alignments.
    */
-  def sortReadsByReadName(): AlignmentRecordDataset = SortReads.time {
-    info("Sorting reads by read name")
+  def sortByReadName(): AlignmentRecordDataset = SortAlignments.time {
+    info("Sorting alignments by read name")
 
     transformDataset(_.orderBy("readName", "readInFragment"))
   }
 
   /**
-   * Sorts our read data by reference positions, with references ordered by name.
+   * Sorts our alignments by reference position, with references ordered by name.
    *
-   * Sorts reads by the location where they are aligned. Unaligned reads are
+   * Sorts alignments by the location where the reads are aligned. Unaligned reads are
    * put at the end and sorted by read name. References are ordered
    * lexicographically.
    *
-   * @return Returns a new genomic dataset containing sorted reads.
+   * @return Returns a new genomic dataset containing sorted alignments.
    *
-   * @see sortReadsByReferencePositionAndIndex
+   * @see sortByReferencePositionAndIndex
    */
-  def sortReadsByReferencePosition(): AlignmentRecordDataset = SortReads.time {
-    info("Sorting reads by reference position")
+  def sortByReferencePosition(): AlignmentRecordDataset = SortAlignments.time {
+    info("Sorting alignments by reference position")
 
     // NOTE: In order to keep unmapped reads from swamping a single partition
     // we sort the unmapped reads by read name. We prefix with tildes ("~";
@@ -1008,18 +1008,18 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
   }
 
   /**
-   * Sorts our read data by reference positions, with references ordered by index.
+   * Sorts our alignments by reference position, with references ordered by index.
    *
-   * Sorts reads by the location where they are aligned. Unaligned reads are
+   * Sorts alignments by the location where the reads are aligned. Unaligned reads are
    * put at the end and sorted by read name. References are ordered by index
    * that they are ordered in the SequenceDictionary.
    *
-   * @return Returns a new genomic dataset containing sorted reads.
+   * @return Returns a new genomic dataset containing sorted alignments.
    *
-   * @see sortReadsByReferencePosition
+   * @see sortByReferencePosition
    */
-  def sortReadsByReferencePositionAndIndex(): AlignmentRecordDataset = SortByIndex.time {
-    info("Sorting reads by reference index, using %s.".format(sequences))
+  def sortByReferencePositionAndIndex(): AlignmentRecordDataset = SortAlignmentsByIndex.time {
+    info("Sorting alignments by reference index, using %s.".format(sequences))
 
     import scala.math.Ordering.{ Int => ImplicitIntOrdering, _ }
 
