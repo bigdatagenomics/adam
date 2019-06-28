@@ -26,7 +26,7 @@ test_that("save sorted sam", {
     originalReads <- resourceFile("sorted.sam")
     reads <- loadAlignments(ac, originalReads)
     tmpPath <- tempfile(fileext = ".sam")
-    sortedReads <- sortReadsByReferencePosition(reads)
+    sortedReads <- sortByReferencePosition(reads)
     saveAsSam(reads, tmpPath, isSorted = TRUE, asSingleFile = TRUE)
 
     expect_files_match(tmpPath, originalReads)
@@ -37,7 +37,7 @@ test_that("save unordered sam", {
     originalReads <- resourceFile("unordered.sam")
     reads <- loadAlignments(ac, originalReads)
     tmpPath <- tempfile(fileext = ".sam")
-    sortedReads <- sortReadsByReferencePosition(reads)
+    sortedReads <- sortByReferencePosition(reads)
     saveAsSam(reads, tmpPath, asSingleFile = TRUE)
 
     expect_files_match(tmpPath, originalReads)
@@ -48,7 +48,7 @@ test_that("save as bam", {
     originalReads <- resourceFile("sorted.sam")
     reads <- loadAlignments(ac, originalReads)
     tmpPath <- tempfile(fileext = ".bam")
-    sortedReads <- sortReadsByReferencePosition(reads)
+    sortedReads <- sortByReferencePosition(reads)
     saveAsSam(reads, tmpPath, isSorted = TRUE, asSingleFile = TRUE)
 
     bam <- loadAlignments(ac, tmpPath)
