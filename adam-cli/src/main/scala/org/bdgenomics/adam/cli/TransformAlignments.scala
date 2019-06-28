@@ -63,10 +63,12 @@ class TransformAlignmentsArgs extends Args4jBase with ADAMSaveAnyArgs with Parqu
   var useAlignedReadPredicate: Boolean = false
   @Args4jOption(required = false, name = "-region_predicate", usage = "Only load a specific range of regions. Mutually exclusive with aligned read predicate.")
   var regionPredicate: String = null
-  @Args4jOption(required = false, name = "-sort_reads", usage = "Sort the reads by referenceId and read position")
-  var sortReads: Boolean = false
-  @Args4jOption(required = false, name = "-sort_lexicographically", usage = "Sort the reads lexicographically by contig name, instead of by index.")
-  var sortLexicographically: Boolean = false
+  @Args4jOption(required = false, name = "-sort_by_read_name", usage = "Sort alignments by read name.")
+  var sortByReadName: Boolean = false
+  @Args4jOption(required = false, name = "-sort_by_reference_position", usage = "Sort alignments by reference position, with references ordered by name.")
+  var sortByReferencePosition: Boolean = false
+  @Args4jOption(required = false, name = "-sort_by_reference_position_and_index", usage = "Sort alignments by reference position, with references ordered by index.")
+  var sortByReferencePositionAndIndex: Boolean = false
   @Args4jOption(required = false, name = "-mark_duplicate_reads", usage = "Mark duplicate reads")
   var markDuplicates: Boolean = false
   @Args4jOption(required = false, name = "-recalibrate_base_qualities", usage = "Recalibrate the base quality scores (ILLUMINA only)")
@@ -333,7 +335,7 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
    */
   private def maybeSort(ds: AlignmentRecordDataset,
                         sl: StorageLevel): AlignmentRecordDataset = {
-    if (args.sortReads) {
+    if (args.sortByReadName || args.sortByReferencePosition || args.sortByReferencePositionAndIndex) {
 
       // cache the input if requested. sort is two stages:
       // 1. sample to create partitioner
@@ -342,12 +344,14 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
         ds.rdd.persist(sl)
       }
 
-      info("Sorting reads")
-
-      // are we sorting lexicographically or using legacy SAM sort order?
-      val sortedDs = if (args.sortLexicographically) {
+      val sortedDs = if (args.sortByReadName) {
+        info("Sorting alignments by read name")
+        ds.sortByReadName()
+      } else if (args.sortByReferencePosition) {
+        info("Sorting alignments by reference position, with references ordered by name")
         ds.sortByReferencePosition()
       } else {
+        info("Sorting alignments by reference position, with references ordered by index")
         ds.sortByReferencePositionAndIndex()
       }
 
@@ -442,27 +446,32 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
     // throw exception if aligned read predicate or limit projection flags are used improperly
     if (args.useAlignedReadPredicate && forceNonParquet()) {
       throw new IllegalArgumentException(
-        "-aligned_read_predicate only applies to Parquet files, but a non-Parquet force load flag was passed."
+        "-aligned_read_predicate only applies to Parquet files, but a non-Parquet force load flag was passed"
       )
     }
     if (args.limitProjection && forceNonParquet()) {
       throw new IllegalArgumentException(
-        "-limit_projection only applies to Parquet files, but a non-Parquet force load flag was passed."
+        "-limit_projection only applies to Parquet files, but a non-Parquet force load flag was passed"
       )
     }
     if (args.useAlignedReadPredicate && isNonParquet(args.inputPath)) {
       throw new IllegalArgumentException(
-        "-aligned_read_predicate only applies to Parquet files, but a non-Parquet input path was specified."
+        "-aligned_read_predicate only applies to Parquet files, but a non-Parquet input path was specified"
       )
     }
     if (args.limitProjection && isNonParquet(args.inputPath)) {
       throw new IllegalArgumentException(
-        "-limit_projection only applies to Parquet files, but a non-Parquet input path was specified."
+        "-limit_projection only applies to Parquet files, but a non-Parquet input path was specified"
       )
     }
     if (args.useAlignedReadPredicate && args.regionPredicate != null) {
       throw new IllegalArgumentException(
         "-aligned_read_predicate and -region_predicate are mutually exclusive"
+      )
+    }
+    if (Seq(args.sortByReadName, args.sortByReferencePosition, args.sortByReferencePositionAndIndex).count(b => b) > 1) {
+      throw new IllegalArgumentException(
+        "only one of -sort_by_name, -sort_by_reference_position, and -sort_by_reference_position_and_index may be specified"
       )
     }
 
@@ -572,17 +581,10 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
     // run our transformation
     val outputDs = this.apply(newDs)
 
-    // if we are sorting, we must strip the indices from the sequence dictionary
+    // if we are sorting by reference, we must strip the indices from the sequence dictionary
     // and sort the sequence dictionary
-    //
-    // we must do this because we do a lexicographic sort, not an index-based sort
-    val sdFinal = if (args.sortReads) {
-      if (args.sortLexicographically) {
-        mergedSd.stripIndices
-          .sorted
-      } else {
-        mergedSd
-      }
+    val sdFinal = if (args.sortByReferencePosition) {
+      mergedSd.stripIndices.sorted
     } else {
       mergedSd
     }
@@ -594,7 +596,7 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
       outputDs.saveAsPartitionedParquet(args.outputPath, partitionSize = args.partitionedBinSize)
     } else {
       outputDs.save(args,
-        isSorted = args.sortReads || args.sortLexicographically)
+        isSorted = args.sortByReadName || args.sortByReferencePosition || args.sortByReferencePositionAndIndex)
     }
   }
 
