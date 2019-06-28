@@ -210,7 +210,7 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
     AlignmentRecordDataset(sc.parallelize(reads), SequenceDictionary.empty, rgd, Seq.empty)
       .toFragments
       .markDuplicates()
-      .toReads
+      .toAlignments
       .rdd
       .collect()
   }

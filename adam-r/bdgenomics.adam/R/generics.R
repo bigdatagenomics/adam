@@ -378,8 +378,8 @@ NULL
 #' @rdname FragmentDataset
 #' @param ardd The genomic dataset to apply this to.
 #' @export
-setGeneric("toReads",
-           function(ardd) { standardGeneric("toReads") })
+setGeneric("toAlignments",
+           function(ardd) { standardGeneric("toAlignments") })
 
 #### Genotype and Variant operations ####
 

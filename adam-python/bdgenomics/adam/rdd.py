@@ -1400,15 +1400,16 @@ class FragmentDataset(GenomicDataset):
         GenomicDataset.__init__(self, jvmRdd, sc)
 
 
-    def toReads(self):
+    def toAlignments(self):
         """
-        Splits up the reads in a Fragment, and creates a new genomic dataset.
+        Splits up the reads in a Fragment back into alignments, and creates a
+        new genomic dataset.
         
-        :return: Returns this genomic dataset converted back to reads.
+        :return: Returns this genomic dataset converted to alignments.
         :rtype: bdgenomics.adam.rdd.AlignmentRecordDataset
         """
 
-        return AlignmentRecordDataset(self._jvmRdd.toReads(), self.sc)
+        return AlignmentRecordDataset(self._jvmRdd.toAlignments(), self.sc)
 
 
     def markDuplicates(self):

@@ -625,14 +625,14 @@ class FragmentDatasetSuite extends ADAMFunSuite {
     assert(fragments.dataset.first().alignments.size === transformed.dataset.first().alignments.size)
   }
 
-  sparkTest("dataset and rdd conversion to reads are equivalent") {
+  sparkTest("dataset and rdd conversion to alignments are equivalent") {
     val fragments = sc.loadFragments(testFile("small.sam"))
     val fragmentRdd = RDDBoundFragmentDataset(fragments.rdd, fragments.sequences,
       fragments.readGroups, fragments.processingSteps, None)
     val fragmentDataset = DatasetBoundFragmentDataset(fragments.dataset, fragments.sequences,
       fragments.readGroups, fragments.processingSteps)
-    val convertedRdd = fragmentRdd.toReads()
-    val convertedDataset = fragmentDataset.toReads()
+    val convertedRdd = fragmentRdd.toAlignments()
+    val convertedDataset = fragmentDataset.toAlignments()
 
     assert(convertedRdd.rdd.collect().toSet == convertedDataset.rdd.collect().toSet)
   }

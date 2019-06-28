@@ -1205,17 +1205,18 @@ setMethod("replaceRdd",
               FragmentDataset(rdd)
           })
 
-#' Splits up the reads in a Fragment, and creates a new genomic dataset.
+#' Splits up the reads in a Fragment back into alignments, and creates a
+#' new genomic dataset.
 #'
 #' @param ardd The genomic dataset to apply this to.
-#' @return Returns this genomic dataset converted back to reads.
+#' @return Returns this genomic dataset converted back to alignments.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
-setMethod("toReads", signature(ardd = "FragmentDataset"),
+setMethod("toAlignments", signature(ardd = "FragmentDataset"),
           function(ardd) {
-              AlignmentRecordDataset(sparkR.callJMethod(ardd@jrdd, "toReads"))
+              AlignmentRecordDataset(sparkR.callJMethod(ardd@jrdd, "toAlignments"))
           })
 
 #' Marks reads as possible fragment duplicates.

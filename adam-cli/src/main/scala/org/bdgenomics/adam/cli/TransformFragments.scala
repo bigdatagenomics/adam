@@ -128,7 +128,7 @@ class TransformFragments(protected val args: TransformFragmentsArgs) extends BDG
 
     if (args.saveAsReads) {
       // save rdd as reads
-      val readRdd = maybeDedupedReads.toReads
+      val readRdd = maybeDedupedReads.toAlignments
 
       // prep to save
       val finalRdd = if (args.sortReads) {
