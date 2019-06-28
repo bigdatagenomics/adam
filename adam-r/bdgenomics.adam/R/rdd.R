@@ -896,10 +896,24 @@ setMethod("countKmers",
           })
 
 
-#' Sorts our read data by reference positions, with contigs ordered by name.
+#' Sorts our alignments by read name.
 #'
-#' Sorts reads by the location where they are aligned. Unaligned reads are
-#' put at the end and sorted by read name. Contigs are ordered lexicographically
+#' @param ardd The genomic dataset to apply this to.
+#' @return A new, sorted AlignmentRecordDataset.
+#'
+#' @importFrom SparkR sparkR.callJMethod
+#'
+#' @export
+setMethod("sortByReadName",
+          signature(ardd = "AlignmentRecordDataset"),
+          function(ardd) {
+              AlignmentRecordDataset(sparkR.callJMethod(ardd@jrdd, "sortByReadName"))
+          })
+
+#' Sorts our alignments by reference positions, with references ordered by name.
+#'
+#' Sorts alignments by the location where reads are aligned. Unaligned reads are
+#' put at the end and sorted by read name. References are ordered lexicographically
 #' by name.
 #'
 #' @param ardd The genomic dataset to apply this to.
@@ -908,16 +922,16 @@ setMethod("countKmers",
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
-setMethod("sortReadsByReferencePosition",
+setMethod("sortByReferencePosition",
           signature(ardd = "AlignmentRecordDataset"),
           function(ardd) {
-              AlignmentRecordDataset(sparkR.callJMethod(ardd@jrdd, "sortReadsByReferencePosition"))
+              AlignmentRecordDataset(sparkR.callJMethod(ardd@jrdd, "sortByReferencePosition"))
           })
 
-#' Sorts our read data by reference positions, with contigs ordered by index.
+#' Sorts our alignments by reference positions, with references ordered by index.
 #'
-#' Sorts reads by the location where they are aligned. Unaligned reads are
-#' put at the end and sorted by read name. Contigs are ordered by index that
+#' Sorts alignments by the location where reads are aligned. Unaligned reads are
+#' put at the end and sorted by read name. References are ordered by index that
 #' they are ordered in the sequence metadata.
 #'
 #' @param ardd The genomic dataset to apply this to.
@@ -926,10 +940,10 @@ setMethod("sortReadsByReferencePosition",
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
-setMethod("sortReadsByReferencePositionAndIndex",
+setMethod("sortByReferencePositionAndIndex",
           signature(ardd = "AlignmentRecordDataset"),
           function(ardd) {
-              AlignmentRecordDataset(sparkR.callJMethod(ardd@jrdd, "sortReadsByReferencePositionAndIndex"))
+              AlignmentRecordDataset(sparkR.callJMethod(ardd@jrdd, "sortByReferencePositionAndIndex"))
           })
 
 #' Marks reads as possible fragment duplicates.

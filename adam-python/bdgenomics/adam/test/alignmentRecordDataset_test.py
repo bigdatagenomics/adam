@@ -35,7 +35,7 @@ class AlignmentRecordDatasetTest(SparkTestCase):
 
         reads = ac.loadAlignments(testFile)
         tmpPath = self.tmpFile() + ".sam"
-        sortedReads = reads.sortReadsByReferencePosition()
+        sortedReads = reads.sortByReferencePosition()
         sortedReads.saveAsSam(tmpPath,
                               isSorted=True,
                               asSingleFile=True)

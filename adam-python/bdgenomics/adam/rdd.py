@@ -965,34 +965,44 @@ class AlignmentRecordDataset(GenomicDataset):
                          SQLContext(self.sc))
 
 
-    def sortReadsByReferencePosition(self):
+    def sortByReadName(self):
         """
-        Sorts our read data by reference positions, with contigs ordered by name.
+        Sorts our alignments by read name.
 
-        Sorts reads by the location where they are aligned. Unaligned reads are
-        put at the end and sorted by read name. Contigs are ordered
-        lexicographically by name.
-
-        :return: Returns a new genomic dataset containing sorted reads.
+        :return: Returns a new genomic dataset containing sorted alignments.
         :rtype: bdgenomics.adam.rdd.AlignmentRecordDataset
         """
-        return AlignmentRecordDataset(self._jvmRdd.sortReadsByReferencePosition(),
+        return AlignmentRecordDataset(self._jvmRdd.sortByReadName(),
+                                  self.sc)
+
+    def sortByReferencePosition(self):
+        """
+        Sorts our alignments by reference position, with references ordered by name.
+
+        Sorts alignments by the location where reads are aligned. Unaligned reads are
+        put at the end and sorted by read name. References are ordered
+        lexicographically by name.
+
+        :return: Returns a new genomic dataset containing sorted alignments.
+        :rtype: bdgenomics.adam.rdd.AlignmentRecordDataset
+        """
+        return AlignmentRecordDataset(self._jvmRdd.sortByReferencePosition(),
                                   self.sc)
 
 
-    def sortReadsByReferencePositionAndIndex(self):
+    def sortByReferencePositionAndIndex(self):
         """
-        Sorts our read data by reference positions, with contigs ordered by index.
+        Sorts our alignments by reference position, with references ordered by index.
 
-        Sorts reads by the location where they are aligned. Unaligned reads are
-        put at the end and sorted by read name. Contigs are ordered by index
+        Sorts alignments by the location where reads are aligned. Unaligned reads are
+        put at the end and sorted by read name. References are ordered by index
         that they are ordered in the sequence metadata.
 
-        :return: Returns a new genomic dataset containing sorted reads.
+        :return: Returns a new genomic dataset containing sorted alignments.
         :rtype: bdgenomics.adam.rdd.AlignmentRecordDataset
         """
 
-        return AlignmentRecordDataset(self._jvmRdd.sortReadsByReferencePositionAndIndex(),
+        return AlignmentRecordDataset(self._jvmRdd.sortByReferencePositionAndIndex(),
                                   self.sc)
 
 
