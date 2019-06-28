@@ -302,13 +302,18 @@ setGeneric("saveAsSam",
 
 #' @rdname AlignmentRecordDataset
 #' @export
-setGeneric("sortReadsByReferencePosition",
-           function(ardd) { standardGeneric("sortReadsByReferencePosition") })
+setGeneric("sortByReadName",
+           function(ardd) { standardGeneric("sortByReadName") })
 
 #' @rdname AlignmentRecordDataset
 #' @export
-setGeneric("sortReadsByReferencePositionAndIndex",
-           function(ardd) { standardGeneric("sortReadsByReferencePositionAndIndex") })
+setGeneric("sortByReferencePosition",
+           function(ardd) { standardGeneric("sortByReferencePosition") })
+
+#' @rdname AlignmentRecordDataset
+#' @export
+setGeneric("sortByReferencePositionAndIndex",
+           function(ardd) { standardGeneric("sortByReferencePositionAndIndex") })
 
 #' @rdname AlignmentRecordDataset
 #' @export
