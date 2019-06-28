@@ -40,26 +40,40 @@ object TransformFragments extends BDGCommandCompanion {
 class TransformFragmentsArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetArgs {
   @Argument(required = true, metaVar = "INPUT", usage = "The Fragment file to apply the transforms to", index = 0)
   var inputPath: String = null
+
   @Argument(required = true, metaVar = "OUTPUT", usage = "Location to write the transformed fragments", index = 1)
   var outputPath: String = null
-  @Args4jOption(required = false, name = "-load_as_reads", usage = "Treats the input data as reads")
-  var loadAsReads: Boolean = false
-  @Args4jOption(required = false, name = "-save_as_reads", usage = "Saves the output data as reads")
-  var saveAsReads: Boolean = false
+
+  @Args4jOption(required = false, name = "-load_as_alignments", usage = "Treats the input data as alignments")
+  var loadAsAlignments: Boolean = false
+
+  @Args4jOption(required = false, name = "-save_as_alignments", usage = "Saves the output data as alignments")
+  var saveAsAlignments: Boolean = false
+
   @Args4jOption(required = false, name = "-single", usage = "Saves OUTPUT as single file")
   var asSingleFile: Boolean = false
-  @Args4jOption(required = false, name = "-sort_reads", usage = "Sort the reads by referenceId and read position. Only valid if run with -save_as_reads")
-  var sortReads: Boolean = false
+
+  @Args4jOption(required = false, name = "-sort_by_read_name", usage = "Sort alignments by read name. Only valid with -save_as_alignments.")
+  var sortByReadName: Boolean = false
+
+  @Args4jOption(required = false, name = "-sort_by_reference_position", usage = "Sort alignments by reference position, with references ordered by name. Only valid with -save_as_alignments.")
+  var sortByReferencePosition: Boolean = false
+
+  @Args4jOption(required = false, name = "-sort_by_reference_position_and_index", usage = "Sort alignments by reference position, with references ordered by index. Only valid with -save_as_alignments.")
+  var sortByReferencePositionAndIndex: Boolean = false
+
   @Args4jOption(required = false, name = "-defer_merging", usage = "Defers merging single file output")
   var deferMerging: Boolean = false
+
   @Args4jOption(required = false, name = "-disable_fast_concat", usage = "Disables the parallel file concatenation engine.")
   var disableFastConcat: Boolean = false
-  @Args4jOption(required = false, name = "-sort_lexicographically", usage = "Sort the reads lexicographically by contig name, instead of by index.")
-  var sortLexicographically: Boolean = false
+
   @Args4jOption(required = false, name = "-mark_duplicate_reads", usage = "Mark duplicate reads")
   var markDuplicates: Boolean = false
+
   @Args4jOption(required = false, name = "-bin_quality_scores", usage = "Rewrites quality scores of reads into bins from a string of bin descriptions, e.g. 0,20,10;20,40,30.")
   var binQualityScores: String = null
+
   @Args4jOption(required = false, name = "-max_read_length", usage = "Maximum FASTQ read length, defaults to 10,000 base pairs (bp).")
   var maxReadLength: Int = 0
 
@@ -98,22 +112,23 @@ class TransformFragments(protected val args: TransformFragmentsArgs) extends BDG
   def run(sc: SparkContext) {
     checkWriteablePath(args.outputPath, sc.hadoopConfiguration)
 
-    if (args.loadAsReads && args.saveAsReads) {
-      warn("If loading and saving as reads, consider using TransformAlignments instead.")
+    if (args.loadAsAlignments && args.saveAsAlignments) {
+      warn("If loading and saving as alignments, consider using TransformAlignments instead")
     }
-    if (args.sortReads) {
-      require(args.saveAsReads,
-        "-sort_reads is only valid if -save_as_reads is given.")
+    if (args.sortByReadName || args.sortByReferencePosition || args.sortByReferencePositionAndIndex) {
+      require(args.saveAsAlignments,
+        "-sort_by_* flags are only valid if -save_as_alignments is given")
     }
-    if (args.sortLexicographically) {
-      require(args.saveAsReads,
-        "-sort_lexicographically is only valid if -save_as_reads is given.")
+    if (Seq(args.sortByReadName, args.sortByReferencePosition, args.sortByReferencePositionAndIndex).count(b => b) > 1) {
+      throw new IllegalArgumentException(
+        "only one of -sort_by_name, -sort_by_reference_position, and -sort_by_reference_position_and_index may be specified"
+      )
     }
     if (args.maxReadLength > 0) {
       FastqRecordReader.setMaxReadLength(sc.hadoopConfiguration, args.maxReadLength)
     }
 
-    val rdd = if (args.loadAsReads) {
+    val rdd = if (args.loadAsAlignments) {
       sc.loadAlignments(args.inputPath)
         .toFragments
     } else {
@@ -126,22 +141,24 @@ class TransformFragments(protected val args: TransformFragmentsArgs) extends BDG
     // should we dedupe the reads?
     val maybeDedupedReads = maybeDedupe(maybeBinnedReads)
 
-    if (args.saveAsReads) {
-      // save rdd as reads
-      val readRdd = maybeDedupedReads.toAlignments
+    if (args.saveAsAlignments) {
+      // save rdd as alignments
+      val alignmentRdd = maybeDedupedReads.toAlignments
 
       // prep to save
-      val finalRdd = if (args.sortReads) {
-        readRdd.sortByReferencePosition()
-      } else if (args.sortLexicographically) {
-        readRdd.sortByReferencePositionAndIndex()
+      val finalRdd = if (args.sortByReadName) {
+        alignmentRdd.sortByReadName()
+      } else if (args.sortByReferencePosition) {
+        alignmentRdd.sortByReferencePosition()
+      } else if (args.sortByReferencePositionAndIndex) {
+        alignmentRdd.sortByReferencePositionAndIndex()
       } else {
-        readRdd
+        alignmentRdd
       }
 
       // save the file
       finalRdd.save(args,
-        isSorted = args.sortReads || args.sortLexicographically)
+        isSorted = args.sortByReadName || args.sortByReferencePosition || args.sortByReferencePositionAndIndex)
     } else {
       maybeDedupedReads.saveAsParquet(args)
     }

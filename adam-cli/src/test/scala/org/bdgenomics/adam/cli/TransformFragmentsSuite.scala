@@ -32,10 +32,13 @@ class TransformFragmentsSuite extends ADAMFunSuite {
   sparkTest("cannot sort if not saving as sam") {
     val loc = tmpLocation()
     intercept[IllegalArgumentException] {
-      TransformFragments(Array(loc, loc, "-sort_reads")).run(sc)
+      TransformFragments(Array(loc, loc, "-sort_by_read_name")).run(sc)
     }
     intercept[IllegalArgumentException] {
-      TransformFragments(Array(loc, loc, "-sort_lexicographically")).run(sc)
+      TransformFragments(Array(loc, loc, "-sort_by_reference_position")).run(sc)
+    }
+    intercept[IllegalArgumentException] {
+      TransformFragments(Array(loc, loc, "-sort_by_reference_position_and_index")).run(sc)
     }
   }
 
@@ -43,9 +46,9 @@ class TransformFragmentsSuite extends ADAMFunSuite {
     val input = copyResource("unsorted.sam")
     val output = tmpLocation(".sam")
     TransformFragments(Array(input, output,
-      "-load_as_reads", "-save_as_reads",
+      "-load_as_alignments", "-save_as_alignments",
       "-single",
-      "-sort_reads")).run(sc)
+      "-sort_by_reference_position")).run(sc)
     val actualSorted = copyResource("sorted.sam")
     checkFiles(actualSorted, output)
   }
@@ -54,7 +57,7 @@ class TransformFragmentsSuite extends ADAMFunSuite {
     val inputPath = copyResource("bqsr1.sam")
     val finalPath = tmpFile("binned.adam")
     TransformFragments(Array(inputPath, finalPath,
-      "-save_as_reads",
+      "-save_as_alignments",
       "-bin_quality_scores", "0,20,10;20,40,30;40,60,50")).run(sc)
     val qualityScoreCounts = sc.loadAlignments(finalPath)
       .rdd
