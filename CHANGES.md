@@ -1,5 +1,40 @@
 # ADAM Changelog #
 
+### Version 0.28.0 ###
+
+**Closed issues:**
+
+ - Bump bdg-formats dependency version to 0.13.0 [\#2177](https://github.com/bigdatagenomics/adam/issues/2177)
+ - Rename reads to alignments in methods where appropriate [\#2172](https://github.com/bigdatagenomics/adam/issues/2172)
+ - Add command line option re: creating references from FASTA sources [\#2168](https://github.com/bigdatagenomics/adam/issues/2168)
+ - Add command line support for loading references in TransformFeatures [\#2167](https://github.com/bigdatagenomics/adam/issues/2167)
+ - Add load methods for data frames [\#2159](https://github.com/bigdatagenomics/adam/issues/2159)
+ - Transform  VCF to adam  file not found exception. [\#2076](https://github.com/bigdatagenomics/adam/issues/2076)
+ - NoClassDefFoundError: javax/tools/ToolProvider on openjdk 10.0.2 [\#2030](https://github.com/bigdatagenomics/adam/issues/2030)
+ - NotSerializableException: com.netflix.servo.monitor.LongGauge [\#1952](https://github.com/bigdatagenomics/adam/issues/1952)
+ - Should NucleotideContigFragmentRDD create sequence dictionary on load? [\#1894](https://github.com/bigdatagenomics/adam/issues/1894)
+ - converting fasta to adam eats a huge ammount of time and memory [\#1891](https://github.com/bigdatagenomics/adam/issues/1891)
+ - Support minPartitions parameter across load calls [\#1792](https://github.com/bigdatagenomics/adam/issues/1792)
+ - make reading fasta less memory hungry [\#1458](https://github.com/bigdatagenomics/adam/issues/1458)
+ - Improve unit test coverage for NucleotideContigFragmentRDD [\#1413](https://github.com/bigdatagenomics/adam/issues/1413)
+ - Support for INSDC Sequence records (i.e., Genbank/EMBL format)? [\#1219](https://github.com/bigdatagenomics/adam/issues/1219)
+
+**Merged and closed pull requests:**
+
+ - [ADAM-2177] Bump bdg-formats dependency version to 0.13.0 [\#2178](https://github.com/bigdatagenomics/adam/pull/2178) ([heuermh](https://github.com/heuermh))
+ - [ADAM-2172] Rename reads to alignments in methods where appropriate [\#2176](https://github.com/bigdatagenomics/adam/pull/2176) ([heuermh](https://github.com/heuermh))
+ - [ADAM-1891] Reimplement FASTA sequence and slice converters for performance [\#2175](https://github.com/bigdatagenomics/adam/pull/2175) ([heuermh](https://github.com/heuermh))
+ - [ADAM-2168]  Add command line option re: creating references from FASTA sources [\#2170](https://github.com/bigdatagenomics/adam/pull/2170) ([heuermh](https://github.com/heuermh))
+ - [ADAM-2167] Add command line support for loading references in TransformFeatures [\#2169](https://github.com/bigdatagenomics/adam/pull/2169) ([heuermh](https://github.com/heuermh))
+ - bump adam-python version [\#2165](https://github.com/bigdatagenomics/adam/pull/2165) ([akmorrow13](https://github.com/akmorrow13))
+ - Convert fragment dataset to alignment dataset directly [\#2162](https://github.com/bigdatagenomics/adam/pull/2162) ([heuermh](https://github.com/heuermh))
+ - [ADAM-2159] Add load methods for data frames [\#2158](https://github.com/bigdatagenomics/adam/pull/2158) ([heuermh](https://github.com/heuermh))
+ - Post 0.27.0 release cleanup and doc fixes. [\#2155](https://github.com/bigdatagenomics/adam/pull/2155) ([heuermh](https://github.com/heuermh))
+ - Add direct conversion from DatasetBoundFragmentRDD to DatasetBoundAli… [\#2016](https://github.com/bigdatagenomics/adam/pull/2016) ([henrydavidge](https://github.com/henrydavidge))
+ - Add ADAMContext APIs to create genomic RDDs from dataframes [\#2000](https://github.com/bigdatagenomics/adam/pull/2000) ([henrydavidge](https://github.com/henrydavidge))
+ - Adding ReadRDD, SequenceRDD, and SliceRDD. [\#1895](https://github.com/bigdatagenomics/adam/pull/1895) ([heuermh](https://github.com/heuermh))
+
+
 ### Version 0.27.0 ###
 
 **Closed issues:**
