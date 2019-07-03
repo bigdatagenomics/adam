@@ -65,7 +65,7 @@ R and Python.
 
 ## Building from Source
 
-You will need to have [Apache Maven](http://maven.apache.org/) version 3.1.1 or
+You will need to have [Apache Maven](http://maven.apache.org/) version 3.3.9 or
 later installed in order to build ADAM.
 
 > **Note:** The default configuration is for Hadoop 2.7.5. If building against
