@@ -24,6 +24,7 @@ import org.bdgenomics.adam.cli.FileSystemUtils._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.{ ADAMSaveAnyArgs, GenomicDataset }
 import org.bdgenomics.adam.rdd.variant.VariantDataset
+import org.bdgenomics.adam.util.FileExtensions._
 import org.bdgenomics.formats.avro.Variant
 import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option ⇒ Args4jOption }
@@ -64,6 +65,12 @@ class TransformVariantsArgs extends Args4jBase with ADAMSaveAnyArgs with Parquet
 
   @Args4jOption(required = false, name = "-disable_fast_concat", usage = "Disables the parallel file concatenation engine.")
   var disableFastConcat: Boolean = false
+
+  @Args4jOption(required = false, name = "-partition_by_start_pos", usage = "Save the data partitioned by genomic range bins based on start pos using Hive-style partitioning.")
+  var partitionByStartPos: Boolean = false
+
+  @Args4jOption(required = false, name = "-partition_bin_size", usage = "Partition bin size used in Hive-style partitioning. Defaults to 1Mbp (1,000,000) base pairs).")
+  var partitionedBinSize = 1000000
 
   @Args4jOption(required = false, name = "-stringency", usage = "Stringency level for various checks; can be SILENT, LENIENT, or STRICT. Defaults to STRICT.")
   var stringency: String = "STRICT"
@@ -129,10 +136,14 @@ class TransformVariants(val args: TransformVariantsArgs)
       optProjection = None,
       stringency = stringency)
 
-    if (args.outputPath.endsWith(".vcf")) {
+    if (isVcfExt(args.outputPath)) {
       maybeSort(maybeCoalesce(variants).toVariantContexts).saveAsVcf(args, stringency)
     } else {
-      maybeSort(maybeCoalesce(variants)).saveAsParquet(args)
+      if (args.partitionByStartPos) {
+        maybeSort(maybeCoalesce(variants)).saveAsPartitionedParquet(args.outputPath, partitionSize = args.partitionedBinSize)
+      } else {
+        maybeSort(maybeCoalesce(variants)).saveAsParquet(args)
+      }
     }
   }
 }

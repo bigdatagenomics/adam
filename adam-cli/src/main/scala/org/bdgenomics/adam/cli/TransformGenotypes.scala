@@ -25,6 +25,7 @@ import org.bdgenomics.adam.converters.VariantContextConverter
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.{ ADAMSaveAnyArgs, GenomicDataset }
 import org.bdgenomics.adam.rdd.variant.GenotypeDataset
+import org.bdgenomics.adam.util.FileExtensions._
 import org.bdgenomics.formats.avro.Genotype
 import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option ⇒ Args4jOption }
@@ -144,7 +145,7 @@ class TransformGenotypes(val args: TransformGenotypesArgs)
       optProjection = None,
       stringency = stringency)
 
-    if (args.outputPath.endsWith(".vcf")) {
+    if (isVcfExt(args.outputPath)) {
       maybeSort(maybeCoalesce(genotypes).toVariantContexts).saveAsVcf(args)
     } else {
       if (args.partitionByStartPos) {
@@ -152,7 +153,6 @@ class TransformGenotypes(val args: TransformGenotypesArgs)
       } else {
         maybeSort(maybeCoalesce(genotypes)).saveAsParquet(args)
       }
-
     }
   }
 }

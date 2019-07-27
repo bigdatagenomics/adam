@@ -20,6 +20,7 @@ package org.bdgenomics.adam.cli
 import org.apache.spark.SparkContext
 import org.bdgenomics.adam.cli.FileSystemUtils._
 import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.util.FileExtensions._
 import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option ⇒ Args4jOption }
 
@@ -56,6 +57,12 @@ class TransformFeaturesArgs extends Args4jBase with ParquetSaveArgs {
   @Args4jOption(required = false, name = "-disable_fast_concat",
     usage = "Disables the parallel file concatenation engine.")
   var disableFastConcat: Boolean = false
+
+  @Args4jOption(required = false, name = "-partition_by_start_pos", usage = "Save the data partitioned by genomic range bins based on start pos using Hive-style partitioning.")
+  var partitionByStartPos: Boolean = false
+
+  @Args4jOption(required = false, name = "-partition_bin_size", usage = "Partition bin size used in Hive-style partitioning. Defaults to 1Mbp (1,000,000) base pairs).")
+  var partitionedBinSize = 1000000
 }
 
 class TransformFeatures(val args: TransformFeaturesArgs)
@@ -63,15 +70,32 @@ class TransformFeatures(val args: TransformFeaturesArgs)
 
   val companion = TransformFeatures
 
+  def isFeatureExt(pathName: String): Boolean = {
+    isBedExt(pathName) ||
+      isGff3Ext(pathName) ||
+      isGtfExt(pathName) ||
+      isIntervalListExt(pathName) ||
+      isNarrowPeakExt(pathName)
+  }
+
   def run(sc: SparkContext) {
     checkWriteablePath(args.outputPath, sc.hadoopConfiguration)
 
     val optSequenceDictionary = Option(args.referencePath).map(sc.loadSequenceDictionary(_))
 
-    sc.loadFeatures(
+    val features = sc.loadFeatures(
       args.featuresPath,
       optSequenceDictionary = optSequenceDictionary,
-      optMinPartitions = Option(args.numPartitions)
-    ).save(args.outputPath, args.single, args.disableFastConcat)
+      optMinPartitions = Option(args.numPartitions))
+
+    if (isFeatureExt(args.outputPath)) {
+      features.save(args.outputPath, args.single, args.disableFastConcat)
+    } else {
+      if (args.partitionByStartPos) {
+        features.saveAsPartitionedParquet(args.outputPath, partitionSize = args.partitionedBinSize)
+      } else {
+        features.saveAsParquet(args.outputPath)
+      }
+    }
   }
 }
