@@ -86,8 +86,7 @@ fi
 # if those pass, build the distribution package and the integration tests
 mvn -U \
     test \
-    -P coverage,coveralls  scoverage:report coveralls:report \
-    -DrepoToken=${COVERALLS_REPO_TOKEN} ${COVERALLS_PRB_OPTION}
+    -P coverage scoverage:report
 
 # make verbose again
 set -x -v
