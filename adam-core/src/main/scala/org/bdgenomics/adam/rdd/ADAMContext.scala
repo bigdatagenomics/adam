@@ -2843,6 +2843,25 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *
    * @param pathName The path name to load variant context records from.
    *   Globs/directories are supported.
+   * @param stringency The validation stringency to use when validating VCF format.
+   * @return Returns a VariantContextDataset.
+   */
+  def loadVariantContexts(
+    pathName: String,
+    stringency: ValidationStringency): VariantContextDataset = {
+
+    if (isVcfExt(pathName)) {
+      loadVcf(pathName, stringency)
+    } else {
+      loadParquetVariantContexts(pathName)
+    }
+  }
+
+  /**
+   * Load a path name in VCF or Parquet format into a VariantContextDataset.
+   *
+   * @param pathName The path name to load variant context records from.
+   *   Globs/directories are supported.
    * @return Returns a VariantContextDataset.
    */
   def loadVariantContexts(
