@@ -4042,13 +4042,13 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *
    * @param pathName The path name to load slices from.
    *   Globs/directories are supported.
-   * @param maximumLength Maximum fragment length. Defaults to 10000L. Values greater
+   * @param maximumLength Maximum fragment length. Values greater
    *   than 1e9 should be avoided.
    * @return Returns a SliceDataset containing DNA slices.
    */
   def loadFastaDna(
     pathName: String,
-    maximumLength: Long = 10000L): SliceDataset = LoadFastaSlices.time {
+    maximumLength: Long): SliceDataset = LoadFastaSlices.time {
 
     val fastaData: RDD[(LongWritable, Text)] = sc.newAPIHadoopFile(
       pathName,
