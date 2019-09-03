@@ -21,7 +21,7 @@
     <avro.version>1.8.2</avro.version>
     <scala.version>2.11.12</scala.version>
     <scala.version.prefix>2.11</scala.version.prefix>
-    <spark.version>2.4.3</spark.version>
+    <spark.version>2.4.4</spark.version>
     <parquet.version>1.10.1</parquet.version>
     <!-- Edit the following line to configure the Hadoop (HDFS) version. -->
     <hadoop.version>2.7.5</hadoop.version>

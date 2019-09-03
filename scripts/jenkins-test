@@ -151,7 +151,7 @@ SPARK=spark-${SPARK_VERSION}
     
 # download prepackaged spark assembly
 
-# Spark 2.4.3 needs special case for Scala 2.12
+# Spark 2.4.3+ needs special case for Scala 2.12
 if [ ${SCALAVER} == 2.12 ];
 then
     curl \
