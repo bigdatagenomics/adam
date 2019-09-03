@@ -42,7 +42,7 @@ import org.bdgenomics.adam.converters.{
   DefaultHeaderLines,
   VariantContextConverter
 }
-import org.bdgenomics.adam.instrumentation.Timers.SaveAsVcf
+import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models.{
   ReferenceRegion,
   ReferenceRegionSerializer,
@@ -316,7 +316,7 @@ sealed abstract class VariantContextDataset extends MultisampleGenomicDataset[Va
   }
 
   /**
-   * Converts an genomic dataset of ADAM VariantContexts to HTSJDK VariantContexts
+   * Converts this genomic dataset of ADAM VariantContexts to HTSJDK VariantContexts
    * and saves to disk as VCF.
    *
    * File paths that end in .gz or .bgz will be saved as block GZIP compressed VCFs.
@@ -336,7 +336,7 @@ sealed abstract class VariantContextDataset extends MultisampleGenomicDataset[Va
   }
 
   /**
-   * Converts an genomic dataset of ADAM VariantContexts to HTSJDK VariantContexts
+   * Converts this genomic dataset of ADAM VariantContexts to HTSJDK VariantContexts
    * and saves as a single file to disk as VCF. Uses lenient validation
    * stringency.
    *
@@ -354,7 +354,33 @@ sealed abstract class VariantContextDataset extends MultisampleGenomicDataset[Va
   }
 
   /**
-   * Converts an genomic dataset of ADAM VariantContexts to HTSJDK VariantContexts
+   * Converts this genomic dataset of ADAM VariantContexts to HTSJDK VariantContexts.
+   *
+   * @param stringency Validation stringency to use.
+   * @return Return a tuple of VCFHeader and an RDD of HTSJDK VariantContexts.
+   */
+  def convertToVcf(
+    stringency: ValidationStringency): (VCFHeader, RDD[htsjdk.variant.variantcontext.VariantContext]) = ConvertToVcf.time {
+
+    val header = new VCFHeader(
+      headerLines.toSet,
+      samples.map(_.getId))
+    header.setSequenceDictionary(sequences.toSAMSequenceDictionary)
+
+    val converter = VariantContextConverter(headerLines,
+      stringency,
+      rdd.context.hadoopConfiguration)
+
+    val htsjdkVcs = rdd
+      .map(vc => converter.convert(vc))
+      .filter(_.isDefined)
+      .map(_.get)
+
+    (header, htsjdkVcs)
+  }
+
+  /**
+   * Converts this genomic dataset of ADAM VariantContexts to HTSJDK VariantContexts
    * and saves to disk as VCF.
    *
    * File paths that end in .gz or .bgz will be saved as block GZIP compressed VCFs.
@@ -386,9 +412,6 @@ sealed abstract class VariantContextDataset extends MultisampleGenomicDataset[Va
     }
 
     info(s"Writing $vcfFormat file to $filePath")
-
-    // map samples to sample ids
-    val sampleIds = samples.map(_.getId)
 
     // convert the variants to htsjdk VCs
     val converter = VariantContextConverter(headerLines,

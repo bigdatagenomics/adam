@@ -521,7 +521,7 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
   }
 
   /**
-   * Converts this set of reads into a corresponding CoverageDataset.
+   * Converts this dataset of alignments into a corresponding CoverageDataset.
    *
    * @return CoverageDataset containing mapped genomic dataset of Coverage.
    */
@@ -652,7 +652,7 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
   }
 
   /**
-   * Converts a genomic dataset into the SAM spec string it represents.
+   * Converts this genomic dataset into the SAM spec string it represents.
    *
    * This method converts a genomic dataset of AlignmentRecords back to an RDD of
    * SAMRecordWritables and a SAMFileHeader, and then maps this RDD into a
@@ -663,7 +663,7 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
   def saveAsSamString(): String = {
 
     // convert the records
-    val (convertRecords: RDD[SAMRecordWritable], header: SAMFileHeader) = convertToSam()
+    val (header: SAMFileHeader, convertRecords: RDD[SAMRecordWritable]) = convertToSam()
 
     // collect the records to the driver
     val records = convertRecords.collect()
@@ -701,15 +701,22 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
   }
 
   /**
-   * Converts an RDD of ADAM read records into SAM records.
+   * Converts this genomic dataset of AlignmentRecords to HTSJDK SAMRecords.
    *
-   * @return Returns a SAM/BAM formatted RDD of reads, as well as the file header.
+   * @param isSorted True if sorted.
+   * @return Return a tuple of SAMFileHeader and an RDD of HTSJDK SAMRecords.
    */
-  def convertToSam(isSorted: Boolean = false): (RDD[SAMRecordWritable], SAMFileHeader) = ConvertToSAM.time {
+  def convertToSam(isSorted: Boolean = false): (SAMFileHeader, RDD[SAMRecordWritable]) = ConvertToSAM.time {
     convertToSam(isSortedToSortOrder(isSorted))
   }
 
-  def convertToSam(sortOrder: SAMFileHeader.SortOrder): (RDD[SAMRecordWritable], SAMFileHeader) = ConvertToSAM.time {
+  /**
+   * Converts this genomic dataset of AlignmentRecords to HTSJDK SAMRecords.
+   *
+   * @param sortOrder Sort order.
+   * @return Return a tuple of SAMFileHeader and an RDD of HTSJDK SAMRecords.
+   */
+  def convertToSam(sortOrder: SAMFileHeader.SortOrder): (SAMFileHeader, RDD[SAMRecordWritable]) = ConvertToSAM.time {
 
     // create conversion object
     val adamRecordConverter = new AlignmentRecordConverter
@@ -735,7 +742,7 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
       srw
     })
 
-    (convertedRDD, header)
+    (header, convertedRDD)
   }
 
   /**
@@ -805,7 +812,7 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
     val fileType = asType.getOrElse(SAMFormat.inferFromFilePath(filePath))
 
     // convert the records
-    val (convertRecords: RDD[SAMRecordWritable], header: SAMFileHeader) =
+    val (header: SAMFileHeader, convertRecords: RDD[SAMRecordWritable]) =
       convertToSam(sortOrder)
 
     // add keys to our records
