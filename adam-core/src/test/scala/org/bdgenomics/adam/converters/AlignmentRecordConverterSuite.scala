@@ -55,7 +55,7 @@ class AlignmentRecordConverterSuite extends FunSuite {
       .setOriginalCigar("2^AAA3")
 
     if (!nullQuality) {
-      builder.setQuality(sequence) // no typo, we just don't care
+      builder.setQualityScores(sequence) // no typo, we just don't care
     }
 
     builder.build()
@@ -148,7 +148,7 @@ class AlignmentRecordConverterSuite extends FunSuite {
   test("convert a read to fastq") {
     val adamRead = AlignmentRecord.newBuilder()
       .setSequence("ACACCAACATG")
-      .setQuality(".+**.+;:**.")
+      .setQualityScores(".+**.+;:**.")
       .setReadName("thebestread")
       .build()
 
@@ -256,14 +256,14 @@ class AlignmentRecordConverterSuite extends FunSuite {
     val alignments = List(
       AlignmentRecord.newBuilder()
         .setSequence("ACCCACAGTA")
-        .setQuality("**********")
+        .setQualityScores("**********")
         .setReadInFragment(0)
         .setReadName("testRead")
         .setReadPaired(true)
         .build(),
       AlignmentRecord.newBuilder()
         .setSequence("GGGAAACCCTTT")
-        .setQuality(";;;;;;......")
+        .setQualityScores(";;;;;;......")
         .setReadName("testRead")
         .setReadInFragment(1)
         .setReadPaired(true)
@@ -280,7 +280,7 @@ class AlignmentRecordConverterSuite extends FunSuite {
     val read1 = reads.find(_.getReadInFragment == 0)
     assert(read1.isDefined)
     assert(read1.get.getSequence === "ACCCACAGTA")
-    assert(read1.get.getQuality() === "**********")
+    assert(read1.get.getQualityScores === "**********")
     assert(read1.get.getReadName === "testRead")
     assert(!read1.get.getReadMapped)
     assert(read1.get.getReadPaired)
@@ -288,7 +288,7 @@ class AlignmentRecordConverterSuite extends FunSuite {
     val read2 = reads.find(_.getReadInFragment == 1)
     assert(read2.isDefined)
     assert(read2.get.getSequence === "GGGAAACCCTTT")
-    assert(read2.get.getQuality() === ";;;;;;......")
+    assert(read2.get.getQualityScores === ";;;;;;......")
     assert(read2.get.getReadName === "testRead")
     assert(!read2.get.getReadMapped)
     assert(read2.get.getReadPaired)
@@ -304,7 +304,7 @@ class AlignmentRecordConverterSuite extends FunSuite {
       .setCigar("10M")
       .setReadNegativeStrand(true)
       .setSequence("TACTGTGGGT")
-      .setQuality("?????*****")
+      .setQualityScores("?????*****")
       .build())
     val fragment = Fragment.newBuilder()
       .setName("testRead")
@@ -323,7 +323,7 @@ class AlignmentRecordConverterSuite extends FunSuite {
     assert(read.getEnd === 20L)
     assert(read.getCigar === "10M")
     assert(read.getSequence === "TACTGTGGGT")
-    assert(read.getQuality === "?????*****")
+    assert(read.getQualityScores === "?????*****")
     assert(read.getReferenceName === "1")
   }
 

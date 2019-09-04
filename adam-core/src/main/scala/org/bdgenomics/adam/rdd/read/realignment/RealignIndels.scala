@@ -261,10 +261,10 @@ private[read] class RealignIndels(
       (startClipped == 0 &&
         endClipped == 0)) {
       (read.record.getSequence,
-        read.qualityScores)
+        read.qualityScoreValues)
     } else {
       (read.record.getSequence.drop(startClipped).dropRight(endClipped),
-        read.qualityScores.drop(startClipped).dropRight(endClipped))
+        read.qualityScoreValues.drop(startClipped).dropRight(endClipped))
     }
   }
 
@@ -689,7 +689,7 @@ private[read] class RealignIndels(
     sumMismatchQualityIgnoreCigar(
       read.getSequence,
       read.mdTag.get.getReference(read, withGaps = true),
-      read.qualityScores,
+      read.qualityScoreValues,
       Int.MaxValue,
       0
     )

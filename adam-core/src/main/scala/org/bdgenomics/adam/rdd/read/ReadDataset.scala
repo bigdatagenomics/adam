@@ -231,7 +231,7 @@ sealed abstract class ReadDataset extends AvroGenomicDataset[Read, ReadProduct, 
       AlignmentRecord.newBuilder()
         .setReadName(read.getName)
         .setSequence(read.getSequence)
-        .setQuality(read.getQualityScores)
+        .setQualityScores(read.getQualityScores)
         .build()
     }
     AlignmentRecordDataset(rdd.map(toAlignmentRecord),

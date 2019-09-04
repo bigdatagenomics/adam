@@ -33,22 +33,23 @@ class AlignmentRecordConverter extends Serializable {
    * Prepare a single record for conversion to FASTQ and similar formats by
    * splitting into a tuple of (name, sequence, qualityScores).
    *
-   * If the base qualities are unknown (qual is null or equals "*"), the quality
-   * scores will be a repeated string of 'B's that is equal to the read length.
+   * If the base quality scores are unknown (qualityScores is null or equals "*"),
+   * the quality scores will be a repeated string of 'B's that is equal to the read
+   * length.
    *
    * @param adamRecord Read to prepare for conversion to FASTQ and similar formats.
    * @param maybeAddSuffix If true, check if a "/%d" suffix is attached to the
    *   read. If there is no suffix, a slash and the number of the read in the
    *   sequenced fragment is appended to the readname. Default is false.
-   * @param outputOriginalBaseQualities If true and the original base quality
-   *   field is set (SAM "OQ" tag), outputs the original qualities. Else,
-   *   output the qual field. Defaults to false.
+   * @param writeOriginalQualityScores If true and the original base quality
+   *   scores field is set (SAM "OQ" tag), outputs the original quality scores. Else,
+   *   output the qualityScores field. Defaults to false.
    * @return Returns tuple of (name, sequence, qualityScores).
    */
   private def prepareFastq(
     adamRecord: AlignmentRecord,
     maybeAddSuffix: Boolean,
-    outputOriginalBaseQualities: Boolean): (String, String, String) = {
+    writeOriginalQualityScores: Boolean): (String, String, String) = {
 
     val readNameSuffix =
       if (maybeAddSuffix &&
@@ -69,15 +70,15 @@ class AlignmentRecordConverter extends Serializable {
       else
         adamRecord.getSequence.length
     val qualityScores =
-      if (outputOriginalBaseQualities && adamRecord.getOriginalQuality != null)
-        if (adamRecord.getOriginalQuality == "*")
+      if (writeOriginalQualityScores && adamRecord.getOriginalQualityScores != null)
+        if (adamRecord.getOriginalQualityScores == "*")
           "B" * seqLength
         else
-          adamRecord.getOriginalQuality
-      else if (adamRecord.getQuality == null)
+          adamRecord.getOriginalQualityScores
+      else if (adamRecord.getQualityScores == null)
         "B" * seqLength
       else
-        adamRecord.getQuality
+        adamRecord.getQualityScores
 
     (
       adamRecord.getReadName + readNameSuffix,
@@ -103,25 +104,26 @@ class AlignmentRecordConverter extends Serializable {
    * ASCII quality scores
    * }}}
    *
-   * If the base qualities are unknown (qual is null or equals "*"), the quality
-   * scores will be a repeated string of 'B's that is equal to the read length.
+   * If the base quality scores are unknown (qualityScores is null or equals "*"),
+   * the quality scores will be a repeated string of 'B's that is equal to the read
+   * length.
    *
    * @param adamRecord Read to convert to FASTQ.
    * @param maybeAddSuffix If true, check if a "/%d" suffix is attached to the
    *   read. If there is no suffix, a slash and the number of the read in the
    *   sequenced fragment is appended to the readname. Default is false.
-   * @param outputOriginalBaseQualities If true and the original base quality
-   *   field is set (SAM "OQ" tag), outputs the original qualities. Else,
-   *   output the qual field. Defaults to false.
+   * @param writeOriginalQualityScores If true and the original base quality
+   *   score field is set (SAM "OQ" tag), outputs the original quality scores. Else,
+   *   output the qualityScores field. Defaults to false.
    * @return Returns this read in string form.
    */
   def convertToFastq(
     adamRecord: AlignmentRecord,
     maybeAddSuffix: Boolean = false,
-    outputOriginalBaseQualities: Boolean = false): String = {
+    writeOriginalQualityScores: Boolean = false): String = {
 
     val (name, sequence, qualityScores) =
-      prepareFastq(adamRecord, maybeAddSuffix, outputOriginalBaseQualities)
+      prepareFastq(adamRecord, maybeAddSuffix, writeOriginalQualityScores)
 
     "@%s\n%s\n+\n%s".format(name, sequence, qualityScores)
   }
@@ -130,29 +132,30 @@ class AlignmentRecordConverter extends Serializable {
    * Converts a single record to Bowtie tab6 format.
    *
    * In Bowtie tab6 format, each alignment record or pair is on a single line.
-   * An unpaired alignment record line is [name]\t[seq]\t[qual]\n.
+   * An unpaired alignment record line is [name]\t[seq]\t[qualityScores]\n.
    * For paired-end alignment records, the second end can have a different name
-   * from the first: [name1]\t[seq1]\t[qual1]\t[name2]\t[seq2]\t[qual2]\n.
+   * from the first: [name1]\t[seq1]\t[qualityScores1]\t[name2]\t[seq2]\t[qualityScores2]\n.
    *
-   * If the base qualities are unknown (qual is null or equals "*"), the quality
-   * scores will be a repeated string of 'B's that is equal to the read length.
+   * If the base quality scores are unknown (qualityScores is null or equals "*"),
+   * the quality scores will be a repeated string of 'B's that is equal to the read
+   * length.
    *
    * @param adamRecord Read to convert to FASTQ.
    * @param maybeAddSuffix If true, check if a "/%d" suffix is attached to the
    *   read. If there is no suffix, a slash and the number of the read in the
    *   sequenced fragment is appended to the readname. Default is false.
-   * @param outputOriginalBaseQualities If true and the original base quality
-   *   field is set (SAM "OQ" tag), outputs the original qualities. Else,
-   *   output the qual field. Defaults to false.
+   * @param writeOriginalQualityScores If true and the original base quality
+   *   scores field is set (SAM "OQ" tag), outputs the original quality scores. Else,
+   *   output the qualityScores field. Defaults to false.
    * @return Returns this read in string form.
    */
   def convertToTab6(
     adamRecord: AlignmentRecord,
     maybeAddSuffix: Boolean = false,
-    outputOriginalBaseQualities: Boolean = false): String = {
+    writeOriginalQualityScores: Boolean = false): String = {
 
     val (name, sequence, qualityScores) =
-      prepareFastq(adamRecord, maybeAddSuffix, outputOriginalBaseQualities)
+      prepareFastq(adamRecord, maybeAddSuffix, writeOriginalQualityScores)
 
     "%s\t%s\t%s".format(name, sequence, qualityScores)
   }
@@ -161,26 +164,27 @@ class AlignmentRecordConverter extends Serializable {
    * Converts a single record to Bowtie tab5 format.
    *
    * In Bowtie tab5 format, each alignment record or pair is on a single line.
-   * An unpaired alignment record line is [name]\t[seq]\t[qual]\n.
-   * A paired-end read line is [name]\t[seq1]\t[qual1]\t[seq2]\t[qual2]\n.
+   * An unpaired alignment record line is [name]\t[seq]\t[qualityScores]\n.
+   * A paired-end read line is [name]\t[seq1]\t[qualityScores1]\t[seq2]\t[qualityScores2]\n.
    *
    * The index suffix will be trimmed from the read name if present.
    *
-   * If the base qualities are unknown (qual is null or equals "*"), the quality
-   * scores will be a repeated string of 'B's that is equal to the read length.
+   * If the base quality scores are unknown (qualityScores is null or equals "*"),
+   * the quality scores will be a repeated string of 'B's that is equal to the read
+   * length.
    *
    * @param adamRecord Read to convert to FASTQ.
-   * @param outputOriginalBaseQualities If true and the original base quality
-   *   field is set (SAM "OQ" tag), outputs the original qualities. Else,
-   *   output the qual field. Defaults to false.
+   * @param writeOriginalQualityScores If true and the original base quality
+   *   scores field is set (SAM "OQ" tag), outputs the original quality scores. Else,
+   *   output the qualityScores field. Defaults to false.
    * @return Returns this read in string form.
    */
   def convertToTab5(
     adamRecord: AlignmentRecord,
-    outputOriginalBaseQualities: Boolean = false): String = {
+    writeOriginalQualityScores: Boolean = false): String = {
 
     val (name, sequence, qualityScores) =
-      prepareFastq(adamRecord, maybeAddSuffix = false, outputOriginalBaseQualities)
+      prepareFastq(adamRecord, maybeAddSuffix = false, writeOriginalQualityScores)
 
     "%s\t%s\t%s".format(trimSuffix(name), sequence, qualityScores)
   }
@@ -190,24 +194,25 @@ class AlignmentRecordConverter extends Serializable {
    * tab5 format.
    *
    * In Bowtie tab5 format, each alignment record or pair is on a single line.
-   * An unpaired alignment record line is [name]\t[seq]\t[qual]\n.
-   * A paired-end read line is [name]\t[seq1]\t[qual1]\t[seq2]\t[qual2]\n.
+   * An unpaired alignment record line is [name]\t[seq]\t[qualityScores]\n.
+   * A paired-end read line is [name]\t[seq1]\t[qualityScores1]\t[seq2]\t[qualityScores2]\n.
    *
-   * If the base qualities are unknown (qual is null or equals "*"), the quality
-   * scores will be a repeated string of 'B's that is equal to the read length.
+   * If the base quality scores are unknown (qualityScores is null or equals "*"),
+   * the quality scores will be a repeated string of 'B's that is equal to the read
+   * length.
    *
    * @param adamRecord Read to convert to FASTQ.
-   * @param outputOriginalBaseQualities If true and the original base quality
-   *   field is set (SAM "OQ" tag), outputs the original qualities. Else,
-   *   output the qual field. Defaults to false.
+   * @param writeOriginalQualityScores If true and the original base quality
+   *   scores field is set (SAM "OQ" tag), outputs the original quality scores. Else,
+   *   output the qualityScores field. Defaults to false.
    * @return Returns this read in string form.
    */
   def convertSecondReadToTab5(
     adamRecord: AlignmentRecord,
-    outputOriginalBaseQualities: Boolean = false): String = {
+    writeOriginalQualityScores: Boolean = false): String = {
 
     val (name, sequence, qualityScores) =
-      prepareFastq(adamRecord, maybeAddSuffix = false, outputOriginalBaseQualities)
+      prepareFastq(adamRecord, maybeAddSuffix = false, writeOriginalQualityScores)
 
     // name of second read is ignored
     "%s\t%s".format(sequence, qualityScores)
@@ -242,7 +247,7 @@ class AlignmentRecordConverter extends Serializable {
     // set canonically necessary fields
     builder.setReadName(adamRecord.getReadName)
     builder.setReadString(adamRecord.getSequence)
-    adamRecord.getQuality match {
+    adamRecord.getQualityScores match {
       case null      => builder.setBaseQualityString("*")
       case s: String => builder.setBaseQualityString(s)
     }
@@ -323,7 +328,7 @@ class AlignmentRecordConverter extends Serializable {
       .foreach(v => builder.setReadFailsVendorQualityCheckFlag(v.booleanValue))
     Option(adamRecord.getMismatchingPositions)
       .foreach(builder.setAttribute("MD", _))
-    Option(adamRecord.getOriginalQuality)
+    Option(adamRecord.getOriginalQualityScores)
       .map(s => s.getBytes.map(v => (v - 33).toByte)) // not ascii, but short int
       .foreach(builder.setOriginalBaseQualities(_))
     Option(adamRecord.getOriginalCigar)

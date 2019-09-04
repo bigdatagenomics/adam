@@ -41,7 +41,7 @@ private[rdd] object MarkDuplicates extends Serializable with Logging {
 
   // Calculates the sum of the phred scores that are greater than or equal to 15
   def score(record: AlignmentRecord): Int = {
-    record.qualityScores.filter(15 <=).sum
+    record.qualityScoreValues.filter(15 <=).sum
   }
 
   private def scoreBucket(bucket: SingleReadBucket): Int = {

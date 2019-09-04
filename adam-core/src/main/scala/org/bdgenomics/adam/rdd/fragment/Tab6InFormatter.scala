@@ -48,7 +48,7 @@ class Tab6InFormatter private (
   private val newLine = "\n".getBytes
   private val converter = new AlignmentRecordConverter
   private val writeSuffixes = conf.getBoolean(FragmentDataset.WRITE_SUFFIXES, false)
-  private val writeOriginalQualities = conf.getBoolean(FragmentDataset.WRITE_ORIGINAL_QUALITIES, false)
+  private val writeOriginalQualityScores = conf.getBoolean(FragmentDataset.WRITE_ORIGINAL_QUALITY_SCORES, false)
 
   /**
    * Writes alignment records to an output stream in Bowtie tab6 format.
@@ -78,7 +78,7 @@ class Tab6InFormatter private (
       // write unpaired read or first of paired-end reads
       val first = converter.convertToTab6(reads(0),
         maybeAddSuffix = writeSuffixes,
-        outputOriginalBaseQualities = writeOriginalQualities)
+        writeOriginalQualityScores)
 
       os.write(first.getBytes)
 
@@ -86,7 +86,7 @@ class Tab6InFormatter private (
       if (reads.size > 1) {
         val second = "\t" + converter.convertToTab6(reads(1),
           maybeAddSuffix = writeSuffixes,
-          outputOriginalBaseQualities = writeOriginalQualities)
+          writeOriginalQualityScores)
 
         os.write(second.getBytes)
       }

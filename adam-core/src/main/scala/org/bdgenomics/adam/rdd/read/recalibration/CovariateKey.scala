@@ -22,7 +22,7 @@ package org.bdgenomics.adam.rdd.read.recalibration
  *
  * @param readGroupId The ID of the read group that bases in this error
  *   covariate came from.
- * @param quality The quality score of bases in this covariate.
+ * @param qualityScore The quality score of bases in this covariate.
  * @param cycle The sequencer cycle that bases in this covariate came from.
  * @param dinucPrev The nucleotide preceding this base.
  * @param dinucCurr The nucleotide that was observed.
@@ -32,7 +32,7 @@ package org.bdgenomics.adam.rdd.read.recalibration
  */
 private[adam] case class CovariateKey(
     readGroupId: Int,
-    quality: Char,
+    qualityScore: Char,
     cycle: Int,
     dinucPrev: Char,
     dinucCurr: Char,

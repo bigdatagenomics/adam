@@ -69,7 +69,7 @@ private[recalibration] object Aggregate {
   def apply(key: CovariateKey, value: Observation) = {
     new Aggregate(value.total,
       value.mismatches,
-      PhredUtils.phredToErrorProbability(key.quality.toInt - 33) * value.total)
+      PhredUtils.phredToErrorProbability(key.qualityScore.toInt - 33) * value.total)
   }
 }
 

@@ -27,7 +27,7 @@ class CycleCovariateSuite extends FunSuite {
   test("compute covariates for an unpaired read on the negative strand") {
     val read = AlignmentRecord.newBuilder()
       .setSequence("AGCCTNGT")
-      .setQuality("********")
+      .setQualityScores("********")
       .setReadNegativeStrand(true)
       .setReadMapped(true)
       .setStart(10L)
@@ -49,7 +49,7 @@ class CycleCovariateSuite extends FunSuite {
   test("compute covariates for a first-of-pair read on the negative strand") {
     val read = AlignmentRecord.newBuilder()
       .setSequence("AGCCTNGT")
-      .setQuality("********")
+      .setQualityScores("********")
       .setReadNegativeStrand(true)
       .setReadMapped(true)
       .setStart(10L)
@@ -73,7 +73,7 @@ class CycleCovariateSuite extends FunSuite {
   test("compute covariates for a second-of-pair read on the negative strand") {
     val read = AlignmentRecord.newBuilder()
       .setSequence("AGCCTNGT")
-      .setQuality("********")
+      .setQualityScores("********")
       .setReadNegativeStrand(true)
       .setReadMapped(true)
       .setStart(10L)
@@ -97,7 +97,7 @@ class CycleCovariateSuite extends FunSuite {
   test("compute covariates for an unpaired read on the positive strand") {
     val read = AlignmentRecord.newBuilder()
       .setSequence("ACNAGGCT")
-      .setQuality("********")
+      .setQualityScores("********")
       .setReadNegativeStrand(false)
       .setReadMapped(true)
       .setStart(10L)
@@ -119,7 +119,7 @@ class CycleCovariateSuite extends FunSuite {
   test("compute covariates for a first-of-pair read on the positive strand") {
     val read = AlignmentRecord.newBuilder()
       .setSequence("ACNAGGCT")
-      .setQuality("********")
+      .setQualityScores("********")
       .setReadNegativeStrand(false)
       .setReadMapped(true)
       .setStart(10L)
@@ -143,7 +143,7 @@ class CycleCovariateSuite extends FunSuite {
   test("compute covariates for a second-of-pair read on the positive strand") {
     val read = AlignmentRecord.newBuilder()
       .setSequence("ACNAGGCT")
-      .setQuality("********")
+      .setQualityScores("********")
       .setReadNegativeStrand(false)
       .setReadMapped(true)
       .setStart(10L)

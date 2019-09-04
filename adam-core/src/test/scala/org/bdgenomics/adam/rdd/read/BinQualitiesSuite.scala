@@ -149,7 +149,7 @@ class BinQualitiesSuite extends ADAMFunSuite {
       .mkString
 
     val read = AlignmentRecord.newBuilder
-      .setQuality(sequence)
+      .setQualityScores(sequence)
       .setSequence("ACAGATTCG")
       .setReadName("aRead")
       .build
@@ -174,7 +174,7 @@ class BinQualitiesSuite extends ADAMFunSuite {
       assert(newQuals(8) === 10)
     }
 
-    testQuals(newRead.getQuality)
+    testQuals(newRead.getQualityScores)
 
     val fragment = Fragment.newBuilder
       .setName("testFragment")
@@ -186,6 +186,6 @@ class BinQualitiesSuite extends ADAMFunSuite {
     assert(newFragment.getAlignments.size === 1)
     assert(newFragment.getName === "testFragment")
 
-    testQuals(newFragment.getAlignments.head.getQuality)
+    testQuals(newFragment.getAlignments.head.getQualityScores)
   }
 }

@@ -48,7 +48,7 @@ class InterleavedFASTQInFormatter private (
   protected val companion = InterleavedFASTQInFormatter
   private val converter = new AlignmentRecordConverter
   private val writeSuffixes = conf.getBoolean(FragmentDataset.WRITE_SUFFIXES, false)
-  private val writeOriginalQualities = conf.getBoolean(FragmentDataset.WRITE_ORIGINAL_QUALITIES, false)
+  private val writeOriginalQualityScores = conf.getBoolean(FragmentDataset.WRITE_ORIGINAL_QUALITY_SCORES, false)
 
   /**
    * Writes alignment records to an output stream in interleaved FASTQ format.
@@ -75,10 +75,10 @@ class InterleavedFASTQInFormatter private (
       // convert both reads to fastq
       val fastq1 = converter.convertToFastq(read1,
         maybeAddSuffix = writeSuffixes,
-        outputOriginalBaseQualities = writeOriginalQualities) + "\n"
+        writeOriginalQualityScores) + "\n"
       val fastq2 = converter.convertToFastq(read2,
         maybeAddSuffix = writeSuffixes,
-        outputOriginalBaseQualities = writeOriginalQualities) + "\n"
+        writeOriginalQualityScores) + "\n"
 
       // write both to the output stream
       // ensure that reads are ordered properly if ordering is known (see #1702)

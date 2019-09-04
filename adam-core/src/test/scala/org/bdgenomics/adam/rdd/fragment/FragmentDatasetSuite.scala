@@ -326,7 +326,7 @@ class FragmentDatasetSuite extends ADAMFunSuite {
     val qualityScoreCounts = binnedFragments.rdd.flatMap(fragment => {
       fragment.getAlignments.toSeq
     }).flatMap(read => {
-      read.getQuality
+      read.getQualityScores
     }).map(s => s.toInt - 33)
       .countByValue
 

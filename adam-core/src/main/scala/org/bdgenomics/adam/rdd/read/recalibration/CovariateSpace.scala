@@ -73,14 +73,14 @@ private[adam] object CovariateSpace extends Serializable {
     // Construct the CovariateKeys
     val readLength = cycles.length
     val covariateArray = new Array[CovariateKey](readLength)
-    val qualities = read.getQuality
+    val qualityScores = read.getQualityScores
     var idx = 0
     while (idx < readLength) {
       val residueCycle = cycles(idx)
       val (residueDinucPrev, residueDinucCurr) = dinucs(idx)
       covariateArray(idx) = new CovariateKey(
         readGroups.getIndex(read.getReadGroupId),
-        qualities(idx),
+        qualityScores(idx),
         residueCycle,
         residueDinucPrev,
         residueDinucCurr,
@@ -101,7 +101,7 @@ private[adam] object CovariateSpace extends Serializable {
   def toCSV(key: CovariateKey,
             readGroups: ReadGroupDictionary): Seq[String] = {
     Seq(readGroups.readGroups(key.readGroupId).id,
-      (key.quality.toInt - 33).toString,
+      (key.qualityScore.toInt - 33).toString,
       cycle.toCSV(key.cycle),
       dinuc.toCSV((key.dinucPrev, key.dinucCurr)))
   }

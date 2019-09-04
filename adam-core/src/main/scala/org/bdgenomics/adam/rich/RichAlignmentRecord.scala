@@ -56,8 +56,8 @@ case class RichAlignmentRecord(record: AlignmentRecord) {
   /**
    * The quality scores as a list of integers. Assumes Illumina (33) encoding.
    */
-  lazy val qualityScores: Array[Int] = {
-    record.getQuality.toCharArray.map(q => q - 33)
+  lazy val qualityScoreValues: Array[Int] = {
+    record.getQualityScores.toCharArray.map(q => q - 33)
   }
 
   /**

@@ -97,10 +97,10 @@ object AlignmentRecordDataset extends Serializable {
 
   /**
    * Hadoop configuration path to check for a boolean value indicating whether
-   * the current or original read qualities should be written. True indicates
-   * to write the original qualities. The default is false.
+   * the current or original read quality scores should be written. True indicates
+   * to write the original quality scores. The default is false.
    */
-  val WRITE_ORIGINAL_QUALITIES = "org.bdgenomics.adam.rdd.read.AlignmentRecordDataset.writeOriginalQualities"
+  val WRITE_ORIGINAL_QUALITY_SCORES = "org.bdgenomics.adam.rdd.read.AlignmentRecordDataset.writeOriginalQualityScores"
 
   /**
    * Hadoop configuration path to check for a boolean value indicating whether
@@ -488,7 +488,7 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
         .setAlphabet(org.bdgenomics.formats.avro.Alphabet.DNA)
         .setName(alignmentRecord.getReadName)
         .setSequence(alignmentRecord.getSequence)
-        .setQualityScores(alignmentRecord.getQuality)
+        .setQualityScores(alignmentRecord.getQualityScores)
 
       Option(alignmentRecord.getSequence).foreach(sequence => builder.setLength(sequence.length().toLong))
       builder.build()
@@ -1363,9 +1363,10 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
    *   mate of each pair.
    * @param fileName2 Path at which to save a FASTQ file containing the second
    *   mate of each pair.
-   * @param outputOriginalBaseQualities If true, writes out reads with the base
-   *   qualities from the original qualities (SAM "OQ") field. If false, writes
-   *   out reads with the base qualities from the qual field. Default is false.
+   * @param writeOriginalQualityScores If true, writes out reads with the base
+   *   quality scores from the original quality scores (SAM "OQ") field. If false,
+   *   writes out reads with the quality scores from the qualityScores field. Default
+   *   is false.
    * @param asSingleFile If false, writes file to disk as shards with
    *   one shard per partition. If true, we save the file to disk as a single
    *   file by merging the shards.
@@ -1378,13 +1379,13 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
   def saveAsPairedFastq(
     fileName1: String,
     fileName2: String,
-    outputOriginalBaseQualities: java.lang.Boolean,
+    writeOriginalQualityScores: java.lang.Boolean,
     asSingleFile: java.lang.Boolean,
     disableFastConcat: java.lang.Boolean,
     validationStringency: ValidationStringency,
     persistLevel: StorageLevel) {
     saveAsPairedFastq(fileName1, fileName2,
-      outputOriginalBaseQualities = outputOriginalBaseQualities: Boolean,
+      writeOriginalQualityScores = writeOriginalQualityScores: Boolean,
       asSingleFile = asSingleFile: Boolean,
       disableFastConcat = disableFastConcat: Boolean,
       validationStringency = validationStringency,
@@ -1401,9 +1402,10 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
    *   mate of each pair.
    * @param fileName2 Path at which to save a FASTQ file containing the second
    *   mate of each pair.
-   * @param outputOriginalBaseQualities If true, writes out reads with the base
-   *   qualities from the original qualities (SAM "OQ") field. If false, writes
-   *   out reads with the base qualities from the qual field. Default is false.
+   * @param writeOriginalQualityScores If true, writes out reads with the base
+   *   quality scores from the original quality scores (SAM "OQ") field. If false,
+   *   writes out reads with the quality scores from the qualityScores field. Default
+   *   is false.
    * @param asSingleFile By default (false), writes file to disk as shards with
    *   one shard per partition. If true, we save the file to disk as a single
    *   file by merging the shards.
@@ -1418,7 +1420,7 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
   def saveAsPairedFastq(
     fileName1: String,
     fileName2: String,
-    outputOriginalBaseQualities: Boolean = false,
+    writeOriginalQualityScores: Boolean = false,
     asSingleFile: Boolean = false,
     disableFastConcat: Boolean = false,
     validationStringency: ValidationStringency = ValidationStringency.LENIENT,
@@ -1510,7 +1512,9 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
 
     val firstToWrite = firstInPairRecords
       .sortBy(_.getReadName)
-      .map(record => arc.convertToFastq(record, maybeAddSuffix = true, outputOriginalBaseQualities = outputOriginalBaseQualities))
+      .map(record => arc.convertToFastq(record,
+        maybeAddSuffix = true,
+        writeOriginalQualityScores))
 
     writeTextRdd(firstToWrite,
       fileName1,
@@ -1520,7 +1524,9 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
 
     val secondToWrite = secondInPairRecords
       .sortBy(_.getReadName)
-      .map(record => arc.convertToFastq(record, maybeAddSuffix = true, outputOriginalBaseQualities = outputOriginalBaseQualities))
+      .map(record => arc.convertToFastq(record,
+        maybeAddSuffix = true,
+        writeOriginalQualityScores))
 
     writeTextRdd(secondToWrite,
       fileName2,
@@ -1536,9 +1542,10 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
    * (Java-specific) Saves reads in FASTQ format.
    *
    * @param fileName Path to save files at.
-   * @param outputOriginalBaseQualities If true, writes out reads with the base
-   *   qualities from the original qualities (SAM "OQ") field. If false, writes
-   *   out reads with the base qualities from the qual field. Default is false.
+   * @param writeOriginalQualityScores If true, writes out reads with the base
+   *   quality scores from the original quality scores (SAM "OQ") field. If false,
+   *   writes out reads with the quality scores from the qualityScores field. Default
+   *   is false.
    * @param sort Whether to sort the FASTQ files by read name or not. Defaults
    *   to false. Sorting the output will recover pair order, if desired.
    * @param asSingleFile If false, writes file to disk as shards with
@@ -1551,14 +1558,14 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
    */
   def saveAsFastq(
     fileName: String,
-    outputOriginalBaseQualities: java.lang.Boolean,
+    writeOriginalQualityScores: java.lang.Boolean,
     sort: java.lang.Boolean,
     asSingleFile: java.lang.Boolean,
     disableFastConcat: java.lang.Boolean,
     validationStringency: ValidationStringency) {
 
     saveAsFastq(fileName, fileName2Opt = None,
-      outputOriginalBaseQualities = outputOriginalBaseQualities: Boolean,
+      writeOriginalQualityScores = writeOriginalQualityScores: Boolean,
       sort = sort: Boolean,
       asSingleFile = asSingleFile: Boolean,
       disableFastConcat = disableFastConcat: Boolean,
@@ -1572,9 +1579,10 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
    * @param fileName Path to save files at.
    * @param fileName2Opt Optional second path for saving files. If set, two
    *   files will be saved.
-   * @param outputOriginalBaseQualities If true, writes out reads with the base
-   *   qualities from the original qualities (SAM "OQ") field. If false, writes
-   *   out reads with the base qualities from the qual field. Default is false.
+   * @param writeOriginalQualityScores If true, writes out reads with the base
+   *   quality scores from the original quality scores (SAM "OQ") field. If false,
+   *   writes out reads with the quality scores from the qualityScores field. Default
+   *   is false.
    * @param sort Whether to sort the FASTQ files by read name or not. Defaults
    *   to false. Sorting the output will recover pair order, if desired.
    * @param asSingleFile By default (false), writes file to disk as shards with
@@ -1591,7 +1599,7 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
   def saveAsFastq(
     fileName: String,
     fileName2Opt: Option[String] = None,
-    outputOriginalBaseQualities: Boolean = false,
+    writeOriginalQualityScores: Boolean = false,
     sort: Boolean = false,
     asSingleFile: Boolean = false,
     disableFastConcat: Boolean = false,
@@ -1604,7 +1612,7 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
         saveAsPairedFastq(
           fileName,
           fileName2,
-          outputOriginalBaseQualities = outputOriginalBaseQualities,
+          writeOriginalQualityScores = writeOriginalQualityScores,
           asSingleFile = asSingleFile,
           disableFastConcat = disableFastConcat,
           validationStringency = validationStringency,
@@ -1622,7 +1630,8 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
 
         // convert the rdd and save as a text file
         val toWrite = outputRdd
-          .map(record => arc.convertToFastq(record, outputOriginalBaseQualities = outputOriginalBaseQualities))
+          .map(record => arc.convertToFastq(record,
+            writeOriginalQualityScores))
 
         writeTextRdd(toWrite,
           fileName,

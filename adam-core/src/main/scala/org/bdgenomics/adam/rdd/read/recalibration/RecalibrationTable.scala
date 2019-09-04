@@ -49,7 +49,7 @@ private[adam] case class RecalibrationTable private[recalibration] (
       var idx = 0
       while (idx < numCovariates) {
         val key = covariates(idx)
-        newQuals(idx) = table.getOrElse(key.toDefault, key.quality)
+        newQuals(idx) = table.getOrElse(key.toDefault, key.qualityScore)
         idx += 1
       }
     }
@@ -91,8 +91,8 @@ private case class TempRecalibrationTable(
   def lookup(key: CovariateKey): Char = {
     val globalEntry = tempTable(key.readGroupId)
     val globalDelta = computeGlobalDelta(globalEntry._1)
-    val residueLogP = log(PhredUtils.phredToErrorProbability(key.quality.toInt - 33))
-    val qualityEntry = getQualityEntry(key.quality, globalEntry)
+    val residueLogP = log(PhredUtils.phredToErrorProbability(key.qualityScore.toInt - 33))
+    val qualityEntry = getQualityEntry(key.qualityScore, globalEntry)
     val qualityDelta = computeQualityDelta(qualityEntry, residueLogP + globalDelta)
     val extrasDelta = computeExtrasDelta(qualityEntry,
       key,
@@ -209,7 +209,7 @@ private[recalibration] object RecalibrationTable {
 
   private def computeQualityTable(
     globalEntry: (Int, scala.collection.Map[CovariateKey, Observation])): QualityTable = {
-    QualityTable(globalEntry._2.groupBy(_._1.quality).map(qualityEntry => {
+    QualityTable(globalEntry._2.groupBy(_._1.qualityScore).map(qualityEntry => {
       val extras = computeExtrasTable(qualityEntry._2)
       (qualityEntry._1, (aggregateObservations(qualityEntry._2), extras))
     }))

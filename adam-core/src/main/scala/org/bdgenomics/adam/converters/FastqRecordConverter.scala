@@ -100,34 +100,34 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
     val readNameNoSuffix = suffixRegex.replaceAllIn(readName, "")
 
     val readSequence = lines(1)
-    val readQualitiesRaw = if (lines.length == 4) {
+    val readQualityScoresRaw = if (lines.length == 4) {
       lines(3)
     } else {
       ""
     }
 
-    val readQualities =
-      if (stringency == ValidationStringency.STRICT) readQualitiesRaw
+    val readQualityScores =
+      if (stringency == ValidationStringency.STRICT) readQualityScoresRaw
       else {
-        if (readQualitiesRaw == "*") "B" * readSequence.length
-        else if (readQualitiesRaw.length < readSequence.length) {
-          readQualitiesRaw + ("B" * (readSequence.length - readQualitiesRaw.length))
-        } else if (readQualitiesRaw.length > readSequence.length) {
-          throw new IllegalArgumentException("Quality length must not be longer than read length")
-        } else readQualitiesRaw
+        if (readQualityScoresRaw == "*") "B" * readSequence.length
+        else if (readQualityScoresRaw.length < readSequence.length) {
+          readQualityScoresRaw + ("B" * (readSequence.length - readQualityScoresRaw.length))
+        } else if (readQualityScoresRaw.length > readSequence.length) {
+          throw new IllegalArgumentException("Quality scores length must not be longer than read length")
+        } else readQualityScoresRaw
       }
 
     if (stringency == ValidationStringency.STRICT) {
-      if (readQualitiesRaw == "*" && readSequence.length > 1)
+      if (readQualityScoresRaw == "*" && readSequence.length > 1)
         throw new IllegalArgumentException(s"Fastq quality must be defined for\n $input")
     }
 
     require(
-      readSequence.length == readQualities.length,
+      readSequence.length == readQualityScores.length,
       s"The first read: ${readName}, has different sequence and qual length."
     )
 
-    (readNameNoSuffix, readSequence, readQualities)
+    (readNameNoSuffix, readSequence, readQualityScores)
   }
 
   private[converters] def parseReadPairInFastq(input: String): (String, String, String, String, String, String) = {
@@ -135,32 +135,32 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
     require(lines.length == 8,
       s"Record must have 8 lines (${lines.length.toString} found):\n${input}")
 
-    val (firstReadName, firstReadSequence, firstReadQualities) =
+    val (firstReadName, firstReadSequence, firstReadQualityScores) =
       parseReadInFastq(lines.take(4).mkString("\n"), setFirstOfPair = true, setSecondOfPair = false)
 
-    val (secondReadName, secondReadSequence, secondReadQualities) =
+    val (secondReadName, secondReadSequence, secondReadQualityScores) =
       parseReadInFastq(lines.drop(4).mkString("\n"), setFirstOfPair = false, setSecondOfPair = true)
 
     (
       firstReadName,
       firstReadSequence,
-      firstReadQualities,
+      firstReadQualityScores,
       secondReadName,
       secondReadSequence,
-      secondReadQualities
+      secondReadQualityScores
     )
   }
 
   private[converters] def makeAlignmentRecord(readName: String,
                                               sequence: String,
-                                              qual: String,
+                                              qualityScores: String,
                                               readInFragment: Int,
                                               readPaired: Boolean = true,
                                               optReadGroup: Option[String] = None): AlignmentRecord = {
     val builder = AlignmentRecord.newBuilder
       .setReadName(readName)
       .setSequence(sequence)
-      .setQuality(qual)
+      .setQualityScores(qualityScores)
       .setReadPaired(readPaired)
       .setReadInFragment(readInFragment)
 
@@ -203,16 +203,16 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
     val (
       firstReadName,
       firstReadSequence,
-      firstReadQualities,
+      firstReadQualityScores,
       secondReadName,
       secondReadSequence,
-      secondReadQualities
+      secondReadQualityScores
       ) = parseReadPairInFastq(element._2.toString)
 
     // build and return iterators
     Iterable(
-      makeAlignmentRecord(firstReadName, firstReadSequence, firstReadQualities, 0),
-      makeAlignmentRecord(secondReadName, secondReadSequence, secondReadQualities, 1)
+      makeAlignmentRecord(firstReadName, firstReadSequence, firstReadQualityScores, 0),
+      makeAlignmentRecord(secondReadName, secondReadSequence, secondReadQualityScores, 1)
     )
   }
 
@@ -232,10 +232,10 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
     val (
       firstReadName,
       firstReadSequence,
-      firstReadQualities,
+      firstReadQualityScores,
       secondReadName,
       secondReadSequence,
-      secondReadQualities
+      secondReadQualityScores
       ) = parseReadPairInFastq(element._2.toString)
 
     require(
@@ -247,8 +247,8 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
     )
 
     val alignments = List(
-      makeAlignmentRecord(firstReadName, firstReadSequence, firstReadQualities, 0),
-      makeAlignmentRecord(secondReadName, secondReadSequence, secondReadQualities, 1)
+      makeAlignmentRecord(firstReadName, firstReadSequence, firstReadQualityScores, 0),
+      makeAlignmentRecord(secondReadName, secondReadSequence, secondReadQualityScores, 1)
     )
 
     // build and return record
@@ -285,7 +285,7 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
     if (setFirstOfPair && setSecondOfPair)
       throw new IllegalArgumentException("setFirstOfPair and setSecondOfPair cannot be true at the same time")
 
-    val (readName, readSequence, readQualities) =
+    val (readName, readSequence, readQualityScores) =
       parseReadInFastq(element._2.toString, setFirstOfPair, setSecondOfPair, stringency)
 
     // default to 0
@@ -296,7 +296,7 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
     val readPaired = setFirstOfPair || setSecondOfPair
 
     makeAlignmentRecord(
-      readName, readSequence, readQualities,
+      readName, readSequence, readQualityScores,
       readInFragment, readPaired, optReadGroup)
   }
 }

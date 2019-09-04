@@ -168,9 +168,9 @@ private[rdd] object BinQualities extends Serializable {
    */
   private[read] def binRead(read: AlignmentRecord,
                             bins: Seq[QualityScoreBin]): AlignmentRecord = {
-    if (read.getQuality != null) {
+    if (read.getQualityScores != null) {
       AlignmentRecord.newBuilder(read)
-        .setQuality(binQualities(read.getQuality, bins))
+        .setQualityScores(binQualities(read.getQualityScores, bins))
         .build
     } else {
       read
