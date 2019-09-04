@@ -91,10 +91,10 @@ object FragmentDataset {
 
   /**
    * Hadoop configuration path to check for a boolean value indicating whether
-   * the current or original read qualities should be written. True indicates
-   * to write the original qualities. The default is false.
+   * the current or original read quality scores should be written. True indicates
+   * to write the original quality scores. The default is false.
    */
-  val WRITE_ORIGINAL_QUALITIES = "org.bdgenomics.adam.rdd.fragment.FragmentDataset.writeOriginalQualities"
+  val WRITE_ORIGINAL_QUALITY_SCORES = "org.bdgenomics.adam.rdd.fragment.FragmentDataset.writeOriginalQualityScores"
 
   /**
    * Hadoop configuration path to check for a boolean value indicating whether

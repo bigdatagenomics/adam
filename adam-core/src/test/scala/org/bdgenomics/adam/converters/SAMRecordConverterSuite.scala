@@ -58,7 +58,7 @@ class SAMRecordConverterSuite extends FunSuite {
     assert(!testAlignmentRecord.getReadPaired)
     assert(testAlignmentRecord.getReadInFragment != 1)
     assert(testAlignmentRecord.getSupplementaryAlignment === testSAMRecord.getSupplementaryAlignmentFlag)
-    assert(testAlignmentRecord.getOriginalQuality === "*****")
+    assert(testAlignmentRecord.getOriginalQualityScores === "*****")
     assert(testAlignmentRecord.getMismatchingPositions === "100")
     assert(testAlignmentRecord.getOriginalCigar === "100M")
     assert(testAlignmentRecord.getOriginalStart === 0L)
@@ -115,7 +115,7 @@ class SAMRecordConverterSuite extends FunSuite {
     val newAlignmentRecord = newRecordConverter.convert(newSAMRecord)
 
     // Validating Conversion
-    assert(newAlignmentRecord.getQuality === null)
+    assert(newAlignmentRecord.getQualityScores === null)
   }
 
   test("don't keep denormalized fields") {

@@ -318,7 +318,7 @@ class ADAMContextSuite extends ADAMFunSuite {
       }
 
       assert(reads.rdd.collect.forall(_.getSequence.length === 250))
-      assert(reads.rdd.collect.forall(_.getQuality.length === 250))
+      assert(reads.rdd.collect.forall(_.getQualityScores.length === 250))
     }
   }
 
@@ -351,7 +351,7 @@ class ADAMContextSuite extends ADAMFunSuite {
       }
 
       assert(reads.rdd.collect.forall(_.getSequence.toString.length === 250))
-      assert(reads.rdd.collect.forall(_.getQuality.toString.length === 250))
+      assert(reads.rdd.collect.forall(_.getQualityScores.toString.length === 250))
     }
   }
 

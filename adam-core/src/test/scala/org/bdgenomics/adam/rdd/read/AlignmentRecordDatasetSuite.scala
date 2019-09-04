@@ -329,7 +329,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
       case i: Int =>
         val (readA, readB) = (reads12A(i), reads12B(i))
         assert(readA.getSequence === readB.getSequence)
-        assert(readA.getQuality === readB.getQuality)
+        assert(readA.getQualityScores === readB.getQualityScores)
         assert(readA.getCigar === readB.getCigar)
     }
   }
@@ -359,7 +359,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
       case i: Int =>
         val (readA, readB) = (readsA(i), readsB(i))
         assert(readA.getSequence === readB.getSequence)
-        assert(readA.getQuality === readB.getQuality)
+        assert(readA.getQualityScores === readB.getQualityScores)
         assert(readA.getCigar === readB.getCigar)
     }
   }
@@ -390,7 +390,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
       case i: Int =>
         val (readA, readB) = (readsA(i), readsB(i))
         assert(readA.getSequence === readB.getSequence)
-        assert(readA.getQuality === readB.getQuality)
+        assert(readA.getQualityScores === readB.getQualityScores)
         assert(readA.getCigar === readB.getCigar)
     }
   }
@@ -449,9 +449,9 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
     noqualA.indices.foreach {
       case i: Int =>
         val (readA, readB, readC) = (noqualA(i), noqualB(i), noqualC(i))
-        assert(readA.getQuality != "*")
-        assert(readB.getQuality == "B" * readB.getSequence.length)
-        assert(readB.getQuality == readC.getQuality)
+        assert(readA.getQualityScores != "*")
+        assert(readB.getQualityScores == "B" * readB.getSequence.length)
+        assert(readB.getQualityScores == readC.getQualityScores)
     }
   }
 
@@ -473,7 +473,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
       case i: Int =>
         val (readA, readB) = (reads12A(i), reads12B(i))
         assert(readA.getSequence === readB.getSequence)
-        assert(readA.getQuality === readB.getQuality)
+        assert(readA.getQualityScores === readB.getQualityScores)
         assert(readA.getReadName === readB.getReadName)
     }
   }
@@ -504,7 +504,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
       case i: Int =>
         val (readA, readB) = (readsA(i), readsB(i))
         assert(readA.getSequence === readB.getSequence)
-        assert(readA.getQuality === readB.getQuality)
+        assert(readA.getQualityScores === readB.getQualityScores)
         assert(readA.getReadName === readB.getReadName)
     }
   }
@@ -602,8 +602,8 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
         assert(p1.getReadInFragment === p2.getReadInFragment)
         assert(p1.getReadName === p2.getReadName)
         assert(p1.getSequence === p2.getSequence)
-        assert(p1.getQuality === p2.getQuality)
-        assert(p1.getOriginalQuality === p2.getOriginalQuality)
+        assert(p1.getQualityScores === p2.getQualityScores)
+        assert(p1.getOriginalQualityScores === p2.getOriginalQualityScores)
         assert(p1.getReadGroupSampleId === p2.getReadGroupSampleId)
         assert(p1.getReadGroupId === p2.getReadGroupId)
         assert(p1.getFailedVendorQualityChecks === p2.getFailedVendorQualityChecks)
@@ -868,7 +868,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
     val inputPath = testFile("small.sam")
     val reads: AlignmentRecordDataset = sc.loadAlignments(inputPath)
     val outputPath = tmpLocation(".fq")
-    reads.saveAsFastq(outputPath, fileName2Opt = None, outputOriginalBaseQualities = true)
+    reads.saveAsFastq(outputPath, fileName2Opt = None, writeOriginalQualityScores = true)
     assert(new File(outputPath).exists())
   }
 
@@ -876,7 +876,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
     val inputPath = testFile("small.sam")
     val reads: AlignmentRecordDataset = sc.loadAlignments(inputPath)
     val outputPath = tmpLocation(".fq")
-    reads.saveAsFastq(outputPath, fileName2Opt = None, outputOriginalBaseQualities = false, sort = true)
+    reads.saveAsFastq(outputPath, fileName2Opt = None, writeOriginalQualityScores = false, sort = true)
     assert(new File(outputPath).exists())
   }
 
@@ -884,7 +884,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
     val inputPath = testFile("small.sam")
     val reads: AlignmentRecordDataset = sc.loadAlignments(inputPath)
     val outputPath = tmpLocation(".fq")
-    reads.saveAsFastq(outputPath, fileName2Opt = None, outputOriginalBaseQualities = true, sort = true)
+    reads.saveAsFastq(outputPath, fileName2Opt = None, writeOriginalQualityScores = true, sort = true)
     assert(new File(outputPath).exists())
   }
 
@@ -1391,7 +1391,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
     val reads = sc.loadAlignments(testFile("small.sam"))
     val binnedReads = reads.binQualityScores(Seq(QualityScoreBin(0, 20, 10)))
     val numQualities = binnedReads.rdd.flatMap(read => {
-      Option(read.getQuality)
+      Option(read.getQualityScores)
     }).flatMap(s => s)
       .count
     assert(numQualities === 0)
@@ -1403,7 +1403,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
       QualityScoreBin(20, 40, 30),
       QualityScoreBin(40, 60, 50)))
     val qualityScoreCounts = binnedReads.rdd.flatMap(read => {
-      read.getQuality
+      read.getQualityScores
     }).map(s => s.toInt - 33)
       .countByValue
 

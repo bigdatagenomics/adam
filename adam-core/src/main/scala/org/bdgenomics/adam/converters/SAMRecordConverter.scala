@@ -40,7 +40,7 @@ private[adam] class SAMRecordConverter extends Serializable with Logging {
    * ADAM, we have promoted some of these fields to "primary" fields, so that we
    * can more efficiently access them. These include the MD tag, which describes
    * substitutions against the reference; the OQ tag, which describes the
-   * original read base qualities; and the OP and OC tags, which describe the
+   * original read base quality scores; and the OP and OC tags, which describe the
    * original read alignment position and CIGAR.
    *
    * @param attrTag Tag name to check.
@@ -88,13 +88,13 @@ private[adam] class SAMRecordConverter extends Serializable with Logging {
         .setCigar(cigar)
         .setBasesTrimmedFromStart(startTrim)
         .setBasesTrimmedFromEnd(endTrim)
-        .setOriginalQuality(SAMUtils.phredToFastq(samRecord.getOriginalBaseQualities))
+        .setOriginalQualityScores(SAMUtils.phredToFastq(samRecord.getOriginalBaseQualities))
 
-      // if the quality string is "*", then we null it in the record
-      // or, in other words, we only set the quality string if it is not "*"
-      val qual = samRecord.getBaseQualityString
-      if (qual != "*") {
-        builder.setQuality(qual)
+      // if the quality scores string is "*", then we null it in the record
+      // or, in other words, we only set the quality scores if it is not "*"
+      val qualityScores = samRecord.getBaseQualityString
+      if (qualityScores != "*") {
+        builder.setQualityScores(qualityScores)
       }
 
       // Only set the reference information if the read is aligned, matching the mate reference

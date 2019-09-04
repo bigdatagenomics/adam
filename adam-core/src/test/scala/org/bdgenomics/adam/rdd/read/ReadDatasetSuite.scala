@@ -146,12 +146,12 @@ class ReadDatasetSuite extends ADAMFunSuite {
     val a1 = alignments(0)
     assert(a1.getReadName === "name1")
     assert(a1.getSequence === "actg")
-    assert(a1.getQuality === "9999")
+    assert(a1.getQualityScores === "9999")
 
     val a2 = alignments(1)
     assert(a2.getReadName === "name2")
     assert(a2.getSequence === "actg")
-    assert(a2.getQuality === "9999")
+    assert(a2.getQualityScores === "9999")
   }
 
   sparkTest("convert reads to sequences") {

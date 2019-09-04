@@ -47,7 +47,7 @@ class FASTQInFormatter private (
   protected val companion = FASTQInFormatter
   private val converter = new AlignmentRecordConverter
   private val writeSuffixes = conf.getBoolean(AlignmentRecordDataset.WRITE_SUFFIXES, false)
-  private val writeOriginalQualities = conf.getBoolean(AlignmentRecordDataset.WRITE_ORIGINAL_QUALITIES, false)
+  private val writeOriginalQualityScores = conf.getBoolean(AlignmentRecordDataset.WRITE_ORIGINAL_QUALITY_SCORES, false)
 
   /**
    * Writes alignment records to an output stream in FASTQ format.
@@ -59,7 +59,7 @@ class FASTQInFormatter private (
     iter.foreach(read => {
       val fastqRead = converter.convertToFastq(read,
         maybeAddSuffix = writeSuffixes,
-        outputOriginalBaseQualities = writeOriginalQualities) + "\n"
+        writeOriginalQualityScores) + "\n"
 
       os.write(fastqRead.getBytes)
     })

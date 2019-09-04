@@ -46,7 +46,7 @@ class RecalibratorSuite extends FunSuite {
     .setEnd(12L)
     .setSequence("AC")
     .setReadNegativeStrand(false)
-    .setQuality(Seq(40, 50).map(i => (i + 33).toChar).mkString)
+    .setQualityScores(Seq(40, 50).map(i => (i + 33).toChar).mkString)
     .setDuplicateRead(false)
     .setReadMapped(true)
     .setReadPaired(false)
@@ -62,12 +62,12 @@ class RecalibratorSuite extends FunSuite {
 
   test("don't replace quality if quality was null") {
     val qualFreeRead = AlignmentRecord.newBuilder(read)
-      .setQuality(null)
+      .setQualityScores(null)
       .build
     val recalibratedRead = lowRecalibrator(qualFreeRead,
       Array.empty)
-    assert(recalibratedRead.getQuality === null)
-    assert(recalibratedRead.getOriginalQuality === null)
+    assert(recalibratedRead.getQualityScores === null)
+    assert(recalibratedRead.getOriginalQualityScores === null)
   }
 
   test("if no covariates, return alignment") {
@@ -82,7 +82,7 @@ class RecalibratorSuite extends FunSuite {
     val recalibratedRead = hiRecalibrator(read,
       BaseQualityRecalibration.observe(read, rgd))
     val expectedRead = AlignmentRecord.newBuilder(read)
-      .setOriginalQuality(read.getQuality)
+      .setOriginalQualityScores(read.getQualityScores)
       .build
     assert(recalibratedRead === expectedRead)
   }
@@ -91,8 +91,8 @@ class RecalibratorSuite extends FunSuite {
     val recalibratedRead = lowRecalibrator(read,
       BaseQualityRecalibration.observe(read, rgd))
     val expectedRead = AlignmentRecord.newBuilder(read)
-      .setQuality(Seq(47, 50).map(i => (i + 33).toChar).mkString)
-      .setOriginalQuality(read.getQuality)
+      .setQualityScores(Seq(47, 50).map(i => (i + 33).toChar).mkString)
+      .setOriginalQualityScores(read.getQualityScores)
       .build
     assert(recalibratedRead === expectedRead)
   }

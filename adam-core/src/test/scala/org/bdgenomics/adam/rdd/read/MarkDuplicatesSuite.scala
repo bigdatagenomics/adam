@@ -55,7 +55,7 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
     AlignmentRecord.newBuilder()
       .setReferenceName(reference.getName)
       .setStart(start)
-      .setQuality(qual)
+      .setQualityScores(qual)
       .setCigar(cigar)
       .setEnd(end)
       .setReadMapped(true)
@@ -190,7 +190,7 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
   test("quality scores") {
     // The ascii value 53 is equal to a phred score of 20
     val qual = 53.toChar.toString * 100
-    val record = AlignmentRecord.newBuilder().setQuality(qual).build()
+    val record = AlignmentRecord.newBuilder().setQualityScores(qual).build()
     assert(MarkDuplicates.score(record) == 2000)
   }
 

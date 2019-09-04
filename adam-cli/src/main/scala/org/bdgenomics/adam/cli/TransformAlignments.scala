@@ -551,7 +551,7 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
 
         val proj = if (args.limitProjection) {
           Some(Filter(AlignmentRecordField.attributes,
-            AlignmentRecordField.originalQuality))
+            AlignmentRecordField.originalQualityScores))
         } else {
           None
         }

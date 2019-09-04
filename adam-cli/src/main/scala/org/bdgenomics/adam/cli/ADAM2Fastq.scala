@@ -47,8 +47,8 @@ class ADAM2FastqArgs extends Args4jBase {
   var persistLevel: String = null
   @Args4jOption(required = false, name = "-no_projection", usage = "Disable projection on records. No great reason to do this, but useful for testing / comparison.")
   var disableProjection: Boolean = false
-  @Args4jOption(required = false, name = "-output_oq", usage = "Output the original sequencing quality scores")
-  var outputOriginalBaseQualities = false
+  @Args4jOption(required = false, name = "-output_oq", usage = "Write the original sequencing quality scores")
+  var writeOriginalQualityScores = false
 }
 
 object ADAM2Fastq extends BDGCommandCompanion {
@@ -71,9 +71,9 @@ class ADAM2Fastq(val args: ADAM2FastqArgs) extends BDGSparkCommand[ADAM2FastqArg
           Projection(
             AlignmentRecordField.readName,
             AlignmentRecordField.sequence,
-            AlignmentRecordField.quality,
+            AlignmentRecordField.qualityScores,
             AlignmentRecordField.readInFragment,
-            AlignmentRecordField.originalQuality
+            AlignmentRecordField.originalQualityScores
           )
         )
       else
@@ -91,7 +91,7 @@ class ADAM2Fastq(val args: ADAM2FastqArgs) extends BDGSparkCommand[ADAM2FastqArg
       Option(args.outputPath2),
       asSingleFile = args.asSingleFile,
       disableFastConcat = args.disableFastConcat,
-      outputOriginalBaseQualities = args.outputOriginalBaseQualities,
+      writeOriginalQualityScores = args.writeOriginalQualityScores,
       validationStringency = args.validationStringency,
       persistLevel = Option(args.persistLevel).map(StorageLevel.fromString(_))
     )

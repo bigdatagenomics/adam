@@ -53,7 +53,7 @@ class DinucCovariateSuite extends FunSuite {
   test("compute covariates for a read on the negative strand") {
     val read = AlignmentRecord.newBuilder()
       .setSequence("AGCCTNGT")
-      .setQuality("********")
+      .setQualityScores("********")
       .setReadNegativeStrand(true)
       .setReadMapped(true)
       .setStart(10L)
@@ -75,7 +75,7 @@ class DinucCovariateSuite extends FunSuite {
   test("compute covariates for a read on the positive strand") {
     val read = AlignmentRecord.newBuilder()
       .setSequence("ACNAGGCT")
-      .setQuality("********")
+      .setQualityScores("********")
       .setReadNegativeStrand(false)
       .setReadMapped(true)
       .setStart(10L)

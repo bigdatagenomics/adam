@@ -128,7 +128,7 @@ private[read] object BaseQualityRecalibration {
    */
   private def shouldIncludeRead(read: AlignmentRecord) = {
     (read.getReadMapped && read.getPrimaryAlignment && !read.getDuplicateRead) &&
-      read.getQuality != null &&
+      read.getQualityScores != null &&
       (read.getMappingQuality != null && read.getMappingQuality > 0) &&
       (read.getCigar != null && read.getCigar != "*") &&
       !read.getFailedVendorQualityChecks
@@ -147,7 +147,7 @@ private[read] object BaseQualityRecalibration {
   private def computeResiduesToInclude(read: AlignmentRecord,
                                        maskedSites: Set[Long]): (Array[Boolean], Array[Boolean]) = {
     val readSequence = read.getSequence.toArray
-    val readQualities = read.getQuality.toArray
+    val readQualities = read.getQualityScores.toArray
     val shouldInclude = new Array[Boolean](readSequence.length)
     val isMismatch = new Array[Boolean](readSequence.length)
     val readCigar = TextCigarCodec.decode(read.getCigar)

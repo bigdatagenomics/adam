@@ -47,7 +47,7 @@ class Tab5InFormatter private (
   protected val companion = Tab5InFormatter
   private val newLine = "\n".getBytes
   private val converter = new AlignmentRecordConverter
-  private val writeOriginalQualities = conf.getBoolean(FragmentDataset.WRITE_ORIGINAL_QUALITIES, false)
+  private val writeOriginalQualityScores = conf.getBoolean(FragmentDataset.WRITE_ORIGINAL_QUALITY_SCORES, false)
 
   /**
    * Writes alignment records to an output stream in Bowtie tab5 format.
@@ -77,15 +77,14 @@ class Tab5InFormatter private (
     }).foreach(reads => {
 
       // write unpaired read or first of paired-end reads
-      val first = converter.convertToTab5(reads(0),
-        outputOriginalBaseQualities = writeOriginalQualities)
+      val first = converter.convertToTab5(reads(0), writeOriginalQualityScores)
 
       os.write(first.getBytes)
 
       // write second of paired-end reads, if present
       if (reads.size > 1) {
         val second = "\t" + converter.convertSecondReadToTab5(reads(1),
-          outputOriginalBaseQualities = writeOriginalQualities)
+          writeOriginalQualityScores)
 
         os.write(second.getBytes)
       }
