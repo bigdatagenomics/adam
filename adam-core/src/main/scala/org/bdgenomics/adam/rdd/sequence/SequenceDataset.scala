@@ -75,6 +75,12 @@ private[adam] class SequenceArraySerializer extends IntervalArraySerializer[Refe
 object SequenceDataset {
 
   /**
+   * Hadoop configuration path to specify line width at
+   * which to hard wrap FASTA formatted sequences. Defaults to 60.
+   */
+  val FASTA_LINE_WIDTH = "org.bdgenomics.adam.rdd.sequence.SequenceDataset.lineWidth"
+
+  /**
    * A genomic dataset that wraps a dataset of Sequence data.
    *
    * @param ds A Dataset of sequences.
