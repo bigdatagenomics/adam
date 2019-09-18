@@ -1,5 +1,38 @@
 # ADAM Changelog #
 
+### Version 0.29.0 ###
+
+**Closed issues:**
+
+ - Bump bdg-formats dependency version to 0.14.0 [\#2208](https://github.com/bigdatagenomics/adam/issues/2208)
+ - Bump Apache Spark dependency version to 2.4.4 [\#2202](https://github.com/bigdatagenomics/adam/issues/2202)
+ - Add missing loadVariantContexts(String, ValidationStringency) method [\#2197](https://github.com/bigdatagenomics/adam/issues/2197)
+ - Jenkins builds failing due to Coveralls API submission [\#2194](https://github.com/bigdatagenomics/adam/issues/2194)
+ - Confirm block-gzipped (bgzf) interleaved FASTQ is supported [\#2193](https://github.com/bigdatagenomics/adam/issues/2193)
+ - TransformGenotype/Variant do not support compressed VCF [\#2190](https://github.com/bigdatagenomics/adam/issues/2190)
+ - Add htsjdk conversion methods to VariantContextDataset [\#2189](https://github.com/bigdatagenomics/adam/issues/2189)
+ - TransformVariants is missing partition arguments [\#2188](https://github.com/bigdatagenomics/adam/issues/2188)
+ - StackOverflowError when saving to BAM in adam-shell [\#2186](https://github.com/bigdatagenomics/adam/issues/2186)
+ - loadFastaDna usage not obvious due to default method parameter [\#2183](https://github.com/bigdatagenomics/adam/issues/2183)
+ - loadFastaDna does not seem to work [\#2182](https://github.com/bigdatagenomics/adam/issues/2182)
+ - kryo buffer overflow when converting fastas from CLI to adam [\#1660](https://github.com/bigdatagenomics/adam/issues/1660)
+
+**Merged and closed pull requests:**
+
+ - [ADAM-2208] Bump bdg-formats dependency version to 0.14.0 [\#2209](https://github.com/bigdatagenomics/adam/pull/2209) ([heuermh](https://github.com/heuermh))
+ - Add FASTA in formatter for sequence datasets [\#2207](https://github.com/bigdatagenomics/adam/pull/2207) ([heuermh](https://github.com/heuermh))
+ - Remove Avro 1.8.x download step from Jenkins Scala 2.12 installation. [\#2206](https://github.com/bigdatagenomics/adam/pull/2206) ([heuermh](https://github.com/heuermh))
+ - Use qualityScores for base quality scores [\#2205](https://github.com/bigdatagenomics/adam/pull/2205) ([heuermh](https://github.com/heuermh))
+ - [ADAM-2189] Add htsjdk conversion methods to VariantContextDataset [\#2204](https://github.com/bigdatagenomics/adam/pull/2204) ([heuermh](https://github.com/heuermh))
+ - [ADAM-2202] Bump Apache Spark dependency version to 2.4.4. [\#2203](https://github.com/bigdatagenomics/adam/pull/2203) ([heuermh](https://github.com/heuermh))
+ - [ADAM-2183] Drop default value for maximumLength [\#2201](https://github.com/bigdatagenomics/adam/pull/2201) ([heuermh](https://github.com/heuermh))
+ - [ADAM-2197] Add missing loadVariantContexts(String, ValidationStringency) method [\#2200](https://github.com/bigdatagenomics/adam/pull/2200) ([heuermh](https://github.com/heuermh))
+ - [ADAM-2194] Disable coveralls reporting from Jenkins test script [\#2196](https://github.com/bigdatagenomics/adam/pull/2196) ([heuermh](https://github.com/heuermh))
+ - [ADAM-2188] Add partition cli args to TransformVariants,Features. [\#2192](https://github.com/bigdatagenomics/adam/pull/2192) ([heuermh](https://github.com/heuermh))
+ - Bump htsjdk dependency version to 2.19.0 [\#2184](https://github.com/bigdatagenomics/adam/pull/2184) ([heuermh](https://github.com/heuermh))
+ - Update required Maven version in docs [\#2181](https://github.com/bigdatagenomics/adam/pull/2181) ([heuermh](https://github.com/heuermh))
+
+
 ### Version 0.28.0 ###
 
 **Closed issues:**
