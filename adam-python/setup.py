@@ -95,10 +95,12 @@ try:
     try:
         import pypandoc
         long_description = pypandoc.convert('README.md', 'rst')
-    except ImportError:
+    except ImportError as e:
         print("Could not import pypandoc - required to package bdgenomics.adam", file=sys.stderr)
-    except OSError:
+        raise e
+    except OSError as e:
         print("Could not convert - pandoc is not installed", file=sys.stderr)
+        raise e
 
     setup(
         name='bdgenomics.adam',
@@ -133,4 +135,3 @@ finally:
         os.rmdir(JARS_TARGET)
         os.remove(SCRIPTS_TARGET)
         os.rmdir(TEMP_PATH)
-
