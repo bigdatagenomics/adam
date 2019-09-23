@@ -18,7 +18,7 @@
 
 from __future__ import print_function
 
-version = '0.28.0a1'
+version = '0.28.0a2'
 
 if __name__ == '__main__':
     print(version)
