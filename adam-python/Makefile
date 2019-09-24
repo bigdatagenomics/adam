@@ -86,7 +86,9 @@ test: check_build_reqs
 
 pypi: check_clean_working_copy
 	set -x \
-	&& $(python) setup.py egg_info $$tag_build sdist bdist_egg upload
+	&& $(python) setup.py egg_info sdist bdist_egg \
+	&& twine check dist/* \
+	&& twine upload dist/*
 clean_pypi:
 	- rm -rf build/
 	- rm -rf dist/

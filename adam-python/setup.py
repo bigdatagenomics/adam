@@ -91,22 +91,15 @@ try:
     # bdgenomics.adam will search for ADAM_HOME with Python.
     scripts.append("bdgenomics/adam/find_adam_home.py")
 
-    long_description = "!!!!! missing pandoc do not upload to PyPI !!!!"
-    try:
-        import pypandoc
-        long_description = pypandoc.convert('README.md', 'rst')
-    except ImportError as e:
-        print("Could not import pypandoc - required to package bdgenomics.adam", file=sys.stderr)
-        raise e
-    except OSError as e:
-        print("Could not convert - pandoc is not installed", file=sys.stderr)
-        raise e
+    with open("README.md", "r") as fh:
+        long_description = fh.read()
 
     setup(
         name='bdgenomics.adam',
         version=adam_version,
         description='A fast, scalable genome analysis system',
         long_description=long_description,
+        long_description_content_type='text/markdown',
         author='Big Data Genomics',
         author_email='adam-developers@googlegroups.com',
         url="https://github.com/bdgenomics/adam",
