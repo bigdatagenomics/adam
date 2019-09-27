@@ -20,7 +20,7 @@ package org.bdgenomics.adam.rdd
 import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.rdd.variant.VariantArray
 import org.bdgenomics.adam.util.ADAMFunSuite
-import org.bdgenomics.formats.avro.{ AlignmentRecord, Variant }
+import org.bdgenomics.formats.avro.{ Alignment, Variant }
 import org.bdgenomics.utils.interval.array.IntervalArray
 import scala.reflect.ClassTag
 
@@ -54,7 +54,7 @@ class TreeRegionJoinSuite extends ADAMFunSuite {
       .map(kv => {
         val (k, v) = kv
         // and this is but another one of them
-        (k, AlignmentRecord.newBuilder
+        (k, Alignment.newBuilder
           .setStart(v.toLong)
           .build)
       })

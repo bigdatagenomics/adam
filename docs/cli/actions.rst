@@ -74,10 +74,10 @@ fall into several general categories:
    -  ``-force_load_ifastq``: Forces ADAM to try to load the input as
       interleaved FASTQ.
    -  ``-force_load_parquet``: Forces ADAM to try to load the input as
-      Parquet encoded using the ADAM ``AlignmentRecord`` schema.
+      Parquet encoded using the ADAM ``Alignment`` schema.
    -  ``-limit_projection``: If loading as Parquet, sets a projection
       that does not load the ``attributes`` or ``origQual`` fields of
-      the ``AlignmentRecord``.
+      the ``Alignment``.
    -  ``-aligned_read_predicate``: If loading as Parquet, only loads
       aligned reads.
    -  ``-region_predicate``: A string indicating that reads should be
@@ -160,7 +160,7 @@ fall into several general categories:
    rewritten to 10, and all quality scores between 20–49 will be
    rewritten to 30.
 -  ``mismatchingPositions`` tagging options: We can recompute the
-   ``mismatchingPositions`` field of an AlignmentRecord (SAM "MD" tag)
+   ``mismatchingPositions`` field of an Alignment (SAM "MD" tag)
    with the ``-add_md_tags`` flag. This flag takes a path to a reference
    file in either FASTA or Parquet ``Sequence`` format.
    Additionally, this engine takes the following options:

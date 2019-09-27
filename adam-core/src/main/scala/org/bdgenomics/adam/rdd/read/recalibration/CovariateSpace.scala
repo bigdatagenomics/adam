@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.rdd.read.recalibration
 
 import org.bdgenomics.adam.models.ReadGroupDictionary
-import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.formats.avro.Alignment
 
 /**
  * Represents the space of all possible CovariateKeys for the given set
@@ -40,7 +40,7 @@ private[adam] object CovariateSpace extends Serializable {
    * @note This method is provided solely as a convenience method for testing.
    */
   private[recalibration] def apply(
-    read: AlignmentRecord,
+    read: Alignment,
     readGroups: ReadGroupDictionary): Array[CovariateKey] = {
     apply(read,
       Array.fill(read.getSequence.length) { true },
@@ -60,7 +60,7 @@ private[adam] object CovariateSpace extends Serializable {
    *   that generated this read.
    * @return Returns an array of error covariates, one per base in the read.
    */
-  def apply(read: AlignmentRecord,
+  def apply(read: Alignment,
             toInclude: Array[Boolean],
             isMismatch: Array[Boolean],
             readGroups: ReadGroupDictionary): Array[CovariateKey] = {

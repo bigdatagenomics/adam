@@ -32,8 +32,8 @@ The method signature of a pipe command is below:
                                                                                       xManifest: ClassTag[X]): Y
 
 ``X`` is the type of the records that are returned (e.g., for reads,
-``AlignmentRecord``) and ``Y`` is the type of the ``GenomicDatset`` that is
-returned (e.g., for reads, ``AlignmentRecordDataset``). As explicit
+``Alignment``) and ``Y`` is the type of the ``GenomicDatset`` that is
+returned (e.g., for reads, ``AlignmentDataset``). As explicit
 parameters, we take:
 
 -  ``cmd``: The command to run.
@@ -67,7 +67,7 @@ reads can be saved to or read from BAM, CRAM, FASTQ, and SAM). The
 ``InFormatter`` and ``OutFormatter`` parameters specify the format that
 is being read into or out of the pipe. We support the following:
 
--  ``AlignmentRecordDataset``:
+-  ``AlignmentDataset``:
 
    -  ``InFormatter``\ s: ``SAMInFormatter`` and ``BAMInFormatter`` write SAM or BAM out to a pipe.
    -  ``OutFormatter``: ``AnySAMOutFormatter`` supports reading SAM and BAM from a pipe, with the exact
@@ -93,19 +93,19 @@ is being read into or out of the pipe. We support the following:
 The ``convFn`` implementations are provided as implicit values in the
 `ADAMContext <adamContext.html>`__. These conversion functions are needed
 to adapt the metadata stored in a single ``GenomicDataset`` to the type of a
-different ``GenomicDataset`` (e.g., if piping an ``AlignmentRecordDataset``
+different ``GenomicDataset`` (e.g., if piping an ``AlignmentDataset``
 through a command that returns a ``VariantContextDataset``, we will need to
-convert the ``AlignmentRecordDataset``\ s ``ReadGroupDictionary`` into an
+convert the ``AlignmentDataset``\ s ``ReadGroupDictionary`` into an
 array of ``Sample``\ s for the ``VariantContextDataset``). We provide four
 implementations:
 
 -  ``ADAMContext.sameTypeConversionFn``: For piped commands that do not
-   change the type of the ``GenomicDataset`` (e.g., ``AlignmentRecordDataset`` →
-   ``AlignmentRecordDataset``).
+   change the type of the ``GenomicDataset`` (e.g., ``AlignmentDataset`` →
+   ``AlignmentDataset``).
 -  ``ADAMContext.readsToVCConversionFn``: For piped commands that go
-   from an ``AlignmentRecordDataset`` to a ``VariantContextDataset``.
+   from an ``AlignmentDataset`` to a ``VariantContextDataset``.
 -  ``ADAMContext.fragmentsToReadsConversionFn``: For piped commands that
-   go from a ``FragmentDataset`` to an ``AlignmentRecordDataset``.
+   go from a ``FragmentDataset`` to an ``AlignmentDataset``.
 
 To put everything together, here is an example command. Here, we will
 run a command ``my_variant_caller``, which accepts one argument
@@ -185,15 +185,15 @@ To run the Scala example code above using Java, we would write:
     import java.util.List;
     import java.util.Map;
     import org.bdgenomics.adam.models.VariantContext
-    import org.bdgenomics.adam.rdd.read.AlignmentRecordDataset;
+    import org.bdgenomics.adam.rdd.read.AlignmentDataset;
     import org.bdgenomics.adam.rdd.read.SAMInFormatter;
     import org.bdgenomics.adam.rdd.variant.VariantContextDataset;
     import org.bdgenomics.adam.rdd.variant.VCFOutFormatter;
-    import org.bdgenomics.adam.api.java.AlignmentRecordToVariantContextConverter;
+    import org.bdgenomics.adam.api.java.AlignmentToVariantContextConverter;
 
     class PipeRunner {
 
-      VariantContextDataset runPipe(AlignmentRecordDataset reads) {
+      VariantContextDataset runPipe(AlignmentDataset reads) {
 
         List<String> cmd = new ArrayList<String>();
         cmd.add("my_variant_caller");
@@ -213,7 +213,7 @@ To run the Scala example code above using Java, we would write:
                                           0,
                                           SAMInFormatter.class,
                                           new VCFOutFormatter,
-                                          new AlignmentRecordToVariantContextConverter);
+                                          new AlignmentToVariantContextConverter);
       }
     }
 
@@ -236,7 +236,7 @@ from above in Python, we would write:
     variants = reads.pipe(["my_variant_caller", "-R", "$0"],
                           "org.bdgenomics.adam.rdd.read.SAMInFormatter",
                           "org.bdgenomics.adam.rdd.variant.VCFOutFormatter",
-                          "org.bdgenomics.adam.api.java.AlignmentRecordToVariantContextConverter",
+                          "org.bdgenomics.adam.api.java.AlignmentToVariantContextConverter",
                           files=[ "hdfs://mynamenode/my/reference/genome.fa" ])
 
 In R, we would write:
@@ -256,6 +256,6 @@ In R, we would write:
                      cmd=cmd,
                      "org.bdgenomics.adam.rdd.read.SAMInFormatter",
                      "org.bdgenomics.adam.rdd.variant.VCFOutFormatter",
-                     "org.bdgenomics.adam.api.java.AlignmentRecordToVariantContextConverter",
+                     "org.bdgenomics.adam.api.java.AlignmentToVariantContextConverter",
                      files=files)
 

@@ -20,7 +20,7 @@ package org.bdgenomics.adam.algorithms.consensus
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.rdd.read.realignment.IndelRealignmentTarget
-import org.bdgenomics.adam.rich.RichAlignmentRecord
+import org.bdgenomics.adam.rich.RichAlignment
 
 /**
  * A consensus generator that wraps multiple other consensus generators.
@@ -64,9 +64,9 @@ private[adam] case class UnionConsensusGenerator(
    * @return Preprocessed reads, as treated by all preprocessing methods..
    */
   def preprocessReadsForRealignment(
-    reads: Iterable[RichAlignmentRecord],
+    reads: Iterable[RichAlignment],
     reference: String,
-    region: ReferenceRegion): Iterable[RichAlignmentRecord] = {
+    region: ReferenceRegion): Iterable[RichAlignment] = {
     generators.foldRight(reads)(
       (g, r) => g.preprocessReadsForRealignment(r, reference, region))
   }
@@ -81,7 +81,7 @@ private[adam] case class UnionConsensusGenerator(
    * @param reads Reads to generate consensus sequences from.
    * @return Consensus sequences to use for realignment.
    */
-  def findConsensus(reads: Iterable[RichAlignmentRecord]): Iterable[Consensus] = {
+  def findConsensus(reads: Iterable[RichAlignment]): Iterable[Consensus] = {
     generators.flatMap(_.findConsensus(reads))
   }
 }

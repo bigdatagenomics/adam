@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.rdd.read.recalibration
 
-import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.formats.avro.Alignment
 
 /**
  * A Covariate represents a predictor, also known as a "feature" or
@@ -34,7 +34,7 @@ private[recalibration] abstract class Covariate[T] {
    * @param read The read to observe.
    * @return The covariates corresponding to each base in this read.
    */
-  def compute(read: AlignmentRecord): Array[T]
+  def compute(read: Alignment): Array[T]
 
   /**
    * Format the provided covariate value to be compatible with GATK's CSV output.

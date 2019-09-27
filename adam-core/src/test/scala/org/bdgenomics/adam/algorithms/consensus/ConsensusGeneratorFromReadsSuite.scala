@@ -19,21 +19,21 @@ package org.bdgenomics.adam.algorithms.consensus
 
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rich.RichAlignmentRecord
+import org.bdgenomics.adam.rich.RichAlignment
 import org.bdgenomics.adam.util.ADAMFunSuite
-import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.formats.avro.Alignment
 
 class ConsensusGeneratorFromReadsSuite extends ADAMFunSuite {
 
   val cg = new ConsensusGeneratorFromReads
 
-  def artificial_reads: RDD[AlignmentRecord] = {
+  def artificial_reads: RDD[Alignment] = {
     val path = testFile("artificial.sam")
     sc.loadAlignments(path).rdd
   }
 
   sparkTest("checking search for consensus list for artificial reads") {
-    val consensus = cg.findConsensus(artificial_reads.map(new RichAlignmentRecord(_))
+    val consensus = cg.findConsensus(artificial_reads.map(new RichAlignment(_))
       .collect()
       .toSeq)
 

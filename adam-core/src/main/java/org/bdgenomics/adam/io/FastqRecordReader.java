@@ -40,7 +40,7 @@ import org.apache.hadoop.util.LineReader;
  *
  * Reads over an input file and parses interleaved FASTQ read pairs into
  * a single Text output. This is then fed into the FastqConverter, which
- * converts the single Text instance into two AlignmentRecords.
+ * converts the single Text instance into two Alignments.
  */
 public abstract class FastqRecordReader extends RecordReader<Void, Text> {
     /*

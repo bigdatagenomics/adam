@@ -20,7 +20,7 @@ package org.bdgenomics.adam.cli
 import htsjdk.samtools.ValidationStringency
 import org.apache.hadoop.fs.{ FileSystem, Path }
 import org.apache.spark.SparkContext
-import org.bdgenomics.adam.projections.{ AlignmentRecordField, Projection }
+import org.bdgenomics.adam.projections.{ AlignmentField, Projection }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option ⇒ Args4jOption }
@@ -49,20 +49,20 @@ class FlagStat(protected val args: FlagStatArgs) extends BDGSparkCommand[FlagSta
   def run(sc: SparkContext): Unit = {
 
     val projection = Projection(
-      AlignmentRecordField.readMapped,
-      AlignmentRecordField.mateMapped,
-      AlignmentRecordField.readPaired,
-      AlignmentRecordField.referenceName,
-      AlignmentRecordField.mateReferenceName,
-      AlignmentRecordField.primaryAlignment,
-      AlignmentRecordField.duplicateRead,
-      AlignmentRecordField.readMapped,
-      AlignmentRecordField.mateMapped,
-      AlignmentRecordField.readInFragment,
-      AlignmentRecordField.properPair,
-      AlignmentRecordField.mappingQuality,
-      AlignmentRecordField.failedVendorQualityChecks,
-      AlignmentRecordField.supplementaryAlignment
+      AlignmentField.readMapped,
+      AlignmentField.mateMapped,
+      AlignmentField.readPaired,
+      AlignmentField.referenceName,
+      AlignmentField.mateReferenceName,
+      AlignmentField.primaryAlignment,
+      AlignmentField.duplicateRead,
+      AlignmentField.readMapped,
+      AlignmentField.mateMapped,
+      AlignmentField.readInFragment,
+      AlignmentField.properPair,
+      AlignmentField.mappingQuality,
+      AlignmentField.failedVendorQualityChecks,
+      AlignmentField.supplementaryAlignment
     )
 
     val stringency = ValidationStringency.valueOf(args.stringency)

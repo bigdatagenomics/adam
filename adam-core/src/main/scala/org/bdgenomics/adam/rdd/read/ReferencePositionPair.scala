@@ -24,8 +24,8 @@ import org.bdgenomics.adam.models.{
   ReferencePosition,
   ReferencePositionSerializer
 }
-import org.bdgenomics.adam.rich.RichAlignmentRecord
-import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.adam.rich.RichAlignment
+import org.bdgenomics.formats.avro.Alignment
 
 /**
  * A singleton object for creating reference position pairs.
@@ -45,10 +45,10 @@ private[read] object ReferencePositionPair {
     val secondOfPair = (singleReadBucket.primaryMapped.filter(_.getReadInFragment == 1) ++
       singleReadBucket.unmapped.filter(_.getReadInFragment == 1)).toSeq
 
-    def getPos(r: AlignmentRecord): ReferencePosition = {
-      require(r.sequence != null, "AlignmentRecord sequence must not be null!")
+    def getPos(r: Alignment): ReferencePosition = {
+      require(r.sequence != null, "Alignment sequence must not be null!")
       if (r.getReadMapped) {
-        new RichAlignmentRecord(r).fivePrimeReferencePosition
+        new RichAlignment(r).fivePrimeReferencePosition
       } else {
         ReferencePosition(r.getSequence, 0L)
       }

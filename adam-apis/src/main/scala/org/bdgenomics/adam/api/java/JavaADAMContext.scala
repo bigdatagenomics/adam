@@ -23,7 +23,7 @@ import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.rdd.ADAMContext
 import org.bdgenomics.adam.rdd.feature.{ CoverageDataset, FeatureDataset }
 import org.bdgenomics.adam.rdd.fragment.FragmentDataset
-import org.bdgenomics.adam.rdd.read.AlignmentRecordDataset
+import org.bdgenomics.adam.rdd.read.AlignmentDataset
 import org.bdgenomics.adam.rdd.sequence.{ SequenceDataset, SliceDataset }
 import org.bdgenomics.adam.rdd.variant.{
   GenotypeDataset,
@@ -51,7 +51,7 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
   def getSparkContext: JavaSparkContext = new JavaSparkContext(ac.sc)
 
   /**
-   * (Java-specific) Load alignment records into an AlignmentRecordDataset.
+   * (Java-specific) Load alignments into an AlignmentDataset.
    *
    * Loads path names ending in:
    * * .bam/.cram/.sam as BAM/CRAM/SAM format,
@@ -67,19 +67,19 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    *
    * @see ADAMContext#loadAlignments
    *
-   * @param pathName The path name to load alignment records from.
+   * @param pathName The path name to load alignments from.
    *   Globs/directories are supported, although file extension must be present
    *   for BAM/CRAM/SAM, FASTA, and FASTQ formats.
-   * @return Returns an AlignmentRecordDataset which wraps the genomic dataset of alignment records,
-   *   sequence dictionary representing contigs the alignment records may be aligned to,
-   *   and the read group dictionary for the alignment records if one is available.
+   * @return Returns an AlignmentDataset which wraps the genomic dataset of alignments,
+   *   sequence dictionary representing contigs the alignments may be aligned to,
+   *   and the read group dictionary for the alignments if one is available.
    */
-  def loadAlignments(pathName: java.lang.String): AlignmentRecordDataset = {
+  def loadAlignments(pathName: java.lang.String): AlignmentDataset = {
     ac.loadAlignments(pathName)
   }
 
   /**
-   * (Java-specific) Load alignment records into an AlignmentRecordDataset.
+   * (Java-specific) Load alignments into an AlignmentDataset.
    *
    * Loads path names ending in:
    * * .bam/.cram/.sam as BAM/CRAM/SAM format,
@@ -95,17 +95,17 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    *
    * @see ADAMContext#loadAlignments
    *
-   * @param pathName The path name to load alignment records from.
+   * @param pathName The path name to load alignments from.
    *   Globs/directories are supported, although file extension must be present
    *   for BAM/CRAM/SAM, FASTA, and FASTQ formats.
    * @param stringency The validation stringency to use when validating
    *   BAM/CRAM/SAM or FASTQ formats.
-   * @return Returns an AlignmentRecordDataset which wraps the genomic dataset of alignment records,
-   *   sequence dictionary representing contigs the alignment records may be aligned to,
-   *   and the read group dictionary for the alignment records if one is available.
+   * @return Returns an AlignmentDataset which wraps the genomic dataset of alignments,
+   *   sequence dictionary representing contigs the alignments may be aligned to,
+   *   and the read group dictionary for the alignments if one is available.
    */
   def loadAlignments(pathName: java.lang.String,
-                     stringency: ValidationStringency): AlignmentRecordDataset = {
+                     stringency: ValidationStringency): AlignmentDataset = {
     ac.loadAlignments(pathName,
       stringency = stringency)
   }
@@ -114,19 +114,19 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    * (Java-specific) Functions like loadBam, but uses BAM index files to look at fewer blocks,
    * and only returns records within the specified ReferenceRegions. BAM index file required.
    *
-   * @param pathName The path name to load indexed BAM formatted alignment records from.
+   * @param pathName The path name to load indexed BAM formatted alignments from.
    *   Globs/directories are supported.
    * @param viewRegions Iterable of ReferenceRegion we are filtering on.
    * @param stringency The validation stringency to use when validating the
    *   BAM/CRAM/SAM format header. Defaults to ValidationStringency.STRICT.
-   * @return Returns an AlignmentRecordDataset which wraps the genomic dataset of alignment records,
-   *   sequence dictionary representing contigs the alignment records may be aligned to,
-   *   and the read group dictionary for the alignment records if one is available.
+   * @return Returns an AlignmentDataset which wraps the genomic dataset of alignments,
+   *   sequence dictionary representing contigs the alignments may be aligned to,
+   *   and the read group dictionary for the alignments if one is available.
    */
   def loadIndexedBam(
     pathName: String,
     viewRegions: java.util.List[ReferenceRegion],
-    stringency: ValidationStringency): AlignmentRecordDataset = {
+    stringency: ValidationStringency): AlignmentDataset = {
 
     ac.loadIndexedBam(pathName, viewRegions.toIterable, stringency = stringency)
   }

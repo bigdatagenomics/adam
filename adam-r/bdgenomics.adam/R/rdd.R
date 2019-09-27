@@ -30,11 +30,11 @@ setClass("GenomicDataset",
 
 #' A class that wraps an RDD of genomic reads with helpful metadata.
 #'
-#' @rdname AlignmentRecordDataset
-#' @slot jrdd The Java RDD of AlignmentRecords that this class wraps.
+#' @rdname AlignmentDataset
+#' @slot jrdd The Java RDD of Alignments that this class wraps.
 #' 
 #' @export
-setClass("AlignmentRecordDataset",
+setClass("AlignmentDataset",
          slots = list(jrdd = "jobj"),
          contains = "GenomicDataset")
 
@@ -44,8 +44,8 @@ GenomicDataset <- function(jrdd) {
 }
 
 #' @importFrom methods new
-AlignmentRecordDataset <- function(jrdd) {
-    new("AlignmentRecordDataset", jrdd = jrdd)
+AlignmentDataset <- function(jrdd) {
+    new("AlignmentDataset", jrdd = jrdd)
 }
 
 #' A class that wraps an RDD of genomic coverage data with helpful metadata.
@@ -394,8 +394,8 @@ setMethod("destClassSuffix",
                   "FeaturesDatasetConverter"
               } else if (destClass == "FragmentDataset") {
                   "FragmentDatasetConverter"
-              } else if (destClass == "AlignmentRecordDataset") {
-                  "AlignmentRecordDatasetConverter"
+              } else if (destClass == "AlignmentDataset") {
+                  "AlignmentDatasetConverter"
               } else if (destClass == "GenotypeDataset") {
                   "GenotypeDatasetConverter"
               } else if (destClass == "VariantDataset") {
@@ -776,17 +776,17 @@ setMethod("shuffleRegionJoinAndGroupByLeft",
           })
 
 setMethod("replaceRdd",
-          signature(ardd = "AlignmentRecordDataset",
+          signature(ardd = "AlignmentDataset",
                     rdd = "jobj"),
           function(ardd, rdd) {
-              AlignmentRecordDataset(rdd)
+              AlignmentDataset(rdd)
           })
 
 setMethod("inferConversionFn",
-          signature(ardd = "AlignmentRecordDataset",
+          signature(ardd = "AlignmentDataset",
                     destClass = "character"),
           function(ardd, destClass) {
-              paste0("org.bdgenomics.adam.api.java.AlignmentRecordsTo",
+              paste0("org.bdgenomics.adam.api.java.AlignmentsTo",
                      destClassSuffix(destClass))
           })
 
@@ -800,7 +800,7 @@ setMethod("inferConversionFn",
 #'
 #' @export
 setMethod("toFragments",
-          signature(ardd = "AlignmentRecordDataset"),
+          signature(ardd = "AlignmentDataset"),
           function(ardd) {
               FragmentDataset(sparkR.callJMethod(ardd@jrdd, "toFragments"))
           })
@@ -819,7 +819,7 @@ setMethod("toFragments",
 #'
 #' @export
 setMethod("saveAsSam",
-          signature(ardd = "AlignmentRecordDataset", filePath = "character"),
+          signature(ardd = "AlignmentDataset", filePath = "character"),
           function(ardd,
                    filePath,
                    asType = NA,
@@ -855,7 +855,7 @@ setMethod("saveAsSam",
 #'
 #' @export
 setMethod("toCoverage",
-          signature(ardd = "AlignmentRecordDataset"),
+          signature(ardd = "AlignmentDataset"),
           function(ardd, collapse = TRUE) {
               CoverageDataset(sparkR.callJMethod(ardd@jrdd, "toCoverage", collapse))
           })
@@ -870,7 +870,7 @@ setMethod("toCoverage",
 #'
 #' @export
 setMethod("save",
-          signature(ardd = "AlignmentRecordDataset", filePath = "character"),
+          signature(ardd = "AlignmentDataset", filePath = "character"),
           function(ardd, filePath, isSorted = FALSE) {
               invisible(sparkR.callJMethod(ardd@jrdd, "save", filePath, isSorted))
           })
@@ -885,7 +885,7 @@ setMethod("save",
 #'
 #' @export
 setMethod("countKmers",
-          signature(ardd = "AlignmentRecordDataset", kmerLength = "numeric"),
+          signature(ardd = "AlignmentDataset", kmerLength = "numeric"),
           function(ardd, kmerLength) {
               new("SparkDataFrame",
                   sparkR.callJMethod(sparkR.callJMethod(ardd@jrdd,
@@ -899,15 +899,15 @@ setMethod("countKmers",
 #' Sorts our alignments by read name.
 #'
 #' @param ardd The genomic dataset to apply this to.
-#' @return A new, sorted AlignmentRecordDataset.
+#' @return A new, sorted AlignmentDataset.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
 setMethod("sortByReadName",
-          signature(ardd = "AlignmentRecordDataset"),
+          signature(ardd = "AlignmentDataset"),
           function(ardd) {
-              AlignmentRecordDataset(sparkR.callJMethod(ardd@jrdd, "sortByReadName"))
+              AlignmentDataset(sparkR.callJMethod(ardd@jrdd, "sortByReadName"))
           })
 
 #' Sorts our alignments by reference positions, with references ordered by name.
@@ -917,15 +917,15 @@ setMethod("sortByReadName",
 #' by name.
 #'
 #' @param ardd The genomic dataset to apply this to.
-#' @return A new, sorted AlignmentRecordDataset.
+#' @return A new, sorted AlignmentDataset.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
 setMethod("sortByReferencePosition",
-          signature(ardd = "AlignmentRecordDataset"),
+          signature(ardd = "AlignmentDataset"),
           function(ardd) {
-              AlignmentRecordDataset(sparkR.callJMethod(ardd@jrdd, "sortByReferencePosition"))
+              AlignmentDataset(sparkR.callJMethod(ardd@jrdd, "sortByReferencePosition"))
           })
 
 #' Sorts our alignments by reference positions, with references ordered by index.
@@ -935,15 +935,15 @@ setMethod("sortByReferencePosition",
 #' they are ordered in the sequence metadata.
 #'
 #' @param ardd The genomic dataset to apply this to.
-#' @return A new, sorted AlignmentRecordDataset.
+#' @return A new, sorted AlignmentDataset.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
 setMethod("sortByReferencePositionAndIndex",
-          signature(ardd = "AlignmentRecordDataset"),
+          signature(ardd = "AlignmentDataset"),
           function(ardd) {
-              AlignmentRecordDataset(sparkR.callJMethod(ardd@jrdd, "sortByReferencePositionAndIndex"))
+              AlignmentDataset(sparkR.callJMethod(ardd@jrdd, "sortByReferencePositionAndIndex"))
           })
 
 #' Marks reads as possible fragment duplicates.
@@ -956,9 +956,9 @@ setMethod("sortByReferencePositionAndIndex",
 #'
 #' @export
 setMethod("markDuplicates",
-          signature(ardd = "AlignmentRecordDataset"),
+          signature(ardd = "AlignmentDataset"),
           function(ardd) {
-              AlignmentRecordDataset(sparkR.callJMethod(ardd@jrdd, "markDuplicates"))
+              AlignmentDataset(sparkR.callJMethod(ardd@jrdd, "markDuplicates"))
           })
 
 #' Runs base quality score recalibration on a set of reads.
@@ -974,10 +974,10 @@ setMethod("markDuplicates",
 #'
 #' @export
 setMethod("recalibrateBaseQualities",
-          signature(ardd = "AlignmentRecordDataset", knownSnps = "VariantDataset", validationStringency = "character"),
+          signature(ardd = "AlignmentDataset", knownSnps = "VariantDataset", validationStringency = "character"),
           function(ardd, knownSnps, validationStringency) {
               stringency <- sparkR.callJStatic("htsjdk.samtools.ValidationStringency", "valueOf", validationStringency)
-              AlignmentRecordDataset(sparkR.callJMethod(ardd@jrdd, "recalibrateBaseQualities", knownSnps@jrdd, stringency))
+              AlignmentDataset(sparkR.callJMethod(ardd@jrdd, "recalibrateBaseQualities", knownSnps@jrdd, stringency))
           })
 
 #' Realigns indels using a consensus-based heuristic.
@@ -1005,7 +1005,7 @@ setMethod("recalibrateBaseQualities",
 #'
 #' @export
 setMethod("realignIndels",
-          signature(ardd = "AlignmentRecordDataset"),
+          signature(ardd = "AlignmentDataset"),
           function(ardd, isSorted = FALSE, maxIndelSize = 500,
                    maxConsensusNumber = 30, lodThreshold = 5.0,
                    maxTargetSize = 3000, maxReadsPerTarget = 20000,
@@ -1014,7 +1014,7 @@ setMethod("realignIndels",
               if (is.na(knownIndels)) {
                   consensusModel <- sparkR.callJStatic("org.bdgenomics.adam.algorithms.consensus.ConsensusGenerator",
                                                        "fromKnowns", knownIndels@jrdd)
-                  AlignmentRecordDataset(sparkR.callJMethod(ardd@jrdd, "realignIndels",
+                  AlignmentDataset(sparkR.callJMethod(ardd@jrdd, "realignIndels",
                                                         consensusModel,
                                                         isSorted,
                                                         maxIndelSize,
@@ -1027,7 +1027,7 @@ setMethod("realignIndels",
               } else {
                   consensusModel <- sparkR.callJStatic("org.bdgenomics.adam.algorithms.consensus.ConsensusGenerator",
                                                        "fromReads")
-                  AlignmentRecordDataset(sparkR.callJMethod(ardd@jrdd, "realignIndels",
+                  AlignmentDataset(sparkR.callJMethod(ardd@jrdd, "realignIndels",
                                                         consensusModel,
                                                         isSorted,
                                                         maxIndelSize,
@@ -1216,7 +1216,7 @@ setMethod("replaceRdd",
 #' @export
 setMethod("toAlignments", signature(ardd = "FragmentDataset"),
           function(ardd) {
-              AlignmentRecordDataset(sparkR.callJMethod(ardd@jrdd, "toAlignments"))
+              AlignmentDataset(sparkR.callJMethod(ardd@jrdd, "toAlignments"))
           })
 
 #' Marks reads as possible fragment duplicates.

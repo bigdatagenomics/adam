@@ -42,10 +42,10 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.TestSaveArgs
 import org.bdgenomics.adam.rdd.feature.{ CoverageDataset, FeatureDataset }
 import org.bdgenomics.adam.rdd.fragment.FragmentDataset
-import org.bdgenomics.adam.rdd.read.AlignmentRecordDataset
+import org.bdgenomics.adam.rdd.read.AlignmentDataset
 import org.bdgenomics.adam.rdd.sequence.SliceDataset
 import org.bdgenomics.adam.sql.{
-  AlignmentRecord => AlignmentRecordProduct,
+  Alignment => AlignmentProduct,
   Feature => FeatureProduct,
   Fragment => FragmentProduct,
   Genotype => GenotypeProduct,
@@ -470,14 +470,14 @@ class VariantContextDatasetSuite extends ADAMFunSuite {
   sparkTest("transform variant contexts to read genomic dataset") {
     val variantContexts = sc.loadVcf(testFile("small.vcf"))
 
-    def checkSave(reads: AlignmentRecordDataset) {
+    def checkSave(reads: AlignmentDataset) {
       val tempPath = tmpLocation(".adam")
       reads.saveAsParquet(tempPath)
 
       assert(sc.loadAlignments(tempPath).rdd.count === 6)
     }
 
-    val reads: AlignmentRecordDataset = variantContexts.transmute[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordDataset](
+    val reads: AlignmentDataset = variantContexts.transmute[Alignment, AlignmentProduct, AlignmentDataset](
       (rdd: RDD[VariantContext]) => {
         rdd.map(VariantDatasetSuite.readFn)
       })

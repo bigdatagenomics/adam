@@ -23,13 +23,13 @@ import org.scalatest.FunSuite
 class SingleReadBucketSuite extends FunSuite {
 
   test("convert unmapped pair to fragment") {
-    val reads = Iterable(AlignmentRecord.newBuilder()
+    val reads = Iterable(Alignment.newBuilder()
       .setReadName("myRead")
       .setSequence("ACACACAC")
       .setQualityScores("********")
       .setReadInFragment(0)
       .setReadPaired(true)
-      .build(), AlignmentRecord.newBuilder()
+      .build(), Alignment.newBuilder()
       .setReadName("myRead")
       .setSequence("GTGTGTGT")
       .setQualityScores(";;;;++++")
@@ -43,7 +43,7 @@ class SingleReadBucketSuite extends FunSuite {
   }
 
   test("convert proper pair to fragment") {
-    val reads = Iterable(AlignmentRecord.newBuilder()
+    val reads = Iterable(Alignment.newBuilder()
       .setReadName("myRead")
       .setSequence("ACACACAC")
       .setQualityScores("********")
@@ -57,7 +57,7 @@ class SingleReadBucketSuite extends FunSuite {
       .setStart(10L)
       .setEnd(18L)
       .setInsertSize(8L)
-      .build(), AlignmentRecord.newBuilder()
+      .build(), Alignment.newBuilder()
       .setReadName("myRead")
       .setSequence("GTGTGTGT")
       .setQualityScores(";;;;++++")
@@ -80,7 +80,7 @@ class SingleReadBucketSuite extends FunSuite {
   }
 
   test("convert read pair to fragment with first of pair chimeric read") {
-    val reads = Iterable(AlignmentRecord.newBuilder()
+    val reads = Iterable(Alignment.newBuilder()
       .setReadName("myRead")
       .setSequence("ACACACAC")
       .setQualityScores("********")
@@ -94,7 +94,7 @@ class SingleReadBucketSuite extends FunSuite {
       .setReferenceName("1")
       .setStart(10L)
       .setEnd(18L)
-      .build(), AlignmentRecord.newBuilder()
+      .build(), Alignment.newBuilder()
       .setReadName("myRead")
       .setSequence("GTGTGTGT")
       .setQualityScores(";;;;++++")
@@ -108,7 +108,7 @@ class SingleReadBucketSuite extends FunSuite {
       .setStart(22L)
       .setEnd(30L)
       .build())
-    val chimera = Iterable(AlignmentRecord.newBuilder()
+    val chimera = Iterable(Alignment.newBuilder()
       .setReadName("myRead")
       .setSequence("GTGTGT")
       .setQualityScores("123456")

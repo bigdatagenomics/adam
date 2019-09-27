@@ -21,26 +21,26 @@ import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.algorithms.consensus.{ Consensus, ConsensusGenerator }
 import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rich.RichAlignmentRecord
+import org.bdgenomics.adam.rich.RichAlignment
 import org.bdgenomics.adam.util.ADAMFunSuite
-import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.formats.avro.Alignment
 
 class IndelRealignmentTargetSuite extends ADAMFunSuite {
 
   // Note: this can't be lazy vals because Spark won't find the RDDs after the first test
-  def mason_reads: RDD[RichAlignmentRecord] = {
+  def mason_reads: RDD[RichAlignment] = {
     val path = testFile("small_realignment_targets.sam")
-    sc.loadAlignments(path).rdd.map(RichAlignmentRecord(_))
+    sc.loadAlignments(path).rdd.map(RichAlignment(_))
   }
 
-  def artificial_reads: RDD[RichAlignmentRecord] = {
+  def artificial_reads: RDD[RichAlignment] = {
     val path = testFile("artificial.sam")
-    sc.loadAlignments(path).rdd.map(RichAlignmentRecord(_))
+    sc.loadAlignments(path).rdd.map(RichAlignment(_))
   }
 
-  def make_read(start: Long, cigar: String, mdtag: String, length: Int, refLength: Int, id: Int = 0): RichAlignmentRecord = {
+  def make_read(start: Long, cigar: String, mdtag: String, length: Int, refLength: Int, id: Int = 0): RichAlignment = {
     val sequence: String = "A" * length
-    RichAlignmentRecord(AlignmentRecord.newBuilder()
+    RichAlignment(Alignment.newBuilder()
       .setReadName("read" + id.toString)
       .setStart(start)
       .setReadMapped(true)
@@ -72,7 +72,7 @@ class IndelRealignmentTargetSuite extends ADAMFunSuite {
 
   sparkTest("creating simple target from read with deletion") {
     val read = make_read(3L, "2M3D2M", "2^AAA2", 4, 7)
-    val read_rdd: RDD[RichAlignmentRecord] = sc.makeRDD(Seq(read), 1)
+    val read_rdd: RDD[RichAlignment] = sc.makeRDD(Seq(read), 1)
     val targets = RealignmentTargetFinder(read_rdd)
     assert(targets != null)
     assert(targets.size === 1)
@@ -90,7 +90,7 @@ class IndelRealignmentTargetSuite extends ADAMFunSuite {
 
   sparkTest("creating simple target from read with insertion") {
     val read = make_read(3L, "2M3I2M", "4", 7, 4)
-    val read_rdd: RDD[RichAlignmentRecord] = sc.makeRDD(Seq(read), 1)
+    val read_rdd: RDD[RichAlignment] = sc.makeRDD(Seq(read), 1)
     val targets = RealignmentTargetFinder(read_rdd)
     assert(targets != null)
     assert(targets.size === 1)
@@ -127,7 +127,7 @@ class IndelRealignmentTargetSuite extends ADAMFunSuite {
     val read1 = make_read(1L, "4M3D2M", "4^AAA2", 6, 9)
     val read2 = make_read(2L, "3M3D2M", "3^AAA2", 5, 8)
     val read3 = make_read(3L, "2M3D2M", "2^AAA2", 4, 7)
-    val read_rdd: RDD[RichAlignmentRecord] = sc.makeRDD(Seq(read1, read2, read3), 1)
+    val read_rdd: RDD[RichAlignment] = sc.makeRDD(Seq(read1, read2, read3), 1)
     val targets = RealignmentTargetFinder(read_rdd)
     assert(targets != null)
     assert(targets.size === 1)
@@ -142,7 +142,7 @@ class IndelRealignmentTargetSuite extends ADAMFunSuite {
     val read2 = make_read(1L, "2M2D2M2D2M", "2^AA2^AA2", 6, 10, 1)
     val read3 = make_read(5L, "2M2D4M", "2^AA4", 6, 8, 2)
 
-    val read_rdd: RDD[RichAlignmentRecord] = sc.makeRDD(Seq(read1, read2, read3), 1)
+    val read_rdd: RDD[RichAlignment] = sc.makeRDD(Seq(read1, read2, read3), 1)
     val targets = RealignmentTargetFinder(read_rdd)
 
     assert(targets != null)
@@ -156,7 +156,7 @@ class IndelRealignmentTargetSuite extends ADAMFunSuite {
   sparkTest("creating targets from two disjoint reads") {
     val read1 = make_read(1L, "2M2D2M", "2^AA2", 4, 6)
     val read2 = make_read(7L, "2M2D2M", "2^AA2", 4, 6)
-    val read_rdd: RDD[RichAlignmentRecord] = sc.makeRDD(Seq(read1, read2), 1)
+    val read_rdd: RDD[RichAlignment] = sc.makeRDD(Seq(read1, read2), 1)
     val targets = RealignmentTargetFinder(read_rdd).toArray
     assert(targets != null)
     assert(targets.size === 2)
@@ -171,7 +171,7 @@ class IndelRealignmentTargetSuite extends ADAMFunSuite {
   }
 
   sparkTest("creating targets for artificial reads: one-by-one") {
-    def check_indel(target: IndelRealignmentTarget, read: AlignmentRecord): Boolean = {
+    def check_indel(target: IndelRealignmentTarget, read: Alignment): Boolean = {
       val indelRange: ReferenceRegion = target.variation.get
       read.getStart.toLong match {
         case 5L  => (indelRange.start == 34) && (indelRange.end == 44)
@@ -186,7 +186,7 @@ class IndelRealignmentTargetSuite extends ADAMFunSuite {
     val reads = artificial_reads.collect()
     reads.foreach(
       read => {
-        val read_rdd: RDD[RichAlignmentRecord] = sc.makeRDD(Seq(read), 1)
+        val read_rdd: RDD[RichAlignment] = sc.makeRDD(Seq(read), 1)
         val targets = RealignmentTargetFinder(read_rdd)
         if (read.getStart < 105) {
           assert(targets != null)
@@ -225,9 +225,9 @@ class IndelRealignmentTargetSuite extends ADAMFunSuite {
     val target = new IndelRealignmentTarget(Some(ReferenceRegion("1", 1, 10)), ReferenceRegion("1", 1, 51))
     val targets_to_add = sc.makeRDD(Seq(target))
     val targets_collected: Array[IndelRealignmentTarget] = RealignmentTargetFinder(sc.makeRDD(Nil), new ConsensusGenerator {
-      override def preprocessReadsForRealignment(reads: Iterable[RichAlignmentRecord], reference: String, region: ReferenceRegion): Iterable[RichAlignmentRecord] = Nil
+      override def preprocessReadsForRealignment(reads: Iterable[RichAlignment], reference: String, region: ReferenceRegion): Iterable[RichAlignment] = Nil
 
-      override def findConsensus(reads: Iterable[RichAlignmentRecord]): Iterable[Consensus] = Nil
+      override def findConsensus(reads: Iterable[RichAlignment]): Iterable[Consensus] = Nil
 
       override def targetsToAdd(): Option[RDD[IndelRealignmentTarget]] = Some(targets_to_add)
     }).toArray

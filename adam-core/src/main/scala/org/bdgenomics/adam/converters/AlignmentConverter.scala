@@ -20,14 +20,14 @@ package org.bdgenomics.adam.converters
 import htsjdk.samtools.{ SAMFileHeader, SAMRecord }
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models._
-import org.bdgenomics.adam.rich.RichAlignmentRecord
-import org.bdgenomics.formats.avro.{ AlignmentRecord, Fragment }
+import org.bdgenomics.adam.rich.RichAlignment
+import org.bdgenomics.formats.avro.{ Alignment, Fragment }
 import scala.collection.JavaConversions._
 
 /**
- * This class contains methods to convert AlignmentRecords to other formats.
+ * This class contains methods to convert Alignments to other formats.
  */
-class AlignmentRecordConverter extends Serializable {
+class AlignmentConverter extends Serializable {
 
   /**
    * Prepare a single record for conversion to FASTQ and similar formats by
@@ -47,13 +47,13 @@ class AlignmentRecordConverter extends Serializable {
    * @return Returns tuple of (name, sequence, qualityScores).
    */
   private def prepareFastq(
-    adamRecord: AlignmentRecord,
+    adamRecord: Alignment,
     maybeAddSuffix: Boolean,
     writeOriginalQualityScores: Boolean): (String, String, String) = {
 
     val readNameSuffix =
       if (maybeAddSuffix &&
-        !AlignmentRecordConverter.readNameHasPairedSuffix(adamRecord) &&
+        !AlignmentConverter.readNameHasPairedSuffix(adamRecord) &&
         adamRecord.getReadPaired) {
         "/%d".format(adamRecord.getReadInFragment + 1)
       } else {
@@ -118,7 +118,7 @@ class AlignmentRecordConverter extends Serializable {
    * @return Returns this read in string form.
    */
   def convertToFastq(
-    adamRecord: AlignmentRecord,
+    adamRecord: Alignment,
     maybeAddSuffix: Boolean = false,
     writeOriginalQualityScores: Boolean = false): String = {
 
@@ -131,9 +131,9 @@ class AlignmentRecordConverter extends Serializable {
   /**
    * Converts a single record to Bowtie tab6 format.
    *
-   * In Bowtie tab6 format, each alignment record or pair is on a single line.
-   * An unpaired alignment record line is [name]\t[seq]\t[qualityScores]\n.
-   * For paired-end alignment records, the second end can have a different name
+   * In Bowtie tab6 format, each alignment or pair is on a single line.
+   * An unpaired alignment line is [name]\t[seq]\t[qualityScores]\n.
+   * For paired-end alignments, the second end can have a different name
    * from the first: [name1]\t[seq1]\t[qualityScores1]\t[name2]\t[seq2]\t[qualityScores2]\n.
    *
    * If the base quality scores are unknown (qualityScores is null or equals "*"),
@@ -150,7 +150,7 @@ class AlignmentRecordConverter extends Serializable {
    * @return Returns this read in string form.
    */
   def convertToTab6(
-    adamRecord: AlignmentRecord,
+    adamRecord: Alignment,
     maybeAddSuffix: Boolean = false,
     writeOriginalQualityScores: Boolean = false): String = {
 
@@ -163,8 +163,8 @@ class AlignmentRecordConverter extends Serializable {
   /**
    * Converts a single record to Bowtie tab5 format.
    *
-   * In Bowtie tab5 format, each alignment record or pair is on a single line.
-   * An unpaired alignment record line is [name]\t[seq]\t[qualityScores]\n.
+   * In Bowtie tab5 format, each alignment or pair is on a single line.
+   * An unpaired alignment line is [name]\t[seq]\t[qualityScores]\n.
    * A paired-end read line is [name]\t[seq1]\t[qualityScores1]\t[seq2]\t[qualityScores2]\n.
    *
    * The index suffix will be trimmed from the read name if present.
@@ -180,7 +180,7 @@ class AlignmentRecordConverter extends Serializable {
    * @return Returns this read in string form.
    */
   def convertToTab5(
-    adamRecord: AlignmentRecord,
+    adamRecord: Alignment,
     writeOriginalQualityScores: Boolean = false): String = {
 
     val (name, sequence, qualityScores) =
@@ -193,8 +193,8 @@ class AlignmentRecordConverter extends Serializable {
    * Converts a single record representing the second read of a pair to Bowtie
    * tab5 format.
    *
-   * In Bowtie tab5 format, each alignment record or pair is on a single line.
-   * An unpaired alignment record line is [name]\t[seq]\t[qualityScores]\n.
+   * In Bowtie tab5 format, each alignment or pair is on a single line.
+   * An unpaired alignment line is [name]\t[seq]\t[qualityScores]\n.
    * A paired-end read line is [name]\t[seq1]\t[qualityScores1]\t[seq2]\t[qualityScores2]\n.
    *
    * If the base quality scores are unknown (qualityScores is null or equals "*"),
@@ -208,7 +208,7 @@ class AlignmentRecordConverter extends Serializable {
    * @return Returns this read in string form.
    */
   def convertSecondReadToTab5(
-    adamRecord: AlignmentRecord,
+    adamRecord: Alignment,
     writeOriginalQualityScores: Boolean = false): String = {
 
     val (name, sequence, qualityScores) =
@@ -231,13 +231,13 @@ class AlignmentRecordConverter extends Serializable {
   /**
    * Converts a single ADAM record into a SAM record.
    *
-   * @param adamRecord ADAM formatted alignment record to convert.
+   * @param adamRecord ADAM formatted alignment to convert.
    * @param header SAM file header to attach to the record.
    * @param rgd Dictionary describing the read groups that are in the RDD that
    *   this read is from.
    * @return Returns the record converted to htsjdk format. Can be used for output to SAM/BAM.
    */
-  def convert(adamRecord: AlignmentRecord,
+  def convert(adamRecord: Alignment,
               header: SAMFileHeader,
               rgd: ReadGroupDictionary): SAMRecord = ConvertToSAMRecord.time {
 
@@ -338,7 +338,7 @@ class AlignmentRecordConverter extends Serializable {
 
     // add all other tags
     if (adamRecord.getAttributes != null) {
-      val mp = RichAlignmentRecord(adamRecord).tags
+      val mp = RichAlignment(adamRecord).tags
       mp.foreach(a => {
         builder.setAttribute(a.tag, a.value)
       })
@@ -371,20 +371,20 @@ class AlignmentRecordConverter extends Serializable {
    * @param fragment Fragment to convert.
    * @return The collection of alignments described by the fragment. If the fragment
    *         doesn't contain any alignments, this method will return one unaligned
-   *         AlignmentRecord per sequence in the Fragment.
+   *         Alignment per sequence in the Fragment.
    */
-  def convertFragment(fragment: Fragment): Iterable[AlignmentRecord] = {
+  def convertFragment(fragment: Fragment): Iterable[Alignment] = {
     asScalaBuffer(fragment.getAlignments).toIterable
   }
 }
 
 /**
- * Singleton object to assist with converting AlignmentRecords.
+ * Singleton object to assist with converting Alignments.
  *
  * Singleton object exists due to cross reference from
- * org.bdgenomics.adam.rdd.read.AlignmentRecordDatasetFunctions.
+ * org.bdgenomics.adam.rdd.read.AlignmentDatasetFunctions.
  */
-private[adam] object AlignmentRecordConverter extends Serializable {
+private[adam] object AlignmentConverter extends Serializable {
 
   /**
    * Checks to see if a read name has a index suffix.
@@ -397,7 +397,7 @@ private[adam] object AlignmentRecordConverter extends Serializable {
    * @param adamRecord Record to check.
    * @return True if the read ends in a read number suffix.
    */
-  def readNameHasPairedSuffix(adamRecord: AlignmentRecord): Boolean = {
+  def readNameHasPairedSuffix(adamRecord: Alignment): Boolean = {
     adamRecord.getReadName.length() > 2 &&
       adamRecord.getReadName.charAt(adamRecord.getReadName.length() - 2) == '/' &&
       (adamRecord.getReadName.charAt(adamRecord.getReadName.length() - 1) == '1' ||

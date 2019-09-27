@@ -21,12 +21,12 @@ import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.util.ADAMFunSuite
-import org.bdgenomics.formats.avro.{ AlignmentRecord, Reference }
+import org.bdgenomics.formats.avro.{ Alignment, Reference }
 
 trait OuterRegionJoinSuite extends ADAMFunSuite {
 
-  def runJoin(leftRdd: RDD[(ReferenceRegion, AlignmentRecord)],
-              rightRdd: RDD[(ReferenceRegion, AlignmentRecord)]): RDD[(Option[AlignmentRecord], AlignmentRecord)]
+  def runJoin(leftRdd: RDD[(ReferenceRegion, Alignment)],
+              rightRdd: RDD[(ReferenceRegion, Alignment)]): RDD[(Option[Alignment], Alignment)]
 
   sparkTest("Ensure same reference regions get passed together") {
     val reference = Reference.newBuilder
@@ -35,7 +35,7 @@ trait OuterRegionJoinSuite extends ADAMFunSuite {
       .setSourceUri("test://chrom1")
       .build
 
-    val builder = AlignmentRecord.newBuilder()
+    val builder = Alignment.newBuilder()
       .setReferenceName(reference.getName)
       .setStart(1L)
       .setReadMapped(true)
@@ -73,7 +73,7 @@ trait OuterRegionJoinSuite extends ADAMFunSuite {
       .setSourceUri("test://chrom1")
       .build
 
-    val built = AlignmentRecord.newBuilder()
+    val built = Alignment.newBuilder()
       .setReferenceName(reference.getName)
       .setStart(1L)
       .setReadMapped(true)
@@ -82,9 +82,9 @@ trait OuterRegionJoinSuite extends ADAMFunSuite {
       .build()
 
     val record1 = built
-    val record2 = AlignmentRecord.newBuilder(built).setStart(3L).setEnd(4L).build()
-    val baseRecord = AlignmentRecord.newBuilder(built).setCigar("4M").setEnd(5L).build()
-    val record3 = AlignmentRecord.newBuilder(built).setStart(6L).setEnd(7L).build()
+    val record2 = Alignment.newBuilder(built).setStart(3L).setEnd(4L).build()
+    val baseRecord = Alignment.newBuilder(built).setCigar("4M").setEnd(5L).build()
+    val record3 = Alignment.newBuilder(built).setStart(6L).setEnd(7L).build()
 
     val baseRdd = sc.parallelize(Seq(baseRecord)).keyBy(ReferenceRegion.unstranded(_))
     val recordsRdd = sc.parallelize(Seq(record1, record2, record3)).keyBy(ReferenceRegion.unstranded(_))

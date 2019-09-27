@@ -21,15 +21,15 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.bdgenomics.adam.rdd.ADAMContext;
-import org.bdgenomics.adam.rdd.read.AlignmentRecordDataset;
+import org.bdgenomics.adam.rdd.read.AlignmentDataset;
 
 /**
  * A simple test class for the JavaADAMRDD/Context. Writes an RDD of reads to
  * disk and reads it back.
  */
 class JavaADAMReadConduit {
-    public static AlignmentRecordDataset conduit(final AlignmentRecordDataset recordRdd,
-                                                 final ADAMContext ac) throws IOException {
+    public static AlignmentDataset conduit(final AlignmentDataset recordRdd,
+                                           final ADAMContext ac) throws IOException {
 
         // make temp directory and save file
         Path tempDir = Files.createTempDirectory("javaAC");

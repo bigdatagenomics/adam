@@ -25,11 +25,11 @@ import htsjdk.samtools.{
 }
 import org.bdgenomics.adam.models.Attribute
 import org.bdgenomics.adam.util.AttributeUtils
-import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.formats.avro.Alignment
 import scala.collection.JavaConverters._
 
 /**
- * Helper class for converting SAMRecords into AlignmentRecords.
+ * Helper class for converting SAMRecords into Alignments.
  */
 private[adam] class SAMRecordConverter extends Serializable with Logging {
 
@@ -55,12 +55,12 @@ private[adam] class SAMRecordConverter extends Serializable with Logging {
   }
 
   /**
-   * Converts a SAM record into an Avro AlignmentRecord.
+   * Converts a SAM record into an Avro Alignment.
    *
    * @param samRecord Record to convert.
    * @return Returns the original record converted into Avro.
    */
-  def convert(samRecord: SAMRecord): AlignmentRecord = {
+  def convert(samRecord: SAMRecord): Alignment = {
     try {
       val cigar: String = samRecord.getCigarString
       val startTrim = if (cigar == "*") {
@@ -82,7 +82,7 @@ private[adam] class SAMRecordConverter extends Serializable with Logging {
         0
       }
 
-      val builder: AlignmentRecord.Builder = AlignmentRecord.newBuilder
+      val builder: Alignment.Builder = Alignment.newBuilder
         .setReadName(samRecord.getReadName)
         .setSequence(samRecord.getReadString)
         .setCigar(cigar)

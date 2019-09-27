@@ -303,7 +303,7 @@ class ReferenceRegionSuite extends FunSuite {
 
   test("create region from unmapped read fails") {
     intercept[IllegalArgumentException] {
-      val read = AlignmentRecord.newBuilder()
+      val read = Alignment.newBuilder()
         .setReadMapped(false)
         .build()
       ReferenceRegion.unstranded(read)
@@ -312,7 +312,7 @@ class ReferenceRegionSuite extends FunSuite {
 
   test("create region from read with null alignment positions fails") {
     intercept[IllegalArgumentException] {
-      val read = AlignmentRecord.newBuilder()
+      val read = Alignment.newBuilder()
         .setReadMapped(true)
         .build()
       ReferenceRegion.unstranded(read)
@@ -321,7 +321,7 @@ class ReferenceRegionSuite extends FunSuite {
 
   test("create stranded region from unmapped read fails") {
     intercept[IllegalArgumentException] {
-      val read = AlignmentRecord.newBuilder()
+      val read = Alignment.newBuilder()
         .setReadMapped(false)
         .build()
       ReferenceRegion.stranded(read)
@@ -330,7 +330,7 @@ class ReferenceRegionSuite extends FunSuite {
 
   test("create stranded region from read with null alignment positions fails") {
     intercept[IllegalArgumentException] {
-      val read = AlignmentRecord.newBuilder()
+      val read = Alignment.newBuilder()
         .setReadMapped(true)
         .build()
       ReferenceRegion.stranded(read)
@@ -339,7 +339,7 @@ class ReferenceRegionSuite extends FunSuite {
 
   test("create stranded region from read with null alignment strand fails") {
     intercept[IllegalArgumentException] {
-      val read = AlignmentRecord.newBuilder()
+      val read = Alignment.newBuilder()
         .setReadMapped(true)
         .setStart(10L)
         .setEnd(15L)
@@ -351,7 +351,7 @@ class ReferenceRegionSuite extends FunSuite {
   }
 
   test("create stranded region from read on forward strand") {
-    val read = AlignmentRecord.newBuilder()
+    val read = Alignment.newBuilder()
       .setReadMapped(true)
       .setStart(10L)
       .setEnd(15L)
@@ -366,7 +366,7 @@ class ReferenceRegionSuite extends FunSuite {
   }
 
   test("create stranded region from read on reverse strand") {
-    val read = AlignmentRecord.newBuilder()
+    val read = Alignment.newBuilder()
       .setReadMapped(true)
       .setStart(10L)
       .setEnd(15L)
@@ -381,7 +381,7 @@ class ReferenceRegionSuite extends FunSuite {
   }
 
   test("create region from mapped read contains read start and end") {
-    val read = AlignmentRecord.newBuilder()
+    val read = Alignment.newBuilder()
       .setReadMapped(true)
       .setSequence("AAAAA")
       .setStart(1L)
@@ -456,7 +456,7 @@ class ReferenceRegionSuite extends FunSuite {
       .setName("chrM")
       .build()
 
-    val read = AlignmentRecord.newBuilder()
+    val read = Alignment.newBuilder()
       .setStart(5L)
       .setSequence("ACGT")
       .setReferenceName(reference.getName)

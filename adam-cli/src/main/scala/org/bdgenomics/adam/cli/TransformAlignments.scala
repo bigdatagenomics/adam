@@ -32,12 +32,12 @@ import org.bdgenomics.adam.cli.FileSystemUtils._
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.io.FastqRecordReader
 import org.bdgenomics.adam.models.{ ReferenceRegion, SnpTable }
-import org.bdgenomics.adam.projections.{ AlignmentRecordField, Filter }
+import org.bdgenomics.adam.projections.{ AlignmentField, Filter }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.ADAMSaveAnyArgs
-import org.bdgenomics.adam.rdd.read.{ AlignmentRecordDataset, QualityScoreBin }
+import org.bdgenomics.adam.rdd.read.{ AlignmentDataset, QualityScoreBin }
 import org.bdgenomics.adam.rich.RichVariant
-import org.bdgenomics.formats.avro.{ AlignmentRecord, ProcessingStep }
+import org.bdgenomics.formats.avro.{ Alignment, ProcessingStep }
 import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
@@ -211,7 +211,7 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
    * @return If the binQualityScores argument is set, rewrites the quality scores of the
    *   reads into bins. Else, returns the original RDD.
    */
-  private def maybeBin(rdd: AlignmentRecordDataset): AlignmentRecordDataset = {
+  private def maybeBin(rdd: AlignmentDataset): AlignmentDataset = {
     Option(args.binQualityScores).fold(rdd)(binDescription => {
       val bins = QualityScoreBin(binDescription)
       rdd.binQualityScores(bins)
@@ -224,10 +224,10 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
    *   to the number of partitions requested by the user. Forces a shuffle using
    *   a hash partitioner.
    */
-  private def maybeRepartition(ds: AlignmentRecordDataset): AlignmentRecordDataset = {
+  private def maybeRepartition(ds: AlignmentDataset): AlignmentDataset = {
     if (args.repartition != -1) {
       info("Repartitioning reads to to '%d' partitions".format(args.repartition))
-      ds.transform((rdd: RDD[AlignmentRecord]) => rdd.repartition(args.repartition))
+      ds.transform((rdd: RDD[Alignment]) => rdd.repartition(args.repartition))
     } else {
       ds
     }
@@ -239,7 +239,7 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
    *   where reads have been marked as duplicates if they appear to be from
    *   duplicated fragments. Else, returns the input RDD.
    */
-  private def maybeDedupe(ds: AlignmentRecordDataset): AlignmentRecordDataset = {
+  private def maybeDedupe(ds: AlignmentDataset): AlignmentDataset = {
     if (args.markDuplicates) {
       info("Marking duplicates")
       ds.markDuplicates()
@@ -260,8 +260,8 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
    *   -realign_indels is not set, we return the input RDD.
    */
   private def maybeRealign(sc: SparkContext,
-                           ds: AlignmentRecordDataset,
-                           sl: StorageLevel): AlignmentRecordDataset = {
+                           ds: AlignmentDataset,
+                           sl: StorageLevel): AlignmentDataset = {
     if (args.locallyRealign) {
 
       info("Locally realigning indels.")
@@ -319,8 +319,8 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
    *   known variation when recalibrating. If BQSR has not been requested,
    *   we return the input RDD.
    */
-  private def maybeRecalibrate(ds: AlignmentRecordDataset,
-                               sl: StorageLevel): AlignmentRecordDataset = {
+  private def maybeRecalibrate(ds: AlignmentDataset,
+                               sl: StorageLevel): AlignmentDataset = {
     if (args.recalibrateBaseQualities) {
 
       info("Recalibrating base qualities")
@@ -360,13 +360,13 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
    *   smaller than the current number of partitions, or if the -force_shuffle
    *   flag is set. If -coalesce was not requested, returns the input RDD.
    */
-  private def maybeCoalesce(ds: AlignmentRecordDataset): AlignmentRecordDataset = {
+  private def maybeCoalesce(ds: AlignmentDataset): AlignmentDataset = {
     if (args.coalesce != -1) {
       info("Coalescing the number of partitions to '%d'".format(args.coalesce))
       if (args.coalesce > ds.rdd.partitions.length || args.forceShuffle) {
-        ds.transform((rdd: RDD[AlignmentRecord]) => rdd.coalesce(args.coalesce, shuffle = true))
+        ds.transform((rdd: RDD[Alignment]) => rdd.coalesce(args.coalesce, shuffle = true))
       } else {
-        ds.transform((rdd: RDD[AlignmentRecord]) => rdd.coalesce(args.coalesce, shuffle = false))
+        ds.transform((rdd: RDD[Alignment]) => rdd.coalesce(args.coalesce, shuffle = false))
       }
     } else {
       ds
@@ -381,8 +381,8 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
    *   instead of by contig index. If no sorting was requested, returns
    *   the input RDD.
    */
-  private def maybeSort(ds: AlignmentRecordDataset,
-                        sl: StorageLevel): AlignmentRecordDataset = {
+  private def maybeSort(ds: AlignmentDataset,
+                        sl: StorageLevel): AlignmentDataset = {
     if (args.sortByReadName || args.sortByReferencePosition || args.sortByReferencePositionAndIndex) {
 
       // cache the input if requested. sort is two stages:
@@ -423,8 +423,8 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
    *   return the input RDD.
    */
   private def maybeMdTag(sc: SparkContext,
-                         ds: AlignmentRecordDataset,
-                         stringencyOpt: Option[ValidationStringency]): AlignmentRecordDataset = {
+                         ds: AlignmentDataset,
+                         stringencyOpt: Option[ValidationStringency]): AlignmentDataset = {
     if (args.mdTagsReferenceFile != null) {
       info(s"Adding MDTags to reads based on reference file ${args.mdTagsReferenceFile}")
       val referenceFile = sc.loadReferenceFile(args.mdTagsReferenceFile,
@@ -438,7 +438,7 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
     }
   }
 
-  def apply(ds: AlignmentRecordDataset): AlignmentRecordDataset = {
+  def apply(ds: AlignmentDataset): AlignmentDataset = {
 
     val sc = ds.rdd.context
     val sl = StorageLevel.fromString(args.storageLevel)
@@ -523,7 +523,7 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
       )
     }
 
-    val loadedDs: AlignmentRecordDataset =
+    val loadedDs: AlignmentDataset =
       if (args.forceLoadBam) {
         if (args.regionPredicate != null) {
           val loci = ReferenceRegion.fromString(args.regionPredicate)
@@ -550,8 +550,8 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
         }
 
         val proj = if (args.limitProjection) {
-          Some(Filter(AlignmentRecordField.attributes,
-            AlignmentRecordField.originalQualityScores))
+          Some(Filter(AlignmentField.attributes,
+            AlignmentField.originalQualityScores))
         } else {
           None
         }
@@ -575,7 +575,7 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
         }
       }
 
-    val aDs: AlignmentRecordDataset = if (args.disableProcessingStep) {
+    val aDs: AlignmentDataset = if (args.disableProcessingStep) {
       loadedDs
     } else {
       // add program info
@@ -624,7 +624,7 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
     })
 
     // make a new aligned read rdd, that merges the two RDDs together
-    val newDs = AlignmentRecordDataset(mergedRdd, mergedSd, mergedRgd, mergedPgs)
+    val newDs = AlignmentDataset(mergedRdd, mergedSd, mergedRgd, mergedPgs)
 
     // run our transformation
     val outputDs = this.apply(newDs)

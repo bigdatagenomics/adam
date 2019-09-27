@@ -18,8 +18,8 @@
 package org.bdgenomics.adam.models
 
 import htsjdk.samtools.{ Cigar, CigarOperator }
-import org.bdgenomics.adam.rich.RichAlignmentRecord._
-import org.bdgenomics.adam.rich.RichAlignmentRecord
+import org.bdgenomics.adam.rich.RichAlignment._
+import org.bdgenomics.adam.rich.RichAlignment
 import scala.collection.JavaConversions._
 import scala.collection.immutable
 import scala.collection.immutable.NumericRange
@@ -266,7 +266,7 @@ object MdTag {
    *
    * @see apply
    */
-  def moveAlignment(read: RichAlignmentRecord, newCigar: Cigar): MdTag = {
+  def moveAlignment(read: RichAlignment, newCigar: Cigar): MdTag = {
     val reference = read.mdTag.get.getReference(read.record)
 
     moveAlignment(reference, read.record.getSequence, newCigar, read.record.getStart)
@@ -286,7 +286,7 @@ object MdTag {
    *
    * @see apply
    */
-  def moveAlignment(read: RichAlignmentRecord, newCigar: Cigar, newReference: String, newAlignmentStart: Long): MdTag = {
+  def moveAlignment(read: RichAlignment, newCigar: Cigar, newReference: String, newAlignmentStart: Long): MdTag = {
     moveAlignment(newReference, read.record.getSequence, newCigar, newAlignmentStart)
   }
 
@@ -444,7 +444,7 @@ case class MdTag(
    *   the raw reference sequence.
    * @return A string corresponding to the reference overlapping this read.
    */
-  def getReference(read: RichAlignmentRecord, withGaps: Boolean = false): String = {
+  def getReference(read: RichAlignment, withGaps: Boolean = false): String = {
     getReferenceSequence(read.getSequence,
       read.samtoolsCigar,
       read.getStart,

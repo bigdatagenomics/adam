@@ -20,7 +20,7 @@ package org.bdgenomics.adam.rdd.read
 import htsjdk.samtools.ValidationStringency
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.util.{ ADAMFunSuite, ReferenceContigMap }
-import org.bdgenomics.formats.avro.{ AlignmentRecord, Reference, Slice }
+import org.bdgenomics.formats.avro.{ Alignment, Reference, Slice }
 
 class MDTaggingSuite extends ADAMFunSuite {
   val chr1 =
@@ -50,13 +50,13 @@ class MDTaggingSuite extends ADAMFunSuite {
       )
     )
 
-  def makeReads(reads: ((Reference, Int, Int, String, String), String)*): (Map[Int, String], RDD[AlignmentRecord]) = {
+  def makeReads(reads: ((Reference, Int, Int, String, String), String)*): (Map[Int, String], RDD[Alignment]) = {
     val (map, rs) =
       (for {
         (((contig, start, end, seq, cigar), mdTag), id) <- reads.zipWithIndex
       } yield (
         id -> mdTag,
-        AlignmentRecord
+        Alignment
         .newBuilder
         .setReferenceName(contig.getName)
         .setStart(start.toLong)

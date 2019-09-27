@@ -17,7 +17,7 @@
 #
 library(bdgenomics.adam)
 
-context("manipulating alignmentrecords")
+context("manipulating Alignments")
 
 ac <- createADAMContext()
 
@@ -77,7 +77,7 @@ test_that("pipe as sam", {
                      cmd=cmd,
                      "org.bdgenomics.adam.rdd.read.SAMInFormatter",
                      "org.bdgenomics.adam.rdd.read.AnySAMOutFormatter",
-                     "org.bdgenomics.adam.api.java.AlignmentRecordsToAlignmentRecordsConverter")
+                     "org.bdgenomics.adam.api.java.AlignmentsToAlignmentsConverter")
 
     expect_equal(count(toDF(reads)),
                  count(toDF(pipedRdd)))

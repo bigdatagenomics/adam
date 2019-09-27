@@ -178,7 +178,7 @@ object ReferenceRegion {
    * @param record Read to create region from.
    * @return Region corresponding to inclusive region of read alignment, if read is mapped.
    */
-  def opt(record: AlignmentRecord): Option[ReferenceRegion] = {
+  def opt(record: Alignment): Option[ReferenceRegion] = {
     if (record.getReadMapped) {
       Some(unstranded(record))
     } else {
@@ -230,7 +230,7 @@ object ReferenceRegion {
     ReferenceRegion(referenceName, start, end)
   }
 
-  private def checkRead(record: AlignmentRecord) {
+  private def checkRead(record: Alignment) {
     require(record.getReadMapped,
       "Cannot build reference region for unmapped read %s.".format(record))
     require(record.getReferenceName != null &&
@@ -250,7 +250,7 @@ object ReferenceRegion {
    *
    * @see stranded
    */
-  def unstranded(record: AlignmentRecord): ReferenceRegion = {
+  def unstranded(record: Alignment): ReferenceRegion = {
     checkRead(record)
     ReferenceRegion(record.getReferenceName, record.getStart, record.getEnd)
   }
@@ -266,7 +266,7 @@ object ReferenceRegion {
    *
    * @see unstranded
    */
-  def stranded(record: AlignmentRecord): ReferenceRegion = {
+  def stranded(record: Alignment): ReferenceRegion = {
     checkRead(record)
 
     val strand = Option(record.getReadNegativeStrand)

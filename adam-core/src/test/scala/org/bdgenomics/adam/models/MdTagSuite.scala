@@ -18,8 +18,8 @@
 package org.bdgenomics.adam.models
 
 import htsjdk.samtools.TextCigarCodec
-import org.bdgenomics.adam.rich.RichAlignmentRecord._
-import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.adam.rich.RichAlignment._
+import org.bdgenomics.formats.avro.Alignment
 import org.scalatest.FunSuite
 
 class MdTagSuite extends FunSuite {
@@ -182,7 +182,7 @@ class MdTagSuite extends FunSuite {
   }
 
   test("check that mdtag and rich record return same end") {
-    val read = AlignmentRecord.newBuilder()
+    val read = Alignment.newBuilder()
       .setSequence("A" * 60)
       .setStart(1L)
       .setEnd(60L)
@@ -463,7 +463,7 @@ class MdTagSuite extends FunSuite {
   }
 
   test("check complex mdtag") {
-    val read = AlignmentRecord.newBuilder()
+    val read = Alignment.newBuilder()
       .setSequence("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
       .setReadMapped(true)
       .setCigar("29M10D31M")
@@ -483,7 +483,7 @@ class MdTagSuite extends FunSuite {
   }
 
   test("get gapped reference") {
-    val read = AlignmentRecord.newBuilder()
+    val read = Alignment.newBuilder()
       .setSequence("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
       .setReadMapped(true)
       .setCigar("29M10D31M")
@@ -497,7 +497,7 @@ class MdTagSuite extends FunSuite {
   }
 
   test("move a cigar alignment by two for a read") {
-    val read = AlignmentRecord.newBuilder()
+    val read = Alignment.newBuilder()
       .setSequence("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
       .setReadMapped(true)
       .setCigar("29M10D31M")
@@ -513,7 +513,7 @@ class MdTagSuite extends FunSuite {
   }
 
   test("rewrite alignment to all matches") {
-    val read = AlignmentRecord.newBuilder()
+    val read = Alignment.newBuilder()
       .setSequence("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
       .setReadMapped(true)
       .setCigar("29M10D31M")
@@ -531,7 +531,7 @@ class MdTagSuite extends FunSuite {
   }
 
   test("rewrite alignment to two mismatches followed by all matches") {
-    val read = AlignmentRecord.newBuilder()
+    val read = Alignment.newBuilder()
       .setSequence("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
       .setReadMapped(true)
       .setCigar("29M10D31M")
@@ -549,7 +549,7 @@ class MdTagSuite extends FunSuite {
   }
 
   test("rewrite alignment to include a deletion but otherwise all matches") {
-    val read = AlignmentRecord.newBuilder()
+    val read = Alignment.newBuilder()
       .setSequence("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
       .setReadMapped(true)
       .setCigar("29M10D31M")
@@ -567,7 +567,7 @@ class MdTagSuite extends FunSuite {
   }
 
   test("rewrite alignment to include an insertion at the start of the read but otherwise all matches") {
-    val read = AlignmentRecord.newBuilder()
+    val read = Alignment.newBuilder()
       .setSequence("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
       .setReadMapped(true)
       .setCigar("29M10D31M")

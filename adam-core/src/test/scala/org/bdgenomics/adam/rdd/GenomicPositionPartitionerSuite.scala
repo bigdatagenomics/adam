@@ -22,7 +22,7 @@ import org.bdgenomics.adam.models.{ ReferencePosition, SequenceRecord, SequenceD
 import org.bdgenomics.adam.projections.Projection
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
-import org.bdgenomics.formats.avro.{ AlignmentRecord, Reference }
+import org.bdgenomics.formats.avro.{ Alignment, Reference }
 import scala.util.Random
 
 class GenomicPositionPartitionerSuite extends ADAMFunSuite {
@@ -109,7 +109,7 @@ class GenomicPositionPartitionerSuite extends ADAMFunSuite {
     val parts = 1
 
     val p = {
-      import org.bdgenomics.adam.projections.AlignmentRecordField._
+      import org.bdgenomics.adam.projections.AlignmentField._
       Projection(referenceName, start, readName, readMapped)
     }
     val gDataset = sc.loadAlignments(filename, optProjection = Some(p))
@@ -146,7 +146,7 @@ class GenomicPositionPartitionerSuite extends ADAMFunSuite {
     val parter = GenomicPositionPartitioner(parts, gDataset.sequences)
 
     val p = {
-      import org.bdgenomics.adam.projections.AlignmentRecordField._
+      import org.bdgenomics.adam.projections.AlignmentField._
       Projection(referenceName, start, readName, readMapped)
     }
 
@@ -174,7 +174,7 @@ class GenomicPositionPartitionerSuite extends ADAMFunSuite {
       .setName(referenceName)
       .build
 
-    AlignmentRecord.newBuilder()
+    Alignment.newBuilder()
       .setReferenceName(reference.getName)
       .setReadName(readName)
       .setReadMapped(readMapped)

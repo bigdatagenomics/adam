@@ -22,7 +22,7 @@ import com.esotericsoftware.kryo.io.{ Output, Input }
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.serialization.AvroSerializer
 import org.bdgenomics.formats.avro.{
-  AlignmentRecord,
+  Alignment,
   Fragment
 }
 import scala.annotation.tailrec
@@ -30,21 +30,21 @@ import scala.collection.JavaConversions._
 import scala.collection.mutable.ListBuffer
 
 private class FragmentIterator(
-    reads: Iterator[AlignmentRecord]) extends Iterator[Iterable[AlignmentRecord]] with Serializable {
+    reads: Iterator[Alignment]) extends Iterator[Iterable[Alignment]] with Serializable {
 
-  private var readIter: BufferedIterator[AlignmentRecord] = reads.buffered
+  private var readIter: BufferedIterator[Alignment] = reads.buffered
 
   def hasNext: Boolean = {
     readIter.hasNext
   }
 
-  def next: Iterable[AlignmentRecord] = {
+  def next: Iterable[Alignment] = {
 
     // get the read name
     val readName = readIter.head.getReadName
 
     @tailrec def getReads(
-      l: ListBuffer[AlignmentRecord]): Iterable[AlignmentRecord] = {
+      l: ListBuffer[Alignment]): Iterable[Alignment] = {
 
       if (!readIter.hasNext ||
         readIter.head.getReadName != readName) {
@@ -63,7 +63,7 @@ private class FragmentIterator(
  */
 private[read] object SingleReadBucket {
 
-  private def fromGroupedReads(reads: Iterable[AlignmentRecord]): SingleReadBucket = {
+  private def fromGroupedReads(reads: Iterable[Alignment]): SingleReadBucket = {
     // split by mapping
     val (mapped, unmapped) = reads.partition(_.getReadMapped)
     val (primaryMapped, secondaryMapped) = mapped.partition(_.getPrimaryAlignment)
@@ -74,26 +74,26 @@ private[read] object SingleReadBucket {
   }
 
   /**
-   * Builds an RDD of SingleReadBuckets from a queryname sorted RDD of AlignmentRecords.
+   * Builds an RDD of SingleReadBuckets from a queryname sorted RDD of Alignments.
    *
-   * @param rdd The RDD of AlignmentRecords to build the RDD of single read
+   * @param rdd The RDD of Alignments to build the RDD of single read
    *   buckets from.
    * @return Returns an RDD of SingleReadBuckets.
    *
    * @note We do not validate that the input RDD is sorted by read name.
    */
-  def fromQuerynameSorted(rdd: RDD[AlignmentRecord]): RDD[SingleReadBucket] = {
+  def fromQuerynameSorted(rdd: RDD[Alignment]): RDD[SingleReadBucket] = {
     rdd.mapPartitions(iter => new FragmentIterator(iter).map(fromGroupedReads))
   }
 
   /**
-   * Builds an RDD of SingleReadBuckets from an RDD of AlignmentRecords.
+   * Builds an RDD of SingleReadBuckets from an RDD of Alignments.
    *
-   * @param rdd The RDD of AlignmentRecords to build the RDD of single read
+   * @param rdd The RDD of Alignments to build the RDD of single read
    *   buckets from.
    * @return Returns an RDD of SingleReadBuckets.
    */
-  def apply(rdd: RDD[AlignmentRecord]): RDD[SingleReadBucket] = {
+  def apply(rdd: RDD[Alignment]): RDD[SingleReadBucket] = {
     rdd.groupBy(p => (p.getReadGroupId, p.getReadName))
       .map(kv => {
         val (_, reads) = kv
@@ -117,9 +117,9 @@ private[read] object SingleReadBucket {
  * @param unmapped All reads from the fragment that are unmapped.
  */
 private[adam] case class SingleReadBucket(
-    primaryMapped: Iterable[AlignmentRecord] = Iterable.empty,
-    secondaryMapped: Iterable[AlignmentRecord] = Iterable.empty,
-    unmapped: Iterable[AlignmentRecord] = Iterable.empty) {
+    primaryMapped: Iterable[Alignment] = Iterable.empty,
+    secondaryMapped: Iterable[Alignment] = Iterable.empty,
+    unmapped: Iterable[Alignment] = Iterable.empty) {
 
   /**
    * @return The union of the primary, secondary, and unmapped buckets.
@@ -161,19 +161,19 @@ private[adam] case class SingleReadBucket(
 }
 
 class SingleReadBucketSerializer extends Serializer[SingleReadBucket] {
-  val recordSerializer = new AvroSerializer[AlignmentRecord]()
+  val recordSerializer = new AvroSerializer[Alignment]()
 
-  def writeArray(kryo: Kryo, output: Output, reads: Seq[AlignmentRecord]): Unit = {
+  def writeArray(kryo: Kryo, output: Output, reads: Seq[Alignment]): Unit = {
     output.writeInt(reads.size, true)
     for (read <- reads) {
       recordSerializer.write(kryo, output, read)
     }
   }
 
-  def readArray(kryo: Kryo, input: Input): Seq[AlignmentRecord] = {
+  def readArray(kryo: Kryo, input: Input): Seq[Alignment] = {
     val numReads = input.readInt(true)
-    (0 until numReads).foldLeft(List[AlignmentRecord]()) {
-      (a, b) => recordSerializer.read(kryo, input, classOf[AlignmentRecord]) :: a
+    (0 until numReads).foldLeft(List[Alignment]()) {
+      (a, b) => recordSerializer.read(kryo, input, classOf[Alignment]) :: a
     }
   }
 

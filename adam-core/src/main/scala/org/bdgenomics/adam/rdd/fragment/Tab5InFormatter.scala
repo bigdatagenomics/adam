@@ -20,7 +20,7 @@ package org.bdgenomics.adam.rdd.fragment
 import java.io.OutputStream
 import grizzled.slf4j.Logging
 import org.apache.hadoop.conf.Configuration
-import org.bdgenomics.adam.converters.AlignmentRecordConverter
+import org.bdgenomics.adam.converters.AlignmentConverter
 import org.bdgenomics.adam.rdd.{ InFormatter, InFormatterCompanion }
 import org.bdgenomics.adam.sql.{ Fragment => FragmentProduct }
 import org.bdgenomics.formats.avro.Fragment
@@ -46,14 +46,14 @@ class Tab5InFormatter private (
 
   protected val companion = Tab5InFormatter
   private val newLine = "\n".getBytes
-  private val converter = new AlignmentRecordConverter
+  private val converter = new AlignmentConverter
   private val writeOriginalQualityScores = conf.getBoolean(FragmentDataset.WRITE_ORIGINAL_QUALITY_SCORES, false)
 
   /**
-   * Writes alignment records to an output stream in Bowtie tab5 format.
+   * Writes alignments to an output stream in Bowtie tab5 format.
    *
-   * In Bowtie tab5 format, each alignment record or pair is on a single line.
-   * An unpaired alignment record line is [name]\t[seq]\t[qual]\n.
+   * In Bowtie tab5 format, each alignment or pair is on a single line.
+   * An unpaired alignment line is [name]\t[seq]\t[qual]\n.
    * A paired-end read line is [name]\t[seq1]\t[qual1]\t[seq2]\t[qual2]\n.
    *
    * The read name for a paired-end read line is the name of the first

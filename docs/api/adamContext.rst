@@ -14,9 +14,9 @@ use this, import the implicit, and call an ``ADAMContext`` method:
 
     // the ._ at the end imports the implicit from the ADAMContext companion object
     import org.bdgenomics.adam.rdd.ADAMContext._
-    import org.bdgenomics.adam.rdd.read.AlignmentRecordDataset
+    import org.bdgenomics.adam.rdd.read.AlignmentDataset
 
-    def loadReads(filePath: String, sc: SparkContext): AlignmentRecordDataset = {
+    def loadReads(filePath: String, sc: SparkContext): AlignmentDataset = {
       sc.loadAlignments(filePath)
     }
 
@@ -27,11 +27,11 @@ In Java, instantiate a JavaADAMContext, which wraps an ADAMContext:
     import org.apache.spark.apis.java.JavaSparkContext;
     import org.bdgenomics.adam.apis.java.JavaADAMContext;
     import org.bdgenomics.adam.rdd.ADAMContext;
-    import org.bdgenomics.adam.rdd.read.AlignmentRecordDataset;
+    import org.bdgenomics.adam.rdd.read.AlignmentDataset;
 
     class LoadReads {
 
-      public static AlignmentRecordDataset loadReads(String filePath,
+      public static AlignmentDataset loadReads(String filePath,
                                                      JavaSparkContext jsc) {
         // create an ADAMContext first
         ADAMContext ac = new ADAMContext(jsc.sc());
@@ -55,7 +55,7 @@ From Python, instantiate an ADAMContext, which wraps a SparkContext:
 
 With an ``ADAMContext``, you can load:
 
--  Single reads as an ``AlignmentRecordDataset``:
+-  Single reads as an ``AlignmentDataset``:
 
    -  From SAM/BAM/CRAM using ``loadBam`` (Scala only)
    -  Selected regions from an indexed BAM/CRAM using ``loadIndexedBam`` (Scala, Java, and Python)

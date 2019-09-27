@@ -25,7 +25,7 @@ rdd
 
    GenomicDataset
    VCFSupportingGenomicDataset
-   AlignmentRecordDataset
+   AlignmentDataset
    CoverageDataset
    FeatureDataset
    FragmentDataset
@@ -235,8 +235,8 @@ class GenomicDataset(object):
             return "FeaturesDatasetConverter"
         elif destClass is FragmentDataset:
             return "FragmentDatasetConverter"
-        elif destClass is AlignmentRecordDataset:
-            return "AlignmentRecordDatasetConverter"
+        elif destClass is AlignmentDataset:
+            return "AlignmentDatasetConverter"
         elif destClass is GenotypeDataset:
             return "GenotypeDatasetConverter"
         elif destClass is VariantDataset:
@@ -842,18 +842,18 @@ class VCFSupportingGenomicDataset(GenomicDataset):
         return self._replaceRdd(self._jvmRdd.addFilterHeaderLine(name, description))
 
 
-class AlignmentRecordDataset(GenomicDataset):
+class AlignmentDataset(GenomicDataset):
     """
-    Wraps an GenomicDataset with Alignment Record metadata and functions.
+    Wraps an GenomicDataset with alignment metadata and functions.
     """
 
     def __init__(self, jvmRdd, sc):
         """
-        Constructs a Python AlignmentRecordDataset from a JVM AlignmentRecordDataset.
+        Constructs a Python AlignmentDataset from a JVM AlignmentDataset.
         Should not be called from user code; instead, go through
         bdgenomics.adamContext.ADAMContext.
 
-        :param jvmRdd: Py4j handle to the underlying JVM AlignmentRecordDataset.
+        :param jvmRdd: Py4j handle to the underlying JVM AlignmentDataset.
         :param pyspark.context.SparkContext sc: Active Spark Context.
         """
 
@@ -862,12 +862,12 @@ class AlignmentRecordDataset(GenomicDataset):
 
     def _replaceRdd(self, newRdd):
 
-        return AlignmentRecordDataset(newRdd, self.sc)
+        return AlignmentDataset(newRdd, self.sc)
 
 
     def _inferConversionFn(self, destClass):
 
-        return "org.bdgenomics.adam.api.java.AlignmentRecordsTo%s" % self._destClassSuffix(destClass)
+        return "org.bdgenomics.adam.api.java.AlignmentsTo%s" % self._destClassSuffix(destClass)
 
 
     def toFragments(self):
@@ -941,7 +941,7 @@ class AlignmentRecordDataset(GenomicDataset):
         """
         Converts a genomic dataset into the SAM spec string it represents.
 
-        This method converts an genomic dataset of AlignmentRecords back to an RDD of
+        This method converts an genomic dataset of Alignments back to an RDD of
         SAMRecordWritables and a SAMFileHeader, and then maps this RDD into a
         string on the driver that represents this file in SAM.
 
@@ -970,9 +970,9 @@ class AlignmentRecordDataset(GenomicDataset):
         Sorts our alignments by read name.
 
         :return: Returns a new genomic dataset containing sorted alignments.
-        :rtype: bdgenomics.adam.rdd.AlignmentRecordDataset
+        :rtype: bdgenomics.adam.rdd.AlignmentDataset
         """
-        return AlignmentRecordDataset(self._jvmRdd.sortByReadName(),
+        return AlignmentDataset(self._jvmRdd.sortByReadName(),
                                   self.sc)
 
     def sortByReferencePosition(self):
@@ -984,9 +984,9 @@ class AlignmentRecordDataset(GenomicDataset):
         lexicographically by name.
 
         :return: Returns a new genomic dataset containing sorted alignments.
-        :rtype: bdgenomics.adam.rdd.AlignmentRecordDataset
+        :rtype: bdgenomics.adam.rdd.AlignmentDataset
         """
-        return AlignmentRecordDataset(self._jvmRdd.sortByReferencePosition(),
+        return AlignmentDataset(self._jvmRdd.sortByReferencePosition(),
                                   self.sc)
 
 
@@ -999,10 +999,10 @@ class AlignmentRecordDataset(GenomicDataset):
         that they are ordered in the sequence metadata.
 
         :return: Returns a new genomic dataset containing sorted alignments.
-        :rtype: bdgenomics.adam.rdd.AlignmentRecordDataset
+        :rtype: bdgenomics.adam.rdd.AlignmentDataset
         """
 
-        return AlignmentRecordDataset(self._jvmRdd.sortByReferencePositionAndIndex(),
+        return AlignmentDataset(self._jvmRdd.sortByReferencePositionAndIndex(),
                                   self.sc)
 
 
@@ -1012,10 +1012,10 @@ class AlignmentRecordDataset(GenomicDataset):
 
         :return: A new genomic dataset where reads have the duplicate read flag set.
         Duplicate reads are NOT filtered out.
-        :rtype: bdgenomics.adam.rdd.AlignmentRecordDataset
+        :rtype: bdgenomics.adam.rdd.AlignmentDataset
         """
 
-        return AlignmentRecordDataset(self._jvmRdd.markDuplicates(),
+        return AlignmentDataset(self._jvmRdd.markDuplicates(),
                                   self.sc)
 
 
@@ -1029,7 +1029,7 @@ class AlignmentRecordDataset(GenomicDataset):
         :param bdgenomics.adam.rdd.VariantDataset knownSnps: A table of known SNPs to mask valid variants.
         :param bdgenomics.adam.stringency validationStringency:
         """
-        return AlignmentRecordDataset(self._jvmRdd.recalibrateBaseQualities(knownSnps._jvmRdd,
+        return AlignmentDataset(self._jvmRdd.recalibrateBaseQualities(knownSnps._jvmRdd,
                                                                          _toJava(validationStringency, self.sc._jvm)))
 
 
@@ -1058,11 +1058,11 @@ class AlignmentRecordDataset(GenomicDataset):
         :param boolean unclipReads: If true, unclips reads prior to realignment.
         Else, omits clipped bases during realignment.
         :return: Returns an genomic dataset of mapped reads which have been realigned.
-        :rtype: bdgenomics.adam.rdd.AlignmentRecordDataset
+        :rtype: bdgenomics.adam.rdd.AlignmentDataset
         """
 
         consensusModel = self.sc._jvm.org.bdgenomics.adam.algorithms.consensus.ConsensusGenerator.fromReads()
-        return AlignmentRecordDataset(self._jvmRdd.realignIndels(consensusModel,
+        return AlignmentDataset(self._jvmRdd.realignIndels(consensusModel,
                                                                  isSorted,
                                                                  maxIndelSize,
                                                                  maxConsensusNumber,
@@ -1101,11 +1101,11 @@ class AlignmentRecordDataset(GenomicDataset):
         :param boolean unclipReads: If true, unclips reads prior to realignment.
         Else, omits clipped bases during realignment.
         :return: Returns a genomic dataset of mapped reads which have been realigned.
-        :rtype: bdgenomics.adam.rdd.AlignmentRecordDataset
+        :rtype: bdgenomics.adam.rdd.AlignmentDataset
         """
 
         consensusModel = self.sc._jvm.org.bdgenomics.adam.algorithms.consensus.ConsensusGenerator.fromKnownIndels(knownIndels._jvmRdd, 0)
-        return AlignmentRecordDataset(self._jvmRdd.realignIndels(consensusModel,
+        return AlignmentDataset(self._jvmRdd.realignIndels(consensusModel,
                                                                  isSorted,
                                                                  maxIndelSize,
                                                                  maxConsensusNumber,
@@ -1132,7 +1132,7 @@ class AlignmentRecordDataset(GenomicDataset):
                           outputOriginalBaseQualities = False,
                           validationStringency = LENIENT):
         """
-        Saves these AlignmentRecords to two FASTQ files.
+        Saves these Alignments to two FASTQ files.
 
         The files are one for the first mate in each pair, and the other for the
         second mate in the pair.
@@ -1198,9 +1198,9 @@ class AlignmentRecordDataset(GenomicDataset):
         :param bdgenomics.adam.stringency validationStringency: How stringently
         to validate the reads.
         :return: Returns a genomic dataset with the pair information recomputed.
-        :rtype: bdgenomics.adam.rdd.AlignmentRecordDataset
+        :rtype: bdgenomics.adam.rdd.AlignmentDataset
         """
-        return AlignmentRecordDataset(self._jvmRdd.reassembleReadPairs(rdd._jrdd,
+        return AlignmentDataset(self._jvmRdd.reassembleReadPairs(rdd._jrdd,
                                                                        _toJava(validationStringency, self.sc._jvm)),
                                       self.sc)
 
@@ -1406,10 +1406,10 @@ class FragmentDataset(GenomicDataset):
         new genomic dataset.
         
         :return: Returns this genomic dataset converted to alignments.
-        :rtype: bdgenomics.adam.rdd.AlignmentRecordDataset
+        :rtype: bdgenomics.adam.rdd.AlignmentDataset
         """
 
-        return AlignmentRecordDataset(self._jvmRdd.toAlignments(), self.sc)
+        return AlignmentDataset(self._jvmRdd.toAlignments(), self.sc)
 
 
     def markDuplicates(self):

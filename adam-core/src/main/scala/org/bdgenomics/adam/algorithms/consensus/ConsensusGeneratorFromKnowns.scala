@@ -22,7 +22,7 @@ import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.read.realignment.IndelRealignmentTarget
-import org.bdgenomics.adam.rich.RichAlignmentRecord
+import org.bdgenomics.adam.rich.RichAlignment
 import org.bdgenomics.formats.avro.Variant
 import scala.math.max
 import scala.transient
@@ -66,9 +66,9 @@ private[adam] class ConsensusGeneratorFromKnowns(rdd: RDD[Variant],
    * @return Preprocessed reads.
    */
   def preprocessReadsForRealignment(
-    reads: Iterable[RichAlignmentRecord],
+    reads: Iterable[RichAlignment],
     reference: String,
-    region: ReferenceRegion): Iterable[RichAlignmentRecord] = {
+    region: ReferenceRegion): Iterable[RichAlignment] = {
     reads
   }
 
@@ -78,7 +78,7 @@ private[adam] class ConsensusGeneratorFromKnowns(rdd: RDD[Variant],
    * @param reads Reads to generate consensus sequences from.
    * @return Consensus sequences to use for realignment.
    */
-  def findConsensus(reads: Iterable[RichAlignmentRecord]): Iterable[Consensus] = {
+  def findConsensus(reads: Iterable[RichAlignment]): Iterable[Consensus] = {
     if (reads.isEmpty) {
       Iterable.empty
     } else {

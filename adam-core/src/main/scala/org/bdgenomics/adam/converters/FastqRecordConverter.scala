@@ -21,7 +21,7 @@ import grizzled.slf4j.Logging
 import htsjdk.samtools.ValidationStringency
 import org.apache.hadoop.io.Text
 import org.bdgenomics.formats.avro.{
-  AlignmentRecord,
+  Alignment,
   Fragment
 }
 import scala.collection.JavaConversions._
@@ -151,13 +151,13 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
     )
   }
 
-  private[converters] def makeAlignmentRecord(readName: String,
-                                              sequence: String,
-                                              qualityScores: String,
-                                              readInFragment: Int,
-                                              readPaired: Boolean = true,
-                                              optReadGroup: Option[String] = None): AlignmentRecord = {
-    val builder = AlignmentRecord.newBuilder
+  private[converters] def makeAlignment(readName: String,
+                                        sequence: String,
+                                        qualityScores: String,
+                                        readInFragment: Int,
+                                        readPaired: Boolean = true,
+                                        optReadGroup: Option[String] = None): Alignment = {
+    val builder = Alignment.newBuilder
       .setReadName(readName)
       .setSequence(sequence)
       .setQualityScores(qualityScores)
@@ -182,7 +182,7 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
   }
 
   /**
-   * Converts a read pair in FASTQ format into two AlignmentRecords.
+   * Converts a read pair in FASTQ format into two Alignments.
    *
    * Used for processing a single fragment of paired end sequencing data stored
    * in interleaved FASTQ. While interleaved FASTQ is not an "official" format,
@@ -192,14 +192,14 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
    *
    * @param element Key-value pair of (void, and the FASTQ text). The text
    *   should correspond to exactly two records.
-   * @return Returns a length = 2 iterable of AlignmentRecords.
+   * @return Returns a length = 2 iterable of Alignments.
    *
    * @throws IllegalArgumentException Throws if records are misformatted. Each
    *   record must be 4 lines, and sequence and quality must be the same length.
    *
    * @see convertFragment
    */
-  def convertPair(element: (Void, Text)): Iterable[AlignmentRecord] = {
+  def convertPair(element: (Void, Text)): Iterable[Alignment] = {
     val (
       firstReadName,
       firstReadSequence,
@@ -211,8 +211,8 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
 
     // build and return iterators
     Iterable(
-      makeAlignmentRecord(firstReadName, firstReadSequence, firstReadQualityScores, 0),
-      makeAlignmentRecord(secondReadName, secondReadSequence, secondReadQualityScores, 1)
+      makeAlignment(firstReadName, firstReadSequence, firstReadQualityScores, 0),
+      makeAlignment(secondReadName, secondReadSequence, secondReadQualityScores, 1)
     )
   }
 
@@ -247,8 +247,8 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
     )
 
     val alignments = List(
-      makeAlignmentRecord(firstReadName, firstReadSequence, firstReadQualityScores, 0),
-      makeAlignmentRecord(secondReadName, secondReadSequence, secondReadQualityScores, 1)
+      makeAlignment(firstReadName, firstReadSequence, firstReadQualityScores, 0),
+      makeAlignment(secondReadName, secondReadSequence, secondReadQualityScores, 1)
     )
 
     // build and return record
@@ -269,7 +269,7 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
    *
    * @param element Key-value pair of (void, and the FASTQ text). The text
    *   should correspond to exactly two records.
-   * @return Returns a length = 2 iterable of AlignmentRecords.
+   * @return Returns a length = 2 iterable of Alignments.
    *
    * @throws IllegalArgumentException Throws if records are misformatted. Each
    *   record must be 4 lines, and sequence and quality must be the same length.
@@ -281,7 +281,7 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
     optReadGroup: Option[String] = None,
     setFirstOfPair: Boolean = false,
     setSecondOfPair: Boolean = false,
-    stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecord = {
+    stringency: ValidationStringency = ValidationStringency.STRICT): Alignment = {
     if (setFirstOfPair && setSecondOfPair)
       throw new IllegalArgumentException("setFirstOfPair and setSecondOfPair cannot be true at the same time")
 
@@ -295,7 +295,7 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
 
     val readPaired = setFirstOfPair || setSecondOfPair
 
-    makeAlignmentRecord(
+    makeAlignment(
       readName, readSequence, readQualityScores,
       readInFragment, readPaired, optReadGroup)
   }

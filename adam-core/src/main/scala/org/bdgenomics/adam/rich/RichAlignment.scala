@@ -30,28 +30,27 @@ import org.bdgenomics.adam.models.{
   ReferenceRegion
 }
 import org.bdgenomics.adam.util.AttributeUtils
-import org.bdgenomics.formats.avro.{ AlignmentRecord, Strand }
+import org.bdgenomics.formats.avro.{ Alignment, Strand }
 import scala.collection.JavaConversions._
-import scala.collection.immutable.NumericRange
 import scala.math.max
 
-object RichAlignmentRecord {
+object RichAlignment {
 
   @deprecated("Use explicit conversion wherever possible in new development.",
     since = "0.21.0")
-  implicit def recordToRichRecord(record: AlignmentRecord): RichAlignmentRecord = new RichAlignmentRecord(record)
+  implicit def recordToRichRecord(record: Alignment): RichAlignment = new RichAlignment(record)
 
   @deprecated("Use explicit conversion wherever possible in new development.",
     since = "0.21.0")
-  implicit def richRecordToRecord(record: RichAlignmentRecord): AlignmentRecord = record.record
+  implicit def richRecordToRecord(record: RichAlignment): Alignment = record.record
 }
 
 /**
- * An enriched version of an Avro AlignmentRecord.
+ * An enriched version of an Avro Alignment.
  *
  * @param record The underlying read.
  */
-case class RichAlignmentRecord(record: AlignmentRecord) {
+case class RichAlignment(record: Alignment) {
 
   /**
    * The quality scores as a list of integers. Assumes Illumina (33) encoding.

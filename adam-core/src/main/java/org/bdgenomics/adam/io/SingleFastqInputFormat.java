@@ -44,7 +44,7 @@ public final class SingleFastqInputFormat extends FastqInputFormat {
      *
      * Reads over an input file and parses FASTQ read pairs into Text. This is
      * then fed into the FastqConverter, which converts the Text instance into
-     * an AlignmentRecord.
+     * an Alignment.
      */
     private static class SingleFastqRecordReader extends FastqRecordReader {
 

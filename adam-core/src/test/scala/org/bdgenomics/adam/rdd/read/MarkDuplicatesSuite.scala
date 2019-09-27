@@ -24,7 +24,7 @@ import org.bdgenomics.adam.models.{
   SequenceDictionary
 }
 import org.bdgenomics.adam.util.ADAMFunSuite
-import org.bdgenomics.formats.avro.{ AlignmentRecord, Reference }
+import org.bdgenomics.formats.avro.{ Alignment, Reference }
 
 class MarkDuplicatesSuite extends ADAMFunSuite {
 
@@ -34,7 +34,7 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
       library = Some("library bar"))))
 
   def createUnmappedRead() = {
-    AlignmentRecord.newBuilder()
+    Alignment.newBuilder()
       .setReadMapped(false)
       .setSequence("ACGT")
       .build()
@@ -52,7 +52,7 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
       .setName(referenceName)
       .build
 
-    AlignmentRecord.newBuilder()
+    Alignment.newBuilder()
       .setReferenceName(reference.getName)
       .setStart(start)
       .setQualityScores(qual)
@@ -71,7 +71,7 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
   def createPair(firstReferenceName: String, firstStart: Long, firstEnd: Long,
                  secondReferenceName: String, secondStart: Long, secondEnd: Long,
                  readName: String = UUID.randomUUID().toString,
-                 avgPhredScore: Int = 20): Seq[AlignmentRecord] = {
+                 avgPhredScore: Int = 20): Seq[Alignment] = {
     val firstReference = Reference.newBuilder
       .setName(firstReferenceName)
       .build
@@ -97,8 +97,8 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
     Seq(firstOfPair, secondOfPair)
   }
 
-  private def markDuplicates(reads: AlignmentRecord*): Array[AlignmentRecord] = {
-    AlignmentRecordDataset(sc.parallelize(reads), SequenceDictionary.empty, rgd, Seq.empty)
+  private def markDuplicates(reads: Alignment*): Array[Alignment] = {
+    AlignmentDataset(sc.parallelize(reads), SequenceDictionary.empty, rgd, Seq.empty)
       .markDuplicates()
       .rdd
       .collect()
@@ -190,7 +190,7 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
   test("quality scores") {
     // The ascii value 53 is equal to a phred score of 20
     val qual = 53.toChar.toString * 100
-    val record = AlignmentRecord.newBuilder().setQualityScores(qual).build()
+    val record = Alignment.newBuilder().setQualityScores(qual).build()
     assert(MarkDuplicates.score(record) == 2000)
   }
 
@@ -206,8 +206,8 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
     assert(dups.forall(p => p.getReadName.startsWith("poor")))
   }
 
-  private def markDuplicateFragments(reads: AlignmentRecord*): Array[AlignmentRecord] = {
-    AlignmentRecordDataset(sc.parallelize(reads), SequenceDictionary.empty, rgd, Seq.empty)
+  private def markDuplicateFragments(reads: Alignment*): Array[Alignment] = {
+    AlignmentDataset(sc.parallelize(reads), SequenceDictionary.empty, rgd, Seq.empty)
       .toFragments
       .markDuplicates()
       .toAlignments

@@ -29,20 +29,20 @@ import org.bdgenomics.adam.models.{
   SequenceRecord
 }
 import org.bdgenomics.formats.avro.{
-  AlignmentRecord,
+  Alignment,
   Fragment
 }
 import org.scalatest.FunSuite
 import scala.collection.JavaConversions._
 
-class AlignmentRecordConverterSuite extends FunSuite {
+class AlignmentConverterSuite extends FunSuite {
 
   // allocate converters
-  val adamRecordConverter = new AlignmentRecordConverter
+  val adamRecordConverter = new AlignmentConverter
 
-  def makeRead(start: Long, cigar: String, mdtag: String, length: Int, id: Int = 0, nullQuality: Boolean = false): AlignmentRecord = {
+  def makeRead(start: Long, cigar: String, mdtag: String, length: Int, id: Int = 0, nullQuality: Boolean = false): Alignment = {
     val sequence: String = "A" * length
-    val builder = AlignmentRecord.newBuilder()
+    val builder = Alignment.newBuilder()
       .setReadName("read" + id.toString)
       .setStart(start)
       .setReadMapped(true)
@@ -146,7 +146,7 @@ class AlignmentRecordConverterSuite extends FunSuite {
   }
 
   test("convert a read to fastq") {
-    val adamRead = AlignmentRecord.newBuilder()
+    val adamRead = Alignment.newBuilder()
       .setSequence("ACACCAACATG")
       .setQualityScores(".+**.+;:**.")
       .setReadName("thebestread")
@@ -162,7 +162,7 @@ class AlignmentRecordConverterSuite extends FunSuite {
     assert(fastq(3) === ".+**.+;:**.")
   }
 
-  def getSAMRecordFromReadName(readName: String): (AlignmentRecord, AlignmentRecord) = {
+  def getSAMRecordFromReadName(readName: String): (Alignment, Alignment) = {
     val samToADAMConverter = new SAMRecordConverter
     val SAMTestFile = new File(getClass.getClassLoader.getResource("bqsr1.sam").getFile)
     val newSAMReader = SamReaderFactory.makeDefault().open(SAMTestFile)
@@ -254,14 +254,14 @@ class AlignmentRecordConverterSuite extends FunSuite {
 
   test("converting a fragment with no alignments should yield unaligned reads") {
     val alignments = List(
-      AlignmentRecord.newBuilder()
+      Alignment.newBuilder()
         .setSequence("ACCCACAGTA")
         .setQualityScores("**********")
         .setReadInFragment(0)
         .setReadName("testRead")
         .setReadPaired(true)
         .build(),
-      AlignmentRecord.newBuilder()
+      Alignment.newBuilder()
         .setSequence("GGGAAACCCTTT")
         .setQualityScores(";;;;;;......")
         .setReadName("testRead")
@@ -295,7 +295,7 @@ class AlignmentRecordConverterSuite extends FunSuite {
   }
 
   test("converting a fragment with alignments should restore the alignments") {
-    val alignments = List(AlignmentRecord.newBuilder()
+    val alignments = List(Alignment.newBuilder()
       .setReadMapped(true)
       .setReferenceName("1")
       .setStart(10L)
@@ -328,7 +328,7 @@ class AlignmentRecordConverterSuite extends FunSuite {
   }
 
   test("read negative strand is propagated even when not mapped") {
-    val record = AlignmentRecord.newBuilder()
+    val record = Alignment.newBuilder()
       .setReadMapped(false)
       .setReadNegativeStrand(true)
       .build()

@@ -26,7 +26,7 @@ adamContext
    ADAMContext
 """
 
-from bdgenomics.adam.rdd import AlignmentRecordDataset, \
+from bdgenomics.adam.rdd import AlignmentDataset, \
     CoverageDataset, \
     FeatureDataset, \
     FragmentDataset, \
@@ -60,7 +60,7 @@ class ADAMContext(object):
 
     def loadAlignments(self, filePath, stringency=STRICT):
         """
-        Load alignment records into an AlignmentRecordDataset.
+        Load alignments into an AlignmentDataset.
 
         Loads path names ending in:
         * .bam/.cram/.sam as BAM/CRAM/SAM format,
@@ -77,13 +77,13 @@ class ADAMContext(object):
         :param str filePath: The path to load the file from.
         :param stringency: The validation stringency to apply. Defaults to STRICT.
         :return: Returns a genomic dataset containing reads.
-        :rtype: bdgenomics.adam.rdd.AlignmentRecordDataset
+        :rtype: bdgenomics.adam.rdd.AlignmentDataset
         """
 
         adamRdd = self.__jac.loadAlignments(filePath,
                                             _toJava(stringency, self._jvm))
 
-        return AlignmentRecordDataset(adamRdd, self._sc)
+        return AlignmentDataset(adamRdd, self._sc)
 
 
     def loadIndexedBam(self,
@@ -96,17 +96,17 @@ class ADAMContext(object):
         BAM index file required.
 
         :param str pathName: The path name to load indexed BAM formatted
-        alignment records from. Globs/directories are supported.
+        alignments from. Globs/directories are supported.
         :param list<ReferenceRegion> viewRegions: List of ReferenceRegion to
         filter on.
         :param int stringency: The validation stringency to use when validating
         the BAM/CRAM/SAM format header. Defaults to ValidationStringency.STRICT.
 
-        :return Returns an AlignmentRecordDataset which wraps the RDD of alignment
-        records, sequence dictionary representing contigs the alignment records
+        :return Returns an AlignmentDataset which wraps the RDD of alignment
+        records, sequence dictionary representing contigs the alignments
         may be aligned to, and the read group dictionary for the alignment
         records if one is available.
-        :rtype: bdgenomics.adam.rdd.AlignmentRecordDataset
+        :rtype: bdgenomics.adam.rdd.AlignmentDataset
         """
 
         # translate reference regions into jvm types
@@ -115,7 +115,7 @@ class ADAMContext(object):
         adamRdd = self.__jac.loadIndexedBam(filePath,
                                             javaRrs,
                                             _toJava(stringency, self._jvm))
-        return AlignmentRecordDataset(adamRdd, self._sc)
+        return AlignmentDataset(adamRdd, self._sc)
 
 
     def loadCoverage(self, filePath,

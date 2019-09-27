@@ -24,7 +24,7 @@ import scala.collection.JavaConversions._
 
 class SAMRecordConverterSuite extends FunSuite {
 
-  test("testing the fields in an alignmentRecord obtained from a mapped samRecord conversion") {
+  test("testing the fields in an Alignment obtained from a mapped samRecord conversion") {
 
     val testRecordConverter = new SAMRecordConverter
     val testFileString = getClass.getClassLoader.getResource("reads12.sam").getFile
@@ -40,32 +40,32 @@ class SAMRecordConverterSuite extends FunSuite {
     testSAMRecord.setAttribute("OC", "100M")
     testSAMRecord.setAttribute("OP", 1)
 
-    // Convert samRecord to alignmentRecord
-    val testAlignmentRecord = testRecordConverter.convert(testSAMRecord)
+    // Convert samRecord to Alignment
+    val testAlignment = testRecordConverter.convert(testSAMRecord)
 
     // Validating Conversion
-    assert(testAlignmentRecord.getCigar === testSAMRecord.getCigarString)
-    assert(testAlignmentRecord.getDuplicateRead === testSAMRecord.getDuplicateReadFlag)
-    assert(testAlignmentRecord.getEnd.toInt === testSAMRecord.getAlignmentEnd)
-    assert(testAlignmentRecord.getMappingQuality.toInt === testSAMRecord.getMappingQuality)
-    assert(testAlignmentRecord.getStart.toInt === (testSAMRecord.getAlignmentStart - 1))
-    assert(testAlignmentRecord.getReadInFragment == 0)
-    assert(testAlignmentRecord.getFailedVendorQualityChecks === testSAMRecord.getReadFailsVendorQualityCheckFlag)
-    assert(!testAlignmentRecord.getPrimaryAlignment === testSAMRecord.getNotPrimaryAlignmentFlag)
-    assert(!testAlignmentRecord.getReadMapped === testSAMRecord.getReadUnmappedFlag)
-    assert(testAlignmentRecord.getReadName === testSAMRecord.getReadName)
-    assert(testAlignmentRecord.getReadNegativeStrand === testSAMRecord.getReadNegativeStrandFlag)
-    assert(!testAlignmentRecord.getReadPaired)
-    assert(testAlignmentRecord.getReadInFragment != 1)
-    assert(testAlignmentRecord.getSupplementaryAlignment === testSAMRecord.getSupplementaryAlignmentFlag)
-    assert(testAlignmentRecord.getOriginalQualityScores === "*****")
-    assert(testAlignmentRecord.getMismatchingPositions === "100")
-    assert(testAlignmentRecord.getOriginalCigar === "100M")
-    assert(testAlignmentRecord.getOriginalStart === 0L)
-    assert(testAlignmentRecord.getAttributes === "XS:i:0\tAS:i:75\tNM:i:0")
+    assert(testAlignment.getCigar === testSAMRecord.getCigarString)
+    assert(testAlignment.getDuplicateRead === testSAMRecord.getDuplicateReadFlag)
+    assert(testAlignment.getEnd.toInt === testSAMRecord.getAlignmentEnd)
+    assert(testAlignment.getMappingQuality.toInt === testSAMRecord.getMappingQuality)
+    assert(testAlignment.getStart.toInt === (testSAMRecord.getAlignmentStart - 1))
+    assert(testAlignment.getReadInFragment == 0)
+    assert(testAlignment.getFailedVendorQualityChecks === testSAMRecord.getReadFailsVendorQualityCheckFlag)
+    assert(!testAlignment.getPrimaryAlignment === testSAMRecord.getNotPrimaryAlignmentFlag)
+    assert(!testAlignment.getReadMapped === testSAMRecord.getReadUnmappedFlag)
+    assert(testAlignment.getReadName === testSAMRecord.getReadName)
+    assert(testAlignment.getReadNegativeStrand === testSAMRecord.getReadNegativeStrandFlag)
+    assert(!testAlignment.getReadPaired)
+    assert(testAlignment.getReadInFragment != 1)
+    assert(testAlignment.getSupplementaryAlignment === testSAMRecord.getSupplementaryAlignmentFlag)
+    assert(testAlignment.getOriginalQualityScores === "*****")
+    assert(testAlignment.getMismatchingPositions === "100")
+    assert(testAlignment.getOriginalCigar === "100M")
+    assert(testAlignment.getOriginalStart === 0L)
+    assert(testAlignment.getAttributes === "XS:i:0\tAS:i:75\tNM:i:0")
   }
 
-  test("testing the fields in an alignmentRecord obtained from an unmapped samRecord conversion") {
+  test("testing the fields in an Alignment obtained from an unmapped samRecord conversion") {
 
     val testRecordConverter = new SAMRecordConverter
     val testFileString = getClass.getClassLoader.getResource("reads12.sam").getFile
@@ -75,24 +75,24 @@ class SAMRecordConverterSuite extends FunSuite {
     val testIterator = SamReaderFactory.makeDefault().open(testFile)
     val testSAMRecord = testIterator.iterator().next()
 
-    // Convert samRecord to alignmentRecord
-    val testAlignmentRecord = testRecordConverter.convert(testSAMRecord)
+    // Convert samRecord to Alignment
+    val testAlignment = testRecordConverter.convert(testSAMRecord)
 
     // Validating Conversion
-    assert(testAlignmentRecord.getCigar === testSAMRecord.getCigarString)
-    assert(testAlignmentRecord.getDuplicateRead === testSAMRecord.getDuplicateReadFlag)
-    assert(testAlignmentRecord.getEnd.toInt === testSAMRecord.getAlignmentEnd)
-    assert(testAlignmentRecord.getMappingQuality.toInt === testSAMRecord.getMappingQuality)
-    assert(testAlignmentRecord.getStart.toInt === (testSAMRecord.getAlignmentStart - 1))
-    assert(testAlignmentRecord.getReadInFragment == 0)
-    assert(testAlignmentRecord.getFailedVendorQualityChecks === testSAMRecord.getReadFailsVendorQualityCheckFlag)
-    assert(!testAlignmentRecord.getPrimaryAlignment === testSAMRecord.getNotPrimaryAlignmentFlag)
-    assert(!testAlignmentRecord.getReadMapped === testSAMRecord.getReadUnmappedFlag)
-    assert(testAlignmentRecord.getReadName === testSAMRecord.getReadName)
-    assert(testAlignmentRecord.getReadNegativeStrand === testSAMRecord.getReadNegativeStrandFlag)
-    assert(!testAlignmentRecord.getReadPaired)
-    assert(testAlignmentRecord.getReadInFragment != 1)
-    assert(testAlignmentRecord.getSupplementaryAlignment === testSAMRecord.getSupplementaryAlignmentFlag)
+    assert(testAlignment.getCigar === testSAMRecord.getCigarString)
+    assert(testAlignment.getDuplicateRead === testSAMRecord.getDuplicateReadFlag)
+    assert(testAlignment.getEnd.toInt === testSAMRecord.getAlignmentEnd)
+    assert(testAlignment.getMappingQuality.toInt === testSAMRecord.getMappingQuality)
+    assert(testAlignment.getStart.toInt === (testSAMRecord.getAlignmentStart - 1))
+    assert(testAlignment.getReadInFragment == 0)
+    assert(testAlignment.getFailedVendorQualityChecks === testSAMRecord.getReadFailsVendorQualityCheckFlag)
+    assert(!testAlignment.getPrimaryAlignment === testSAMRecord.getNotPrimaryAlignmentFlag)
+    assert(!testAlignment.getReadMapped === testSAMRecord.getReadUnmappedFlag)
+    assert(testAlignment.getReadName === testSAMRecord.getReadName)
+    assert(testAlignment.getReadNegativeStrand === testSAMRecord.getReadNegativeStrandFlag)
+    assert(!testAlignment.getReadPaired)
+    assert(testAlignment.getReadInFragment != 1)
+    assert(testAlignment.getSupplementaryAlignment === testSAMRecord.getSupplementaryAlignmentFlag)
   }
 
   test("'*' quality gets nulled out") {
@@ -112,10 +112,10 @@ class SAMRecordConverterSuite extends FunSuite {
     newSAMRecord.setBaseQualityString("*")
 
     // Conversion
-    val newAlignmentRecord = newRecordConverter.convert(newSAMRecord)
+    val newAlignment = newRecordConverter.convert(newSAMRecord)
 
     // Validating Conversion
-    assert(newAlignmentRecord.getQualityScores === null)
+    assert(newAlignment.getQualityScores === null)
   }
 
   test("don't keep denormalized fields") {

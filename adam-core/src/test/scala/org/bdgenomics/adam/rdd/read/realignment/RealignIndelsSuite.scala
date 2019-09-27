@@ -32,26 +32,26 @@ import org.bdgenomics.adam.models.{
   SequenceRecord
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.read.AlignmentRecordDataset
+import org.bdgenomics.adam.rdd.read.AlignmentDataset
 import org.bdgenomics.adam.rdd.variant.VariantDataset
-import org.bdgenomics.adam.rich.RichAlignmentRecord
+import org.bdgenomics.adam.rich.RichAlignment
 import org.bdgenomics.adam.util.{ ADAMFunSuite, ReferenceFile }
-import org.bdgenomics.formats.avro.{ AlignmentRecord, Variant, Reference }
+import org.bdgenomics.formats.avro.{ Alignment, Variant, Reference }
 
 class RealignIndelsSuite extends ADAMFunSuite {
 
-  def artificialReadsRdd: AlignmentRecordDataset = {
+  def artificialReadsRdd: AlignmentDataset = {
     val path = testFile("artificial.sam")
     sc.loadAlignments(path)
   }
 
-  def artificialReads: RDD[AlignmentRecord] = {
+  def artificialReads: RDD[Alignment] = {
     artificialReadsRdd.rdd
   }
 
   def artificialRealignedReads(cg: ConsensusGenerator = ConsensusGenerator.fromReads,
                                maxCoverage: Int = 3000,
-                               optRefFile: Option[ReferenceFile] = None): RDD[AlignmentRecord] = {
+                               optRefFile: Option[ReferenceFile] = None): RDD[Alignment] = {
     artificialReadsRdd
       .realignIndels(consensusModel = cg,
         maxReadsPerTarget = maxCoverage,
@@ -60,13 +60,13 @@ class RealignIndelsSuite extends ADAMFunSuite {
       .rdd
   }
 
-  def gatkArtificialRealignedReads: RDD[AlignmentRecord] = {
+  def gatkArtificialRealignedReads: RDD[Alignment] = {
     val path = testFile("artificial.realigned.sam")
     sc.loadAlignments(path).rdd
   }
 
-  def makeRead(start: Long, end: Long): RichAlignmentRecord = {
-    RichAlignmentRecord(AlignmentRecord.newBuilder()
+  def makeRead(start: Long, end: Long): RichAlignment = {
+    RichAlignment(Alignment.newBuilder()
       .setReferenceName("ctg")
       .setStart(start)
       .setEnd(end)
@@ -98,9 +98,9 @@ class RealignIndelsSuite extends ADAMFunSuite {
   }
 
   sparkTest("checking mapping to targets for artificial reads") {
-    val targets = RealignmentTargetFinder(artificialReads.map(RichAlignmentRecord(_))).toArray
+    val targets = RealignmentTargetFinder(artificialReads.map(RichAlignment(_))).toArray
     assert(targets.size === 1)
-    val rr = artificialReads.map(RichAlignmentRecord(_))
+    val rr = artificialReads.map(RichAlignment(_))
     val readsMappedToTarget = RealignIndels.mapTargets(rr, targets).map(kv => {
       val (t, r) = kv
 
@@ -110,7 +110,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
     assert(readsMappedToTarget.count(_._1.isDefined) === 1)
 
     assert(readsMappedToTarget.forall {
-      case (target: Option[(Int, IndelRealignmentTarget)], reads: Seq[AlignmentRecord]) => reads.forall {
+      case (target: Option[(Int, IndelRealignmentTarget)], reads: Seq[Alignment]) => reads.forall {
         read =>
           {
             if (read.getStart <= 25) {
@@ -159,9 +159,9 @@ class RealignIndelsSuite extends ADAMFunSuite {
       assert(readReference._1 === refStr.substring(startIndex, stopIndex))
     }
 
-    val targets = RealignmentTargetFinder(artificialReads.map(RichAlignmentRecord(_))).toArray
-    val rr = artificialReads.map(RichAlignmentRecord(_))
-    val readsMappedToTarget: Array[((Int, IndelRealignmentTarget), Iterable[AlignmentRecord])] = RealignIndels.mapTargets(rr, targets)
+    val targets = RealignmentTargetFinder(artificialReads.map(RichAlignment(_))).toArray
+    val rr = artificialReads.map(RichAlignment(_))
+    val readsMappedToTarget: Array[((Int, IndelRealignmentTarget), Iterable[Alignment])] = RealignIndels.mapTargets(rr, targets)
       .filter(_._1.isDefined)
       .map(kv => {
         val (t, r) = kv
@@ -172,7 +172,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
     val readReference = readsMappedToTarget.map {
       case ((_, target), reads) =>
         if (!target.isEmpty) {
-          val referenceFromReads: (String, Long, Long) = RealignIndels.getReferenceFromReads(reads.map(r => new RichAlignmentRecord(r)).toSeq)
+          val referenceFromReads: (String, Long, Long) = RealignIndels.getReferenceFromReads(reads.map(r => new RichAlignment(r)).toSeq)
           assert(referenceFromReads._2 == -1 || referenceFromReads._1.length > 0)
           checkReference(referenceFromReads)
         }
@@ -363,7 +363,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
     val reference = Reference.newBuilder()
       .setName("chr1")
       .build()
-    val reads = Seq(AlignmentRecord.newBuilder()
+    val reads = Seq(Alignment.newBuilder()
       .setReferenceName(reference.getName)
       .setStart(1L)
       .setEnd(4L)
@@ -372,7 +372,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
       .setCigar("3M")
       .setReadMapped(true)
       .setMismatchingPositions("3")
-      .build(), AlignmentRecord.newBuilder()
+      .build(), Alignment.newBuilder()
       .setReferenceName(reference.getName)
       .setStart(9L)
       .setEnd(12L)
@@ -381,7 +381,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
       .setCigar("3M")
       .setReadMapped(true)
       .setMismatchingPositions("3")
-      .build()).map(RichAlignmentRecord(_))
+      .build()).map(RichAlignment(_))
       .toIterable
     val ri = new RealignIndels(sc)
 
@@ -394,7 +394,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
     val reference = Reference.newBuilder()
       .setName("chr1")
       .build()
-    val reads = sc.parallelize(Seq(AlignmentRecord.newBuilder()
+    val reads = sc.parallelize(Seq(Alignment.newBuilder()
       .setReferenceName(reference.getName)
       .setStart(1L)
       .setEnd(4L)
@@ -403,7 +403,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
       .setCigar("3M")
       .setReadMapped(true)
       .setMismatchingPositions("3")
-      .build(), AlignmentRecord.newBuilder()
+      .build(), Alignment.newBuilder()
       .setReferenceName(reference.getName)
       .setStart(10L)
       .setEnd(13L)
@@ -412,7 +412,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
       .setCigar("3M")
       .setReadMapped(true)
       .setMismatchingPositions("3")
-      .build(), AlignmentRecord.newBuilder()
+      .build(), Alignment.newBuilder()
       .setReferenceName(reference.getName)
       .setStart(4L)
       .setEnd(7L)
@@ -421,7 +421,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
       .setCigar("3M")
       .setReadMapped(true)
       .setMismatchingPositions("3")
-      .build(), AlignmentRecord.newBuilder()
+      .build(), Alignment.newBuilder()
       .setReferenceName(reference.getName)
       .setStart(7L)
       .setEnd(10L)
@@ -461,7 +461,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
     // st:      TT   CCACA
     // sc:     agA   GGTC
     // ec:       A   GGTCt
-    val insRead = AlignmentRecord.newBuilder
+    val insRead = Alignment.newBuilder
       .setReferenceName("1")
       .setStart(10L)
       .setEnd(15L)
@@ -472,7 +472,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
       .setReadMapped(true)
       .setMappingQuality(40)
       .build
-    val extRead = AlignmentRecord.newBuilder
+    val extRead = Alignment.newBuilder
       .setReferenceName("1")
       .setStart(8L)
       .setEnd(16L)
@@ -483,7 +483,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
       .setReadMapped(true)
       .setMappingQuality(40)
       .build
-    val ovlRead = AlignmentRecord.newBuilder
+    val ovlRead = Alignment.newBuilder
       .setReferenceName("1")
       .setStart(9L)
       .setEnd(18L)
@@ -494,7 +494,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
       .setReadMapped(true)
       .setMappingQuality(41)
       .build
-    val ovsRead = AlignmentRecord.newBuilder
+    val ovsRead = Alignment.newBuilder
       .setReferenceName("1")
       .setStart(10L)
       .setEnd(18L)
@@ -505,7 +505,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
       .setReadMapped(true)
       .setMappingQuality(42)
       .build
-    val stRead = AlignmentRecord.newBuilder
+    val stRead = Alignment.newBuilder
       .setReferenceName("1")
       .setStart(12L)
       .setEnd(19L)
@@ -516,7 +516,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
       .setReadMapped(true)
       .setMappingQuality(43)
       .build
-    val scRead = AlignmentRecord.newBuilder
+    val scRead = Alignment.newBuilder
       .setReadName("sc")
       .setReferenceName("1")
       .setStart(13L)
@@ -528,7 +528,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
       .setReadMapped(true)
       .setMappingQuality(44)
       .build
-    val ecRead = AlignmentRecord.newBuilder
+    val ecRead = Alignment.newBuilder
       .setReferenceName("1")
       .setStart(13L)
       .setEnd(18L)
@@ -541,7 +541,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
       .setMappingQuality(45)
       .build
 
-    val rdd = AlignmentRecordDataset(sc.parallelize(Seq(insRead,
+    val rdd = AlignmentDataset(sc.parallelize(Seq(insRead,
       extRead,
       ovlRead,
       ovsRead,
@@ -595,7 +595,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
   }
 
   test("extract seq/qual from a read with no clipped bases") {
-    val read = new RichAlignmentRecord(AlignmentRecord.newBuilder
+    val read = new RichAlignment(Alignment.newBuilder
       .setSequence("ACTCG")
       .setQualityScores(Seq(20, 30, 40, 50, 60).map(i => (i + 33).toChar).mkString)
       .setCigar("5M")
@@ -613,7 +613,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
   }
 
   test("extract seq/qual from a read with clipped bases at start") {
-    val read = new RichAlignmentRecord(AlignmentRecord.newBuilder
+    val read = new RichAlignment(Alignment.newBuilder
       .setSequence("ACTCG")
       .setQualityScores(Seq(20, 30, 40, 50, 60).map(i => (i + 33).toChar).mkString)
       .setCigar("2H1S4M")
@@ -630,7 +630,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
   }
 
   test("extract seq/qual from a read with clipped bases at end") {
-    val read = new RichAlignmentRecord(AlignmentRecord.newBuilder
+    val read = new RichAlignment(Alignment.newBuilder
       .setSequence("ACTCG")
       .setQualityScores(Seq(20, 30, 40, 50, 60).map(i => (i + 33).toChar).mkString)
       .setCigar("3M2S")
@@ -646,7 +646,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
   }
 
   test("if unclip is selected, don't drop base when extracting from a read with clipped bases") {
-    val read = new RichAlignmentRecord(AlignmentRecord.newBuilder
+    val read = new RichAlignment(Alignment.newBuilder
       .setSequence("ACTCG")
       .setQualityScores(Seq(20, 30, 40, 50, 60).map(i => (i + 33).toChar).mkString)
       .setCigar("1S2M2S")

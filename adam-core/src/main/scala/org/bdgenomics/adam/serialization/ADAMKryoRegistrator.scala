@@ -197,8 +197,8 @@ class ADAMKryoRegistrator extends KryoRegistrator with Logging {
     kryo.register(classOf[org.bdgenomics.adam.rdd.GenomeBins])
 
     // IntervalArray registrations for org.bdgenomics.adam.rdd
-    kryo.register(classOf[org.bdgenomics.adam.rdd.read.AlignmentRecordArray],
-      new org.bdgenomics.adam.rdd.read.AlignmentRecordArraySerializer)
+    kryo.register(classOf[org.bdgenomics.adam.rdd.read.AlignmentArray],
+      new org.bdgenomics.adam.rdd.read.AlignmentArraySerializer)
     kryo.register(classOf[org.bdgenomics.adam.rdd.feature.CoverageArray],
       new org.bdgenomics.adam.rdd.feature.CoverageArraySerializer(kryo))
     kryo.register(classOf[org.bdgenomics.adam.rdd.feature.FeatureArray],
@@ -242,7 +242,7 @@ class ADAMKryoRegistrator extends KryoRegistrator with Logging {
     kryo.register(classOf[org.bdgenomics.adam.rdd.read.recalibration.Observation])
 
     // org.bdgenomics.adam.rich
-    kryo.register(classOf[org.bdgenomics.adam.rich.RichAlignmentRecord])
+    kryo.register(classOf[org.bdgenomics.adam.rich.RichAlignment])
     kryo.register(classOf[org.bdgenomics.adam.rich.RichVariant])
 
     // org.bdgenomics.adam.util
@@ -252,8 +252,8 @@ class ADAMKryoRegistrator extends KryoRegistrator with Logging {
       new org.bdgenomics.adam.util.TwoBitFileSerializer)
 
     // org.bdgenomics.formats.avro
-    kryo.register(classOf[org.bdgenomics.formats.avro.AlignmentRecord],
-      new AvroSerializer[org.bdgenomics.formats.avro.AlignmentRecord])
+    kryo.register(classOf[org.bdgenomics.formats.avro.Alignment],
+      new AvroSerializer[org.bdgenomics.formats.avro.Alignment])
     kryo.register(classOf[org.bdgenomics.formats.avro.Dbxref],
       new AvroSerializer[org.bdgenomics.formats.avro.Dbxref])
     kryo.register(classOf[org.bdgenomics.formats.avro.Feature],
@@ -328,7 +328,7 @@ class ADAMKryoRegistrator extends KryoRegistrator with Logging {
     kryo.register(classOf[scala.Array[org.apache.spark.sql.catalyst.InternalRow]])
     kryo.register(classOf[scala.Array[org.apache.spark.sql.types.StructField]])
     kryo.register(classOf[scala.Array[org.apache.spark.sql.types.StructType]])
-    kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.AlignmentRecord]])
+    kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.Alignment]])
     kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.Dbxref]])
     kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.Feature]])
     kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.Fragment]])
@@ -353,7 +353,7 @@ class ADAMKryoRegistrator extends KryoRegistrator with Logging {
     kryo.register(classOf[scala.Array[org.bdgenomics.adam.models.SequenceRecord]])
     kryo.register(classOf[scala.Array[org.bdgenomics.adam.models.VariantContext]])
     kryo.register(classOf[scala.Array[org.bdgenomics.adam.rdd.read.recalibration.CovariateKey]])
-    kryo.register(classOf[scala.Array[org.bdgenomics.adam.rich.RichAlignmentRecord]])
+    kryo.register(classOf[scala.Array[org.bdgenomics.adam.rich.RichAlignment]])
     kryo.register(classOf[scala.Array[scala.collection.Seq[_]]])
     kryo.register(classOf[scala.Array[Int]])
     kryo.register(classOf[scala.Array[Long]])

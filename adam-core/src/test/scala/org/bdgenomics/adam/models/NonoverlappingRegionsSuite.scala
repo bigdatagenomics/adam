@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.models
 
-import org.bdgenomics.formats.avro.{ AlignmentRecord, Reference }
+import org.bdgenomics.formats.avro.{ Alignment, Reference }
 import org.scalatest.FunSuite
 
 class NonoverlappingRegionsSuite extends FunSuite {
@@ -98,7 +98,7 @@ class NonoverlappingRegionsSuite extends FunSuite {
       .setSourceUri("test://chrom1")
       .build
 
-    val built = AlignmentRecord.newBuilder()
+    val built = Alignment.newBuilder()
       .setReferenceName(reference.getName)
       .setStart(1L)
       .setReadMapped(true)
@@ -107,8 +107,8 @@ class NonoverlappingRegionsSuite extends FunSuite {
       .build()
 
     val record1 = built
-    val record2 = AlignmentRecord.newBuilder(built).setStart(3L).setEnd(4L).build()
-    val baseRecord = AlignmentRecord.newBuilder(built).setCigar("4M").setEnd(5L).build()
+    val record2 = Alignment.newBuilder(built).setStart(3L).setEnd(4L).build()
+    val baseRecord = Alignment.newBuilder(built).setCigar("4M").setEnd(5L).build()
 
     val baseMapping = new NonoverlappingRegions(Seq(ReferenceRegion.unstranded(baseRecord)))
     val regions1 = baseMapping.findOverlappingRegions(ReferenceRegion.unstranded(record1))

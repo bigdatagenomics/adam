@@ -33,7 +33,7 @@ import org.bdgenomics.adam.rdd.{
 import org.bdgenomics.adam.serialization.AvroSerializer
 import org.bdgenomics.adam.sql.{ Read => ReadProduct }
 import org.bdgenomics.formats.avro.{
-  AlignmentRecord,
+  Alignment,
   Read,
   Sequence,
   Slice,
@@ -224,17 +224,17 @@ sealed abstract class ReadDataset extends AvroGenomicDataset[Read, ReadProduct, 
   /**
    * Convert this genomic dataset of reads into alignments.
    *
-   * @return Returns a new AlignmentRecordDataset converted from this genomic dataset of alignments.
+   * @return Returns a new AlignmentDataset converted from this genomic dataset of alignments.
    */
-  def toAlignments: AlignmentRecordDataset = {
-    def toAlignmentRecord(read: Read): AlignmentRecord = {
-      AlignmentRecord.newBuilder()
+  def toAlignments: AlignmentDataset = {
+    def toAlignment(read: Read): Alignment = {
+      Alignment.newBuilder()
         .setReadName(read.getName)
         .setSequence(read.getSequence)
         .setQualityScores(read.getQualityScores)
         .build()
     }
-    AlignmentRecordDataset(rdd.map(toAlignmentRecord),
+    AlignmentDataset(rdd.map(toAlignment),
       sequences,
       ReadGroupDictionary.empty,
       processingSteps = Seq.empty)

@@ -29,7 +29,7 @@ import org.bdgenomics.adam.models.{
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.fragment.FragmentDataset
-import org.bdgenomics.adam.rdd.read.AlignmentRecordDataset
+import org.bdgenomics.adam.rdd.read.AlignmentDataset
 import org.bdgenomics.adam.rdd.sequence.SliceDataset
 import org.bdgenomics.adam.rdd.variant.{
   GenotypeDataset,
@@ -37,7 +37,7 @@ import org.bdgenomics.adam.rdd.variant.{
   VariantContextDataset
 }
 import org.bdgenomics.adam.sql.{
-  AlignmentRecord => AlignmentRecordProduct,
+  Alignment => AlignmentProduct,
   Feature => FeatureProduct,
   Fragment => FragmentProduct,
   Genotype => GenotypeProduct,
@@ -78,8 +78,8 @@ object FeatureDatasetSuite extends Serializable {
       .build
   }
 
-  def readFn(f: Feature): AlignmentRecord = {
-    AlignmentRecord.newBuilder
+  def readFn(f: Feature): Alignment = {
+    Alignment.newBuilder
       .setReferenceName(f.getReferenceName)
       .setStart(f.getStart)
       .setEnd(f.getEnd)
@@ -1095,14 +1095,14 @@ class FeatureDatasetSuite extends ADAMFunSuite {
   sparkTest("transform features to read genomic dataset") {
     val features = sc.loadFeatures(testFile("sample_coverage.bed"))
 
-    def checkSave(reads: AlignmentRecordDataset) {
+    def checkSave(reads: AlignmentDataset) {
       val tempPath = tmpLocation(".adam")
       reads.saveAsParquet(tempPath)
 
       assert(sc.loadAlignments(tempPath).rdd.count === 3)
     }
 
-    val reads: AlignmentRecordDataset = features.transmute[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordDataset](
+    val reads: AlignmentDataset = features.transmute[Alignment, AlignmentProduct, AlignmentDataset](
       (rdd: RDD[Feature]) => {
         rdd.map(FeatureDatasetSuite.readFn)
       })
@@ -1112,10 +1112,10 @@ class FeatureDatasetSuite extends ADAMFunSuite {
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
 
-    val readsDs: AlignmentRecordDataset = features.transmuteDataset[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordDataset](
+    val readsDs: AlignmentDataset = features.transmuteDataset[Alignment, AlignmentProduct, AlignmentDataset](
       (ds: Dataset[FeatureProduct]) => {
         ds.map(r => {
-          AlignmentRecordProduct.fromAvro(
+          AlignmentProduct.fromAvro(
             FeatureDatasetSuite.readFn(r.toAvro))
         })
       })
