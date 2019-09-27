@@ -20,12 +20,12 @@ define help
 
 Supported targets: prepare, develop, sdist, clean, test, and pypi.
 
-Please note that all build targets require a virtualenv to be active. 
+Please note that all build targets require a virtualenv to be active.
 
 The 'prepare' target installs ADAM's build requirements into the current virtualenv.
 
-The 'develop' target creates an editable install of ADAM and its runtime requirements in the 
-current virtualenv. The install is called 'editable' because changes to the source code 
+The 'develop' target creates an editable install of ADAM and its runtime requirements in the
+current virtualenv. The install is called 'editable' because changes to the source code
 immediately affect the virtualenv. This target also builds a .egg.
 
 The 'clean' target undoes the effect of 'develop'.
@@ -86,15 +86,12 @@ test: check_build_reqs
 
 pypi: check_clean_working_copy
 	set -x \
-	&& tag_build=`$(python) -c 'pass;\
-	    from version import version as v;\
-	    from pkg_resources import parse_version as pv;\
-	    import os;\
-	    print "--tag-build=.dev" + os.getenv("BUILD_NUMBER") if pv(v).is_prerelease else ""'` \
-	&& $(python) setup.py egg_info $$tag_build sdist bdist_egg upload
+	&& $(python) setup.py egg_info sdist bdist_egg \
+	&& twine check dist/* \
+	&& twine upload dist/*
 clean_pypi:
 	- rm -rf build/
-
+	- rm -rf dist/
 
 clean: clean_develop clean_pypi
 
