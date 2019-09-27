@@ -30,7 +30,7 @@ import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
 object TransformFragments extends BDGCommandCompanion {
   val commandName = "transformFragments"
-  val commandDescription = "Convert alignment records into fragment records."
+  val commandDescription = "Convert alignments into fragment records."
 
   def apply(cmdLine: Array[String]) = {
     new TransformFragments(Args4j[TransformFragmentsArgs](cmdLine))

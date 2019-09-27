@@ -26,7 +26,7 @@ import org.bdgenomics.adam.rdd.{
 }
 import org.bdgenomics.adam.rdd.feature.{ CoverageDataset, FeatureDataset }
 import org.bdgenomics.adam.rdd.fragment.FragmentDataset
-import org.bdgenomics.adam.rdd.read.{ AlignmentRecordDataset, ReadDataset }
+import org.bdgenomics.adam.rdd.read.{ AlignmentDataset, ReadDataset }
 import org.bdgenomics.adam.rdd.sequence.{ SequenceDataset, SliceDataset }
 import org.bdgenomics.adam.rdd.variant.{
   VariantDataset,
@@ -34,7 +34,7 @@ import org.bdgenomics.adam.rdd.variant.{
   VariantContextDataset
 }
 import org.bdgenomics.adam.sql.{
-  AlignmentRecord => AlignmentRecordProduct,
+  Alignment => AlignmentProduct,
   Feature => FeatureProduct,
   Fragment => FragmentProduct,
   Genotype => GenotypeProduct,
@@ -62,9 +62,9 @@ trait ToFragmentDatasetConversion[T, U <: Product, V <: GenomicDataset[T, U, V]]
   val yTag: TypeTag[FragmentProduct] = typeTag[FragmentProduct]
 }
 
-trait ToAlignmentRecordDatasetConversion[T, U <: Product, V <: GenomicDataset[T, U, V]] extends GenomicDatasetConversion[T, U, V, AlignmentRecord, AlignmentRecordProduct, AlignmentRecordDataset] {
+trait ToAlignmentDatasetConversion[T, U <: Product, V <: GenomicDataset[T, U, V]] extends GenomicDatasetConversion[T, U, V, Alignment, AlignmentProduct, AlignmentDataset] {
 
-  val yTag: TypeTag[AlignmentRecordProduct] = typeTag[AlignmentRecordProduct]
+  val yTag: TypeTag[AlignmentProduct] = typeTag[AlignmentProduct]
 }
 
 trait ToGenotypeDatasetConversion[T, U <: Product, V <: GenomicDataset[T, U, V]] extends GenomicDatasetConversion[T, U, V, Genotype, GenotypeProduct, GenotypeDataset] {
@@ -109,10 +109,10 @@ final class CoverageToFragmentsDatasetConverter extends ToFragmentDatasetConvers
   }
 }
 
-final class CoverageToAlignmentRecordsDatasetConverter extends ToAlignmentRecordDatasetConversion[Coverage, Coverage, CoverageDataset] {
+final class CoverageToAlignmentsDatasetConverter extends ToAlignmentDatasetConversion[Coverage, Coverage, CoverageDataset] {
 
-  def call(v1: CoverageDataset, v2: Dataset[AlignmentRecordProduct]): AlignmentRecordDataset = {
-    ADAMContext.coverageToAlignmentRecordsDatasetConversionFn(v1, v2)
+  def call(v1: CoverageDataset, v2: Dataset[AlignmentProduct]): AlignmentDataset = {
+    ADAMContext.coverageToAlignmentsDatasetConversionFn(v1, v2)
   }
 }
 
@@ -164,10 +164,10 @@ final class FeaturesToFragmentsDatasetConverter extends ToFragmentDatasetConvers
   }
 }
 
-final class FeaturesToAlignmentRecordsDatasetConverter extends ToAlignmentRecordDatasetConversion[Feature, FeatureProduct, FeatureDataset] {
+final class FeaturesToAlignmentsDatasetConverter extends ToAlignmentDatasetConversion[Feature, FeatureProduct, FeatureDataset] {
 
-  def call(v1: FeatureDataset, v2: Dataset[AlignmentRecordProduct]): AlignmentRecordDataset = {
-    ADAMContext.featuresToAlignmentRecordsDatasetConversionFn(v1, v2)
+  def call(v1: FeatureDataset, v2: Dataset[AlignmentProduct]): AlignmentDataset = {
+    ADAMContext.featuresToAlignmentsDatasetConversionFn(v1, v2)
   }
 }
 
@@ -219,10 +219,10 @@ final class FragmentsToFeaturesDatasetConverter extends ToFeatureDatasetConversi
   }
 }
 
-final class FragmentsToAlignmentRecordsDatasetConverter extends ToAlignmentRecordDatasetConversion[Fragment, FragmentProduct, FragmentDataset] {
+final class FragmentsToAlignmentsDatasetConverter extends ToAlignmentDatasetConversion[Fragment, FragmentProduct, FragmentDataset] {
 
-  def call(v1: FragmentDataset, v2: Dataset[AlignmentRecordProduct]): AlignmentRecordDataset = {
-    ADAMContext.fragmentsToAlignmentRecordsDatasetConversionFn(v1, v2)
+  def call(v1: FragmentDataset, v2: Dataset[AlignmentProduct]): AlignmentDataset = {
+    ADAMContext.fragmentsToAlignmentsDatasetConversionFn(v1, v2)
   }
 }
 
@@ -260,57 +260,57 @@ final class FragmentsToVariantsDatasetConverter extends ToVariantDatasetConversi
   }
 }
 
-final class AlignmentRecordsToCoverageDatasetConverter extends ToCoverageDatasetConversion[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordDataset] {
-  def call(v1: AlignmentRecordDataset, v2: Dataset[Coverage]): CoverageDataset = {
-    ADAMContext.alignmentRecordsToCoverageDatasetConversionFn(v1, v2)
+final class AlignmentsToCoverageDatasetConverter extends ToCoverageDatasetConversion[Alignment, AlignmentProduct, AlignmentDataset] {
+  def call(v1: AlignmentDataset, v2: Dataset[Coverage]): CoverageDataset = {
+    ADAMContext.AlignmentsToCoverageDatasetConversionFn(v1, v2)
   }
 }
 
-final class AlignmentRecordsToFeaturesDatasetConverter extends ToFeatureDatasetConversion[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordDataset] {
+final class AlignmentsToFeaturesDatasetConverter extends ToFeatureDatasetConversion[Alignment, AlignmentProduct, AlignmentDataset] {
 
-  def call(v1: AlignmentRecordDataset, v2: Dataset[FeatureProduct]): FeatureDataset = {
-    ADAMContext.alignmentRecordsToFeaturesDatasetConversionFn(v1, v2)
+  def call(v1: AlignmentDataset, v2: Dataset[FeatureProduct]): FeatureDataset = {
+    ADAMContext.AlignmentsToFeaturesDatasetConversionFn(v1, v2)
   }
 }
 
-final class AlignmentRecordsToFragmentsDatasetConverter extends ToFragmentDatasetConversion[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordDataset] {
+final class AlignmentsToFragmentsDatasetConverter extends ToFragmentDatasetConversion[Alignment, AlignmentProduct, AlignmentDataset] {
 
-  def call(v1: AlignmentRecordDataset, v2: Dataset[FragmentProduct]): FragmentDataset = {
-    ADAMContext.alignmentRecordsToFragmentsDatasetConversionFn(v1, v2)
+  def call(v1: AlignmentDataset, v2: Dataset[FragmentProduct]): FragmentDataset = {
+    ADAMContext.AlignmentsToFragmentsDatasetConversionFn(v1, v2)
   }
 }
 
-final class AlignmentRecordsToGenotypesDatasetConverter extends ToGenotypeDatasetConversion[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordDataset] {
+final class AlignmentsToGenotypesDatasetConverter extends ToGenotypeDatasetConversion[Alignment, AlignmentProduct, AlignmentDataset] {
 
-  def call(v1: AlignmentRecordDataset, v2: Dataset[GenotypeProduct]): GenotypeDataset = {
-    ADAMContext.alignmentRecordsToGenotypesDatasetConversionFn(v1, v2)
+  def call(v1: AlignmentDataset, v2: Dataset[GenotypeProduct]): GenotypeDataset = {
+    ADAMContext.AlignmentsToGenotypesDatasetConversionFn(v1, v2)
   }
 }
 
-final class AlignmentRecordsToReadsDatasetConverter extends ToReadDatasetConversion[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordDataset] {
+final class AlignmentsToReadsDatasetConverter extends ToReadDatasetConversion[Alignment, AlignmentProduct, AlignmentDataset] {
 
-  def call(v1: AlignmentRecordDataset, v2: Dataset[ReadProduct]): ReadDataset = {
-    ADAMContext.alignmentRecordsToReadsDatasetConversionFn(v1, v2)
+  def call(v1: AlignmentDataset, v2: Dataset[ReadProduct]): ReadDataset = {
+    ADAMContext.AlignmentsToReadsDatasetConversionFn(v1, v2)
   }
 }
 
-final class AlignmentRecordsToSequencesDatasetConverter extends ToSequenceDatasetConversion[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordDataset] {
+final class AlignmentsToSequencesDatasetConverter extends ToSequenceDatasetConversion[Alignment, AlignmentProduct, AlignmentDataset] {
 
-  def call(v1: AlignmentRecordDataset, v2: Dataset[SequenceProduct]): SequenceDataset = {
-    ADAMContext.alignmentRecordsToSequencesDatasetConversionFn(v1, v2)
+  def call(v1: AlignmentDataset, v2: Dataset[SequenceProduct]): SequenceDataset = {
+    ADAMContext.AlignmentsToSequencesDatasetConversionFn(v1, v2)
   }
 }
 
-final class AlignmentRecordsToSlicesDatasetConverter extends ToSliceDatasetConversion[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordDataset] {
+final class AlignmentsToSlicesDatasetConverter extends ToSliceDatasetConversion[Alignment, AlignmentProduct, AlignmentDataset] {
 
-  def call(v1: AlignmentRecordDataset, v2: Dataset[SliceProduct]): SliceDataset = {
-    ADAMContext.alignmentRecordsToSlicesDatasetConversionFn(v1, v2)
+  def call(v1: AlignmentDataset, v2: Dataset[SliceProduct]): SliceDataset = {
+    ADAMContext.AlignmentsToSlicesDatasetConversionFn(v1, v2)
   }
 }
 
-final class AlignmentRecordsToVariantsDatasetConverter extends ToVariantDatasetConversion[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordDataset] {
-  def call(v1: AlignmentRecordDataset, v2: Dataset[VariantProduct]): VariantDataset = {
-    ADAMContext.alignmentRecordsToVariantsDatasetConversionFn(v1, v2)
+final class AlignmentsToVariantsDatasetConverter extends ToVariantDatasetConversion[Alignment, AlignmentProduct, AlignmentDataset] {
+  def call(v1: AlignmentDataset, v2: Dataset[VariantProduct]): VariantDataset = {
+    ADAMContext.AlignmentsToVariantsDatasetConversionFn(v1, v2)
   }
 }
 
@@ -334,10 +334,10 @@ final class GenotypesToFragmentsDatasetConverter extends ToFragmentDatasetConver
   }
 }
 
-final class GenotypesToAlignmentRecordsDatasetConverter extends ToAlignmentRecordDatasetConversion[Genotype, GenotypeProduct, GenotypeDataset] {
+final class GenotypesToAlignmentsDatasetConverter extends ToAlignmentDatasetConversion[Genotype, GenotypeProduct, GenotypeDataset] {
 
-  def call(v1: GenotypeDataset, v2: Dataset[AlignmentRecordProduct]): AlignmentRecordDataset = {
-    ADAMContext.genotypesToAlignmentRecordsDatasetConversionFn(v1, v2)
+  def call(v1: GenotypeDataset, v2: Dataset[AlignmentProduct]): AlignmentDataset = {
+    ADAMContext.genotypesToAlignmentsDatasetConversionFn(v1, v2)
   }
 }
 
@@ -390,10 +390,10 @@ final class ReadsToFragmentsDatasetConverter extends ToFragmentDatasetConversion
   }
 }
 
-final class ReadsToAlignmentRecordsDatasetConverter extends ToAlignmentRecordDatasetConversion[Read, ReadProduct, ReadDataset] {
+final class ReadsToAlignmentsDatasetConverter extends ToAlignmentDatasetConversion[Read, ReadProduct, ReadDataset] {
 
-  def call(v1: ReadDataset, v2: Dataset[AlignmentRecordProduct]): AlignmentRecordDataset = {
-    ADAMContext.readsToAlignmentRecordsDatasetConversionFn(v1, v2)
+  def call(v1: ReadDataset, v2: Dataset[AlignmentProduct]): AlignmentDataset = {
+    ADAMContext.readsToAlignmentsDatasetConversionFn(v1, v2)
   }
 }
 
@@ -446,10 +446,10 @@ final class SequencesToFragmentsDatasetConverter extends ToFragmentDatasetConver
   }
 }
 
-final class SequencesToAlignmentRecordsDatasetConverter extends ToAlignmentRecordDatasetConversion[Sequence, SequenceProduct, SequenceDataset] {
+final class SequencesToAlignmentsDatasetConverter extends ToAlignmentDatasetConversion[Sequence, SequenceProduct, SequenceDataset] {
 
-  def call(v1: SequenceDataset, v2: Dataset[AlignmentRecordProduct]): AlignmentRecordDataset = {
-    ADAMContext.sequencesToAlignmentRecordsDatasetConversionFn(v1, v2)
+  def call(v1: SequenceDataset, v2: Dataset[AlignmentProduct]): AlignmentDataset = {
+    ADAMContext.sequencesToAlignmentsDatasetConversionFn(v1, v2)
   }
 }
 
@@ -502,10 +502,10 @@ final class SlicesToFragmentsDatasetConverter extends ToFragmentDatasetConversio
   }
 }
 
-final class SlicesToAlignmentRecordsDatasetConverter extends ToAlignmentRecordDatasetConversion[Slice, SliceProduct, SliceDataset] {
+final class SlicesToAlignmentsDatasetConverter extends ToAlignmentDatasetConversion[Slice, SliceProduct, SliceDataset] {
 
-  def call(v1: SliceDataset, v2: Dataset[AlignmentRecordProduct]): AlignmentRecordDataset = {
-    ADAMContext.slicesToAlignmentRecordsDatasetConversionFn(v1, v2)
+  def call(v1: SliceDataset, v2: Dataset[AlignmentProduct]): AlignmentDataset = {
+    ADAMContext.slicesToAlignmentsDatasetConversionFn(v1, v2)
   }
 }
 
@@ -557,10 +557,10 @@ final class VariantsToFragmentsDatasetConverter extends ToFragmentDatasetConvers
   }
 }
 
-final class VariantsToAlignmentRecordsDatasetConverter extends ToAlignmentRecordDatasetConversion[Variant, VariantProduct, VariantDataset] {
+final class VariantsToAlignmentsDatasetConverter extends ToAlignmentDatasetConversion[Variant, VariantProduct, VariantDataset] {
 
-  def call(v1: VariantDataset, v2: Dataset[AlignmentRecordProduct]): AlignmentRecordDataset = {
-    ADAMContext.variantsToAlignmentRecordsDatasetConversionFn(v1, v2)
+  def call(v1: VariantDataset, v2: Dataset[AlignmentProduct]): AlignmentDataset = {
+    ADAMContext.variantsToAlignmentsDatasetConversionFn(v1, v2)
   }
 }
 

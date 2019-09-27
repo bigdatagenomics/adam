@@ -90,7 +90,7 @@ case class VCFOutFormatter(
    * Reads VariantContexts from an input stream. Autodetects VCF format.
    *
    * @param is An InputStream connected to a process we are piping from.
-   * @return Returns an iterator of AlignmentRecords read from the stream.
+   * @return Returns an iterator of Alignments read from the stream.
    */
   def read(is: InputStream): Iterator[VariantContext] = {
 

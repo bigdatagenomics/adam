@@ -19,7 +19,7 @@ package org.bdgenomics.adam.rdd.read
 
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.rdd.fragment.FragmentDataset
-import org.bdgenomics.formats.avro.{ AlignmentRecord, Fragment }
+import org.bdgenomics.formats.avro.{ Alignment, Fragment }
 import scala.collection.JavaConversions._
 
 /**
@@ -119,10 +119,10 @@ private[rdd] object BinQualities extends Serializable {
    * @return Returns a new RDD of reads were the quality scores of the read
    *   bases have been binned.
    */
-  def apply(reads: AlignmentRecordDataset,
-            bins: Seq[QualityScoreBin]): AlignmentRecordDataset = {
+  def apply(reads: AlignmentDataset,
+            bins: Seq[QualityScoreBin]): AlignmentDataset = {
 
-    reads.transform((rdd: RDD[AlignmentRecord]) => {
+    reads.transform((rdd: RDD[Alignment]) => {
       rdd.map(binRead(_, bins))
     })
   }
@@ -152,7 +152,7 @@ private[rdd] object BinQualities extends Serializable {
    */
   private[read] def binFragment(fragment: Fragment,
                                 bins: Seq[QualityScoreBin]): Fragment = {
-    val reads: Seq[AlignmentRecord] = fragment.getAlignments
+    val reads: Seq[Alignment] = fragment.getAlignments
     val binnedReads = reads.map(binRead(_, bins))
     Fragment.newBuilder(fragment)
       .setAlignments(binnedReads)
@@ -166,10 +166,10 @@ private[rdd] object BinQualities extends Serializable {
    * @param bins The bins to place the quality scores in.
    * @return Returns a new read whose quality scores have been updated.
    */
-  private[read] def binRead(read: AlignmentRecord,
-                            bins: Seq[QualityScoreBin]): AlignmentRecord = {
+  private[read] def binRead(read: Alignment,
+                            bins: Seq[QualityScoreBin]): Alignment = {
     if (read.getQualityScores != null) {
-      AlignmentRecord.newBuilder(read)
+      Alignment.newBuilder(read)
         .setQualityScores(binQualities(read.getQualityScores, bins))
         .build
     } else {

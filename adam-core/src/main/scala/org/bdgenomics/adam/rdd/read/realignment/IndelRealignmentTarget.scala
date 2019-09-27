@@ -21,8 +21,8 @@ import com.esotericsoftware.kryo.io.{ Input, Output }
 import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import htsjdk.samtools.CigarOperator
 import org.bdgenomics.adam.models.ReferenceRegion
-import org.bdgenomics.adam.rich.RichAlignmentRecord
-import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.adam.rich.RichAlignment
+import org.bdgenomics.formats.avro.Alignment
 import org.bdgenomics.adam.instrumentation.Timers._
 import scala.collection.JavaConversions._
 import scala.collection.immutable.TreeSet
@@ -45,7 +45,7 @@ private[realignment] object TargetOrdering extends Ordering[IndelRealignmentTarg
    * @param read Read to compare.
    * @return True if read alignment is contained in target span.
    */
-  def contains(target: IndelRealignmentTarget, read: AlignmentRecord): Boolean = {
+  def contains(target: IndelRealignmentTarget, read: Alignment): Boolean = {
     ReferenceRegion.opt(read).exists(target.readRange.overlaps)
   }
 
@@ -56,7 +56,7 @@ private[realignment] object TargetOrdering extends Ordering[IndelRealignmentTarg
    * @param read Read to compare.
    * @return True if start of read is before the start of the indel alignment target.
    */
-  def lt(target: IndelRealignmentTarget, read: RichAlignmentRecord): Boolean = {
+  def lt(target: IndelRealignmentTarget, read: RichAlignment): Boolean = {
     ReferenceRegion.opt(read.record).exists(target.readRange.compareTo(_) < 0)
   }
 
@@ -83,7 +83,7 @@ private[realignment] object IndelRealignmentTarget {
    * @return Set of generated realignment targets.
    */
   def apply(
-    read: RichAlignmentRecord,
+    read: RichAlignment,
     maxIndelSize: Int): Seq[IndelRealignmentTarget] = CreateIndelRealignmentTargets.time {
 
     val region = ReferenceRegion.unstranded(read.record)

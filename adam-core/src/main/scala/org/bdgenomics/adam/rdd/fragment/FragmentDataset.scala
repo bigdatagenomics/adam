@@ -24,7 +24,7 @@ import org.apache.spark.api.java.function.{ Function => JFunction }
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.apache.spark.sql.functions._
-import org.bdgenomics.adam.converters.AlignmentRecordConverter
+import org.bdgenomics.adam.converters.AlignmentConverter
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models.{
   ReadGroupDictionary,
@@ -39,16 +39,16 @@ import org.bdgenomics.adam.rdd.{
   JavaSaveArgs
 }
 import org.bdgenomics.adam.rdd.read.{
-  AlignmentRecordDataset,
+  AlignmentDataset,
   BinQualities,
-  DatasetBoundAlignmentRecordDataset,
+  DatasetBoundAlignmentDataset,
   MarkDuplicates,
   QualityScoreBin
 }
 import org.bdgenomics.adam.serialization.AvroSerializer
 import org.bdgenomics.adam.sql.{
   Fragment => FragmentProduct,
-  AlignmentRecord => AlignmentRecordProduct
+  Alignment => AlignmentProduct
 }
 import org.bdgenomics.formats.avro._
 import org.bdgenomics.utils.interval.array.{
@@ -239,10 +239,10 @@ case class DatasetBoundFragmentDataset private[rdd] (
     copy(dataset = tFn.call(dataset))
   }
 
-  override def toAlignments(): AlignmentRecordDataset = {
+  override def toAlignments(): AlignmentDataset = {
     import dataset.sparkSession.implicits._
     val df = dataset.select(explode(col("alignments")).as("rec")).select("rec.*")
-    DatasetBoundAlignmentRecordDataset(df.as[AlignmentRecordProduct],
+    DatasetBoundAlignmentDataset(df.as[AlignmentProduct],
       sequences,
       readGroups,
       processingSteps)
@@ -351,13 +351,13 @@ sealed abstract class FragmentDataset extends AvroReadGroupGenomicDataset[Fragme
    *
    * @return Returns this genomic dataset converted to alignments.
    */
-  def toAlignments(): AlignmentRecordDataset = {
-    val converter = new AlignmentRecordConverter
+  def toAlignments(): AlignmentDataset = {
+    val converter = new AlignmentConverter
 
     // convert the fragments to alignments
     val newRdd = rdd.flatMap(converter.convertFragment)
 
-    AlignmentRecordDataset(newRdd,
+    AlignmentDataset(newRdd,
       sequences,
       readGroups,
       processingSteps)
@@ -407,7 +407,7 @@ sealed abstract class FragmentDataset extends AvroReadGroupGenomicDataset[Fragme
    * @return Fragments whose quality scores are binned.
    */
   def binQualityScores(bins: Seq[QualityScoreBin]): FragmentDataset = {
-    AlignmentRecordDataset.validateBins(bins)
+    AlignmentDataset.validateBins(bins)
     BinQualities(this, bins)
   }
 

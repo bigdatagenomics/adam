@@ -18,9 +18,9 @@
 package org.bdgenomics.adam.algorithms.consensus
 
 import htsjdk.samtools.{ Cigar, CigarOperator }
-import org.bdgenomics.adam.rich.RichAlignmentRecord
+import org.bdgenomics.adam.rich.RichAlignment
 import org.bdgenomics.adam.rich.RichCigar
-import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.formats.avro.Alignment
 import scala.annotation.tailrec
 import scala.collection.JavaConversions._
 
@@ -35,14 +35,14 @@ private[adam] object NormalizationUtils {
    * @param read Read whose Cigar should be left align.
    * @return Cigar fully moved left.
    */
-  def leftAlignIndel(read: AlignmentRecord): Cigar = {
+  def leftAlignIndel(read: Alignment): Cigar = {
     var indelPos = -1
     var pos = 0
     var indelLength = 0
     var readPos = 0
     var referencePos = 0
     var isInsert = false
-    val richRead = RichAlignmentRecord(read)
+    val richRead = RichAlignment(read)
     val cigar = richRead.samtoolsCigar
 
     // find indel in cigar

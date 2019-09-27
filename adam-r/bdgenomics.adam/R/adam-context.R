@@ -66,7 +66,7 @@ javaStringency <- function(stringency) {
 }
 
 
-#' Load alignment records into an AlignmentRecordDataset.
+#' Load alignments into an AlignmentDataset.
 #'
 #' Loads path names ending in:
 #' * .bam/.cram/.sam as BAM/CRAM/SAM format,
@@ -95,7 +95,7 @@ setMethod("loadAlignments",
               jrdd <- sparkR.callJMethod(ac@jac,
                                          "loadAlignments",
                                          filePath, jStringency)
-              AlignmentRecordDataset(jrdd)
+              AlignmentDataset(jrdd)
           })
 
 #' Load DNA sequences into a SequenceDataset.

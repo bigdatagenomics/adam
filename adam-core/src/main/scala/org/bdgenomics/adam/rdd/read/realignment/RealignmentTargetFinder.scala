@@ -19,7 +19,7 @@ package org.bdgenomics.adam.rdd.read.realignment
 
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.algorithms.consensus.{ ConsensusGenerator, ConsensusGeneratorFromReads }
-import org.bdgenomics.adam.rich.RichAlignmentRecord
+import org.bdgenomics.adam.rich.RichAlignment
 import org.bdgenomics.adam.instrumentation.Timers._
 
 import scala.annotation.tailrec
@@ -34,7 +34,7 @@ private[realignment] object RealignmentTargetFinder {
    * @return Sorted set of realignment targets.
    */
   def apply(
-    rdd: RDD[RichAlignmentRecord],
+    rdd: RDD[RichAlignment],
     consensusGenerator: ConsensusGenerator = new ConsensusGeneratorFromReads,
     maxIndelSize: Int = 500,
     maxTargetSize: Int = 3000): TreeSet[IndelRealignmentTarget] = {
@@ -99,7 +99,7 @@ private[realignment] class RealignmentTargetFinder extends Serializable {
    * @return An ordered set of indel realignment targets.
    */
   def findTargets(
-    reads: RDD[RichAlignmentRecord],
+    reads: RDD[RichAlignment],
     consensusGenerator: ConsensusGenerator,
     maxIndelSize: Int = 500,
     maxTargetSize: Int = 3000): TargetSet = FindTargets.time {

@@ -19,9 +19,9 @@ package org.bdgenomics.adam.rdd
 
 import org.apache.spark.SparkContext._
 import org.bdgenomics.adam.models.ReferenceRegion
-import org.bdgenomics.adam.rdd.read.AlignmentRecordArray
+import org.bdgenomics.adam.rdd.read.AlignmentArray
 import org.bdgenomics.adam.util.ADAMFunSuite
-import org.bdgenomics.formats.avro.{ AlignmentRecord, Reference }
+import org.bdgenomics.formats.avro.{ Alignment, Reference }
 import org.bdgenomics.utils.interval.array.IntervalArray
 
 class InnerTreeRegionJoinSuite extends ADAMFunSuite {
@@ -33,7 +33,7 @@ class InnerTreeRegionJoinSuite extends ADAMFunSuite {
       .setSourceUri("test://chrom1")
       .build
 
-    val builder = AlignmentRecord.newBuilder()
+    val builder = Alignment.newBuilder()
       .setReferenceName(reference.getName)
       .setStart(1L)
       .setReadMapped(true)
@@ -49,16 +49,16 @@ class InnerTreeRegionJoinSuite extends ADAMFunSuite {
     assert(InnerTreeRegionJoinSuite.getReferenceRegion(record1) ===
       InnerTreeRegionJoinSuite.getReferenceRegion(record2))
 
-    val tree = IntervalArray[ReferenceRegion, AlignmentRecord](rdd1,
-      AlignmentRecordArray.apply(_, _))
+    val tree = IntervalArray[ReferenceRegion, Alignment](rdd1,
+      AlignmentArray.apply(_, _))
 
-    assert(InnerTreeRegionJoin[AlignmentRecord, AlignmentRecord]().broadcastAndJoin(
+    assert(InnerTreeRegionJoin[Alignment, Alignment]().broadcastAndJoin(
       tree,
       rdd2).aggregate(true)(
         InnerTreeRegionJoinSuite.merge,
         InnerTreeRegionJoinSuite.and))
 
-    assert(InnerTreeRegionJoin[AlignmentRecord, AlignmentRecord]().broadcastAndJoin(
+    assert(InnerTreeRegionJoin[Alignment, Alignment]().broadcastAndJoin(
       tree,
       rdd2)
       .aggregate(0)(
@@ -73,7 +73,7 @@ class InnerTreeRegionJoinSuite extends ADAMFunSuite {
       .setSourceUri("test://chrom1")
       .build
 
-    val built = AlignmentRecord.newBuilder()
+    val built = Alignment.newBuilder()
       .setReferenceName(reference.getName)
       .setStart(1L)
       .setReadMapped(true)
@@ -82,23 +82,23 @@ class InnerTreeRegionJoinSuite extends ADAMFunSuite {
       .build()
 
     val record1 = built
-    val record2 = AlignmentRecord.newBuilder(built).setStart(3L).setEnd(4L).build()
-    val baseRecord = AlignmentRecord.newBuilder(built).setCigar("4M").setEnd(5L).build()
+    val record2 = Alignment.newBuilder(built).setStart(3L).setEnd(4L).build()
+    val baseRecord = Alignment.newBuilder(built).setCigar("4M").setEnd(5L).build()
 
     val baseRdd = sc.parallelize(Seq(baseRecord)).keyBy(ReferenceRegion.unstranded(_))
     val recordsRdd = sc.parallelize(Seq(record1, record2)).keyBy(ReferenceRegion.unstranded(_))
 
-    val tree = IntervalArray[ReferenceRegion, AlignmentRecord](baseRdd,
-      AlignmentRecordArray.apply(_, _))
+    val tree = IntervalArray[ReferenceRegion, Alignment](baseRdd,
+      AlignmentArray.apply(_, _))
 
-    assert(InnerTreeRegionJoin[AlignmentRecord, AlignmentRecord]().broadcastAndJoin(
+    assert(InnerTreeRegionJoin[Alignment, Alignment]().broadcastAndJoin(
       tree,
       recordsRdd)
       .aggregate(true)(
         InnerTreeRegionJoinSuite.merge,
         InnerTreeRegionJoinSuite.and))
 
-    assert(InnerTreeRegionJoin[AlignmentRecord, AlignmentRecord]().broadcastAndJoin(
+    assert(InnerTreeRegionJoin[Alignment, Alignment]().broadcastAndJoin(
       tree,
       recordsRdd).count() === 2)
   }
@@ -116,14 +116,14 @@ class InnerTreeRegionJoinSuite extends ADAMFunSuite {
       .setSourceUri("test://chrom2")
       .build
 
-    val builtRef1 = AlignmentRecord.newBuilder()
+    val builtRef1 = Alignment.newBuilder()
       .setReferenceName(reference1.getName)
       .setStart(1L)
       .setReadMapped(true)
       .setCigar("1M")
       .setEnd(2L)
       .build()
-    val builtRef2 = AlignmentRecord.newBuilder()
+    val builtRef2 = Alignment.newBuilder()
       .setReferenceName(reference2.getName)
       .setStart(1)
       .setReadMapped(true)
@@ -132,35 +132,35 @@ class InnerTreeRegionJoinSuite extends ADAMFunSuite {
       .build()
 
     val record1 = builtRef1
-    val record2 = AlignmentRecord.newBuilder(builtRef1).setStart(3L).setEnd(4L).build()
+    val record2 = Alignment.newBuilder(builtRef1).setStart(3L).setEnd(4L).build()
     val record3 = builtRef2
-    val baseRecord1 = AlignmentRecord.newBuilder(builtRef1).setCigar("4M").setEnd(5L).build()
-    val baseRecord2 = AlignmentRecord.newBuilder(builtRef2).setCigar("4M").setEnd(5L).build()
+    val baseRecord1 = Alignment.newBuilder(builtRef1).setCigar("4M").setEnd(5L).build()
+    val baseRecord2 = Alignment.newBuilder(builtRef2).setCigar("4M").setEnd(5L).build()
 
     val baseRdd = sc.parallelize(Seq(baseRecord1, baseRecord2)).keyBy(ReferenceRegion.unstranded(_))
     val recordsRdd = sc.parallelize(Seq(record1, record2, record3)).keyBy(ReferenceRegion.unstranded(_))
 
-    val tree = IntervalArray[ReferenceRegion, AlignmentRecord](baseRdd,
-      AlignmentRecordArray.apply(_, _))
+    val tree = IntervalArray[ReferenceRegion, Alignment](baseRdd,
+      AlignmentArray.apply(_, _))
 
-    assert(InnerTreeRegionJoin[AlignmentRecord, AlignmentRecord]().broadcastAndJoin(
+    assert(InnerTreeRegionJoin[Alignment, Alignment]().broadcastAndJoin(
       tree,
       recordsRdd)
       .aggregate(true)(
         InnerTreeRegionJoinSuite.merge,
         InnerTreeRegionJoinSuite.and))
 
-    assert(InnerTreeRegionJoin[AlignmentRecord, AlignmentRecord]().broadcastAndJoin(
+    assert(InnerTreeRegionJoin[Alignment, Alignment]().broadcastAndJoin(
       tree,
       recordsRdd).count() === 3)
   }
 }
 
 object InnerTreeRegionJoinSuite {
-  def getReferenceRegion(record: AlignmentRecord): ReferenceRegion =
+  def getReferenceRegion(record: Alignment): ReferenceRegion =
     ReferenceRegion.unstranded(record)
 
-  def merge(prev: Boolean, next: (AlignmentRecord, AlignmentRecord)): Boolean =
+  def merge(prev: Boolean, next: (Alignment, Alignment)): Boolean =
     prev && getReferenceRegion(next._1).overlaps(getReferenceRegion(next._2))
 
   def count[T](prev: Int, next: (T, T)): Int =

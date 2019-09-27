@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.rdd.read.recalibration
 
-import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.formats.avro.Alignment
 import org.scalatest.FunSuite
 
 class DinucCovariateSuite extends FunSuite {
@@ -51,7 +51,7 @@ class DinucCovariateSuite extends FunSuite {
   }
 
   test("compute covariates for a read on the negative strand") {
-    val read = AlignmentRecord.newBuilder()
+    val read = Alignment.newBuilder()
       .setSequence("AGCCTNGT")
       .setQualityScores("********")
       .setReadNegativeStrand(true)
@@ -73,7 +73,7 @@ class DinucCovariateSuite extends FunSuite {
   }
 
   test("compute covariates for a read on the positive strand") {
-    val read = AlignmentRecord.newBuilder()
+    val read = Alignment.newBuilder()
       .setSequence("ACNAGGCT")
       .setQualityScores("********")
       .setReadNegativeStrand(false)

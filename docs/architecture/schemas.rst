@@ -9,7 +9,7 @@ generates implementations of this schema for multiple common languages,
 including Java, C, C++, and Python. bdg-formats contains several core
 schemas:
 
--  The *AlignmentRecord* schema represents a genomic read, along with
+-  The *Alignment* schema represents a genomic read, along with
    that read's alignment to a reference genome, if available.
 -  The *Feature* schema represents a generic genomic feature. This
    record can be used to tag a region of the genome with an annotation,
@@ -30,7 +30,7 @@ query, while maintaining extensibility and the ability to interoperate
 with common genomics file formats. Where necessary, the bdg-formats
 schemas are nested, which allows for the description of complex nested
 features and groupings (such as the Fragment record, which groups
-together AlignmentRecords). All fields in the bdg-formats schemas are
+together Alignments). All fields in the bdg-formats schemas are
 nullable, and the schemas themselves do not contain invariants around
 valid values for a field. Instead, we validate data on ingress and
 egress to/from a conventional genomic file format. This allows users to

@@ -20,7 +20,7 @@ package org.bdgenomics.adam.rdd
 import org.bdgenomics.adam.converters.DefaultHeaderLines
 import org.bdgenomics.adam.models.{ SequenceRecord, SequenceDictionary, ReferenceRegion }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.read.AlignmentRecordDataset
+import org.bdgenomics.adam.rdd.read.AlignmentDataset
 import org.bdgenomics.adam.rdd.feature.FeatureDataset
 import org.bdgenomics.adam.rdd.variant.GenotypeDataset
 import org.bdgenomics.formats.avro._

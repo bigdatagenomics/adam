@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.rdd.read.recalibration
 
-import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.formats.avro.Alignment
 import org.scalatest.FunSuite
 
 class CycleCovariateSuite extends FunSuite {
@@ -25,7 +25,7 @@ class CycleCovariateSuite extends FunSuite {
   val cc = new CycleCovariate
 
   test("compute covariates for an unpaired read on the negative strand") {
-    val read = AlignmentRecord.newBuilder()
+    val read = Alignment.newBuilder()
       .setSequence("AGCCTNGT")
       .setQualityScores("********")
       .setReadNegativeStrand(true)
@@ -47,7 +47,7 @@ class CycleCovariateSuite extends FunSuite {
   }
 
   test("compute covariates for a first-of-pair read on the negative strand") {
-    val read = AlignmentRecord.newBuilder()
+    val read = Alignment.newBuilder()
       .setSequence("AGCCTNGT")
       .setQualityScores("********")
       .setReadNegativeStrand(true)
@@ -71,7 +71,7 @@ class CycleCovariateSuite extends FunSuite {
   }
 
   test("compute covariates for a second-of-pair read on the negative strand") {
-    val read = AlignmentRecord.newBuilder()
+    val read = Alignment.newBuilder()
       .setSequence("AGCCTNGT")
       .setQualityScores("********")
       .setReadNegativeStrand(true)
@@ -95,7 +95,7 @@ class CycleCovariateSuite extends FunSuite {
   }
 
   test("compute covariates for an unpaired read on the positive strand") {
-    val read = AlignmentRecord.newBuilder()
+    val read = Alignment.newBuilder()
       .setSequence("ACNAGGCT")
       .setQualityScores("********")
       .setReadNegativeStrand(false)
@@ -117,7 +117,7 @@ class CycleCovariateSuite extends FunSuite {
   }
 
   test("compute covariates for a first-of-pair read on the positive strand") {
-    val read = AlignmentRecord.newBuilder()
+    val read = Alignment.newBuilder()
       .setSequence("ACNAGGCT")
       .setQualityScores("********")
       .setReadNegativeStrand(false)
@@ -141,7 +141,7 @@ class CycleCovariateSuite extends FunSuite {
   }
 
   test("compute covariates for a second-of-pair read on the positive strand") {
-    val read = AlignmentRecord.newBuilder()
+    val read = Alignment.newBuilder()
       .setSequence("ACNAGGCT")
       .setQualityScores("********")
       .setReadNegativeStrand(false)

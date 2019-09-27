@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.models
 
 import org.scalatest.FunSuite
-import org.bdgenomics.formats.avro.{ AlignmentRecord, Genotype, Variant, Reference }
+import org.bdgenomics.formats.avro.{ Alignment, Genotype, Variant, Reference }
 
 class ReferencePositionSuite extends FunSuite {
 
@@ -27,7 +27,7 @@ class ReferencePositionSuite extends FunSuite {
       .setName("chr1")
       .build
 
-    val read = AlignmentRecord.newBuilder()
+    val read = Alignment.newBuilder()
       .setReferenceName(reference.getName)
       .setStart(1L)
       .setReadMapped(true)

@@ -18,10 +18,10 @@
 package org.bdgenomics.adam.rdd.read
 
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.projections.{ AlignmentRecordField, Projection }
+import org.bdgenomics.adam.projections.{ AlignmentField, Projection }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
-import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.formats.avro.Alignment
 
 class FlagStatSuite extends ADAMFunSuite {
 
@@ -29,21 +29,21 @@ class FlagStatSuite extends ADAMFunSuite {
 
     val inputPath = testFile("NA12878.sam")
     val projection = Projection(
-      AlignmentRecordField.readMapped,
-      AlignmentRecordField.mateMapped,
-      AlignmentRecordField.readPaired,
-      AlignmentRecordField.referenceName,
-      AlignmentRecordField.mateReferenceName,
-      AlignmentRecordField.primaryAlignment,
-      AlignmentRecordField.duplicateRead,
-      AlignmentRecordField.readMapped,
-      AlignmentRecordField.mateMapped,
-      AlignmentRecordField.readInFragment,
-      AlignmentRecordField.properPair,
-      AlignmentRecordField.mappingQuality,
-      AlignmentRecordField.failedVendorQualityChecks)
+      AlignmentField.readMapped,
+      AlignmentField.mateMapped,
+      AlignmentField.readPaired,
+      AlignmentField.referenceName,
+      AlignmentField.mateReferenceName,
+      AlignmentField.primaryAlignment,
+      AlignmentField.duplicateRead,
+      AlignmentField.readMapped,
+      AlignmentField.mateMapped,
+      AlignmentField.readInFragment,
+      AlignmentField.properPair,
+      AlignmentField.mappingQuality,
+      AlignmentField.failedVendorQualityChecks)
 
-    val adamFile: RDD[AlignmentRecord] = sc.loadAlignments(inputPath, optProjection = Some(projection)).rdd
+    val adamFile: RDD[Alignment] = sc.loadAlignments(inputPath, optProjection = Some(projection)).rdd
 
     val (failedVendorQuality, passedVendorQuality) = FlagStat(adamFile)
 

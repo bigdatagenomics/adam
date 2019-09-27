@@ -24,11 +24,11 @@ import org.apache.spark.rdd.MetricsContext._
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.algorithms.consensus.{ Consensus, ConsensusGenerator }
 import org.bdgenomics.adam.models.{ MdTag, ReferencePosition, ReferenceRegion }
-import org.bdgenomics.adam.rich.{ RichAlignmentRecord, RichCigar }
-import org.bdgenomics.adam.rich.RichAlignmentRecord._
+import org.bdgenomics.adam.rich.{ RichAlignment, RichCigar }
+import org.bdgenomics.adam.rich.RichAlignment._
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.util.ReferenceFile
-import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.formats.avro.Alignment
 import scala.annotation.tailrec
 import scala.collection.JavaConversions._
 import scala.collection.immutable.{ NumericRange, TreeSet }
@@ -43,7 +43,7 @@ private[read] object RealignIndels extends Serializable with Logging {
    * @return RDD of realigned reads.
    */
   def apply(
-    rdd: RDD[AlignmentRecord],
+    rdd: RDD[Alignment],
     consensusModel: ConsensusGenerator = ConsensusGenerator.fromReads,
     dataIsSorted: Boolean = false,
     maxIndelSize: Int = 500,
@@ -52,7 +52,7 @@ private[read] object RealignIndels extends Serializable with Logging {
     maxTargetSize: Int = 3000,
     maxReadsPerTarget: Int = 20000,
     optReferenceFile: Option[ReferenceFile] = None,
-    unclipReads: Boolean = false): RDD[AlignmentRecord] = {
+    unclipReads: Boolean = false): RDD[Alignment] = {
     new RealignIndels(
       rdd.context,
       consensusGenerator = consensusModel,
@@ -79,7 +79,7 @@ private[read] object RealignIndels extends Serializable with Logging {
    * @see mapTargets
    */
   @tailrec final def mapToTarget(
-    read: RichAlignmentRecord,
+    read: RichAlignment,
     targets: Array[IndelRealignmentTarget],
     headIdx: Int,
     tailIdx: Int,
@@ -141,9 +141,9 @@ private[read] object RealignIndels extends Serializable with Logging {
    * @see mapToTarget
    */
   def mapTargets(
-    rich_rdd: RDD[RichAlignmentRecord],
+    rich_rdd: RDD[RichAlignment],
     targets: Array[IndelRealignmentTarget],
-    maxReadsPerTarget: Int = Int.MaxValue): RDD[(Option[(Int, IndelRealignmentTarget)], Iterable[RichAlignmentRecord])] = MapTargets.time {
+    maxReadsPerTarget: Int = Int.MaxValue): RDD[(Option[(Int, IndelRealignmentTarget)], Iterable[RichAlignment])] = MapTargets.time {
 
     // group reads by target
     val broadcastTargets = rich_rdd.context.broadcast(targets)
@@ -165,7 +165,7 @@ private[read] object RealignIndels extends Serializable with Logging {
     info("Dropping %d targets whose coverage is too high:\n%s".format(targetsToDrop.length, targetsToDrop.mkString("\n")))
 
     val bcastTargetsToDrop = rich_rdd.context.broadcast(targetsToDropSet)
-    val readsMappedToTarget = rich_rdd.groupBy((r: RichAlignmentRecord) => {
+    val readsMappedToTarget = rich_rdd.groupBy((r: RichAlignment) => {
       mapToTarget(r,
         broadcastTargets.value,
         0,
@@ -188,11 +188,11 @@ private[read] object RealignIndels extends Serializable with Logging {
   /**
    * From a set of reads, returns the reference sequence that they overlap.
    */
-  def getReferenceFromReads(reads: Iterable[RichAlignmentRecord]): (String, Long, Long) = GetReferenceFromReads.time {
+  def getReferenceFromReads(reads: Iterable[RichAlignment]): (String, Long, Long) = GetReferenceFromReads.time {
     var tossedReads = 0
 
     // get reference and range from a single read
-    val readRefs = reads.flatMap((r: RichAlignmentRecord) => {
+    val readRefs = reads.flatMap((r: RichAlignment) => {
       r.mdTag.fold {
         warn("Discarding read " + r.record.getReadName + " during reference re-creation.")
         tossedReads += 1
@@ -250,7 +250,7 @@ private[read] class RealignIndels(
    *   soft clipped bases in the read have been dropped.
    */
   def extractSequenceAndQuality(
-    read: RichAlignmentRecord): (String, Seq[Int]) = {
+    read: RichAlignment): (String, Seq[Int]) = {
 
     // is this read clipped at the start or end? if so, how many bases?
     val richCigar = new RichCigar(read.samtoolsCigar)
@@ -277,8 +277,8 @@ private[read] class RealignIndels(
    * @return A sequence of reads which have either been realigned if there is a sufficiently good alternative
    * consensus, or not realigned if there is not a sufficiently good consensus.
    */
-  def realignTargetGroup(targetGroup: (Option[(Int, IndelRealignmentTarget)], Iterable[RichAlignmentRecord]),
-                         partitionIdx: Int = 0): Iterable[RichAlignmentRecord] = RealignTargetGroup.time {
+  def realignTargetGroup(targetGroup: (Option[(Int, IndelRealignmentTarget)], Iterable[RichAlignment]),
+                         partitionIdx: Int = 0): Iterable[RichAlignment] = RealignTargetGroup.time {
     val (target, reads) = targetGroup
 
     if (target.isEmpty) {
@@ -294,7 +294,7 @@ private[read] class RealignIndels(
         val refStart = reads.map(_.getStart).min
         val refEnd = reads.map(_.getEnd).max
         val refRegion = ReferenceRegion(reads.head.record.getReferenceName, refStart, refEnd)
-        val reference = optBcastReferenceFile.fold(getReferenceFromReads(reads.map(r => new RichAlignmentRecord(r)))._1)(brf => GetReferenceFromFile.time { brf.value.extract(refRegion) })
+        val reference = optBcastReferenceFile.fold(getReferenceFromReads(reads.map(r => new RichAlignment(r)))._1)(brf => GetReferenceFromFile.time { brf.value.extract(refRegion) })
 
         // preprocess reads and get consensus
         val readsToClean = consensusGenerator.preprocessReadsForRealignment(
@@ -330,7 +330,7 @@ private[read] class RealignIndels(
            *  - the consensus sequence itself
            *  - a map containing each realigned read and it's offset into the new sequence
            */
-          val consensusOutcomes = new Array[(Int, Consensus, Map[RichAlignmentRecord, Int])](consensus.size)
+          val consensusOutcomes = new Array[(Int, Consensus, Map[RichAlignment, Int])](consensus.size)
 
           // loop over all consensuses and evaluate
           consensus.zipWithIndex.foreach(p => SweepReadsOverConsensus.time {
@@ -377,7 +377,7 @@ private[read] class RealignIndels(
               val consensusSequence = bestConsensus.insertIntoReference(reference, refRegion)
 
               // if we see a sufficient improvement, realign the reads
-              val cleanedReads: Iterable[RichAlignmentRecord] = readsToClean.map(p => {
+              val cleanedReads: Iterable[RichAlignment] = readsToClean.map(p => {
                 val (r, rIdx) = p
 
                 try {
@@ -386,7 +386,7 @@ private[read] class RealignIndels(
                   // if read alignment is improved by aligning against new consensus, realign
                   if (finalRemapping != -1) {
                     realignedReadCount += 1
-                    val builder: AlignmentRecord.Builder = AlignmentRecord.newBuilder(r)
+                    val builder: Alignment.Builder = Alignment.newBuilder(r)
 
                     // bump up mapping quality by 10
                     builder.setMappingQuality(r.getMappingQuality + 10)
@@ -426,7 +426,7 @@ private[read] class RealignIndels(
                       builder.setOriginalCigar(r.getCigar())
                       val rec = builder.build()
 
-                      new RichAlignmentRecord(rec)
+                      new RichAlignment(rec)
                     }
                   } else {
                     r
@@ -685,7 +685,7 @@ private[read] class RealignIndels(
    * @param read Read over which to sum mismatch quality.
    * @return Mismatch quality of read for current alignment.
    */
-  def sumMismatchQuality(read: AlignmentRecord): Int = {
+  def sumMismatchQuality(read: Alignment): Int = {
     sumMismatchQualityIgnoreCigar(
       read.getSequence,
       read.mdTag.get.getReference(read, withGaps = true),
@@ -702,7 +702,7 @@ private[read] class RealignIndels(
    * @param rdd Reads to realign.
    * @return Realigned read.
    */
-  def realignIndels(rdd: RDD[AlignmentRecord]): RDD[AlignmentRecord] = {
+  def realignIndels(rdd: RDD[Alignment]): RDD[Alignment] = {
     val sortedRdd = if (dataIsSorted) {
       rdd.filter(r => r.getReadMapped)
     } else {
@@ -713,7 +713,7 @@ private[read] class RealignIndels(
     }
 
     // we only want to convert once so let's get it over with
-    val richRdd = sortedRdd.map(new RichAlignmentRecord(_))
+    val richRdd = sortedRdd.map(new RichAlignment(_))
     richRdd.cache()
 
     // find realignment targets

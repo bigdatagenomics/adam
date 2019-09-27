@@ -23,7 +23,7 @@ import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.models.SnpTable
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
-import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.formats.avro.Alignment
 import scala.io.Source
 
 class BaseQualityRecalibrationSuite extends ADAMFunSuite {
@@ -34,7 +34,7 @@ class BaseQualityRecalibrationSuite extends ADAMFunSuite {
     val obsFilepath = testFile("bqsr1-ref.observed")
 
     val rdd = sc.loadAlignments(readsFilepath)
-    val reads: RDD[AlignmentRecord] = rdd.rdd
+    val reads: RDD[Alignment] = rdd.rdd
     val variants = sc.loadVariants(snpsFilepath)
     val snps = sc.broadcast(SnpTable(variants))
 

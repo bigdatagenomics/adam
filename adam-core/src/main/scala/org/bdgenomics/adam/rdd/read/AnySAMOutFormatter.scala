@@ -21,7 +21,7 @@ import htsjdk.samtools._
 import java.io.InputStream
 import org.bdgenomics.adam.converters.SAMRecordConverter
 import org.bdgenomics.adam.rdd.OutFormatter
-import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.formats.avro.Alignment
 import scala.annotation.tailrec
 import scala.collection.mutable.ListBuffer
 
@@ -29,17 +29,17 @@ import scala.collection.mutable.ListBuffer
  * An OutFormatter that automatically infers whether the piped input is SAM or
  * BAM. Autodetecting streamed CRAM is not currently supported.
  */
-case class AnySAMOutFormatter(stringency: ValidationStringency) extends OutFormatter[AlignmentRecord] {
+case class AnySAMOutFormatter(stringency: ValidationStringency) extends OutFormatter[Alignment] {
 
   def this() = this(ValidationStringency.STRICT)
 
   /**
-   * Reads alignment records from an input stream. Autodetects SAM/BAM format.
+   * Reads alignments from an input stream. Autodetects SAM/BAM format.
    *
    * @param is An InputStream connected to a process we are piping from.
-   * @return Returns an iterator of AlignmentRecords read from the stream.
+   * @return Returns an iterator of Alignments read from the stream.
    */
-  def read(is: InputStream): Iterator[AlignmentRecord] = {
+  def read(is: InputStream): Iterator[Alignment] = {
 
     // make reader
     val reader = SamReaderFactory.makeDefault()
@@ -50,7 +50,7 @@ case class AnySAMOutFormatter(stringency: ValidationStringency) extends OutForma
   }
 }
 
-private case class SAMIteratorConverter(val reader: SamReader) extends Iterator[AlignmentRecord] {
+private case class SAMIteratorConverter(val reader: SamReader) extends Iterator[Alignment] {
 
   val iter = reader.iterator()
 
@@ -61,7 +61,7 @@ private case class SAMIteratorConverter(val reader: SamReader) extends Iterator[
     iter.hasNext
   }
 
-  def next: AlignmentRecord = {
+  def next: Alignment = {
     assert(iter.hasNext)
     converter.convert(iter.next)
   }

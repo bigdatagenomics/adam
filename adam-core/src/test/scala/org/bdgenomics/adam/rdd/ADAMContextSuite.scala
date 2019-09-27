@@ -88,7 +88,7 @@ class ADAMContextSuite extends ADAMFunSuite {
       val noReturnType = sc.loadParquet(bamReadsAdamFile.getAbsolutePath)
     }
     //finally just make sure we did not break anything,we came might as well
-    val returnType: RDD[AlignmentRecord] = sc.loadParquet(bamReadsAdamFile.getAbsolutePath)
+    val returnType: RDD[Alignment] = sc.loadParquet(bamReadsAdamFile.getAbsolutePath)
     assert(manifest[returnType.type] != manifest[RDD[Nothing]])
   }
 
@@ -120,19 +120,19 @@ class ADAMContextSuite extends ADAMFunSuite {
     val referencePath = resourceUrl("artificial.fa").toString
     sc.hadoopConfiguration.set(CRAMInputFormat.REFERENCE_SOURCE_PATH_PROPERTY,
       referencePath)
-    val reads: RDD[AlignmentRecord] = sc.loadAlignments(path).rdd
+    val reads: RDD[Alignment] = sc.loadAlignments(path).rdd
     assert(reads.count() === 10)
   }
 
   sparkTest("can read a small .SAM with all attribute tag types") {
     val path = testFile("tags.sam")
-    val reads: RDD[AlignmentRecord] = sc.loadAlignments(path).rdd
+    val reads: RDD[Alignment] = sc.loadAlignments(path).rdd
     assert(reads.count() === 7)
   }
 
   sparkTest("can filter a .SAM file based on quality") {
     val path = testFile("small.sam")
-    val reads: RDD[AlignmentRecord] = sc.loadAlignments(path)
+    val reads: RDD[Alignment] = sc.loadAlignments(path)
       .rdd
       .filter(a => (a.getReadMapped && a.getMappingQuality > 30))
     assert(reads.count() === 18)

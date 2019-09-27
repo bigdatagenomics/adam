@@ -22,7 +22,7 @@ import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.rdd.read.realignment.IndelRealignmentTarget
 import org.bdgenomics.adam.rdd.variant.VariantDataset
-import org.bdgenomics.adam.rich.RichAlignmentRecord
+import org.bdgenomics.adam.rich.RichAlignment
 import scala.collection.JavaConversions._
 
 /**
@@ -169,9 +169,9 @@ abstract class ConsensusGenerator extends Serializable {
    * @return Preprocessed reads.
    */
   def preprocessReadsForRealignment(
-    reads: Iterable[RichAlignmentRecord],
+    reads: Iterable[RichAlignment],
     reference: String,
-    region: ReferenceRegion): Iterable[RichAlignmentRecord]
+    region: ReferenceRegion): Iterable[RichAlignment]
 
   /**
    * For all reads in this region, generates the list of consensus sequences for realignment.
@@ -179,5 +179,5 @@ abstract class ConsensusGenerator extends Serializable {
    * @param reads Reads to generate consensus sequences from.
    * @return Consensus sequences to use for realignment.
    */
-  def findConsensus(reads: Iterable[RichAlignmentRecord]): Iterable[Consensus]
+  def findConsensus(reads: Iterable[RichAlignment]): Iterable[Consensus]
 }

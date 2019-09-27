@@ -24,7 +24,7 @@ import org.bdgenomics.adam.models.{
   SequenceRecord
 }
 import org.bdgenomics.adam.util.ADAMFunSuite
-import org.bdgenomics.formats.avro.{ AlignmentRecord, Reference }
+import org.bdgenomics.formats.avro.{ Alignment, Reference }
 
 class LeftOuterShuffleRegionJoinAndGroupByLeftSuite(partitionMap: Seq[Option[(ReferenceRegion, ReferenceRegion)]]) extends ADAMFunSuite {
 
@@ -37,9 +37,9 @@ class LeftOuterShuffleRegionJoinAndGroupByLeftSuite(partitionMap: Seq[Option[(Re
       SequenceRecord("chr2", 15, url = "test://chrom2"))
   }
 
-  def runJoin(leftRdd: RDD[(ReferenceRegion, AlignmentRecord)],
-              rightRdd: RDD[(ReferenceRegion, AlignmentRecord)]): RDD[(AlignmentRecord, Iterable[AlignmentRecord])] = {
-    LeftOuterShuffleRegionJoinAndGroupByLeft[AlignmentRecord, AlignmentRecord](rightRdd, leftRdd)
+  def runJoin(leftRdd: RDD[(ReferenceRegion, Alignment)],
+              rightRdd: RDD[(ReferenceRegion, Alignment)]): RDD[(Alignment, Iterable[Alignment])] = {
+    LeftOuterShuffleRegionJoinAndGroupByLeft[Alignment, Alignment](rightRdd, leftRdd)
       .compute()
   }
 
@@ -50,7 +50,7 @@ class LeftOuterShuffleRegionJoinAndGroupByLeftSuite(partitionMap: Seq[Option[(Re
       .setSourceUri("test://chrom1")
       .build
 
-    val builder = AlignmentRecord.newBuilder()
+    val builder = Alignment.newBuilder()
       .setReferenceName(reference.getName)
       .setStart(1L)
       .setReadMapped(true)
@@ -88,7 +88,7 @@ class LeftOuterShuffleRegionJoinAndGroupByLeftSuite(partitionMap: Seq[Option[(Re
       .setSourceUri("test://chrom1")
       .build
 
-    val built = AlignmentRecord.newBuilder()
+    val built = Alignment.newBuilder()
       .setReferenceName(reference.getName)
       .setStart(1L)
       .setReadMapped(true)
@@ -97,9 +97,9 @@ class LeftOuterShuffleRegionJoinAndGroupByLeftSuite(partitionMap: Seq[Option[(Re
       .build()
 
     val record1 = built
-    val record2 = AlignmentRecord.newBuilder(built).setStart(3L).setEnd(4L).build()
-    val baseRecord = AlignmentRecord.newBuilder(built).setCigar("4M").setEnd(5L).build()
-    val record3 = AlignmentRecord.newBuilder(built).setStart(6L).setEnd(7L).build()
+    val record2 = Alignment.newBuilder(built).setStart(3L).setEnd(4L).build()
+    val baseRecord = Alignment.newBuilder(built).setCigar("4M").setEnd(5L).build()
+    val record3 = Alignment.newBuilder(built).setStart(6L).setEnd(7L).build()
 
     val baseRdd = sc.parallelize(Seq(baseRecord)).keyBy(ReferenceRegion.unstranded(_))
     val recordsRdd = sc.parallelize(Seq(record1, record2, record3)).keyBy(ReferenceRegion.unstranded(_))

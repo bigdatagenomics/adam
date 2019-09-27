@@ -34,7 +34,7 @@ import org.bdgenomics.adam.models.{
   SnpTable
 }
 import org.bdgenomics.adam.instrumentation.Timers._
-import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.formats.avro.Alignment
 import scala.annotation.tailrec
 
 /**
@@ -57,7 +57,7 @@ import scala.annotation.tailrec
  * @param optSamplingSeed An optional seed to provide if downsampling reads.
  */
 private class BaseQualityRecalibration(
-  val input: RDD[AlignmentRecord],
+  val input: RDD[Alignment],
   val knownSnps: Broadcast[SnpTable],
   val readGroups: ReadGroupDictionary,
   val minAcceptableAsciiPhred: Char = (5 + 33).toChar,
@@ -70,7 +70,7 @@ private class BaseQualityRecalibration(
    * An RDD representing the input reads along with any error covariates that
    * the bases in the read map to.
    */
-  val dataset: RDD[(AlignmentRecord, Array[CovariateKey])] = {
+  val dataset: RDD[(Alignment, Array[CovariateKey])] = {
     val covRdd = input.map(read => {
       val covariates = if (BaseQualityRecalibration.shouldIncludeRead(read)) {
         BaseQualityRecalibration.observe(read, knownSnps, readGroups)
@@ -110,7 +110,7 @@ private class BaseQualityRecalibration(
    * The input reads but with the quality scores of the reads replaced with
    * the quality scores given by the observation table.
    */
-  val result: RDD[AlignmentRecord] = {
+  val result: RDD[Alignment] = {
     val recalibrator = Recalibrator(observed, minAcceptableAsciiPhred)
     dataset.map(p => recalibrator(p._1, p._2))
   }
@@ -126,7 +126,7 @@ private[read] object BaseQualityRecalibration {
    *   duplicate), it did not fail vendor checks, and the quality and CIGAR
    *   are defined.
    */
-  private def shouldIncludeRead(read: AlignmentRecord) = {
+  private def shouldIncludeRead(read: Alignment) = {
     (read.getReadMapped && read.getPrimaryAlignment && !read.getDuplicateRead) &&
       read.getQualityScores != null &&
       (read.getMappingQuality != null && read.getMappingQuality > 0) &&
@@ -144,7 +144,7 @@ private[read] object BaseQualityRecalibration {
    *   not masked) and the second array contains true if the base is not a
    *   mismatch.
    */
-  private def computeResiduesToInclude(read: AlignmentRecord,
+  private def computeResiduesToInclude(read: Alignment,
                                        maskedSites: Set[Long]): (Array[Boolean], Array[Boolean]) = {
     val readSequence = read.getSequence.toArray
     val readQualities = read.getQualityScores.toArray
@@ -301,7 +301,7 @@ private[read] object BaseQualityRecalibration {
    *   this method is package private, while the other is private.
    */
   private[recalibration] def observe(
-    read: AlignmentRecord,
+    read: Alignment,
     readGroups: ReadGroupDictionary,
     maskedSites: Set[Long] = Set.empty): Array[CovariateKey] = ObservingRead.time {
     val (toInclude, isMismatch) = ReadResidues.time {
@@ -326,7 +326,7 @@ private[read] object BaseQualityRecalibration {
    *   error covariates seen in this read.
    */
   private def observe(
-    read: AlignmentRecord,
+    read: Alignment,
     knownSnps: Broadcast[SnpTable],
     readGroups: ReadGroupDictionary): Array[CovariateKey] = ObservingRead.time {
     val maskedSites = knownSnps.value
@@ -350,13 +350,13 @@ private[read] object BaseQualityRecalibration {
    * @param optSamplingSeed An optional seed to provide if downsampling reads.
    */
   def apply(
-    rdd: RDD[AlignmentRecord],
+    rdd: RDD[Alignment],
     knownSnps: Broadcast[SnpTable],
     readGroups: ReadGroupDictionary,
     minAcceptableQuality: Int,
     optStorageLevel: Option[StorageLevel],
     optSamplingFraction: Option[Double] = None,
-    optSamplingSeed: Option[Long] = None): RDD[AlignmentRecord] = {
+    optSamplingSeed: Option[Long] = None): RDD[Alignment] = {
     require(minAcceptableQuality >= 0 && minAcceptableQuality < 93,
       "MinAcceptableQuality (%d) must be positive and less than 93.")
     optSamplingFraction.foreach(samplingFraction => {

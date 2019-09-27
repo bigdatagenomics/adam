@@ -21,7 +21,7 @@ import org.bdgenomics.adam.models.{
   ReadGroup,
   ReadGroupDictionary
 }
-import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.formats.avro.Alignment
 import org.scalatest.FunSuite
 
 class RecalibratorSuite extends FunSuite {
@@ -39,7 +39,7 @@ class RecalibratorSuite extends FunSuite {
         'N') -> new Aggregate(100000, 1, 10.0)))))
   val rgd = ReadGroupDictionary(Seq(ReadGroup("s", "rg0")))
 
-  val read = AlignmentRecord.newBuilder
+  val read = Alignment.newBuilder
     .setReferenceName("chr1")
     .setReadGroupId("rg0")
     .setStart(10L)
@@ -61,7 +61,7 @@ class RecalibratorSuite extends FunSuite {
   val lowRecalibrator = Recalibrator(table, (40 + 33).toChar)
 
   test("don't replace quality if quality was null") {
-    val qualFreeRead = AlignmentRecord.newBuilder(read)
+    val qualFreeRead = Alignment.newBuilder(read)
       .setQualityScores(null)
       .build
     val recalibratedRead = lowRecalibrator(qualFreeRead,
@@ -71,7 +71,7 @@ class RecalibratorSuite extends FunSuite {
   }
 
   test("if no covariates, return alignment") {
-    val emptyRead = AlignmentRecord.newBuilder
+    val emptyRead = Alignment.newBuilder
       .setReadName("emptyRead")
       .build
     val notRecalibratedRead = lowRecalibrator(emptyRead, Array.empty)
@@ -81,7 +81,7 @@ class RecalibratorSuite extends FunSuite {
   test("skip recalibration if base is below quality threshold") {
     val recalibratedRead = hiRecalibrator(read,
       BaseQualityRecalibration.observe(read, rgd))
-    val expectedRead = AlignmentRecord.newBuilder(read)
+    val expectedRead = Alignment.newBuilder(read)
       .setOriginalQualityScores(read.getQualityScores)
       .build
     assert(recalibratedRead === expectedRead)
@@ -90,7 +90,7 @@ class RecalibratorSuite extends FunSuite {
   test("recalibrate changed bases above quality threshold") {
     val recalibratedRead = lowRecalibrator(read,
       BaseQualityRecalibration.observe(read, rgd))
-    val expectedRead = AlignmentRecord.newBuilder(read)
+    val expectedRead = Alignment.newBuilder(read)
       .setQualityScores(Seq(47, 50).map(i => (i + 33).toChar).mkString)
       .setOriginalQualityScores(read.getQualityScores)
       .build

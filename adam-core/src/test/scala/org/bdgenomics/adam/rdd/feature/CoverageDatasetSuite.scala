@@ -29,7 +29,7 @@ import org.bdgenomics.adam.models.{
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.fragment.FragmentDataset
-import org.bdgenomics.adam.rdd.read.AlignmentRecordDataset
+import org.bdgenomics.adam.rdd.read.AlignmentDataset
 import org.bdgenomics.adam.rdd.sequence.SliceDataset
 import org.bdgenomics.adam.rdd.variant.{
   GenotypeDataset,
@@ -37,7 +37,7 @@ import org.bdgenomics.adam.rdd.variant.{
   VariantContextDataset
 }
 import org.bdgenomics.adam.sql.{
-  AlignmentRecord => AlignmentRecordProduct,
+  Alignment => AlignmentProduct,
   Feature => FeatureProduct,
   Fragment => FragmentProduct,
   Genotype => GenotypeProduct,
@@ -78,8 +78,8 @@ object CoverageDatasetSuite extends Serializable {
       .build
   }
 
-  def readFn(cov: Coverage): AlignmentRecord = {
-    AlignmentRecord.newBuilder
+  def readFn(cov: Coverage): Alignment = {
+    Alignment.newBuilder
       .setReferenceName(cov.referenceName)
       .setStart(cov.start)
       .setEnd(cov.end)
@@ -383,14 +383,14 @@ class CoverageDatasetSuite extends ADAMFunSuite {
   sparkTest("transform coverage to read genomic dataset") {
     val coverage = sc.loadCoverage(testFile("sample_coverage.bed"))
 
-    def checkSave(reads: AlignmentRecordDataset) {
+    def checkSave(reads: AlignmentDataset) {
       val tempPath = tmpLocation(".adam")
       reads.saveAsParquet(tempPath)
 
       assert(sc.loadAlignments(tempPath).rdd.count === 3)
     }
 
-    val reads: AlignmentRecordDataset = coverage.transmute[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordDataset](
+    val reads: AlignmentDataset = coverage.transmute[Alignment, AlignmentProduct, AlignmentDataset](
       (rdd: RDD[Coverage]) => {
         rdd.map(CoverageDatasetSuite.readFn)
       })
@@ -400,10 +400,10 @@ class CoverageDatasetSuite extends ADAMFunSuite {
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
 
-    val readsDs: AlignmentRecordDataset = coverage.transmuteDataset[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordDataset](
+    val readsDs: AlignmentDataset = coverage.transmuteDataset[Alignment, AlignmentProduct, AlignmentDataset](
       (ds: Dataset[Coverage]) => {
         ds.map(r => {
-          AlignmentRecordProduct.fromAvro(
+          AlignmentProduct.fromAvro(
             CoverageDatasetSuite.readFn(r))
         })
       })

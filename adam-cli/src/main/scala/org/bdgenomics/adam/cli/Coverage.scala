@@ -20,11 +20,11 @@ package org.bdgenomics.adam.cli
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.cli.FileSystemUtils._
-import org.bdgenomics.adam.projections.AlignmentRecordField._
+import org.bdgenomics.adam.projections.AlignmentField._
 import org.bdgenomics.adam.projections.Projection
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.read.AlignmentRecordDataset
-import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.adam.rdd.read.AlignmentDataset
+import org.bdgenomics.formats.avro.Alignment
 import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
@@ -89,12 +89,12 @@ class Coverage(protected val args: CoverageArgs) extends BDGSparkCommand[Coverag
       "Cannot compute coverage for both negative and positive strands separately")
 
     // load alignments
-    val alignmentsRdd: AlignmentRecordDataset = sc.loadAlignments(args.inputPath)
+    val alignmentsRdd: AlignmentDataset = sc.loadAlignments(args.inputPath)
 
     val finalAlignments = if (args.onlyNegativeStrands && !args.onlyPositiveStrands) {
-      alignmentsRdd.transform((rdd: RDD[AlignmentRecord]) => rdd.filter(_.getReadNegativeStrand))
+      alignmentsRdd.transform((rdd: RDD[Alignment]) => rdd.filter(_.getReadNegativeStrand))
     } else if (!args.onlyNegativeStrands && args.onlyPositiveStrands) {
-      alignmentsRdd.transform((rdd: RDD[AlignmentRecord]) => rdd.filter(!_.getReadNegativeStrand))
+      alignmentsRdd.transform((rdd: RDD[Alignment]) => rdd.filter(!_.getReadNegativeStrand))
     } else {
       alignmentsRdd
     }

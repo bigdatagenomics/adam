@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.rdd.read
 
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.formats.avro.Alignment
 
 /**
  * Helper object to reassemble paired reads from a queryname sorted file.
@@ -46,7 +46,7 @@ private[rdd] object RepairPartitions extends Serializable {
    */
   private[read] def getPairAtStart(
     idx: Int,
-    iter: Iterator[AlignmentRecord]): Iterator[(Int, Seq[AlignmentRecord])] = {
+    iter: Iterator[Alignment]): Iterator[(Int, Seq[Alignment])] = {
 
     if (iter.hasNext && idx > 0) {
       val bufferedIterator = iter.buffered
@@ -72,7 +72,7 @@ private[rdd] object RepairPartitions extends Serializable {
    */
   private[read] def dropPairAtStart(
     idx: Int,
-    iter: Iterator[AlignmentRecord]): Iterator[AlignmentRecord] = {
+    iter: Iterator[Alignment]): Iterator[Alignment] = {
 
     if (idx == 0) {
       iter
@@ -97,12 +97,12 @@ private[rdd] object RepairPartitions extends Serializable {
    */
   private[read] def addPairsAtEnd(
     idx: Int,
-    iter: Iterator[AlignmentRecord],
-    pairMap: Array[Seq[AlignmentRecord]]): Iterator[AlignmentRecord] = {
+    iter: Iterator[Alignment],
+    pairMap: Array[Seq[Alignment]]): Iterator[Alignment] = {
 
     // if we aren't in the last partition, then we should add reads
     val readsToAdd = if (idx == pairMap.length) {
-      Iterator[AlignmentRecord]()
+      Iterator[Alignment]()
     } else {
       pairMap(idx).toIterator
     }
@@ -119,15 +119,15 @@ private[rdd] object RepairPartitions extends Serializable {
    *   ("partition from" - 1), and the reads that should move to that partition.
    */
   private[read] def unrollArray(
-    array: Array[(Int, Seq[AlignmentRecord])],
-    numOutputPartitions: Int): Array[Seq[AlignmentRecord]] = {
+    array: Array[(Int, Seq[Alignment])],
+    numOutputPartitions: Int): Array[Seq[Alignment]] = {
 
     assert(array.length < numOutputPartitions)
 
     // by filling instead of allocating, we ensure that we'll never have
     // an NPE on read
     val outputArray = Array.fill(
-      numOutputPartitions) { Seq.empty[AlignmentRecord] }
+      numOutputPartitions) { Seq.empty[Alignment] }
 
     array.foreach(p => {
       val (idx, reads) = p
@@ -145,7 +145,7 @@ private[rdd] object RepairPartitions extends Serializable {
    * @return An RDD where the read pairs that are split across partition
    *   boundaries have been moved back into the correct split.
    */
-  def apply(rdd: RDD[AlignmentRecord]): RDD[AlignmentRecord] = {
+  def apply(rdd: RDD[Alignment]): RDD[Alignment] = {
 
     val pairsAtStarts = rdd.mapPartitionsWithIndex(getPairAtStart(_, _))
       .collect

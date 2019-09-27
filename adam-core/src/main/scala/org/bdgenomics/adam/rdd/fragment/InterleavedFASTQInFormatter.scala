@@ -20,7 +20,7 @@ package org.bdgenomics.adam.rdd.fragment
 import java.io.OutputStream
 import grizzled.slf4j.Logging
 import org.apache.hadoop.conf.Configuration
-import org.bdgenomics.adam.converters.AlignmentRecordConverter
+import org.bdgenomics.adam.converters.AlignmentConverter
 import org.bdgenomics.adam.rdd.{ InFormatter, InFormatterCompanion }
 import org.bdgenomics.adam.sql.{ Fragment => FragmentProduct }
 import org.bdgenomics.formats.avro.Fragment
@@ -46,12 +46,12 @@ class InterleavedFASTQInFormatter private (
     conf: Configuration) extends InFormatter[Fragment, FragmentProduct, FragmentDataset, InterleavedFASTQInFormatter] with Logging {
 
   protected val companion = InterleavedFASTQInFormatter
-  private val converter = new AlignmentRecordConverter
+  private val converter = new AlignmentConverter
   private val writeSuffixes = conf.getBoolean(FragmentDataset.WRITE_SUFFIXES, false)
   private val writeOriginalQualityScores = conf.getBoolean(FragmentDataset.WRITE_ORIGINAL_QUALITY_SCORES, false)
 
   /**
-   * Writes alignment records to an output stream in interleaved FASTQ format.
+   * Writes alignments to an output stream in interleaved FASTQ format.
    *
    * @param os An OutputStream connected to a process we are piping to.
    * @param iter An iterator of records to write.

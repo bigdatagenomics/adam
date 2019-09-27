@@ -20,9 +20,9 @@ package org.bdgenomics.adam.algorithms.consensus
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.{ MdTag, ReferencePosition, ReferenceRegion }
 import org.bdgenomics.adam.rdd.read.realignment.IndelRealignmentTarget
-import org.bdgenomics.adam.rich.RichAlignmentRecord._
-import org.bdgenomics.adam.rich.RichAlignmentRecord
-import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.adam.rich.RichAlignment._
+import org.bdgenomics.adam.rich.RichAlignment
+import org.bdgenomics.formats.avro.Alignment
 
 /**
  * Consensus generator that examines the read alignments.
@@ -49,9 +49,9 @@ private[adam] class ConsensusGeneratorFromReads extends ConsensusGenerator {
    * @return Reads with indels normalized if they contain a single indel.
    */
   def preprocessReadsForRealignment(
-    reads: Iterable[RichAlignmentRecord],
+    reads: Iterable[RichAlignment],
     reference: String,
-    region: ReferenceRegion): Iterable[RichAlignmentRecord] = {
+    region: ReferenceRegion): Iterable[RichAlignment] = {
     reads.map(r => {
       // if there are two alignment blocks (sequence matches) then there is a single indel in the read
       if (numAlignmentBlocks(r.samtoolsCigar) == 2) {
@@ -59,7 +59,7 @@ private[adam] class ConsensusGeneratorFromReads extends ConsensusGenerator {
         val cigar = NormalizationUtils.leftAlignIndel(r)
         val mdTag = MdTag.moveAlignment(r, cigar)
 
-        val newRead: RichAlignmentRecord = AlignmentRecord.newBuilder(r)
+        val newRead: RichAlignment = Alignment.newBuilder(r)
           .setCigar(cigar.toString)
           .setMismatchingPositions(mdTag.toString())
           .build()
@@ -83,7 +83,7 @@ private[adam] class ConsensusGeneratorFromReads extends ConsensusGenerator {
    * @param Reads to search for INDELs.
    * @return Consensuses generated from reads with a singel INDEL
    */
-  def findConsensus(reads: Iterable[RichAlignmentRecord]): Iterable[Consensus] = {
+  def findConsensus(reads: Iterable[RichAlignment]): Iterable[Consensus] = {
     reads.filter(r => r.mdTag.isDefined)
       .flatMap(r => {
         // try to generate a consensus alignment - if a consensus exists, add it to our

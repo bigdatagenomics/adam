@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.rdd.read
 
 import org.bdgenomics.adam.util.ADAMFunSuite
-import org.bdgenomics.formats.avro.{ AlignmentRecord, Fragment }
+import org.bdgenomics.formats.avro.{ Alignment, Fragment }
 import scala.collection.JavaConversions._
 
 class BinQualitiesSuite extends ADAMFunSuite {
@@ -133,7 +133,7 @@ class BinQualitiesSuite extends ADAMFunSuite {
   }
 
   test("skip read if qualities are null") {
-    val read = AlignmentRecord.newBuilder
+    val read = Alignment.newBuilder
       .setSequence("ACAGATTCG")
       .setReadName("aRead")
       .build
@@ -148,7 +148,7 @@ class BinQualitiesSuite extends ADAMFunSuite {
       .map(i => (i + 33).toChar)
       .mkString
 
-    val read = AlignmentRecord.newBuilder
+    val read = Alignment.newBuilder
       .setQualityScores(sequence)
       .setSequence("ACAGATTCG")
       .setReadName("aRead")

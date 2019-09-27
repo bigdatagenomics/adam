@@ -27,28 +27,35 @@ import htsjdk.variant.vcf.{
 import org.apache.spark.SparkContext
 import org.bdgenomics.adam.models.VariantContext
 import org.bdgenomics.adam.rdd.feature.FeatureDataset
-import org.bdgenomics.adam.rdd.read.AlignmentRecordDataset
+import org.bdgenomics.adam.rdd.read.AlignmentDataset
 import org.bdgenomics.adam.rdd.variant.{
   GenotypeDataset,
   VariantDataset,
   VariantContextDataset
 }
 import org.bdgenomics.formats.avro.{
-  AlignmentRecord,
+  Alignment,
   Feature,
   Genotype,
   Sample,
   Variant
 }
 import org.bdgenomics.utils.instrumentation.MetricsListener
-import org.bdgenomics.utils.instrumentation._
+import org.bdgenomics.utils.instrumentation.{
+  Alignment => TextAlignment,
+  ASCIITable,
+  ASCIITableHeader,
+  DurationFormatting,
+  Metrics,
+  RecordedMetrics
+}
 
 /**
  * Utility methods for use in adam-shell.
  */
 object ADAMShell {
 
-  /** Alignment record headers. */
+  /** Alignment headers. */
   val alignmentHeaders = Array(
     new ASCIITableHeader("Reference Name"),
     new ASCIITableHeader("Start"),
@@ -59,13 +66,13 @@ object ADAMShell {
   )
 
   /**
-   * Print attribute values for alignment records in the specified AlignmentRecordDataset up to the limit.
+   * Print attribute values for alignments in the specified AlignmentDataset up to the limit.
    *
-   * @param alignments AlignmentRecordDataset.
+   * @param alignments AlignmentDataset.
    * @param keys Sequence of attribute keys.
-   * @param limit Number of alignment records to print attribute values for. Defaults to 10.
+   * @param limit Number of alignments to print attribute values for. Defaults to 10.
    */
-  def printAlignmentAttributes(alignments: AlignmentRecordDataset, keys: Seq[String], limit: Int = 10): Unit = {
+  def printAlignmentAttributes(alignments: AlignmentDataset, keys: Seq[String], limit: Int = 10): Unit = {
     printAlignmentAttributes(alignments.rdd.take(limit), keys)
   }
 
@@ -74,12 +81,12 @@ object ADAMShell {
   }
 
   /**
-   * Print attribute values for the specified alignment records.
+   * Print attribute values for the specified alignments.
    *
    * @param alignments Sequence of alignments.
    * @param keys Sequence of attribute keys.
    */
-  def printAlignmentAttributes(alignments: Seq[AlignmentRecord], keys: Seq[String]): Unit = {
+  def printAlignmentAttributes(alignments: Seq[Alignment], keys: Seq[String]): Unit = {
     val header = alignmentHeaders ++ keys.map(key => new ASCIITableHeader(key))
 
     val rows: Array[Array[String]] = alignments.map(a => Array[String](
@@ -120,7 +127,7 @@ object ADAMShell {
   /**
    * Print attribute values for the specified features.
    *
-   * @param alignments Sequence of features.
+   * @param features Sequence of features.
    * @param keys Sequence of attribute keys.
    */
   def printFeatureAttributes(features: Seq[Feature], keys: Seq[String]): Unit = {
@@ -156,9 +163,9 @@ object ADAMShell {
     new ASCIITableHeader("Reference Name"),
     new ASCIITableHeader("Start"),
     new ASCIITableHeader("End"),
-    new ASCIITableHeader("Ref", Alignment.Left),
-    new ASCIITableHeader("Alt", Alignment.Left),
-    new ASCIITableHeader("Alleles", Alignment.Center),
+    new ASCIITableHeader("Ref", TextAlignment.Left),
+    new ASCIITableHeader("Alt", TextAlignment.Left),
+    new ASCIITableHeader("Alleles", TextAlignment.Center),
     new ASCIITableHeader("Sample")
   )
 
@@ -265,8 +272,8 @@ object ADAMShell {
     new ASCIITableHeader("Reference Name"),
     new ASCIITableHeader("Start"),
     new ASCIITableHeader("End"),
-    new ASCIITableHeader("Ref", Alignment.Left),
-    new ASCIITableHeader("Alt", Alignment.Left)
+    new ASCIITableHeader("Ref", TextAlignment.Left),
+    new ASCIITableHeader("Alt", TextAlignment.Left)
   )
 
   /**

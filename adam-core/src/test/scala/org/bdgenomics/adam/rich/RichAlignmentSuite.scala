@@ -18,26 +18,26 @@
 package org.bdgenomics.adam.rich
 
 import org.bdgenomics.adam.models.{ ReferencePosition, TagType, Attribute }
-import org.bdgenomics.adam.rich.RichAlignmentRecord._
-import org.bdgenomics.formats.avro.{ AlignmentRecord, Reference }
+import org.bdgenomics.adam.rich.RichAlignment._
+import org.bdgenomics.formats.avro.{ Alignment, Reference }
 import org.scalatest.FunSuite
 
-class RichAlignmentRecordSuite extends FunSuite {
+class RichAlignmentSuite extends FunSuite {
 
   test("Unclipped Start") {
-    val recordWithoutClipping = AlignmentRecord.newBuilder().setReadMapped(true).setCigar("10M").setStart(42L).setEnd(52L).build()
-    val recordWithClipping = AlignmentRecord.newBuilder().setReadMapped(true).setCigar("2S8M").setStart(42L).setEnd(50L).build()
-    val recordWithHardClipping = AlignmentRecord.newBuilder().setReadMapped(true).setCigar("3H2S5M4S").setStart(42L).setEnd(47L).build()
+    val recordWithoutClipping = Alignment.newBuilder().setReadMapped(true).setCigar("10M").setStart(42L).setEnd(52L).build()
+    val recordWithClipping = Alignment.newBuilder().setReadMapped(true).setCigar("2S8M").setStart(42L).setEnd(50L).build()
+    val recordWithHardClipping = Alignment.newBuilder().setReadMapped(true).setCigar("3H2S5M4S").setStart(42L).setEnd(47L).build()
     assert(recordWithoutClipping.unclippedStart == 42L)
     assert(recordWithClipping.unclippedStart == 40L)
     assert(recordWithHardClipping.unclippedStart == 37L)
   }
 
   test("Unclipped End") {
-    val unmappedRead = AlignmentRecord.newBuilder().setReadMapped(false).setStart(0L).setCigar("10M").setEnd(10L).build()
-    val recordWithoutClipping = AlignmentRecord.newBuilder().setReadMapped(true).setCigar("10M").setStart(10L).setEnd(20L).build()
-    val recordWithClipping = AlignmentRecord.newBuilder().setReadMapped(true).setCigar("8M2S").setStart(10L).setEnd(18L).build()
-    val recordWithHardClipping = AlignmentRecord.newBuilder().setReadMapped(true).setCigar("6M2S2H").setStart(10L).setEnd(16L).build()
+    val unmappedRead = Alignment.newBuilder().setReadMapped(false).setStart(0L).setCigar("10M").setEnd(10L).build()
+    val recordWithoutClipping = Alignment.newBuilder().setReadMapped(true).setCigar("10M").setStart(10L).setEnd(20L).build()
+    val recordWithClipping = Alignment.newBuilder().setReadMapped(true).setCigar("8M2S").setStart(10L).setEnd(18L).build()
+    val recordWithHardClipping = Alignment.newBuilder().setReadMapped(true).setCigar("6M2S2H").setStart(10L).setEnd(16L).build()
     assert(recordWithoutClipping.unclippedEnd == 20L)
     assert(recordWithClipping.unclippedEnd == 20L)
     assert(recordWithHardClipping.unclippedEnd == 20L)
@@ -45,14 +45,14 @@ class RichAlignmentRecordSuite extends FunSuite {
 
   test("tags contains optional fields") {
     val reference = Reference.newBuilder.setName("chr1").build
-    val rec = AlignmentRecord.newBuilder().setAttributes("XX:i:3\tYY:Z:foo").setReferenceName(reference.getName).build()
+    val rec = Alignment.newBuilder().setAttributes("XX:i:3\tYY:Z:foo").setReferenceName(reference.getName).build()
     assert(rec.tags.size === 2)
     assert(rec.tags(0) === Attribute("XX", TagType.Integer, 3))
     assert(rec.tags(1) === Attribute("YY", TagType.String, "foo"))
   }
 
   test("read overlap unmapped read") {
-    val unmappedRead = AlignmentRecord.newBuilder().setReadMapped(false).setStart(0L).setCigar("10M").setEnd(10L).build()
+    val unmappedRead = Alignment.newBuilder().setReadMapped(false).setStart(0L).setCigar("10M").setEnd(10L).build()
 
     val overlaps = unmappedRead.overlapsReferencePosition(ReferencePosition("chr1", 10))
     assert(!overlaps)
@@ -61,7 +61,7 @@ class RichAlignmentRecordSuite extends FunSuite {
   test("read overlap reference position") {
 
     val reference = Reference.newBuilder.setName("chr1").build
-    val record = RichAlignmentRecord(AlignmentRecord.newBuilder()
+    val record = RichAlignment(Alignment.newBuilder()
       .setReadMapped(true)
       .setCigar("10M")
       .setStart(10L)
@@ -78,7 +78,7 @@ class RichAlignmentRecordSuite extends FunSuite {
   test("read overlap same position different contig") {
 
     val reference = Reference.newBuilder.setName("chr1").build
-    val record = RichAlignmentRecord(AlignmentRecord.newBuilder()
+    val record = RichAlignment(Alignment.newBuilder()
       .setReadMapped(true)
       .setCigar("10M")
       .setStart(10L)

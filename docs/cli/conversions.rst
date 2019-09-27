@@ -69,7 +69,7 @@ Additionally, ``transformFragments`` takes the following options:
    ``loadAlignments`` instead of ``loadFragments``), which behaves
    differently for unpaired FASTQ.
 -  ``-save_as_alignments``: Saves the output as a Parquet file of
-   ``AlignmentRecord``\ s, as SAM/BAM/CRAM, or as FASTQ, depending on
+   ``Alignment``\ s, as SAM/BAM/CRAM, or as FASTQ, depending on
    the output file extension. If this option is specified, the output
    can also be sorted:
 -  ``-sort_by_read_name``: Sorts alignments by read name.

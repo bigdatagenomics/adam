@@ -101,7 +101,7 @@
               <mainClass>org.bdgenomics.adam.codegen.DumpSchemasToProduct</mainClass>
               <arguments>
                 <argument>org.bdgenomics.adam.sql</argument>
-                <argument>org.bdgenomics.formats.avro.AlignmentRecord</argument>
+                <argument>org.bdgenomics.formats.avro.Alignment</argument>
                 <argument>org.bdgenomics.formats.avro.Dbxref</argument>
                 <argument>org.bdgenomics.formats.avro.Feature</argument>
                 <argument>org.bdgenomics.formats.avro.Fragment</argument>
@@ -131,7 +131,7 @@
               <mainClass>org.bdgenomics.adam.codegen.DumpSchemasToProjectionEnums</mainClass>
               <arguments>
                 <argument>org.bdgenomics.adam.projections</argument>
-                <argument>org.bdgenomics.formats.avro.AlignmentRecord</argument>
+                <argument>org.bdgenomics.formats.avro.Alignment</argument>
                 <argument>org.bdgenomics.formats.avro.Dbxref</argument>
                 <argument>org.bdgenomics.formats.avro.Feature</argument>
                 <argument>org.bdgenomics.formats.avro.Fragment</argument>

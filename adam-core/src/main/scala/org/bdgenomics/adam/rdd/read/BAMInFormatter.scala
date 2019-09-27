@@ -23,7 +23,7 @@ import htsjdk.samtools.{
   SAMFileWriterFactory
 }
 import java.io.OutputStream
-import org.bdgenomics.adam.converters.AlignmentRecordConverter
+import org.bdgenomics.adam.converters.AlignmentConverter
 import org.bdgenomics.adam.models.ReadGroupDictionary
 
 /**
@@ -33,7 +33,7 @@ object BAMInFormatter extends AnySAMInFormatterCompanion[BAMInFormatter] {
 
   protected def makeFormatter(header: SAMFileHeader,
                               readGroups: ReadGroupDictionary,
-                              converter: AlignmentRecordConverter): BAMInFormatter = {
+                              converter: AlignmentConverter): BAMInFormatter = {
     BAMInFormatter(header, readGroups, converter)
   }
 }
@@ -41,7 +41,7 @@ object BAMInFormatter extends AnySAMInFormatterCompanion[BAMInFormatter] {
 case class BAMInFormatter private (
     header: SAMFileHeader,
     readGroups: ReadGroupDictionary,
-    converter: AlignmentRecordConverter) extends AnySAMInFormatter[BAMInFormatter] {
+    converter: AlignmentConverter) extends AnySAMInFormatter[BAMInFormatter] {
 
   protected val companion = BAMInFormatter
 

@@ -269,58 +269,58 @@ setGeneric("shuffleRegionJoinAndGroupByLeft",
                standardGeneric("shuffleRegionJoinAndGroupByLeft")
            })
 
-#### AlignmentRecord operations ####
+#### Alignment operations ####
 
-#' The AlignmentRecordDataset is the class used to manipulate genomic read data.
+#' The AlignmentDataset is the class used to manipulate genomic read data.
 #' 
-#' @name AlignmentRecordDataset
+#' @name AlignmentDataset
 NULL
 
-#' @rdname AlignmentRecordDataset
+#' @rdname AlignmentDataset
 #' @export
 setGeneric("toFragments",
            function(ardd) { standardGeneric("toFragments") })
 
-#' @rdname AlignmentRecordDataset
+#' @rdname AlignmentDataset
 #' @param ardd The genomic dataset to apply this to.
 #' @param ... additional argument(s).
 #' @export
 setGeneric("toCoverage",
            function(ardd, ...) { standardGeneric("toCoverage") })
 
-#' @rdname AlignmentRecordDataset
+#' @rdname AlignmentDataset
 #' @param kmerLength The value of _k_ to use for cutting _k_-mers.
 #' @export
 setGeneric("countKmers",
            function(ardd, kmerLength) { standardGeneric("countKmers") })
 
-#' @rdname AlignmentRecordDataset
+#' @rdname AlignmentDataset
 #' @param filePath The path to save the file to.
 #' @export
 setGeneric("saveAsSam",
            function(ardd, filePath, ...) { standardGeneric("saveAsSam") })
 
-#' @rdname AlignmentRecordDataset
+#' @rdname AlignmentDataset
 #' @export
 setGeneric("sortByReadName",
            function(ardd) { standardGeneric("sortByReadName") })
 
-#' @rdname AlignmentRecordDataset
+#' @rdname AlignmentDataset
 #' @export
 setGeneric("sortByReferencePosition",
            function(ardd) { standardGeneric("sortByReferencePosition") })
 
-#' @rdname AlignmentRecordDataset
+#' @rdname AlignmentDataset
 #' @export
 setGeneric("sortByReferencePositionAndIndex",
            function(ardd) { standardGeneric("sortByReferencePositionAndIndex") })
 
-#' @rdname AlignmentRecordDataset
+#' @rdname AlignmentDataset
 #' @export
 setGeneric("markDuplicates",
            function(ardd) { standardGeneric("markDuplicates") })
 
-#' @rdname AlignmentRecordDataset
+#' @rdname AlignmentDataset
 #' @param knownSnps A table of known SNPs to mask valid variants.
 #' @param validationStringency The stringency to apply towards validating BQSR.
 #' @export
@@ -329,7 +329,7 @@ setGeneric("recalibrateBaseQualities",
              standardGeneric("recalibrateBaseQualities")
            })
 
-#' @rdname AlignmentRecordDataset
+#' @rdname AlignmentDataset
 #' @export
 setGeneric("realignIndels",
            function(ardd, ...) { standardGeneric("realignIndels") })

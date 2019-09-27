@@ -22,7 +22,7 @@ import java.io.File
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
-import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.formats.avro.Alignment
 
 class Adam2FastqSuite extends ADAMFunSuite {
 
@@ -56,7 +56,7 @@ class Adam2FastqSuite extends ADAMFunSuite {
     // This is because Picard and ADAM disagree on setting negative strand on unmapped reads
     // Picard allows unmapped reads to set the negative strand flag and therefore reverse-complemented on output
     val reads = sc.loadAlignments(readsFilepath)
-      .transform((rdd: RDD[AlignmentRecord]) => rdd.filter(r => r.getReadMapped != null && r.getReadMapped))
+      .transform((rdd: RDD[Alignment]) => rdd.filter(r => r.getReadMapped != null && r.getReadMapped))
 
     reads.saveAsFastq(outputFastqR1File, Some(outputFastqR2File), sort = true)
 

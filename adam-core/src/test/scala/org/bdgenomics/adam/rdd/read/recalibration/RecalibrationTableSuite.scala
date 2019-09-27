@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.rdd.read.recalibration
 
-import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.formats.avro.Alignment
 import org.scalatest.FunSuite
 
 class RecalibrationTableSuite extends FunSuite {

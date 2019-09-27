@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.rdd.read
 
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.formats.avro.Alignment
 
 private[read] object FlagStatMetrics {
   val emptyFailedQuality = new FlagStatMetrics(0, DuplicateMetrics.empty, DuplicateMetrics.empty, 0, 0, 0, 0, 0, 0, 0, 0, 0, true)
@@ -28,17 +28,17 @@ private[read] object FlagStatMetrics {
 private[read] object DuplicateMetrics {
   val empty = new DuplicateMetrics(0, 0, 0, 0)
 
-  def apply(record: AlignmentRecord): (DuplicateMetrics, DuplicateMetrics) = {
+  def apply(record: Alignment): (DuplicateMetrics, DuplicateMetrics) = {
     import FlagStat.b2i
 
-    def isPrimary(record: AlignmentRecord): Boolean = {
+    def isPrimary(record: Alignment): Boolean = {
       record.getDuplicateRead && record.getPrimaryAlignment
     }
-    def isSecondary(record: AlignmentRecord): Boolean = {
+    def isSecondary(record: Alignment): Boolean = {
       record.getDuplicateRead && !record.getPrimaryAlignment
     }
 
-    def duplicateMetrics(f: (AlignmentRecord) => Boolean) = {
+    def duplicateMetrics(f: (Alignment) => Boolean) = {
       new DuplicateMetrics(
         b2i(f(record)),
         b2i(f(record) && record.getReadMapped && record.getMateMapped),
@@ -92,7 +92,7 @@ private[read] object FlagStat {
   def b(boolean: java.lang.Boolean) = Option(boolean).exists(x => x)
   def i(int: java.lang.Integer): Int = Option(int).map(Integer2int).getOrElse(-1)
 
-  def apply(rdd: RDD[AlignmentRecord]) = {
+  def apply(rdd: RDD[Alignment]) = {
     rdd.map {
       p =>
         val mateMappedToDiffChromosome =

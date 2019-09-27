@@ -54,7 +54,7 @@ public final class InterleavedFastqInputFormat extends FastqInputFormat {
      *
      * Reads over an input file and parses interleaved FASTQ read pairs into
      * a single Text output. This is then fed into the FastqConverter, which
-     * converts the single Text instance into two AlignmentRecords.
+     * converts the single Text instance into two Alignments.
      */
     private static class InterleavedFastqRecordReader extends FastqRecordReader {
 

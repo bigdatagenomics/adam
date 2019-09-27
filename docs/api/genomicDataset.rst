@@ -22,7 +22,7 @@ supports the following metadata:
 -  ``MultisampleGenomicDataset``: Adds metadata about the samples in a
    dataset. Applies to ``GenotypeDataset``.
 -  ``ReadGroupGenomicDataset``: Adds metadata about the read groups attached
-   to a dataset. Applies to ``AlignmentRecordDataset`` and ``FragmentDataset``.
+   to a dataset. Applies to ``AlignmentDataset`` and ``FragmentDataset``.
 
 Additionally, ``GenotypeDataset``, ``VariantDataset``, and ``VariantContextDataset``
 store the VCF header lines attached to the original file, to enable a
@@ -56,7 +56,7 @@ that keep the same type as the base type of the ``GenomicDataset``. To apply
 an ``RDD`` transform, use the ``transform`` method, which takes a
 function mapping one ``RDD`` of the base type into another ``RDD`` of
 the base type. For example, we could use ``transform`` on an
-``AlignmentRecordDataset`` to filter out reads that have a low mapping
+``AlignmentDataset`` to filter out reads that have a low mapping
 quality, but we cannot use ``transform`` to translate those reads into
 ``Feature``\ s showing the genomic locations covered by reads.
 
@@ -154,7 +154,7 @@ Similar to ``transform``/``transformDataset``, there exists a
 
 Using partitioned Parquet to speed up range based queries
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-GenomicDatasets of types ``AlignmentRecordDataset``, ``GenotypeDataset``, 
+GenomicDatasets of types ``AlignmentDataset``, ``GenotypeDataset``,
 ``VariantDataset``, and ``NucleotideFragmentContigDataset`` can be written as Parquet 
 using a Hive-style hierarchical directory scheme that is based on contig and 
 genomic position.  This partitioning reduces the latency of genomic range
@@ -201,7 +201,7 @@ Within each contigName directory, there are subdirectories named using a compute
 dataset are written into Parquet files within the appropriate positionBin directory, computed
 based on the start position of the record using the calculation ``floor(start / partitionSize)``.
 For example, when using the default ``partitionSize`` of 1,000,000 base pairs, an
-alignment record with start position 20,100,000 on chromosome 22 would be found in a
+alignment with start position 20,100,000 on chromosome 22 would be found in a
 Parquet file at the path ``mydataset.adam/contigName=22/positionBin=20``. The splitting
 of data into one or more Parquet fields in these leaf directories is automatic based on
 Parquet block size settings.

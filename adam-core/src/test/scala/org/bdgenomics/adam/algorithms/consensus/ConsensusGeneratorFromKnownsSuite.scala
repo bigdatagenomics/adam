@@ -20,9 +20,9 @@ package org.bdgenomics.adam.algorithms.consensus
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rich.RichAlignmentRecord
+import org.bdgenomics.adam.rich.RichAlignment
 import org.bdgenomics.adam.util.ADAMFunSuite
-import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.formats.avro.Alignment
 
 class ConsensusGeneratorFromKnownsSuite extends ADAMFunSuite {
 
@@ -38,22 +38,22 @@ class ConsensusGeneratorFromKnownsSuite extends ADAMFunSuite {
 
   sparkTest("no consensuses for reads that don't overlap a target") {
     val c = cg(sc)
-    val read = AlignmentRecord.newBuilder
+    val read = Alignment.newBuilder
       .setStart(1L)
       .setEnd(2L)
       .setReferenceName("notAContig")
       .build
-    assert(c.findConsensus(Iterable(new RichAlignmentRecord(read))).isEmpty)
+    assert(c.findConsensus(Iterable(new RichAlignment(read))).isEmpty)
   }
 
   sparkTest("return a consensus for read overlapping a single target") {
     val c = cg(sc)
-    val read = AlignmentRecord.newBuilder
+    val read = Alignment.newBuilder
       .setStart(19189L)
       .setEnd(19191L)
       .setReferenceName("2")
       .build
-    val consensuses = c.findConsensus(Iterable(new RichAlignmentRecord(read)))
+    val consensuses = c.findConsensus(Iterable(new RichAlignment(read)))
     assert(consensuses.size === 1)
     assert(consensuses.head.consensus === "")
     assert(consensuses.head.index.referenceName === "2")

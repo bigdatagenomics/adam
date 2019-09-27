@@ -19,13 +19,13 @@
 
 from bdgenomics.adam.adamContext import ADAMContext
 from bdgenomics.adam.models import ReferenceRegion
-from bdgenomics.adam.rdd import AlignmentRecordDataset, CoverageDataset
+from bdgenomics.adam.rdd import AlignmentDataset, CoverageDataset
 from bdgenomics.adam.test import SparkTestCase
 
 from pyspark.sql.types import DoubleType
 from  pyspark.storagelevel import StorageLevel
 
-class AlignmentRecordDatasetTest(SparkTestCase):
+class AlignmentDatasetTest(SparkTestCase):
 
 
     def test_save_sorted_sam(self):
@@ -108,7 +108,7 @@ class AlignmentRecordDatasetTest(SparkTestCase):
         pipedRdd = reads.pipe(["tee", "/dev/null"],
                               "org.bdgenomics.adam.rdd.read.SAMInFormatter",
                               "org.bdgenomics.adam.rdd.read.AnySAMOutFormatter",
-                              "org.bdgenomics.adam.api.java.AlignmentRecordsToAlignmentRecordsConverter")
+                              "org.bdgenomics.adam.api.java.AlignmentsToAlignmentsConverter")
 
         self.assertEqual(reads.toDF().count(), pipedRdd.toDF().count())
 

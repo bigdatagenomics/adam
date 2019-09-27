@@ -19,11 +19,11 @@ package org.bdgenomics.adam.rdd.read
 
 import htsjdk.samtools.{ SAMFileHeader, SAMFileWriter }
 import java.io.OutputStream
-import org.bdgenomics.adam.converters.AlignmentRecordConverter
+import org.bdgenomics.adam.converters.AlignmentConverter
 import org.bdgenomics.adam.models.ReadGroupDictionary
 import org.bdgenomics.adam.rdd.{ InFormatter, InFormatterCompanion }
-import org.bdgenomics.adam.sql.{ AlignmentRecord => AlignmentRecordProduct }
-import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.adam.sql.{ Alignment => AlignmentProduct }
+import org.bdgenomics.formats.avro.Alignment
 
 /**
  * Companion object that builds an InFormatter that writes data where the metadata
@@ -31,21 +31,21 @@ import org.bdgenomics.formats.avro.AlignmentRecord
  *
  * @tparam T The type of the underlying InFormatter.
  */
-trait AnySAMInFormatterCompanion[T <: AnySAMInFormatter[T]] extends InFormatterCompanion[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordDataset, T] {
+trait AnySAMInFormatterCompanion[T <: AnySAMInFormatter[T]] extends InFormatterCompanion[Alignment, AlignmentProduct, AlignmentDataset, T] {
   protected def makeFormatter(header: SAMFileHeader,
                               readGroups: ReadGroupDictionary,
-                              converter: AlignmentRecordConverter): T
+                              converter: AlignmentConverter): T
 
   /**
-   * Makes an AnySAMInFormatter from a GenomicDataset of AlignmentRecords.
+   * Makes an AnySAMInFormatter from a GenomicDataset of Alignments.
    *
-   * @param gDataset AlignmentRecordDataset with reference build and read group info.
+   * @param gDataset AlignmentDataset with reference build and read group info.
    * @return Returns an InFormatter that extends AnySAMInFormatter.
    */
-  def apply(gDataset: AlignmentRecordDataset): T = {
+  def apply(gDataset: AlignmentDataset): T = {
 
     // make a converter
-    val arc = new AlignmentRecordConverter
+    val arc = new AlignmentConverter
 
     // build a header and set the sort order
     val header = arc.createSAMHeader(gDataset.sequences, gDataset.readGroups)
@@ -61,7 +61,7 @@ trait AnySAMInFormatterCompanion[T <: AnySAMInFormatter[T]] extends InFormatterC
  *
  * @tparam T The recursive type of the class that implements this trait.
  */
-trait AnySAMInFormatter[T <: AnySAMInFormatter[T]] extends InFormatter[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordDataset, T] {
+trait AnySAMInFormatter[T <: AnySAMInFormatter[T]] extends InFormatter[Alignment, AlignmentProduct, AlignmentDataset, T] {
 
   /**
    * A serializable form of the SAM File Header.
@@ -74,19 +74,19 @@ trait AnySAMInFormatter[T <: AnySAMInFormatter[T]] extends InFormatter[Alignment
   val readGroups: ReadGroupDictionary
 
   /**
-   * A converter from AlignmentRecord to SAMRecord.
+   * A converter from Alignment to SAMRecord.
    */
-  val converter: AlignmentRecordConverter
+  val converter: AlignmentConverter
 
   protected def makeWriter(os: OutputStream): SAMFileWriter
 
   /**
-   * Writes alignment records to an output stream in SAM format.
+   * Writes alignments to an output stream in SAM format.
    *
    * @param os An OutputStream connected to a process we are piping to.
    * @param iter An iterator of records to write.
    */
-  def write(os: OutputStream, iter: Iterator[AlignmentRecord]) {
+  def write(os: OutputStream, iter: Iterator[Alignment]) {
 
     // create a sam file writer connected to the output stream
     val writer = makeWriter(os)

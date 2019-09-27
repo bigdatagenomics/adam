@@ -23,7 +23,7 @@ import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models.{ ReadGroupDictionary, ReferencePosition }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.fragment.FragmentDataset
-import org.bdgenomics.formats.avro.{ AlignmentRecord, Fragment, Strand }
+import org.bdgenomics.formats.avro.{ Alignment, Fragment, Strand }
 
 private[rdd] object MarkDuplicates extends Serializable with Logging {
 
@@ -40,7 +40,7 @@ private[rdd] object MarkDuplicates extends Serializable with Logging {
   }
 
   // Calculates the sum of the phred scores that are greater than or equal to 15
-  def score(record: AlignmentRecord): Int = {
+  def score(record: Alignment): Int = {
     record.qualityScoreValues.filter(15 <=).sum
   }
 
@@ -60,7 +60,7 @@ private[rdd] object MarkDuplicates extends Serializable with Logging {
     })
   }
 
-  def apply(rdd: AlignmentRecordDataset): RDD[AlignmentRecord] = {
+  def apply(rdd: AlignmentDataset): RDD[Alignment] = {
 
     markBuckets(rdd.groupReadsByFragment(), rdd.readGroups)
       .flatMap(_.allReads)

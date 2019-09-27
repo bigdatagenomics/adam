@@ -19,14 +19,14 @@ package org.bdgenomics.adam.cli
 
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
-import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.formats.avro.Alignment
 import org.bdgenomics.utils.cli.Args4j
 
 class ViewSuite extends ADAMFunSuite {
 
   val inputSamPath = testFile("flag-values.sam")
 
-  var reads: Array[AlignmentRecord] = null
+  var reads: Array[Alignment] = null
   var readsCount = 0
 
   sparkBefore("initialize 'reads' Array from flag-values.sam") {
@@ -41,9 +41,9 @@ class ViewSuite extends ADAMFunSuite {
         )
       )
 
-    val alignmentRecords = sc.loadBam(inputSamPath)
+    val Alignments = sc.loadBam(inputSamPath)
 
-    reads = transform.apply(alignmentRecords).rdd.collect()
+    reads = transform.apply(Alignments).rdd.collect()
     readsCount = reads.length
   }
 

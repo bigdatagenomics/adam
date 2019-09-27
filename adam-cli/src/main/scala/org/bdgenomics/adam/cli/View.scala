@@ -22,7 +22,7 @@ import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.cli.FileSystemUtils._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.ADAMSaveAnyArgs
-import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.formats.avro.Alignment
 import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
@@ -116,7 +116,7 @@ object View extends BDGCommandCompanion {
 class View(val args: ViewArgs) extends BDGSparkCommand[ViewArgs] {
   val companion = View
 
-  type ReadFilter = (AlignmentRecord => Boolean)
+  type ReadFilter = (Alignment => Boolean)
 
   def getFilters(n: Int, matchValue: Boolean = true): List[ReadFilter] = {
     def getFilter(bit: Int, fn: ReadFilter): Option[ReadFilter] =
@@ -149,7 +149,7 @@ class View(val args: ViewArgs) extends BDGSparkCommand[ViewArgs] {
     ).flatten
   }
 
-  def applyFilters(reads: RDD[AlignmentRecord]): RDD[AlignmentRecord] = {
+  def applyFilters(reads: RDD[Alignment]): RDD[Alignment] = {
     val matchAllFilters: List[ReadFilter] = getFilters(args.matchAllBits, matchValue = true)
     val mismatchAllFilters: List[ReadFilter] = getFilters(args.mismatchAllBits, matchValue = false)
     val allFilters = matchAllFilters ++ mismatchAllFilters
@@ -171,7 +171,7 @@ class View(val args: ViewArgs) extends BDGSparkCommand[ViewArgs] {
     checkWriteablePath(args.outputPath, sc.hadoopConfiguration)
 
     val reads = sc.loadAlignments(args.inputPath)
-      .transform((rdd: RDD[AlignmentRecord]) => applyFilters(rdd))
+      .transform((rdd: RDD[Alignment]) => applyFilters(rdd))
 
     if (args.outputPath != null) {
       reads.save(args)

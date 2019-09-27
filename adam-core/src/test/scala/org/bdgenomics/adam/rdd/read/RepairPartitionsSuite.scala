@@ -20,13 +20,13 @@ package org.bdgenomics.adam.rdd.read
 import org.apache.spark.SparkContext._
 import org.apache.spark.Partitioner
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.formats.avro.Alignment
 import org.bdgenomics.adam.util.ADAMFunSuite
 
 class RepairPartitionsSuite extends ADAMFunSuite {
 
-  def makeRead(readName: String): AlignmentRecord = {
-    AlignmentRecord.newBuilder()
+  def makeRead(readName: String): Alignment = {
+    Alignment.newBuilder()
       .setReadName(readName)
       .build()
   }
