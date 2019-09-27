@@ -41,7 +41,11 @@ import org.bdgenomics.adam.rdd.{
 import org.bdgenomics.adam.rich.RichVariant
 import org.bdgenomics.adam.serialization.AvroSerializer
 import org.bdgenomics.adam.sql.{ Variant => VariantProduct }
-import org.bdgenomics.formats.avro.{ Sample, Variant }
+import org.bdgenomics.formats.avro.{
+  Reference,
+  Sample,
+  Variant
+}
 import org.bdgenomics.utils.interval.array.{
   IntervalArray,
   IntervalArraySerializer
@@ -78,42 +82,73 @@ private[adam] class VariantArraySerializer extends IntervalArraySerializer[Refer
 object VariantDataset extends Serializable {
 
   /**
-   * Builds a VariantDataset without a partition map.
+   * Builds a VariantDataset from an RDD.
    *
    * @param rdd The underlying Variant RDD.
-   * @param sequences The sequence dictionary for the RDD.
-   * @param headerLines The header lines for the RDD.
-   * @return A new Variant RDD.
+   * @param references The references for the genomic dataset.
+   * @param headerLines The header lines for the genomic dataset.
+   * @return A new VariantDataset.
+   */
+  def apply(rdd: RDD[Variant],
+            references: Iterable[Reference],
+            headerLines: Seq[VCFHeaderLine]): VariantDataset = {
+
+    RDDBoundVariantDataset(rdd, SequenceDictionary.fromAvro(references.toSeq), headerLines, None)
+  }
+
+  /**
+   * Builds a VariantDataset from an RDD.
+   *
+   * @param rdd The underlying Variant RDD.
+   * @param sequences The sequence dictionary for the genomic dataset.
+   * @param headerLines The header lines for the genomic dataset.
+   * @return A new VariantDataset.
    */
   def apply(rdd: RDD[Variant],
             sequences: SequenceDictionary,
             headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines): VariantDataset = {
 
-    new RDDBoundVariantDataset(rdd, sequences, headerLines, None)
+    RDDBoundVariantDataset(rdd, sequences, headerLines, None)
   }
 
   /**
-   * An dataset containing variants called against a given reference genome.
+   * Builds a VariantDataset from a Dataset.
    *
-   * @param ds Variants.
-   * @param sequences A dictionary describing the reference genome.
+   * @param ds The underlying Variant Dataset.
+   * @return A new VariantDataset.
    */
   def apply(ds: Dataset[VariantProduct]): VariantDataset = {
-    VariantDataset(ds, SequenceDictionary.empty, DefaultHeaderLines.allHeaderLines)
+    DatasetBoundVariantDataset(ds, SequenceDictionary.empty, DefaultHeaderLines.allHeaderLines)
   }
 
   /**
-   * An dataset containing variants called against a given reference genome.
+   * Builds a VariantDataset from a Dataset.
    *
-   * @param ds Variants.
-   * @param sequences A dictionary describing the reference genome.
-   * @param headerLines The VCF header lines that cover all INFO/FORMAT fields
-   *   needed to represent this RDD of Variants.
+   * @param ds The underlying Variant Dataset.
+   * @param references The references for the genomic dataset.
+   * @param headerLines The header lines for the genomic dataset.
+   * @return A new VariantDataset.
+   */
+  def apply(ds: Dataset[VariantProduct],
+            references: Iterable[Reference],
+            headerLines: Seq[VCFHeaderLine]): VariantDataset = {
+
+    DatasetBoundVariantDataset(ds, SequenceDictionary.fromAvro(references.toSeq), headerLines)
+  }
+
+  /**
+   * Builds a VariantDataset from a Dataset.
+   *
+   * @param ds The underlying Variant Dataset.
+   * @param sequences The sequence dictionary for the genomic dataset.
+   * @param headerLines The header lines for the genomic dataset.
+   * @return A new VariantDataset.
    */
   def apply(ds: Dataset[VariantProduct],
             sequences: SequenceDictionary,
             headerLines: Seq[VCFHeaderLine]): VariantDataset = {
-    new DatasetBoundVariantDataset(ds, sequences, headerLines)
+
+    DatasetBoundVariantDataset(ds, sequences, headerLines)
   }
 }
 

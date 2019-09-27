@@ -50,6 +50,7 @@ import org.bdgenomics.utils.interval.array.{ IntervalArray, IntervalArraySeriali
 import org.bdgenomics.formats.avro.{
   Genotype,
   GenotypeAllele,
+  Reference,
   Sample,
   Variant,
   VariantAnnotation
@@ -86,50 +87,82 @@ private[adam] class GenotypeArraySerializer extends IntervalArraySerializer[Refe
 object GenotypeDataset extends Serializable {
 
   /**
-   * An genomic dataset containing genotypes called in a set of samples against a given
-   * reference genome.
+   * Builds a GenotypeDataset from an RDD.
    *
-   * @param rdd Called genotypes.
-   * @param sequences A dictionary describing the reference genome.
-   * @param samples The samples called.
-   * @param headerLines The VCF header lines that cover all INFO/FORMAT fields
-   *   needed to represent this genomic dataset of Genotypes.
+   * @param rdd The underlying Genotype RDD.
+   * @param references The references for the genomic dataset.
+   * @param samples The samples for the genomic dataset.
+   * @param headerLines The header lines for the genomic dataset.
+   * @return A new GenotypeDataset.
+   */
+  def apply(rdd: RDD[Genotype],
+            references: Iterable[Reference],
+            samples: Iterable[Sample],
+            headerLines: Seq[VCFHeaderLine]): GenotypeDataset = {
+
+    RDDBoundGenotypeDataset(rdd, SequenceDictionary.fromAvro(references.toSeq), samples.toSeq, headerLines, None)
+  }
+
+  /**
+   * Builds a GenotypeDataset from an RDD.
+   *
+   * @param rdd The underlying Genotype RDD.
+   * @param references The references for the genomic dataset.
+   * @param samples The samples for the genomic dataset.
+   * @param headerLines The header lines for the genomic dataset.
+   * @return A new GenotypeDataset.
    */
   def apply(rdd: RDD[Genotype],
             sequences: SequenceDictionary,
             samples: Iterable[Sample],
             headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines): GenotypeDataset = {
+
     RDDBoundGenotypeDataset(rdd, sequences, samples.toSeq, headerLines, None)
   }
 
   /**
-   * An genomic dataset containing genotypes called in a set of samples against a given
-   * reference genome, populated from a SQL Dataset.
+   * Builds a GenotypeDataset from a Dataset.
    *
-   * @param ds Called genotypes.
-   * @param sequences A dictionary describing the reference genome.
-   * @param samples The samples called.
-   * @param headerLines The VCF header lines that cover all INFO/FORMAT fields
-   *   needed to represent this genomic dataset of Genotypes.
+   * @param ds The underlying Genotype Dataset.
+   * @return A new GenotypeDataset.
    */
   def apply(ds: Dataset[GenotypeProduct]): GenotypeDataset = {
-    GenotypeDataset(ds, SequenceDictionary.empty, Seq.empty, DefaultHeaderLines.allHeaderLines)
+    DatasetBoundGenotypeDataset(ds, SequenceDictionary.empty, Seq.empty, DefaultHeaderLines.allHeaderLines)
   }
 
   /**
-   * An genomic dataset containing genotypes called in a set of samples against a given
-   * reference genome, populated from a SQL Dataset.
+   * Builds a GenotypeDataset from a Dataset.
    *
-   * @param ds Called genotypes.
-   * @param sequences A dictionary describing the reference genome.
-   * @param samples The samples called.
-   * @param headerLines The VCF header lines that cover all INFO/FORMAT fields
-   *   needed to represent this genomic dataset of Genotypes.
+   * @param ds The underlying Genotype Dataset.
+   * @param references The references for the genomic dataset.
+   * @param samples The samples for the genomic dataset.
+   * @param headerLines The header lines for the genomic dataset.
+   * @return A new GenotypeDataset.
    */
+
+  def apply(ds: Dataset[GenotypeProduct],
+            references: Iterable[Reference],
+            samples: Iterable[Sample],
+            headerLines: Seq[VCFHeaderLine]): GenotypeDataset = {
+
+    DatasetBoundGenotypeDataset(ds, SequenceDictionary.fromAvro(references.toSeq), samples.toSeq, headerLines)
+  }
+
+  /**
+   * Builds a GenotypeDataset from a Dataset.
+   *
+   * @param ds The underlying Genotype Dataset.
+   * @param sequences The sequence dictionary for the genomic dataset.
+   * @param samples The samples for the genomic dataset.
+   * @param headerLines The header lines for the genomic dataset.
+   * @return A new GenotypeDataset.
+   */
+
   def apply(ds: Dataset[GenotypeProduct],
             sequences: SequenceDictionary,
             samples: Iterable[Sample],
             headerLines: Seq[VCFHeaderLine]): GenotypeDataset = {
+
     DatasetBoundGenotypeDataset(ds, sequences, samples.toSeq, headerLines)
   }
 }

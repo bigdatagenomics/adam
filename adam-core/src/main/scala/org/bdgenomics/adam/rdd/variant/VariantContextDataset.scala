@@ -60,7 +60,7 @@ import org.bdgenomics.adam.rdd.{
 }
 import org.bdgenomics.adam.sql.{ VariantContext => VariantContextProduct }
 import org.bdgenomics.adam.util.{ FileMerger, FileExtensions }
-import org.bdgenomics.formats.avro.Sample
+import org.bdgenomics.formats.avro.{ Reference, Sample }
 import org.bdgenomics.utils.interval.array.{
   IntervalArray,
   IntervalArraySerializer
@@ -102,7 +102,24 @@ private[adam] class VariantContextArraySerializer extends IntervalArraySerialize
 object VariantContextDataset extends Serializable {
 
   /**
-   * Builds a VariantContextDataset without a partition map.
+   * Builds a VariantContextDataset from an RDD.
+   *
+   * @param rdd The underlying VariantContext RDD.
+   * @param references The references for the genomic dataset.
+   * @param samples The samples for the genomic dataset.
+   * @param headerLines The header lines for the genomic dataset.
+   * @return A new VariantContextDataset.
+   */
+  def apply(rdd: RDD[VariantContext],
+            references: Iterable[Reference],
+            samples: Iterable[Sample],
+            headerLines: Seq[VCFHeaderLine]): VariantContextDataset = {
+
+    RDDBoundVariantContextDataset(rdd, SequenceDictionary.fromAvro(references.toSeq), samples.toSeq, headerLines)
+  }
+
+  /**
+   * Builds a VariantContextDataset from an RDD.
    *
    * @param rdd The underlying VariantContext RDD.
    * @param sequences The sequence dictionary for the genomic dataset.
@@ -113,18 +130,13 @@ object VariantContextDataset extends Serializable {
   def apply(rdd: RDD[VariantContext],
             sequences: SequenceDictionary,
             samples: Iterable[Sample],
-            headerLines: Seq[VCFHeaderLine]): VariantContextDataset = {
+            headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines): VariantContextDataset = {
+
     RDDBoundVariantContextDataset(rdd, sequences, samples.toSeq, headerLines, None)
   }
 
-  def apply(rdd: RDD[VariantContext],
-            sequences: SequenceDictionary,
-            samples: Iterable[Sample]): VariantContextDataset = {
-    RDDBoundVariantContextDataset(rdd, sequences, samples.toSeq, null)
-  }
-
   /**
-   * Builds a VariantContextDataset without a partition map.
+   * Builds a VariantContextDataset from a Dataset.
    *
    * @param ds The underlying VariantContext dataset.
    * @return A new VariantContextDataset.
@@ -134,7 +146,24 @@ object VariantContextDataset extends Serializable {
   }
 
   /**
-   * Builds a VariantContextDataset without a partition map.
+   * Builds a VariantContextDataset from a Dataset.
+   *
+   * @param ds The underlying VariantContext dataset.
+   * @param references The references for the genomic dataset.
+   * @param samples The samples for the genomic dataset.
+   * @param headerLines The header lines for the genomic dataset.
+   * @return A new VariantContextDataset.
+   */
+  def apply(ds: Dataset[VariantContextProduct],
+            references: Iterable[Reference],
+            samples: Iterable[Sample],
+            headerLines: Seq[VCFHeaderLine]): VariantContextDataset = {
+
+    DatasetBoundVariantContextDataset(ds, SequenceDictionary.fromAvro(references.toSeq), samples.toSeq, headerLines)
+  }
+
+  /**
+   * Builds a VariantContextDataset from a Dataset.
    *
    * @param ds The underlying VariantContext dataset.
    * @param sequences The sequence dictionary for the genomic dataset.
@@ -146,6 +175,7 @@ object VariantContextDataset extends Serializable {
             sequences: SequenceDictionary,
             samples: Iterable[Sample],
             headerLines: Seq[VCFHeaderLine]): VariantContextDataset = {
+
     DatasetBoundVariantContextDataset(ds, sequences, samples.toSeq, headerLines)
   }
 }
