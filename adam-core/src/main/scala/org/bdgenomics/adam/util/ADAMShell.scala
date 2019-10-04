@@ -27,7 +27,8 @@ import htsjdk.variant.vcf.{
 import org.apache.spark.SparkContext
 import org.bdgenomics.adam.models.VariantContext
 import org.bdgenomics.adam.rdd.feature.FeatureDataset
-import org.bdgenomics.adam.rdd.read.AlignmentDataset
+import org.bdgenomics.adam.rdd.read.{ AlignmentDataset, ReadDataset }
+import org.bdgenomics.adam.rdd.sequence.{ SequenceDataset, SliceDataset }
 import org.bdgenomics.adam.rdd.variant.{
   GenotypeDataset,
   VariantDataset,
@@ -37,7 +38,10 @@ import org.bdgenomics.formats.avro.{
   Alignment,
   Feature,
   Genotype,
+  Read,
   Sample,
+  Sequence,
+  Slice,
   Variant
 }
 import org.bdgenomics.utils.instrumentation.MetricsListener
@@ -237,6 +241,44 @@ object ADAMShell {
     println("\nGenotype Filters\n" + new ASCIITable(header, rows).toString)
   }
 
+  /** Read headers. */
+  val readHeaders = Array(
+    new ASCIITableHeader("Name"),
+    new ASCIITableHeader("Description"),
+    new ASCIITableHeader("Alphabet"),
+    new ASCIITableHeader("Length")
+  )
+
+  /**
+   * Print attribute values for reads in the specified ReadDataset up to the limit.
+   *
+   * @param reads ReadDataset.
+   * @param keys Sequence of attribute keys. Defaults to empty.
+   * @param limit Number of reads to print attribute values for. Defaults to 10.
+   */
+  def printReadAttributes(reads: ReadDataset, keys: Seq[String] = Seq.empty, limit: Int = 10): Unit = {
+    printReadAttributes(reads.rdd.take(limit), keys)
+  }
+
+  /**
+   * Print attribute values for the specified reads.
+   *
+   * @param reads Sequence of reads.
+   * @param keys Sequence of attribute keys.
+   */
+  def printReadAttributes(reads: Seq[Read], keys: Seq[String]): Unit = {
+    val header = readHeaders ++ keys.map(key => new ASCIITableHeader(key))
+
+    val rows: Array[Array[String]] = reads.map(r => Array[String](
+      Option(r.getName()).getOrElse(""),
+      Option(r.getDescription()).getOrElse(""),
+      Option(r.getAlphabet()).fold("")(_.toString),
+      Option(r.getLength()).fold("")(_.toString)
+    ) ++ keys.map(key => Option(r.getAttributes().get(key)).getOrElse(""))).toArray
+
+    println("\nRead Attributes\n" + new ASCIITable(header, rows).toString)
+  }
+
   /**
    * Print attribute values for the specified samples.
    *
@@ -255,6 +297,94 @@ object ADAMShell {
     ) ++ keys.map(key => Option(s.getAttributes().get(key)).getOrElse("")) ++ Array(Option(s.getProcessingSteps().toString).getOrElse(""))).toArray
 
     println("\nSample Attributes\n" + new ASCIITable(header, rows).toString)
+  }
+
+  /** Sequence headers. */
+  val sequenceHeaders = Array(
+    new ASCIITableHeader("Name"),
+    new ASCIITableHeader("Description"),
+    new ASCIITableHeader("Alphabet"),
+    new ASCIITableHeader("Length")
+  )
+
+  /**
+   * Print attribute values for sequences in the specified SequenceDataset up to the limit.
+   *
+   * @param sequences SequenceDataset.
+   * @param keys Sequence of attribute keys. Defaults to empty.
+   * @param limit Number of sequences to print attribute values for. Defaults to 10.
+   */
+  def printSequenceAttributes(sequences: SequenceDataset, keys: Seq[String] = Seq.empty, limit: Int = 10): Unit = {
+    printSequenceAttributes(sequences.rdd.take(limit), keys)
+  }
+
+  /**
+   * Print attribute values for the specified sequences.
+   *
+   * @param sequences Sequence of sequences.
+   * @param keys Sequence of attribute keys.
+   */
+  def printSequenceAttributes(sequences: Seq[Sequence], keys: Seq[String]): Unit = {
+    val header = sequenceHeaders ++ keys.map(key => new ASCIITableHeader(key))
+
+    val rows: Array[Array[String]] = sequences.map(s => Array[String](
+      Option(s.getName()).getOrElse(""),
+      Option(s.getDescription()).getOrElse(""),
+      Option(s.getAlphabet()).fold("")(_.toString),
+      Option(s.getLength()).fold("")(_.toString)
+    ) ++ keys.map(key => Option(s.getAttributes().get(key)).getOrElse(""))).toArray
+
+    println("\nSequence Attributes\n" + new ASCIITable(header, rows).toString)
+  }
+
+  /** Slice headers. */
+  val sliceHeaders = Array(
+    new ASCIITableHeader("Name"),
+    new ASCIITableHeader("Description"),
+    new ASCIITableHeader("Alphabet"),
+    new ASCIITableHeader("Start"),
+    new ASCIITableHeader("End"),
+    new ASCIITableHeader("Strand"),
+    new ASCIITableHeader("Length"),
+    new ASCIITableHeader("Total length"),
+    new ASCIITableHeader("Index"),
+    new ASCIITableHeader("Slices")
+  )
+
+  /**
+   * Print attribute values for slices in the specified SliceDataset up to the limit.
+   *
+   * @param slices SliceDataset.
+   * @param keys Sequence of attribute keys. Defaults to empty.
+   * @param limit Number of slices to print attribute values for. Defaults to 10.
+   */
+  def printSliceAttributes(slices: SliceDataset, keys: Seq[String] = Seq.empty, limit: Int = 10): Unit = {
+    printSliceAttributes(slices.rdd.take(limit), keys)
+  }
+
+  /**
+   * Print attribute values for the specified slices.
+   *
+   * @param slices Sequence of slices.
+   * @param keys Sequence of attribute keys.
+   */
+  def printSliceAttributes(slices: Seq[Slice], keys: Seq[String]): Unit = {
+    val header = sliceHeaders ++ keys.map(key => new ASCIITableHeader(key))
+
+    val rows: Array[Array[String]] = slices.map(s => Array[String](
+      Option(s.getName()).getOrElse(""),
+      Option(s.getDescription()).getOrElse(""),
+      Option(s.getAlphabet()).fold("")(_.toString),
+      Option(s.getStart()).fold("")(_.toString),
+      Option(s.getEnd()).fold("")(_.toString),
+      Option(s.getStrand()).fold("")(_.toString),
+      Option(s.getLength()).fold("")(_.toString),
+      Option(s.getTotalLength()).fold("")(_.toString),
+      Option(s.getIndex()).fold("")(_.toString),
+      Option(s.getSlices()).fold("")(_.toString)
+    ) ++ keys.map(key => Option(s.getAttributes().get(key)).getOrElse(""))).toArray
+
+    println("\nSlice Attributes\n" + new ASCIITable(header, rows).toString)
   }
 
   /**
