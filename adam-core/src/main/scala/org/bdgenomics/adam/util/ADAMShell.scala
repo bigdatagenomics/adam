@@ -69,10 +69,10 @@ object ADAMShell {
    * Print attribute values for alignments in the specified AlignmentDataset up to the limit.
    *
    * @param alignments AlignmentDataset.
-   * @param keys Sequence of attribute keys.
+   * @param keys Sequence of attribute keys. Defaults to empty.
    * @param limit Number of alignments to print attribute values for. Defaults to 10.
    */
-  def printAlignmentAttributes(alignments: AlignmentDataset, keys: Seq[String], limit: Int = 10): Unit = {
+  def printAlignmentAttributes(alignments: AlignmentDataset, keys: Seq[String] = Seq.empty, limit: Int = 10): Unit = {
     printAlignmentAttributes(alignments.rdd.take(limit), keys)
   }
 
@@ -117,10 +117,10 @@ object ADAMShell {
    * Print attribute values for features in the specified FeatureDataset up to the limit.
    *
    * @param features FeatureDataset.
-   * @param keys Sequence of attribute keys.
+   * @param keys Sequence of attribute keys. Defaults to empty.
    * @param limit Number of features to print attribute values for. Defaults to 10.
    */
-  def printFeatureAttributes(features: FeatureDataset, keys: Seq[String], limit: Int = 10): Unit = {
+  def printFeatureAttributes(features: FeatureDataset, keys: Seq[String] = Seq.empty, limit: Int = 10): Unit = {
     printFeatureAttributes(features.rdd.take(limit), keys)
   }
 
@@ -151,10 +151,10 @@ object ADAMShell {
    * Print VCF FORMAT field attributes for genotypes in the specified GenotypeDataset up to the limit.
    *
    * @param genotypes GenotypeDataset.
-   * @param keys Sequence of VCF FORMAT field attribute keys.
+   * @param keys Sequence of VCF FORMAT field attribute keys. Defaults to empty.
    * @param limit Number of genotypes to print VCF FORMAT field attribute values for. Defaults to 10.
    */
-  def printFormatFields(genotypes: GenotypeDataset, keys: Seq[String], limit: Int = 10): Unit = {
+  def printFormatFields(genotypes: GenotypeDataset, keys: Seq[String] = Seq.empty, limit: Int = 10): Unit = {
     printFormatFields(genotypes.rdd.take(limit), keys, genotypes.headerLines)
   }
 
@@ -241,9 +241,9 @@ object ADAMShell {
    * Print attribute values for the specified samples.
    *
    * @param samples Sequence of samples.
-   * @param keys Sequence of attribute keys.
+   * @param keys Sequence of attribute keys. Defaults to empty.
    */
-  def printSampleAttributes(samples: Seq[Sample], keys: Seq[String]): Unit = {
+  def printSampleAttributes(samples: Seq[Sample], keys: Seq[String] = Seq.empty): Unit = {
     val header = Array(
       new ASCIITableHeader("Identifier"),
       new ASCIITableHeader("Name")
@@ -310,10 +310,10 @@ object ADAMShell {
    * Print VCF INFO field attributes for variants in the specified VariantDataset up to the limit.
    *
    * @param variants VariantDataset.
-   * @param keys Sequence of VCF INFO field attribute keys.
+   * @param keys Sequence of VCF INFO field attribute keys. Defaults to empty.
    * @param limit Number of variants to print VCF INFO field attribute values for. Defaults to 10.
    */
-  def printInfoFields(variants: VariantDataset, keys: Seq[String], limit: Int = 10): Unit = {
+  def printInfoFields(variants: VariantDataset, keys: Seq[String] = Seq.empty, limit: Int = 10): Unit = {
     printInfoFields(variants.rdd.take(limit), keys, variants.headerLines)
   }
 
@@ -321,7 +321,7 @@ object ADAMShell {
    * Print VCF INFO field attributes for the specified variants.
    *
    * @param variants Sequence of variants.
-   * @param keys Sequence of VCF INFO field attribute keys.
+   * @param keys Sequence of VCF INFO field attribute keys. Defaults to empty.
    * @param headerLines Sequence of VCF header lines.
    */
   def printInfoFields(variants: Seq[Variant], keys: Seq[String], headerLines: Seq[VCFHeaderLine]): Unit = {
