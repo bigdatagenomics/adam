@@ -332,7 +332,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
    * @param pathName The path to save the file to.
    * @param blockSize The size in bytes of blocks to write.
    * @param pageSize The size in bytes of pages to write.
-   * @param compressCodec The compression codec to apply to pages.
+   * @param compressionCodec The compression codec to apply to pages.
    * @param disableDictionaryEncoding If false, dictionary encoding is used. If
    *   true, delta encoding is used.
    */
@@ -340,7 +340,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
     pathName: String,
     blockSize: Int = 128 * 1024 * 1024,
     pageSize: Int = 1 * 1024 * 1024,
-    compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
+    compressionCodec: CompressionCodecName = CompressionCodecName.GZIP,
     disableDictionaryEncoding: Boolean = false): Unit
 
   /**
