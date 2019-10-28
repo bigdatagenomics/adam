@@ -278,13 +278,13 @@ sealed abstract class VariantContextDataset extends MultisampleGenomicDataset[Va
   def saveAsParquet(pathName: String,
                     blockSize: Int = 128 * 1024 * 1024,
                     pageSize: Int = 1 * 1024 * 1024,
-                    compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
+                    compressionCodec: CompressionCodecName = CompressionCodecName.GZIP,
                     disableDictionaryEncoding: Boolean = false) {
     info("Saving directly as Parquet from SQL. Options other than compression codec are ignored.")
     dataset.toDF()
       .write
       .format("parquet")
-      .option("spark.sql.parquet.compression.codec", compressCodec.toString.toLowerCase())
+      .option("spark.sql.parquet.compression.codec", compressionCodec.toString.toLowerCase())
       .save(pathName)
     saveMetadata(pathName)
   }
