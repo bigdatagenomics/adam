@@ -246,13 +246,13 @@ abstract class CoverageDataset
   def saveAsParquet(filePath: String,
                     blockSize: Int = 128 * 1024 * 1024,
                     pageSize: Int = 1 * 1024 * 1024,
-                    compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
+                    compressionCodec: CompressionCodecName = CompressionCodecName.GZIP,
                     disableDictionaryEncoding: Boolean = false) {
 
     toFeatures().saveAsParquet(filePath,
       blockSize,
       pageSize,
-      compressCodec,
+      compressionCodec,
       disableDictionaryEncoding)
   }
 

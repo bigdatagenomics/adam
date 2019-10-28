@@ -371,11 +371,11 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
    * Saves this RDD to disk in range binned partitioned Parquet format.
    *
    * @param pathName The path to save the partitioned Parquet file  to.
-   * @param compressCodec Name of the compression codec to use.
+   * @param compressionCodec Name of the compression codec to use.
    * @param partitionSize Size of partitions used when writing Parquet, in base pairs (bp).  Defaults to 1,000,000 bp.
    */
   def saveAsPartitionedParquet(pathName: String,
-                               compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
+                               compressionCodec: CompressionCodecName = CompressionCodecName.GZIP,
                                partitionSize: Int = 1000000) {
     info("Saving directly as Hive-partitioned Parquet from SQL. " +
       "Options other than compression codec are ignored.")
@@ -384,7 +384,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
       .write
       .partitionBy("referenceName", "positionBin")
       .format("parquet")
-      .option("spark.sql.parquet.compression.codec", compressCodec.toString.toLowerCase())
+      .option("spark.sql.parquet.compression.codec", compressionCodec.toString.toLowerCase())
       .save(pathName)
     writePartitionedParquetFlag(pathName, partitionSize)
     saveMetadata(pathName)
@@ -3101,13 +3101,13 @@ sealed abstract class GenericGenomicDataset[T, U <: Product] extends GenomicData
   def saveAsParquet(pathName: String,
                     blockSize: Int = 128 * 1024 * 1024,
                     pageSize: Int = 1 * 1024 * 1024,
-                    compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
+                    compressionCodec: CompressionCodecName = CompressionCodecName.GZIP,
                     disableDictionaryEncoding: Boolean = false) {
     warn("Saving directly as Parquet from SQL. Options other than compression codec are ignored.")
     dataset.toDF()
       .write
       .format("parquet")
-      .option("spark.sql.parquet.compression.codec", compressCodec.toString.toLowerCase())
+      .option("spark.sql.parquet.compression.codec", compressionCodec.toString.toLowerCase())
       .save(pathName)
   }
 
@@ -3786,7 +3786,7 @@ abstract class AvroGenomicDataset[T <% IndexedRecord: Manifest, U <: Product, V 
    * @param pathName The path to save the file to.
    * @param blockSize The size in bytes of blocks to write. Defaults to 128 * 1024 * 1024.
    * @param pageSize The size in bytes of pages to write. Defaults to 1 * 1024 * 1024.
-   * @param compressCodec The compression codec to apply to pages. Defaults to CompressionCodecName.GZIP.
+   * @param compressionCodec The compression codec to apply to pages. Defaults to CompressionCodecName.GZIP.
    * @param disableDictionaryEncoding If false, dictionary encoding is used. If
    *   true, delta encoding is used. Defaults to false.
    * @param optSchema The optional schema to set. Defaults to None.
@@ -3795,13 +3795,13 @@ abstract class AvroGenomicDataset[T <% IndexedRecord: Manifest, U <: Product, V 
     pathName: String,
     blockSize: Int = 128 * 1024 * 1024,
     pageSize: Int = 1 * 1024 * 1024,
-    compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
+    compressionCodec: CompressionCodecName = CompressionCodecName.GZIP,
     disableDictionaryEncoding: Boolean = false,
     optSchema: Option[Schema] = None): Unit = SaveAsADAM.time {
     info("Saving data in ADAM format")
 
     val job = HadoopUtil.newJob(rdd.context)
-    ParquetOutputFormat.setCompression(job, compressCodec)
+    ParquetOutputFormat.setCompression(job, compressionCodec)
     ParquetOutputFormat.setEnableDictionary(job, !disableDictionaryEncoding)
     ParquetOutputFormat.setBlockSize(job, blockSize)
     ParquetOutputFormat.setPageSize(job, pageSize)
@@ -3869,7 +3869,7 @@ abstract class AvroGenomicDataset[T <% IndexedRecord: Manifest, U <: Product, V 
    * @param pathName Path to save the file at.
    * @param blockSize Size per block.
    * @param pageSize Size per page.
-   * @param compressCodec Name of the compression codec to use.
+   * @param compressionCodec Name of the compression codec to use.
    * @param disableDictionaryEncoding Whether or not to disable bit-packing.
    *   Default is false.
    */
@@ -3877,12 +3877,12 @@ abstract class AvroGenomicDataset[T <% IndexedRecord: Manifest, U <: Product, V 
     pathName: String,
     blockSize: Int = 128 * 1024 * 1024,
     pageSize: Int = 1 * 1024 * 1024,
-    compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
+    compressionCodec: CompressionCodecName = CompressionCodecName.GZIP,
     disableDictionaryEncoding: Boolean = false) {
     saveRddAsParquet(pathName,
       blockSize,
       pageSize,
-      compressCodec,
+      compressionCodec,
       disableDictionaryEncoding)
     saveMetadata(pathName)
   }
@@ -3893,7 +3893,7 @@ abstract class AvroGenomicDataset[T <% IndexedRecord: Manifest, U <: Product, V 
    * @param pathName Path to save the file at.
    * @param blockSize The size in bytes of blocks to write.
    * @param pageSize The size in bytes of pages to write.
-   * @param compressCodec The compression codec to apply to pages.
+   * @param compressionCodec The compression codec to apply to pages.
    * @param disableDictionaryEncoding If false, dictionary encoding is used. If
    *   true, delta encoding is used.
    */
@@ -3901,13 +3901,13 @@ abstract class AvroGenomicDataset[T <% IndexedRecord: Manifest, U <: Product, V 
     pathName: java.lang.String,
     blockSize: java.lang.Integer,
     pageSize: java.lang.Integer,
-    compressCodec: CompressionCodecName,
+    compressionCodec: CompressionCodecName,
     disableDictionaryEncoding: java.lang.Boolean) {
     saveAsParquet(
       new JavaSaveArgs(pathName,
         blockSize = blockSize,
         pageSize = pageSize,
-        compressionCodec = compressCodec,
+        compressionCodec = compressionCodec,
         disableDictionaryEncoding = disableDictionaryEncoding))
   }
 
