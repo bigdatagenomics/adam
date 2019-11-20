@@ -22,7 +22,7 @@
     <scala.version>2.11.12</scala.version>
     <scala.version.prefix>2.11</scala.version.prefix>
     <spark.version>2.4.4</spark.version>
-    <parquet.version>1.10.1</parquet.version>
+    <parquet.version>1.11.0</parquet.version>
     <!-- Edit the following line to configure the Hadoop (HDFS) version. -->
     <hadoop.version>2.7.5</hadoop.version>
     <hadoop-bam.version>7.9.2</hadoop-bam.version>
@@ -68,6 +68,13 @@
     <url>https://github.com/bigdatagenomics/adam/issues</url>
   </issueManagement>
 
+  <repositories>
+    <repository>
+      <id>apache-staging</id>
+      <name>Apache staging repository (RCs)</name>
+      <url>https://repository.apache.org/content/groups/staging</url>
+    </repository>
+  </repositories>
   <build>
     <outputDirectory>target/${scala.version}/classes</outputDirectory>
     <testOutputDirectory>target/${scala.version}/test-classes</testOutputDirectory>
@@ -507,6 +514,19 @@
         <artifactId>parquet-avro</artifactId>
         <version>${parquet.version}</version>
       </dependency>
+
+      <!-- newly required, overriding spark-sql -->
+      <dependency>
+        <groupId>org.apache.parquet</groupId>
+        <artifactId>parquet-column</artifactId>
+        <version>${parquet.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.parquet</groupId>
+        <artifactId>parquet-hadoop</artifactId>
+        <version>${parquet.version}</version>
+      </dependency>
+
       <dependency>
         <groupId>org.seqdoop</groupId>
         <artifactId>hadoop-bam</artifactId>

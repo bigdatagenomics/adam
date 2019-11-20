@@ -248,7 +248,20 @@
       <artifactId>parquet-avro</artifactId>
       <scope>compile</scope>
     </dependency>
+
+    <!-- newly required, overriding spark-sql -->
     <dependency>
+      <groupId>org.apache.parquet</groupId>
+      <artifactId>parquet-column</artifactId>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.parquet</groupId>
+      <artifactId>parquet-hadoop</artifactId>
+      <scope>compile</scope>
+    </dependency>
+
+      <dependency>
       <groupId>org.seqdoop</groupId>
       <artifactId>hadoop-bam</artifactId>
       <scope>compile</scope>
