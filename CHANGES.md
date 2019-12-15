@@ -1,5 +1,32 @@
 # ADAM Changelog #
 
+### Version 0.30.0 ###
+
+**Closed issues:**
+
+ - Github changes plugin used in release script does not use two-factor authentication [\#2235](https://github.com/bigdatagenomics/adam/issues/2235)
+ - Update bdg-formats dependency version to 0.15.0 [\#2233](https://github.com/bigdatagenomics/adam/issues/2233)
+ - 7 tests failing on HEAD [\#2231](https://github.com/bigdatagenomics/adam/issues/2231)
+ - BUILD FAILURE - Failed to execute goal org.codehaus.mojo:exec-maven-plugin:1.5.0:java [\#2227](https://github.com/bigdatagenomics/adam/issues/2227)
+ - GenomicDataset saveAsParquet incorrectly named parameter compressCodec [\#2224](https://github.com/bigdatagenomics/adam/issues/2224)
+ - Add printAttributes methods for Reads, Sequences, Slices [\#2219](https://github.com/bigdatagenomics/adam/issues/2219)
+ - Add default Set.empty to printAttributes key method parameter [\#2218](https://github.com/bigdatagenomics/adam/issues/2218)
+ - Add Avro-friendly ctrs in rdd.variant package [\#2215](https://github.com/bigdatagenomics/adam/issues/2215)
+ - Cannot resolve adam-shade-spark2_2.11 dependency [\#2211](https://github.com/bigdatagenomics/adam/issues/2211)
+
+**Merged and closed pull requests:**
+
+ - [ADAM-2235] Update github-changes-maven-plugin dependency version to 1.1 [\#2236](https://github.com/bigdatagenomics/adam/pull/2236) ([heuermh](https://github.com/heuermh))
+ - [ADAM-2233] Update bdg-formats dependency version to 0.15.0. [\#2234](https://github.com/bigdatagenomics/adam/pull/2234) ([heuermh](https://github.com/heuermh))
+ - Update maven plugin dependency versions. [\#2230](https://github.com/bigdatagenomics/adam/pull/2230) ([heuermh](https://github.com/heuermh))
+ - [ADAM-2224] Complete refactoring of compressionCodec for named parameter. [\#2229](https://github.com/bigdatagenomics/adam/pull/2229) ([heuermh](https://github.com/heuermh))
+ - [ADAM-2224] Use compressionCodec for named parameter. [\#2226](https://github.com/bigdatagenomics/adam/pull/2226) ([heuermh](https://github.com/heuermh))
+ - [ADAM-2219] Add printAttributes methods for Reads, Sequences, Slices [\#2223](https://github.com/bigdatagenomics/adam/pull/2223) ([heuermh](https://github.com/heuermh))
+ - [ADAM-2218] Add default Set.empty to printAttributes key method parameter. [\#2220](https://github.com/bigdatagenomics/adam/pull/2220) ([heuermh](https://github.com/heuermh))
+ - Rename AlignmentRecord to Alignment. [\#2217](https://github.com/bigdatagenomics/adam/pull/2217) ([heuermh](https://github.com/heuermh))
+ - [ADAM-2215] Add Avro-friendly ctrs to rdd.variant package [\#2216](https://github.com/bigdatagenomics/adam/pull/2216) ([heuermh](https://github.com/heuermh))
+
+
 ### Version 0.29.0 ###
 
 **Closed issues:**
