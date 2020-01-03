@@ -1,7 +1,6 @@
 ADAM
 ====
 
-[![Build Status](https://img.shields.io/jenkins/s/https/amplab.cs.berkeley.edu/jenkins/view/Big%20Data%20Genomics/job/ADAM.svg)](https://amplab.cs.berkeley.edu/jenkins/view/Big%20Data%20Genomics/job/ADAM/)
 [![Maven Central](https://img.shields.io/maven-central/v/org.bdgenomics.adam/adam-parent-spark2_2.11.svg?maxAge=600)](http://search.maven.org/#search%7Cga%7C1%7Corg.bdgenomics.adam)
 [![API Documentation](http://javadoc.io/badge/org.bdgenomics.adam/adam-core-spark2_2.11.svg?color=brightgreen&label=scaladoc)](http://javadoc.io/doc/org.bdgenomics.adam/adam-core-spark2_2.11)
 
