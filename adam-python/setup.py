@@ -24,8 +24,8 @@ from setuptools import find_packages, setup
 
 from version import version as adam_version
 
-if sys.version_info < (2, 7):
-    print("Python versions prior to 2.7 are not supported for pip installed ADAM.",
+if sys.version_info < (3, 1):
+    print("Python versions prior to 3.1 are not supported for pip installed ADAM.",
           file=sys.stderr)
     exit(-1)
 
