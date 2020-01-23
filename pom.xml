@@ -35,7 +35,6 @@
   </properties>
 
   <modules>
-    <module>adam-shade</module>
     <module>adam-codegen</module>
     <module>adam-core</module>
     <module>adam-apis</module>
@@ -68,13 +67,6 @@
     <url>https://github.com/bigdatagenomics/adam/issues</url>
   </issueManagement>
 
-  <repositories>
-    <repository>
-      <id>apache-staging</id>
-      <name>Apache staging repository (RCs)</name>
-      <url>https://repository.apache.org/content/groups/staging</url>
-    </repository>
-  </repositories>
   <build>
     <outputDirectory>target/${scala.version}/classes</outputDirectory>
     <testOutputDirectory>target/${scala.version}/test-classes</testOutputDirectory>
