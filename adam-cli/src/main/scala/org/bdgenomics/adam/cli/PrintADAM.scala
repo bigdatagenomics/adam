@@ -82,8 +82,10 @@ class PrintADAM(protected val args: PrintADAMArgs) extends BDGSparkCommand[Print
             case Some(hd) =>
               val schema = hd.getSchema
               val writer = new GenericDatumWriter[Object](schema)
-              val encoder = EncoderFactory.get().jsonEncoder(schema, out, pretty = true)
-              encoder.configure(out)
+              val encoder = EncoderFactory.get().jsonEncoder(schema, out)
+              val jg = new org.codehaus.jackson.JsonFactory().createJsonGenerator(out)
+              jg.useDefaultPrettyPrinter()
+              encoder.configure(jg)
               it.foreach(pileup => {
                 writer.write(pileup, encoder)
               })

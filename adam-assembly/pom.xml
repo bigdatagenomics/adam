@@ -59,21 +59,6 @@
               <goal>shade</goal>
             </goals>
             <configuration>
-              <relocations>
-                <relocation>
-                  <pattern>org.apache.parquet</pattern>
-                  <shadedPattern>org.bdgenomics.adam.shaded.org.apache.parquet</shadedPattern>
-                </relocation>
-                <!-- Some packages are shaded already, and on the original spark classpath. Shade them more. -->
-                <relocation>
-                  <pattern>shaded.parquet</pattern>
-                  <shadedPattern>org.bdgenomics.adam.shaded.reshaded.parquet</shadedPattern>
-                </relocation>
-                <relocation>
-                  <pattern>org.apache.avro</pattern>
-                  <shadedPattern>org.bdgenomics.adam.shaded.org.apache.avro</shadedPattern>
-                </relocation>
-              </relocations>
               <transformers>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
               </transformers>
