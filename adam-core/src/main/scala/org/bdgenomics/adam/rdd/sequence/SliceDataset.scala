@@ -23,7 +23,6 @@ import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.api.java.function.{ Function => JFunction }
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Dataset, SQLContext }
-import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.read.ReadDataset
 import org.bdgenomics.adam.rdd.{
@@ -305,7 +304,7 @@ sealed abstract class SliceDataset extends AvroGenomicDataset[Slice, SliceProduc
    *
    * @return Returns a new SliceDataset with the sequence dictionary replaced.
    */
-  def createSequenceDictionary(): SliceDataset = CreateSequenceDictionary.time {
+  def createSequenceDictionary(): SliceDataset = {
     val sd = new SequenceDictionary(rdd.flatMap(slice => {
       if (slice.getName != null) {
         Some(SequenceRecord.fromSlice(slice))

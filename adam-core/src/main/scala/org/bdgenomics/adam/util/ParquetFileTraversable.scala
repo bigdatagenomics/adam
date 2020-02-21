@@ -21,7 +21,6 @@ import org.apache.avro.generic.IndexedRecord
 import org.apache.hadoop.fs.Path
 import org.apache.parquet.avro.AvroParquetReader
 import org.apache.spark.SparkContext
-import org.bdgenomics.utils.misc.HadoopUtil
 
 /**
  * Implements a traversable collection that is backed by a Parquet file.
@@ -45,7 +44,7 @@ class ParquetFileTraversable[T <: IndexedRecord](sc: SparkContext, file: Path) e
     }
     val status = fs.getFileStatus(file)
     var paths = List[Path]()
-    if (HadoopUtil.isDirectory(status)) {
+    if (status.isDirectory) {
       val files = fs.listStatus(file)
       files.foreach {
         file =>

@@ -18,7 +18,6 @@
 package org.bdgenomics.adam.converters
 
 import htsjdk.samtools.{ SAMFileHeader, SAMRecord }
-import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rich.RichAlignment
 import org.bdgenomics.formats.avro.{ Alignment, Fragment }
@@ -239,7 +238,7 @@ class AlignmentConverter extends Serializable {
    */
   def convert(adamRecord: Alignment,
               header: SAMFileHeader,
-              rgd: ReadGroupDictionary): SAMRecord = ConvertToSAMRecord.time {
+              rgd: ReadGroupDictionary): SAMRecord = {
 
     // attach header
     val builder: SAMRecord = new SAMRecord(header)

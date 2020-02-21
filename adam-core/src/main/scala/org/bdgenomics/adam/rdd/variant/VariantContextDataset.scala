@@ -42,7 +42,6 @@ import org.bdgenomics.adam.converters.{
   DefaultHeaderLines,
   VariantContextConverter
 }
-import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models.{
   ReferenceRegion,
   ReferenceRegionSerializer,
@@ -390,7 +389,7 @@ sealed abstract class VariantContextDataset extends MultisampleGenomicDataset[Va
    * @return Return a tuple of VCFHeader and an RDD of HTSJDK VariantContexts.
    */
   def convertToVcf(
-    stringency: ValidationStringency): (VCFHeader, RDD[htsjdk.variant.variantcontext.VariantContext]) = ConvertToVcf.time {
+    stringency: ValidationStringency): (VCFHeader, RDD[htsjdk.variant.variantcontext.VariantContext]) = {
 
     val header = new VCFHeader(
       headerLines.toSet,
@@ -430,7 +429,7 @@ sealed abstract class VariantContextDataset extends MultisampleGenomicDataset[Va
                 asSingleFile: Boolean,
                 deferMerging: Boolean,
                 disableFastConcat: Boolean,
-                stringency: ValidationStringency): Unit = SaveAsVcf.time {
+                stringency: ValidationStringency): Unit = {
 
     // TODO: Add BCF support
     val vcfFormat = VCFFormat.VCF

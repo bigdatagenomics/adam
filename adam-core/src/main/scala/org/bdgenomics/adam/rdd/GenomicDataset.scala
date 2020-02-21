@@ -33,7 +33,7 @@ import org.apache.avro.file.DataFileWriter
 import org.apache.avro.generic.IndexedRecord
 import org.apache.avro.specific.{ SpecificDatumWriter, SpecificRecordBase }
 import org.apache.hadoop.fs.{ FileSystem, Path }
-import org.apache.hadoop.mapreduce.{ OutputFormat => NewOutputFormat }
+import org.apache.hadoop.mapreduce.{ Job, OutputFormat => NewOutputFormat }
 import org.apache.parquet.avro.AvroParquetOutputFormat
 import org.apache.parquet.hadoop.ParquetOutputFormat
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
@@ -41,11 +41,10 @@ import org.apache.parquet.hadoop.util.ContextUtil
 import org.apache.spark.{ SparkContext, SparkFiles }
 import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.api.java.function.{ Function => JFunction, Function2 }
-import org.apache.spark.rdd.{ InstrumentedOutputFormat, RDD }
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ DataFrame, Dataset, SQLContext }
 import org.apache.spark.sql.functions._
 import org.apache.spark.storage.StorageLevel
-import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models.{
   ReadGroup,
   ReadGroupDictionary,
@@ -62,7 +61,6 @@ import org.bdgenomics.formats.avro.{
 }
 import org.bdgenomics.utils.cli.SaveArgs
 import org.bdgenomics.utils.interval.array.IntervalArray
-import org.bdgenomics.utils.misc.HadoopUtil
 import org.json4s.JsonDSL._
 import org.json4s.jackson.JsonMethods._
 import scala.annotation.tailrec
@@ -1161,7 +1159,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
       txTag: ClassTag[(T, X)],
-      uyTag: TypeTag[(U, Y)]): GenericGenomicDataset[(T, X), (U, Y)] = InnerBroadcastJoin.time {
+      uyTag: TypeTag[(U, Y)]): GenericGenomicDataset[(T, X), (U, Y)] = {
 
     // key the RDDs and join
     RDDBoundGenericGenomicDataset[(T, X), (U, Y)](InnerTreeRegionJoin[T, X]().broadcastAndJoin(
@@ -1225,7 +1223,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   def broadcastRegionJoinAgainst[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
     broadcast: GenomicBroadcast[X, Y, Z])(
       implicit tTag: ClassTag[T], xTag: ClassTag[X],
-      uyTag: TypeTag[(Y, U)]): GenericGenomicDataset[(X, T), (Y, U)] = InnerBroadcastJoin.time {
+      uyTag: TypeTag[(Y, U)]): GenericGenomicDataset[(X, T), (Y, U)] = {
 
     // key the RDDs and join
     RDDBoundGenericGenomicDataset[(X, T), (Y, U)](InnerTreeRegionJoin[X, T]().join(
@@ -1323,7 +1321,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
       otxTag: ClassTag[(Option[T], X)],
-      ouyTag: TypeTag[(Option[U], Y)]): GenericGenomicDataset[(Option[T], X), (Option[U], Y)] = RightOuterBroadcastJoin.time {
+      ouyTag: TypeTag[(Option[U], Y)]): GenericGenomicDataset[(Option[T], X), (Option[U], Y)] = {
 
     // key the RDDs and join
     RDDBoundGenericGenomicDataset[(Option[T], X), (Option[U], Y)](RightOuterTreeRegionJoin[T, X]().broadcastAndJoin(
@@ -1365,7 +1363,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   def rightOuterBroadcastRegionJoinAgainst[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
     broadcast: GenomicBroadcast[X, Y, Z])(
       implicit tTag: ClassTag[T], xTag: ClassTag[X],
-      oyuTag: TypeTag[(Option[Y], U)]): GenericGenomicDataset[(Option[X], T), (Option[Y], U)] = RightOuterBroadcastJoin.time {
+      oyuTag: TypeTag[(Option[Y], U)]): GenericGenomicDataset[(Option[X], T), (Option[Y], U)] = {
 
     // key the RDDs and join
     RDDBoundGenericGenomicDataset[(Option[X], T), (Option[Y], U)](RightOuterTreeRegionJoin[X, T]().join(
@@ -1487,7 +1485,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
       itxTag: ClassTag[(Iterable[T], X)],
-      iuyTag: TypeTag[(Seq[U], Y)]): GenericGenomicDataset[(Iterable[T], X), (Seq[U], Y)] = BroadcastJoinAndGroupByRight.time {
+      iuyTag: TypeTag[(Seq[U], Y)]): GenericGenomicDataset[(Iterable[T], X), (Seq[U], Y)] = {
 
     // key the RDDs and join
     RDDBoundGenericGenomicDataset[(Iterable[T], X), (Seq[U], Y)](InnerTreeRegionJoinAndGroupByRight[T, X]().broadcastAndJoin(
@@ -1527,7 +1525,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   def broadcastRegionJoinAgainstAndGroupByRight[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
     broadcast: GenomicBroadcast[X, Y, Z])(
       implicit tTag: ClassTag[T], xTag: ClassTag[X],
-      syuTag: TypeTag[(Seq[Y], U)]): GenericGenomicDataset[(Iterable[X], T), (Seq[Y], U)] = BroadcastJoinAndGroupByRight.time {
+      syuTag: TypeTag[(Seq[Y], U)]): GenericGenomicDataset[(Iterable[X], T), (Seq[Y], U)] = {
 
     // key the RDDs and join
     RDDBoundGenericGenomicDataset[(Iterable[X], T), (Seq[Y], U)](InnerTreeRegionJoinAndGroupByRight[X, T]().join(
@@ -1657,7 +1655,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
       itxTag: ClassTag[(Iterable[T], X)],
-      iuyTag: TypeTag[(Seq[U], Y)]): GenericGenomicDataset[(Iterable[T], X), (Seq[U], Y)] = RightOuterBroadcastJoinAndGroupByRight.time {
+      iuyTag: TypeTag[(Seq[U], Y)]): GenericGenomicDataset[(Iterable[T], X), (Seq[U], Y)] = {
 
     // key the RDDs and join
     RDDBoundGenericGenomicDataset[(Iterable[T], X), (Seq[U], Y)](RightOuterTreeRegionJoinAndGroupByRight[T, X]().broadcastAndJoin(
@@ -1699,7 +1697,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   def rightOuterBroadcastRegionJoinAgainstAndGroupByRight[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
     broadcast: GenomicBroadcast[X, Y, Z])(
       implicit tTag: ClassTag[T], xTag: ClassTag[X],
-      syuTag: TypeTag[(Seq[Y], U)]): GenericGenomicDataset[(Iterable[X], T), (Seq[Y], U)] = RightOuterBroadcastJoinAndGroupByRight.time {
+      syuTag: TypeTag[(Seq[Y], U)]): GenericGenomicDataset[(Iterable[X], T), (Seq[Y], U)] = {
 
     // key the RDDs and join
     RDDBoundGenericGenomicDataset[(Iterable[X], T), (Seq[Y], U)](RightOuterTreeRegionJoinAndGroupByRight[X, T]().join(
@@ -1852,7 +1850,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
       txTag: ClassTag[(T, X)],
-      uyTag: TypeTag[(U, Y)]): GenericGenomicDataset[(T, X), (U, Y)] = InnerShuffleJoin.time {
+      uyTag: TypeTag[(U, Y)]): GenericGenomicDataset[(T, X), (U, Y)] = {
 
     val (leftRddToJoin, rightRddToJoin) =
       prepareForShuffleRegionJoin(genomicDataset, optPartitions, flankSize)
@@ -2007,7 +2005,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
       otxTag: ClassTag[(Option[T], X)],
-      ouyTag: TypeTag[(Option[U], Y)]): GenericGenomicDataset[(Option[T], X), (Option[U], Y)] = RightOuterShuffleJoin.time {
+      ouyTag: TypeTag[(Option[U], Y)]): GenericGenomicDataset[(Option[T], X), (Option[U], Y)] = {
 
     val (leftRddToJoin, rightRddToJoin) =
       prepareForShuffleRegionJoin(genomicDataset, optPartitions, flankSize)
@@ -2170,7 +2168,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
       toxTag: ClassTag[(T, Option[X])],
-      uoyTag: TypeTag[(U, Option[Y])]): GenericGenomicDataset[(T, Option[X]), (U, Option[Y])] = LeftOuterShuffleJoin.time {
+      uoyTag: TypeTag[(U, Option[Y])]): GenericGenomicDataset[(T, Option[X]), (U, Option[Y])] = {
 
     val (leftRddToJoin, rightRddToJoin) =
       prepareForShuffleRegionJoin(genomicDataset, optPartitions, flankSize)
@@ -2334,7 +2332,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
       toxTag: ClassTag[(T, Iterable[X])],
-      uiyTag: TypeTag[(U, Seq[Y])]): GenericGenomicDataset[(T, Iterable[X]), (U, Seq[Y])] = LeftOuterShuffleJoin.time {
+      uiyTag: TypeTag[(U, Seq[Y])]): GenericGenomicDataset[(T, Iterable[X]), (U, Seq[Y])] = {
 
     val (leftRddToJoin, rightRddToJoin) =
       prepareForShuffleRegionJoin(genomicDataset, optPartitions, flankSize)
@@ -2494,7 +2492,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
       otoxTag: ClassTag[(Option[T], Option[X])],
-      ouoyTag: TypeTag[(Option[U], Option[Y])]): GenericGenomicDataset[(Option[T], Option[X]), (Option[U], Option[Y])] = FullOuterShuffleJoin.time {
+      ouoyTag: TypeTag[(Option[U], Option[Y])]): GenericGenomicDataset[(Option[T], Option[X]), (Option[U], Option[Y])] = {
 
     val (leftRddToJoin, rightRddToJoin) =
       prepareForShuffleRegionJoin(genomicDataset, optPartitions, flankSize)
@@ -2651,7 +2649,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
       tixTag: ClassTag[(T, Iterable[X])],
-      uiyTag: TypeTag[(U, Seq[Y])]): GenericGenomicDataset[(T, Iterable[X]), (U, Seq[Y])] = ShuffleJoinAndGroupByLeft.time {
+      uiyTag: TypeTag[(U, Seq[Y])]): GenericGenomicDataset[(T, Iterable[X]), (U, Seq[Y])] = {
 
     val (leftRddToJoin, rightRddToJoin) =
       prepareForShuffleRegionJoin(genomicDataset, optPartitions, flankSize)
@@ -2819,7 +2817,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
       otixTag: ClassTag[(Option[T], Iterable[X])],
-      ouiyTag: TypeTag[(Option[U], Seq[Y])]): GenericGenomicDataset[(Option[T], Iterable[X]), (Option[U], Seq[Y])] = RightOuterShuffleJoinAndGroupByLeft.time {
+      ouiyTag: TypeTag[(Option[U], Seq[Y])]): GenericGenomicDataset[(Option[T], Iterable[X]), (Option[U], Seq[Y])] = {
 
     val (leftRddToJoin, rightRddToJoin) =
       prepareForShuffleRegionJoin(genomicDataset, optPartitions, flankSize)
@@ -3797,10 +3795,10 @@ abstract class AvroGenomicDataset[T <% IndexedRecord: Manifest, U <: Product, V 
     pageSize: Int = 1 * 1024 * 1024,
     compressionCodec: CompressionCodecName = CompressionCodecName.GZIP,
     disableDictionaryEncoding: Boolean = false,
-    optSchema: Option[Schema] = None): Unit = SaveAsADAM.time {
+    optSchema: Option[Schema] = None): Unit = {
     info("Saving data in ADAM format")
 
-    val job = HadoopUtil.newJob(rdd.context)
+    val job = Job.getInstance(rdd.context.hadoopConfiguration)
     ParquetOutputFormat.setCompression(job, compressionCodec)
     ParquetOutputFormat.setEnableDictionary(job, !disableDictionaryEncoding)
     ParquetOutputFormat.setBlockSize(job, blockSize)
@@ -3815,7 +3813,8 @@ abstract class AvroGenomicDataset[T <% IndexedRecord: Manifest, U <: Product, V 
     // Save the values to the ADAM/Parquet file
     recordToSave.saveAsNewAPIHadoopFile(
       pathName,
-      classOf[java.lang.Void], manifest[T].runtimeClass.asInstanceOf[Class[T]], classOf[InstrumentedADAMAvroParquetOutputFormat],
+      classOf[java.lang.Void], manifest[T].runtimeClass.asInstanceOf[Class[T]],
+      classOf[AvroParquetOutputFormat[IndexedRecord]],
       ContextUtil.getConfiguration(job)
     )
   }
@@ -3933,10 +3932,4 @@ abstract class AvroGenomicDataset[T <% IndexedRecord: Manifest, U <: Product, V 
     f.writeInt(partitionSize)
     f.close()
   }
-}
-
-@deprecated("this class will be removed", "ADAM 0.32.0")
-private[rdd] class InstrumentedADAMAvroParquetOutputFormat extends InstrumentedOutputFormat[Void, IndexedRecord] {
-  override def outputFormatClass(): Class[_ <: NewOutputFormat[Void, IndexedRecord]] = classOf[AvroParquetOutputFormat[IndexedRecord]]
-  override def timerName(): String = WriteADAMRecord.timerName
 }

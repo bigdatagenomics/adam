@@ -25,7 +25,6 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.apache.spark.sql.functions._
 import org.bdgenomics.adam.converters.AlignmentConverter
-import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models.{
   ReadGroupDictionary,
   ReferenceRegion,
@@ -369,7 +368,7 @@ sealed abstract class FragmentDataset extends AvroReadGroupGenomicDataset[Fragme
    * @return A new genomic dataset where reads have the duplicate read flag set. Duplicate
    *   reads are NOT filtered out.
    */
-  def markDuplicates(): FragmentDataset = MarkDuplicatesInDriver.time {
+  def markDuplicates(): FragmentDataset = {
     replaceRdd(MarkDuplicates(this))
   }
 

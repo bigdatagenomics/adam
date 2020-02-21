@@ -18,7 +18,6 @@
 package org.bdgenomics.adam.rdd.read.recalibration
 
 import java.lang.StringBuilder
-import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.util.PhredUtils
 import org.bdgenomics.formats.avro.Alignment
 
@@ -43,7 +42,7 @@ private[recalibration] case class Recalibrator(
    * if the covariates for this read were observed.
    */
   def apply(record: Alignment,
-            covariates: Array[CovariateKey]): Alignment = RecalibrateRead.time {
+            covariates: Array[CovariateKey]): Alignment = {
     if (record.getQualityScores != null &&
       covariates.nonEmpty) {
       Alignment.newBuilder(record)
@@ -63,7 +62,7 @@ private[recalibration] case class Recalibrator(
    *   covariate table.
    */
   private def computeQual(read: Alignment,
-                          covariates: Array[CovariateKey]): String = ComputeQualityScore.time {
+                          covariates: Array[CovariateKey]): String = {
     val origQuals = read.getQualityScores
     val quals = new StringBuilder(origQuals)
     val newQuals = table(covariates)
@@ -89,7 +88,7 @@ private[recalibration] object Recalibrator {
    * @return Returns a recalibrator gained by inverting the observation table.
    */
   def apply(observed: ObservationTable,
-            minAcceptableAsciiPhred: Char): Recalibrator = CreatingRecalibrationTable.time {
+            minAcceptableAsciiPhred: Char): Recalibrator = {
     Recalibrator(RecalibrationTable(observed), minAcceptableAsciiPhred)
   }
 }

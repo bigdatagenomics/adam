@@ -17,7 +17,6 @@
  */
 package org.bdgenomics.adam.rdd.read.recalibration
 
-import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.formats.avro.Alignment
 import scala.annotation.tailrec
 
@@ -31,7 +30,7 @@ private[adam] class DinucCovariate extends Covariate[(Char, Char)] {
    * @param read The read to compute the covariate for.
    * @return Returns an array of dinucleotides.
    */
-  def compute(read: Alignment): Array[(Char, Char)] = ComputingDinucCovariate.time {
+  def compute(read: Alignment): Array[(Char, Char)] = {
     val sequence = read.getSequence
     if (read.getReadNegativeStrand) {
 

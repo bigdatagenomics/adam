@@ -34,13 +34,13 @@ import org.apache.avro.specific.{ SpecificDatumReader, SpecificRecord, SpecificR
 import org.apache.hadoop.fs.{ FileSystem, Path, PathFilter }
 import org.apache.hadoop.io.{ LongWritable, Text }
 import org.apache.hadoop.io.compress.CompressionCodecFactory
+import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat
 import org.apache.parquet.avro.{ AvroParquetInputFormat, AvroReadSupport }
 import org.apache.parquet.filter2.predicate.FilterPredicate
 import org.apache.parquet.hadoop.ParquetInputFormat
 import org.apache.parquet.hadoop.util.ContextUtil
 import org.apache.spark.SparkContext
-import org.apache.spark.rdd.MetricsContext._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{
   DataFrame,
@@ -50,7 +50,6 @@ import org.apache.spark.sql.{
 }
 import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.converters._
-import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.io._
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.projections.{
@@ -97,9 +96,7 @@ import org.bdgenomics.formats.avro.{
   Slice,
   Variant
 }
-import org.bdgenomics.utils.instrumentation.Metrics
 import org.bdgenomics.utils.io.LocalFileByteAccess
-import org.bdgenomics.utils.misc.HadoopUtil
 import org.json4s.DefaultFormats
 import org.json4s.jackson.JsonMethods._
 import org.seqdoop.hadoop_bam._
@@ -1778,7 +1775,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
         "e.g.:\nval reads: RDD[Alignment] = ...\nbut not\nval reads = ...\nwithout a return type")
 
     info("Reading the ADAM file at %s to create RDD".format(pathName))
-    val job = HadoopUtil.newJob(sc)
+    val job = Job.getInstance(sc.hadoopConfiguration)
     ParquetInputFormat.setReadSupportClass(job, classOf[AvroReadSupport[T]])
     AvroParquetInputFormat.setAvroReadSchema(job,
       manifest[T].runtimeClass.newInstance().asInstanceOf[T].getSchema)
@@ -1801,8 +1798,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       ContextUtil.getConfiguration(job)
     )
 
-    val instrumented = if (Metrics.isRecording) records.instrument() else records
-    val mapped = instrumented.map(p => p._2)
+    val mapped = records.map(p => p._2)
 
     if (optPredicate.isDefined) {
       // Strip the nulls that the predicate returns
@@ -1996,7 +1992,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    */
   def loadBam(
     pathName: String,
-    stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentDataset = LoadBam.time {
+    stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentDataset = {
 
     val path = new Path(pathName)
     val bamFiles = getFsAndFiles(path)
@@ -2040,7 +2036,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
           (kv1._1 ++ kv2._1, kv1._2 ++ kv2._2, kv1._3 ++ kv2._3)
         })
 
-    val job = HadoopUtil.newJob(sc)
+    val job = Job.getInstance(sc.hadoopConfiguration)
 
     // this logic is counterintuitive but important.
     // hadoop-bam does not filter out .bai files, etc. as such, if we have a
@@ -2058,7 +2054,6 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       sc.newAPIHadoopFile(pathName, classOf[AnySAMInputFormat], classOf[LongWritable],
         classOf[SAMRecordWritable], ContextUtil.getConfiguration(job))
     }
-    if (Metrics.isRecording) records.instrument() else records
     val samRecordConverter = new SAMRecordConverter
 
     AlignmentDataset(records.map(p => samRecordConverter.convert(p._2.get)),
@@ -2101,7 +2096,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   def loadIndexedBam(
     pathName: String,
     viewRegions: Iterable[ReferenceRegion],
-    stringency: ValidationStringency = ValidationStringency.STRICT)(implicit s: DummyImplicit): AlignmentDataset = LoadIndexedBam.time {
+    stringency: ValidationStringency = ValidationStringency.STRICT)(implicit s: DummyImplicit): AlignmentDataset = {
 
     val path = new Path(pathName)
 
@@ -2163,7 +2158,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
         (kv1._1 ++ kv2._1, kv1._2 ++ kv2._2, kv1._3 ++ kv2._3)
       })
 
-    val job = HadoopUtil.newJob(sc)
+    val job = Job.getInstance(sc.hadoopConfiguration)
     val conf = ContextUtil.getConfiguration(job)
     BAMInputFormat.setIntervals(conf, viewRegions.toList.map(r => LocatableReferenceRegion(r)))
 
@@ -2173,7 +2168,6 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       classOf[SAMRecordWritable],
       conf)
 
-    if (Metrics.isRecording) records.instrument() else records
     val samRecordConverter = new SAMRecordConverter
     AlignmentDataset(records.map(p => samRecordConverter.convert(p._2.get)),
       seqDict,
@@ -2434,9 +2428,9 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @return Returns an unaligned AlignmentDataset.
    */
   def loadInterleavedFastq(
-    pathName: String): AlignmentDataset = LoadInterleavedFastq.time {
+    pathName: String): AlignmentDataset = {
 
-    val job = HadoopUtil.newJob(sc)
+    val job = Job.getInstance(sc.hadoopConfiguration)
     val conf = ContextUtil.getConfiguration(job)
     conf.setStrings("io.compression.codecs",
       classOf[BGZFCodec].getCanonicalName,
@@ -2448,7 +2442,6 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       classOf[Text],
       conf
     )
-    if (Metrics.isRecording) records.instrument() else records
 
     // convert records
     val fastqRecordConverter = new FastqRecordConverter
@@ -2475,7 +2468,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     pathName1: String,
     optPathName2: Option[String],
     optReadGroup: Option[String] = None,
-    stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentDataset = LoadFastq.time {
+    stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentDataset = {
 
     optPathName2.fold({
       loadUnpairedFastq(pathName1,
@@ -2510,7 +2503,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     pathName2: String,
     optReadGroup: Option[String] = None,
     persistLevel: Option[StorageLevel] = Some(StorageLevel.MEMORY_ONLY),
-    stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentDataset = LoadPairedFastq.time {
+    stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentDataset = {
 
     val reads1 = loadUnpairedFastq(
       pathName1,
@@ -2565,9 +2558,9 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     setFirstOfPair: Boolean = false,
     setSecondOfPair: Boolean = false,
     optReadGroup: Option[String] = None,
-    stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentDataset = LoadUnpairedFastq.time {
+    stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentDataset = {
 
-    val job = HadoopUtil.newJob(sc)
+    val job = Job.getInstance(sc.hadoopConfiguration)
     val conf = ContextUtil.getConfiguration(job)
     conf.setStrings("io.compression.codecs",
       classOf[BGZFCodec].getCanonicalName,
@@ -2580,7 +2573,6 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       classOf[Text],
       conf
     )
-    if (Metrics.isRecording) records.instrument() else records
 
     // convert records
     val fastqRecordConverter = new FastqRecordConverter
@@ -2610,7 +2602,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     optViewRegions: Option[Iterable[ReferenceRegion]]): RDD[(LongWritable, VariantContextWritable)] = {
 
     // load vcf data
-    val job = HadoopUtil.newJob(sc)
+    val job = Job.getInstance(sc.hadoopConfiguration)
     job.getConfiguration().setStrings("io.compression.codecs",
       classOf[BGZFCodec].getCanonicalName(),
       classOf[BGZFEnhancedGzipCodec].getCanonicalName())
@@ -2639,13 +2631,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    */
   def loadVcf(
     pathName: String,
-    stringency: ValidationStringency = ValidationStringency.STRICT): VariantContextDataset = LoadVcf.time {
+    stringency: ValidationStringency = ValidationStringency.STRICT): VariantContextDataset = {
 
     // load records from VCF
     val records = readVcfRecords(pathName, None)
-
-    // attach instrumentation
-    if (Metrics.isRecording) records.instrument() else records
 
     // load vcf metadata
     val (sd, samples, headers) = loadVcfMetadata(pathName)
@@ -2690,13 +2679,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     pathName: String,
     infoFields: Set[String],
     formatFields: Set[String],
-    stringency: ValidationStringency = ValidationStringency.STRICT): VariantContextDataset = LoadVcf.time {
+    stringency: ValidationStringency = ValidationStringency.STRICT): VariantContextDataset = {
 
     // load records from VCF
     val records = readVcfRecords(pathName, None)
-
-    // attach instrumentation
-    if (Metrics.isRecording) records.instrument() else records
 
     // load vcf metadata
     val (sd, samples, headers) = loadVcfMetadata(pathName)
@@ -2752,13 +2738,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   def loadIndexedVcf(
     pathName: String,
     viewRegions: Iterable[ReferenceRegion],
-    stringency: ValidationStringency = ValidationStringency.STRICT)(implicit s: DummyImplicit): VariantContextDataset = LoadIndexedVcf.time {
+    stringency: ValidationStringency = ValidationStringency.STRICT)(implicit s: DummyImplicit): VariantContextDataset = {
 
     // load records from VCF
     val records = readVcfRecords(pathName, Some(viewRegions))
-
-    // attach instrumentation
-    if (Metrics.isRecording) records.instrument() else records
 
     // load vcf metadata
     val (sd, samples, headers) = loadVcfMetadata(pathName)
@@ -3007,9 +2990,9 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   sequencing fragment.
    */
   def loadInterleavedFastqAsFragments(
-    pathName: String): FragmentDataset = LoadInterleavedFastqFragments.time {
+    pathName: String): FragmentDataset = {
 
-    val job = HadoopUtil.newJob(sc)
+    val job = Job.getInstance(sc.hadoopConfiguration)
     val conf = ContextUtil.getConfiguration(job)
     conf.setStrings("io.compression.codecs",
       classOf[BGZFCodec].getCanonicalName,
@@ -3021,7 +3004,6 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       classOf[Text],
       conf
     )
-    if (Metrics.isRecording) records.instrument() else records
 
     // convert records
     val fastqRecordConverter = new FastqRecordConverter
@@ -3054,7 +3036,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     pathName2: String,
     optReadGroup: Option[String] = None,
     persistLevel: Option[StorageLevel] = Some(StorageLevel.MEMORY_ONLY),
-    stringency: ValidationStringency = ValidationStringency.STRICT): FragmentDataset = LoadPairedFastqFragments.time {
+    stringency: ValidationStringency = ValidationStringency.STRICT): FragmentDataset = {
 
     loadPairedFastq(pathName1, pathName2, optReadGroup, persistLevel, stringency).toFragments()
   }
@@ -3104,7 +3086,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     optMinPartitions: Option[Int] = None,
     optPredicate: Option[FilterPredicate] = None,
     optProjection: Option[Schema] = None,
-    stringency: ValidationStringency = ValidationStringency.STRICT): CoverageDataset = LoadCoverage.time {
+    stringency: ValidationStringency = ValidationStringency.STRICT): CoverageDataset = {
 
     loadFeatures(pathName,
       optSequenceDictionary = optSequenceDictionary,
@@ -3165,11 +3147,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     pathName: String,
     optSequenceDictionary: Option[SequenceDictionary] = None,
     optMinPartitions: Option[Int] = None,
-    stringency: ValidationStringency = ValidationStringency.STRICT): FeatureDataset = LoadGff3.time {
+    stringency: ValidationStringency = ValidationStringency.STRICT): FeatureDataset = {
 
     val records = sc.textFile(pathName, optMinPartitions.getOrElse(sc.defaultParallelism))
       .flatMap(new GFF3Parser().parse(_, stringency))
-    if (Metrics.isRecording) records.instrument() else records
 
     optSequenceDictionary
       .fold(FeatureDataset(records))(FeatureDataset(records, _, Seq.empty))
@@ -3191,11 +3172,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     pathName: String,
     optSequenceDictionary: Option[SequenceDictionary] = None,
     optMinPartitions: Option[Int] = None,
-    stringency: ValidationStringency = ValidationStringency.STRICT): FeatureDataset = LoadGtf.time {
+    stringency: ValidationStringency = ValidationStringency.STRICT): FeatureDataset = {
 
     val records = sc.textFile(pathName, optMinPartitions.getOrElse(sc.defaultParallelism))
       .flatMap(new GTFParser().parse(_, stringency))
-    if (Metrics.isRecording) records.instrument() else records
 
     optSequenceDictionary
       .fold(FeatureDataset(records))(FeatureDataset(records, _, Seq.empty))
@@ -3217,11 +3197,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     pathName: String,
     optSequenceDictionary: Option[SequenceDictionary] = None,
     optMinPartitions: Option[Int] = None,
-    stringency: ValidationStringency = ValidationStringency.STRICT): FeatureDataset = LoadBed.time {
+    stringency: ValidationStringency = ValidationStringency.STRICT): FeatureDataset = {
 
     val records = sc.textFile(pathName, optMinPartitions.getOrElse(sc.defaultParallelism))
       .flatMap(new BEDParser().parse(_, stringency))
-    if (Metrics.isRecording) records.instrument() else records
 
     optSequenceDictionary
       .fold(FeatureDataset(records))(FeatureDataset(records, _, Seq.empty))
@@ -3243,11 +3222,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     pathName: String,
     optSequenceDictionary: Option[SequenceDictionary] = None,
     optMinPartitions: Option[Int] = None,
-    stringency: ValidationStringency = ValidationStringency.STRICT): FeatureDataset = LoadNarrowPeak.time {
+    stringency: ValidationStringency = ValidationStringency.STRICT): FeatureDataset = {
 
     val records = sc.textFile(pathName, optMinPartitions.getOrElse(sc.defaultParallelism))
       .flatMap(new NarrowPeakParser().parse(_, stringency))
-    if (Metrics.isRecording) records.instrument() else records
 
     optSequenceDictionary
       .fold(FeatureDataset(records))(FeatureDataset(records, _, Seq.empty))
@@ -3267,14 +3245,13 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   def loadIntervalList(
     pathName: String,
     optMinPartitions: Option[Int] = None,
-    stringency: ValidationStringency = ValidationStringency.STRICT): FeatureDataset = LoadIntervalList.time {
+    stringency: ValidationStringency = ValidationStringency.STRICT): FeatureDataset = {
 
     val parsedLines = sc.textFile(pathName, optMinPartitions.getOrElse(sc.defaultParallelism))
       .map(new IntervalListParser().parseWithHeader(_, stringency))
     val (seqDict, records) = (SequenceDictionary(parsedLines.flatMap(_._1).collect(): _*),
       parsedLines.flatMap(_._2))
 
-    if (Metrics.isRecording) records.instrument() else records
     FeatureDataset(records, seqDict, Seq.empty)
   }
 
@@ -3423,7 +3400,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     optMinPartitions: Option[Int] = None,
     optPredicate: Option[FilterPredicate] = None,
     optProjection: Option[Schema] = None,
-    stringency: ValidationStringency = ValidationStringency.STRICT): FeatureDataset = LoadFeatures.time {
+    stringency: ValidationStringency = ValidationStringency.STRICT): FeatureDataset = {
 
     val trimmedPathName = trimExtensionIfCompressed(pathName)
     if (isBedExt(trimmedPathName)) {
@@ -3479,7 +3456,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    */
   def loadReferenceFile(
     pathName: String,
-    maximumLength: Long): ReferenceFile = LoadReferenceFile.time {
+    maximumLength: Long): ReferenceFile = {
 
     if (is2BitExt(pathName)) {
       new TwoBitFile(new LocalFileByteAccess(new File(pathName)))
@@ -3504,7 +3481,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @throws IllegalArgumentException if pathName file extension not one of .dict,
    *   .genome, or .txt
    */
-  def loadSequenceDictionary(pathName: String): SequenceDictionary = LoadSequenceDictionary.time {
+  def loadSequenceDictionary(pathName: String): SequenceDictionary = {
     val trimmedPathName = trimExtensionIfCompressed(pathName)
     if (isDictExt(trimmedPathName)) {
       info(s"Loading $pathName as HTSJDK sequence dictionary.")
@@ -3544,7 +3521,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     pathName: String,
     optPredicate: Option[FilterPredicate] = None,
     optProjection: Option[Schema] = None,
-    stringency: ValidationStringency = ValidationStringency.STRICT): GenotypeDataset = LoadGenotypes.time {
+    stringency: ValidationStringency = ValidationStringency.STRICT): GenotypeDataset = {
 
     if (isVcfExt(pathName)) {
       info(s"Loading $pathName as VCF and converting to Genotypes.")
@@ -3578,7 +3555,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     pathName: String,
     optPredicate: Option[FilterPredicate] = None,
     optProjection: Option[Schema] = None,
-    stringency: ValidationStringency = ValidationStringency.STRICT): VariantDataset = LoadVariants.time {
+    stringency: ValidationStringency = ValidationStringency.STRICT): VariantDataset = {
 
     if (isVcfExt(pathName)) {
       info(s"Loading $pathName as VCF and converting to Variants.")
@@ -3634,7 +3611,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     optReadGroup: Option[String] = None,
     optPredicate: Option[FilterPredicate] = None,
     optProjection: Option[Schema] = None,
-    stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentDataset = LoadAlignments.time {
+    stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentDataset = {
 
     // need this to pick up possible .bgz extension
     sc.hadoopConfiguration.setStrings("io.compression.codecs",
@@ -3691,7 +3668,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     pathName: String,
     optPredicate: Option[FilterPredicate] = None,
     optProjection: Option[Schema] = None,
-    stringency: ValidationStringency = ValidationStringency.STRICT): FragmentDataset = LoadFragments.time {
+    stringency: ValidationStringency = ValidationStringency.STRICT): FragmentDataset = {
 
     // need this to pick up possible .bgz extension
     sc.hadoopConfiguration.setStrings("io.compression.codecs",
@@ -3863,7 +3840,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    */
   private def loadFastaSequences(
     pathName: String,
-    alphabet: Alphabet): SequenceDataset = LoadFastaSequences.time {
+    alphabet: Alphabet): SequenceDataset = {
 
     val fastaData: RDD[(LongWritable, Text)] = sc.newAPIHadoopFile(
       pathName,
@@ -3871,7 +3848,6 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       classOf[LongWritable],
       classOf[Text]
     )
-    if (Metrics.isRecording) fastaData.instrument() else fastaData
 
     val remapData = fastaData.map(kv => (kv._1.get, kv._2.toString))
     SequenceDataset(FastaSequenceConverter(alphabet, remapData))
@@ -3938,7 +3914,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     pathName: String,
     alphabet: Alphabet,
     optPredicate: Option[FilterPredicate] = None,
-    optProjection: Option[Schema] = None): SequenceDataset = LoadSequences.time {
+    optProjection: Option[Schema] = None): SequenceDataset = {
 
     val trimmedPathName = trimExtensionIfCompressed(pathName)
     if (isFastaExt(trimmedPathName)) {
@@ -4048,7 +4024,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    */
   def loadFastaDna(
     pathName: String,
-    maximumLength: Long): SliceDataset = LoadFastaSlices.time {
+    maximumLength: Long): SliceDataset = {
 
     val fastaData: RDD[(LongWritable, Text)] = sc.newAPIHadoopFile(
       pathName,
@@ -4056,7 +4032,6 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       classOf[LongWritable],
       classOf[Text]
     )
-    if (Metrics.isRecording) fastaData.instrument() else fastaData
 
     val remapData = fastaData.map(kv => (kv._1.get, kv._2.toString))
 
@@ -4090,7 +4065,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     pathName: String,
     maximumLength: Long = 10000L,
     optPredicate: Option[FilterPredicate] = None,
-    optProjection: Option[Schema] = None): SliceDataset = LoadSlices.time {
+    optProjection: Option[Schema] = None): SliceDataset = {
 
     val trimmedPathName = trimExtensionIfCompressed(pathName)
     if (isFastaExt(trimmedPathName)) {

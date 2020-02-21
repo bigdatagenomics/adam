@@ -17,7 +17,6 @@
  */
 package org.bdgenomics.adam.rdd.read.recalibration
 
-import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.util.PhredUtils
 import scala.math.{ exp, log }
 
@@ -45,13 +44,12 @@ private[adam] case class RecalibrationTable private[recalibration] (
   def apply(covariates: Array[CovariateKey]): Array[Char] = {
     val numCovariates = covariates.length
     val newQuals = new Array[Char](numCovariates)
-    QueryingRecalibrationTable.time {
-      var idx = 0
-      while (idx < numCovariates) {
-        val key = covariates(idx)
-        newQuals(idx) = table.getOrElse(key.toDefault, key.qualityScore)
-        idx += 1
-      }
+
+    var idx = 0
+    while (idx < numCovariates) {
+      val key = covariates(idx)
+      newQuals(idx) = table.getOrElse(key.toDefault, key.qualityScore)
+      idx += 1
     }
     newQuals
   }
@@ -197,7 +195,7 @@ private[recalibration] object RecalibrationTable {
 
     // take all the covariates from the observation table, and query
     // them against the recalibration table
-    val recalibrationQualityMappings = InvertingRecalibrationTable.time {
+    val recalibrationQualityMappings = {
       observed.entries
         .keys
         .map(key => (key.toDefault, tt.lookup(key)))

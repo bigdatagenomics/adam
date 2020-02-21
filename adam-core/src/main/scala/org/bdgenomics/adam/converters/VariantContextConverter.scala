@@ -19,6 +19,7 @@ package org.bdgenomics.adam.converters
 
 import com.google.common.base.Splitter
 import com.google.common.collect.ImmutableList
+import grizzled.slf4j.Logging
 import htsjdk.samtools.ValidationStringency
 import htsjdk.variant.variantcontext.{
   Allele,
@@ -41,7 +42,7 @@ import htsjdk.variant.vcf.{
 }
 import java.util.Collections
 import org.apache.hadoop.conf.Configuration
-import org.bdgenomics.utils.misc.{ Logging, MathUtils }
+import org.bdgenomics.utils.misc.MathUtils
 import org.bdgenomics.adam.models.{
   SequenceDictionary,
   VariantContext => ADAMVariantContext
@@ -410,7 +411,7 @@ class VariantContextConverter(
           throw t
         } else {
           if (stringency == ValidationStringency.LENIENT) {
-            log.warn("Caught exception %s when converting %s.".format(t, vc))
+            logger.warn("Caught exception %s when converting %s.".format(t, vc))
           }
           Seq.empty
         }
@@ -921,7 +922,7 @@ class VariantContextConverter(
         gb.setGenotypeLikelihoods(likelihoods)
       } catch {
         case _: ArrayIndexOutOfBoundsException => {
-          log.warn("Ran into Array Out of Bounds when accessing indices %s of genotype %s.".format(gIndices.mkString(","), g))
+          logger.warn("Ran into Array Out of Bounds when accessing indices %s of genotype %s.".format(gIndices.mkString(","), g))
           gb
         }
       }
@@ -1099,7 +1100,7 @@ class VariantContextConverter(
         g.getVariant.getAlternateAllele != null ||
         nls.isEmpty) {
         if (nls.nonEmpty) {
-          log.warn("Expected empty non-reference likelihoods for genotype with empty likelihoods (%s).".format(g))
+          logger.warn("Expected empty non-reference likelihoods for genotype with empty likelihoods (%s).".format(g))
         }
         gb.noPL
       } else {
@@ -1532,7 +1533,7 @@ class VariantContextConverter(
         }
         case (false, VCFHeaderLineCount.G) => {
           if (stringency == ValidationStringency.LENIENT) {
-            log.warn("Ignoring INFO field with Number=G described in header row: %s".format(headerLine))
+            logger.warn("Ignoring INFO field with Number=G described in header row: %s".format(headerLine))
             None
           } else
             throw new IllegalArgumentException("Number=G INFO lines are not supported in split-allelic model: %s".format(
@@ -1659,7 +1660,7 @@ class VariantContextConverter(
                   throw t
                 } else {
                   if (stringency == ValidationStringency.LENIENT) {
-                    log.warn("Saw invalid info field %s. Ignoring...".format(t))
+                    logger.warn("Saw invalid info field %s. Ignoring...".format(t))
                   }
                   None
                 }
@@ -1705,7 +1706,7 @@ class VariantContextConverter(
               throw t
             } else {
               if (stringency == ValidationStringency.LENIENT) {
-                log.warn("Converting variant field from %s with function %s line %s failed: %s".format(vc, fn, t))
+                logger.warn("Converting variant field from %s with function %s line %s failed: %s".format(vc, fn, t))
               }
               vb
             }
@@ -1730,7 +1731,7 @@ class VariantContextConverter(
                 throw t
               } else {
                 if (stringency == ValidationStringency.LENIENT) {
-                  log.warn("Generating annotation tag from line %s with function %sfailed: %s".format(vab, fn, t))
+                  logger.warn("Generating annotation tag from line %s with function %sfailed: %s".format(vab, fn, t))
                 }
                 vab
               }
@@ -1833,7 +1834,7 @@ class VariantContextConverter(
               throw t
             } else {
               if (stringency == ValidationStringency.LENIENT) {
-                log.warn("Converting genotype field in %s with function %s failed: %s".format(
+                logger.warn("Converting genotype field in %s with function %s failed: %s".format(
                   g, fn, t))
               }
               gb
@@ -1868,7 +1869,7 @@ class VariantContextConverter(
                 throw t
               } else {
                 if (stringency == ValidationStringency.LENIENT) {
-                  log.warn("Converting genotype annotation field in %s with function %s failed: %s".format(
+                  logger.warn("Converting genotype annotation field in %s with function %s failed: %s".format(
                     g, fn, t))
                 }
                 vcab
@@ -2166,7 +2167,7 @@ class VariantContextConverter(
                   throw t
                 } else {
                   if (stringency == ValidationStringency.LENIENT) {
-                    log.warn("Generating field extractor from header line %s failed: %s".format(il, t))
+                    logger.warn("Generating field extractor from header line %s failed: %s".format(il, t))
                   }
                   None
                 }
@@ -2198,7 +2199,7 @@ class VariantContextConverter(
                 throw t
               } else {
                 if (stringency == ValidationStringency.LENIENT) {
-                  log.warn("Applying extraction function %s to %s failed with %s.".format(fn, v, t))
+                  logger.warn("Applying extraction function %s to %s failed with %s.".format(fn, v, t))
                 }
                 vcb
               }
@@ -2227,7 +2228,7 @@ class VariantContextConverter(
                     throw t
                   } else {
                     if (stringency == ValidationStringency.LENIENT) {
-                      log.warn("Applying annotation extraction function %s to %s failed with %s.".format(fn, v, t))
+                      logger.warn("Applying annotation extraction function %s to %s failed with %s.".format(fn, v, t))
                     }
                     vcb
                   }
@@ -2269,7 +2270,7 @@ class VariantContextConverter(
                   throw t
                 } else {
                   if (stringency == ValidationStringency.LENIENT) {
-                    log.warn("Generating field extractor from header line %s failed: %s".format(fl, t))
+                    logger.warn("Generating field extractor from header line %s failed: %s".format(fl, t))
                   }
                   None
                 }
@@ -2297,7 +2298,7 @@ class VariantContextConverter(
                 throw t
               } else {
                 if (stringency == ValidationStringency.LENIENT) {
-                  log.warn("Applying annotation extraction function %s to %s failed with %s.".format(fn, g, t))
+                  logger.warn("Applying annotation extraction function %s to %s failed with %s.".format(fn, g, t))
                 }
 
                 gb
@@ -2321,7 +2322,7 @@ class VariantContextConverter(
                     throw t
                   } else {
                     if (stringency == ValidationStringency.LENIENT) {
-                      log.warn("Applying annotation extraction function %s to %s failed with %s.".format(fn, vca, t))
+                      logger.warn("Applying annotation extraction function %s to %s failed with %s.".format(fn, vca, t))
                     }
 
                     gb
@@ -2347,7 +2348,7 @@ class VariantContextConverter(
                   throw t
                 } else {
                   if (stringency == ValidationStringency.LENIENT) {
-                    log.warn("Applying attribute extraction function %s to %s failed with %s.".format(fn, vca, t))
+                    logger.warn("Applying attribute extraction function %s to %s failed with %s.".format(fn, vca, t))
                   }
 
                   gb
@@ -2385,7 +2386,7 @@ class VariantContextConverter(
           throw t
         } else {
           if (stringency == ValidationStringency.LENIENT) {
-            log.error(
+            logger.error(
               "Encountered error %s when converting variant context with variant:\n%s\nand genotypes: \n%s".format(t, vc.variant.variant, vc.genotypes.mkString("\n")))
           }
           None

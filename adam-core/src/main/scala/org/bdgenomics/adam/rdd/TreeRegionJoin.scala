@@ -19,7 +19,6 @@ package org.bdgenomics.adam.rdd
 
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.utils.interval.array.IntervalArray
 import scala.reflect.ClassTag
@@ -49,23 +48,21 @@ trait TreeRegionJoin[T, U, RT, RU] extends RegionJoin[T, U, RT, RU] {
     rightRdd: RDD[(ReferenceRegion, U)])(
       implicit tTag: ClassTag[T]): RDD[(Iterable[T], U)] = {
 
-    RunningMapSideJoin.time {
-      // map and join
-      rightRdd.mapPartitions(iter => {
-        val shallowCopyTree = broadcastTree.value
-          .duplicate()
+    // map and join
+    rightRdd.mapPartitions(iter => {
+      val shallowCopyTree = broadcastTree.value
+        .duplicate()
 
-        iter.map(kv => {
-          val (rr, u) = kv
+      iter.map(kv => {
+        val (rr, u) = kv
 
-          // what values keys does this overlap in the tree?
-          val overlappingValues = shallowCopyTree.get(rr)
-            .map(_._2)
+        // what values keys does this overlap in the tree?
+        val overlappingValues = shallowCopyTree.get(rr)
+          .map(_._2)
 
-          (overlappingValues, u)
-        })
+        (overlappingValues, u)
       })
-    }
+    })
   }
 
   /**
@@ -81,7 +78,7 @@ trait TreeRegionJoin[T, U, RT, RU] extends RegionJoin[T, U, RT, RU] {
   private[rdd] def runJoinAndGroupByRight(
     leftRdd: RDD[(ReferenceRegion, T)],
     rightRdd: RDD[(ReferenceRegion, U)])(
-      implicit tTag: ClassTag[T]): RDD[(Iterable[T], U)] = TreeJoin.time {
+      implicit tTag: ClassTag[T]): RDD[(Iterable[T], U)] = {
 
     // build the tree from the left RDD
     val tree = IntervalArray(leftRdd)

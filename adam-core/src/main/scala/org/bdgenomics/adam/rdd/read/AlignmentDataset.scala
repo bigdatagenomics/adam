@@ -30,7 +30,6 @@ import org.apache.spark.SparkContext
 import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.api.java.function.{ Function => JFunction }
 import org.apache.spark.broadcast.Broadcast
-import org.apache.spark.rdd.MetricsContext._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.apache.spark.storage.StorageLevel
@@ -40,7 +39,6 @@ import org.bdgenomics.adam.algorithms.consensus.{
   NormalizationUtils
 }
 import org.bdgenomics.adam.converters.AlignmentConverter
-import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd._
@@ -706,7 +704,7 @@ sealed abstract class AlignmentDataset extends AvroReadGroupGenomicDataset[Align
    * @param isSorted True if sorted.
    * @return Return a tuple of SAMFileHeader and an RDD of HTSJDK SAMRecords.
    */
-  def convertToSam(isSorted: Boolean = false): (SAMFileHeader, RDD[SAMRecordWritable]) = ConvertToSAM.time {
+  def convertToSam(isSorted: Boolean = false): (SAMFileHeader, RDD[SAMRecordWritable]) = {
     convertToSam(isSortedToSortOrder(isSorted))
   }
 
@@ -716,7 +714,7 @@ sealed abstract class AlignmentDataset extends AvroReadGroupGenomicDataset[Align
    * @param sortOrder Sort order.
    * @return Return a tuple of SAMFileHeader and an RDD of HTSJDK SAMRecords.
    */
-  def convertToSam(sortOrder: SAMFileHeader.SortOrder): (SAMFileHeader, RDD[SAMRecordWritable]) = ConvertToSAM.time {
+  def convertToSam(sortOrder: SAMFileHeader.SortOrder): (SAMFileHeader, RDD[SAMRecordWritable]) = {
 
     // create conversion object
     val adamRecordConverter = new AlignmentConverter
@@ -798,7 +796,7 @@ sealed abstract class AlignmentDataset extends AvroReadGroupGenomicDataset[Align
     asSingleFile: Boolean = false,
     isSorted: Boolean = false,
     deferMerging: Boolean = false,
-    disableFastConcat: Boolean = false): Unit = SAMSave.time {
+    disableFastConcat: Boolean = false): Unit = {
     saveAsSam(filePath, asType, asSingleFile, isSortedToSortOrder(isSorted), deferMerging, disableFastConcat)
   }
 
@@ -808,7 +806,7 @@ sealed abstract class AlignmentDataset extends AvroReadGroupGenomicDataset[Align
     asSingleFile: Boolean,
     sortOrder: SAMFileHeader.SortOrder,
     deferMerging: Boolean,
-    disableFastConcat: Boolean): Unit = SAMSave.time {
+    disableFastConcat: Boolean): Unit = {
     val fileType = asType.getOrElse(SAMFormat.inferFromFilePath(filePath))
 
     // convert the records
@@ -907,9 +905,9 @@ sealed abstract class AlignmentDataset extends AvroReadGroupGenomicDataset[Align
 
     if (!asSingleFile) {
       val headeredOutputFormat = fileType match {
-        case SAMFormat.SAM  => classOf[InstrumentedADAMSAMOutputFormat[LongWritable]]
-        case SAMFormat.BAM  => classOf[InstrumentedADAMBAMOutputFormat[LongWritable]]
-        case SAMFormat.CRAM => classOf[InstrumentedADAMCRAMOutputFormat[LongWritable]]
+        case SAMFormat.SAM  => classOf[ADAMSAMOutputFormat[LongWritable]]
+        case SAMFormat.BAM  => classOf[ADAMBAMOutputFormat[LongWritable]]
+        case SAMFormat.CRAM => classOf[ADAMCRAMOutputFormat[LongWritable]]
       }
       withKey.saveAsNewAPIHadoopFile(
         filePath,
@@ -929,9 +927,9 @@ sealed abstract class AlignmentDataset extends AvroReadGroupGenomicDataset[Align
 
       // set up output format
       val headerLessOutputFormat = fileType match {
-        case SAMFormat.SAM  => classOf[InstrumentedADAMSAMOutputFormatHeaderLess[LongWritable]]
-        case SAMFormat.BAM  => classOf[InstrumentedADAMBAMOutputFormatHeaderLess[LongWritable]]
-        case SAMFormat.CRAM => classOf[InstrumentedADAMCRAMOutputFormatHeaderLess[LongWritable]]
+        case SAMFormat.SAM  => classOf[ADAMSAMOutputFormatHeaderLess[LongWritable]]
+        case SAMFormat.BAM  => classOf[ADAMBAMOutputFormatHeaderLess[LongWritable]]
+        case SAMFormat.CRAM => classOf[ADAMCRAMOutputFormatHeaderLess[LongWritable]]
       }
 
       // save rdd
@@ -981,7 +979,7 @@ sealed abstract class AlignmentDataset extends AvroReadGroupGenomicDataset[Align
    *
    * @return Returns a new genomic dataset containing sorted alignments.
    */
-  def sortByReadName(): AlignmentDataset = SortAlignments.time {
+  def sortByReadName(): AlignmentDataset = {
     info("Sorting alignments by read name")
 
     transformDataset(_.orderBy("readName", "readInFragment"))
@@ -998,7 +996,7 @@ sealed abstract class AlignmentDataset extends AvroReadGroupGenomicDataset[Align
    *
    * @see sortByReferencePositionAndIndex
    */
-  def sortByReferencePosition(): AlignmentDataset = SortAlignments.time {
+  def sortByReferencePosition(): AlignmentDataset = {
     info("Sorting alignments by reference position")
 
     // NOTE: In order to keep unmapped reads from swamping a single partition
@@ -1025,7 +1023,7 @@ sealed abstract class AlignmentDataset extends AvroReadGroupGenomicDataset[Align
    *
    * @see sortByReferencePosition
    */
-  def sortByReferencePositionAndIndex(): AlignmentDataset = SortAlignmentsByIndex.time {
+  def sortByReferencePositionAndIndex(): AlignmentDataset = {
     info("Sorting alignments by reference index, using %s.".format(sequences))
 
     import scala.math.Ordering.{ Int => ImplicitIntOrdering, _ }
@@ -1057,7 +1055,7 @@ sealed abstract class AlignmentDataset extends AvroReadGroupGenomicDataset[Align
    * @return A new genomic dataset where reads have the duplicate read flag set. Duplicate
    *   reads are NOT filtered out.
    */
-  def markDuplicates(): AlignmentDataset = MarkDuplicatesInDriver.time {
+  def markDuplicates(): AlignmentDataset = {
     replaceRdd(MarkDuplicates(this))
   }
 
@@ -1130,7 +1128,7 @@ sealed abstract class AlignmentDataset extends AvroReadGroupGenomicDataset[Align
     minAcceptableQuality: Int = 5,
     optStorageLevel: Option[StorageLevel] = Some(StorageLevel.MEMORY_ONLY),
     optSamplingFraction: Option[Double] = None,
-    optSamplingSeed: Option[Long] = None): AlignmentDataset = BQSRInDriver.time {
+    optSamplingSeed: Option[Long] = None): AlignmentDataset = {
     replaceRdd(BaseQualityRecalibration(rdd,
       knownSnps,
       readGroups,
@@ -1275,7 +1273,7 @@ sealed abstract class AlignmentDataset extends AvroReadGroupGenomicDataset[Align
     maxTargetSize: Int = 3000,
     maxReadsPerTarget: Int = 20000,
     unclipReads: Boolean = false,
-    optReferenceFile: Option[ReferenceFile] = None): AlignmentDataset = RealignIndelsInDriver.time {
+    optReferenceFile: Option[ReferenceFile] = None): AlignmentDataset = {
     replaceRdd(RealignIndels(rdd,
       consensusModel = consensusModel,
       dataIsSorted = isSorted,

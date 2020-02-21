@@ -171,11 +171,6 @@
     </dependency>
     <dependency>
       <groupId>org.bdgenomics.utils</groupId>
-      <artifactId>utils-metrics-spark2_${scala.version.prefix}</artifactId>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.bdgenomics.utils</groupId>
       <artifactId>utils-io-spark2_${scala.version.prefix}</artifactId>
       <scope>compile</scope>
     </dependency>
