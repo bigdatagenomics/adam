@@ -23,7 +23,7 @@ import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.spark.SparkContext
 import org.apache.spark.api.java.function.{ Function => JFunction }
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{ Dataset, SQLContext }
+import org.apache.spark.sql.Dataset
 import org.bdgenomics.adam.models.{
   Coverage,
   ReferenceRegion,
@@ -133,9 +133,8 @@ case class ParquetUnboundCoverageDataset private[rdd] (
   protected lazy val optPartitionMap = sc.extractPartitionMap(parquetFilename)
 
   lazy val dataset = {
-    val sqlContext = SQLContext.getOrCreate(sc)
-    import sqlContext.implicits._
-    sqlContext.read.parquet(parquetFilename)
+    import spark.implicits._
+    spark.read.parquet(parquetFilename)
       .select("referenceName", "start", "end", "score", "sampleId")
       .withColumnRenamed("sampleId", "optSampleId")
       .withColumnRenamed("score", "count")
@@ -171,7 +170,7 @@ case class DatasetBoundCoverageDataset private[rdd] (
   }
 
   override def toFeatures(): FeatureDataset = {
-    import dataset.sqlContext.implicits._
+    import spark.implicits._
     DatasetBoundFeatureDataset(dataset.map(_.toSqlFeature), sequences, samples)
   }
 
@@ -191,9 +190,8 @@ case class RDDBoundCoverageDataset private[rdd] (
     optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends CoverageDataset {
 
   lazy val dataset: Dataset[Coverage] = {
-    val sqlContext = SQLContext.getOrCreate(rdd.context)
-    import sqlContext.implicits._
-    sqlContext.createDataset(rdd)
+    import spark.implicits._
+    spark.createDataset(rdd)
   }
 
   override def toFeatures(): FeatureDataset = {

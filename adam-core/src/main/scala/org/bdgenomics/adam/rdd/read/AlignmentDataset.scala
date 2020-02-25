@@ -31,7 +31,7 @@ import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.api.java.function.{ Function => JFunction }
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{ Dataset, SQLContext }
+import org.apache.spark.sql.Dataset
 import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.algorithms.consensus.{
   ConsensusGenerator,
@@ -234,9 +234,8 @@ case class ParquetUnboundAlignmentDataset private[rdd] (
   }
 
   lazy val dataset = {
-    val sqlContext = SQLContext.getOrCreate(sc)
-    import sqlContext.implicits._
-    sqlContext.read.parquet(parquetFilename).as[AlignmentProduct]
+    import spark.implicits._
+    spark.read.parquet(parquetFilename).as[AlignmentProduct]
   }
 
   def replaceSequences(
@@ -354,9 +353,8 @@ case class RDDBoundAlignmentDataset private[rdd] (
    * A SQL Dataset of reads.
    */
   lazy val dataset: Dataset[AlignmentProduct] = {
-    val sqlContext = SQLContext.getOrCreate(rdd.context)
-    import sqlContext.implicits._
-    sqlContext.createDataset(rdd.map(AlignmentProduct.fromAvro))
+    import spark.implicits._
+    spark.createDataset(rdd.map(AlignmentProduct.fromAvro))
   }
 
   override def toCoverage(): CoverageDataset = {
@@ -524,7 +522,7 @@ sealed abstract class AlignmentDataset extends AvroReadGroupGenomicDataset[Align
    * @return CoverageDataset containing mapped genomic dataset of Coverage.
    */
   def toCoverage(): CoverageDataset = {
-    import dataset.sqlContext.implicits._
+    import spark.implicits._
     val covCounts = dataset.toDF
       .where($"readMapped")
       .select($"referenceName", $"start", $"end", $"readGroupSampleId")
@@ -765,7 +763,7 @@ sealed abstract class AlignmentDataset extends AvroReadGroupGenomicDataset[Align
    * @return Returns a Dataset containing k-mer/count pairs.
    */
   def countKmersAsDataset(kmerLength: Int): Dataset[(String, Long)] = {
-    import dataset.sqlContext.implicits._
+    import spark.implicits._
     val kmers = dataset.select($"sequence".as[String])
       .flatMap(_.sliding(kmerLength))
       .as[String]

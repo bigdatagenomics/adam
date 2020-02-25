@@ -22,7 +22,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.api.java.function.{ Function => JFunction }
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{ Dataset, SQLContext }
+import org.apache.spark.sql.Dataset
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.read.ReadDataset
 import org.bdgenomics.adam.rdd.{
@@ -128,9 +128,8 @@ case class ParquetUnboundSliceDataset private[rdd] (
   protected lazy val optPartitionMap = sc.extractPartitionMap(parquetFilename)
 
   lazy val dataset = {
-    val sqlContext = SQLContext.getOrCreate(sc)
-    import sqlContext.implicits._
-    sqlContext.read.parquet(parquetFilename).as[SliceProduct]
+    import spark.implicits._
+    spark.read.parquet(parquetFilename).as[SliceProduct]
   }
 
   def replaceSequences(newSequences: SequenceDictionary): SliceDataset = {
@@ -187,9 +186,8 @@ case class RDDBoundSliceDataset private[rdd] (
    * A SQL Dataset of slices.
    */
   lazy val dataset: Dataset[SliceProduct] = {
-    val sqlContext = SQLContext.getOrCreate(rdd.context)
-    import sqlContext.implicits._
-    sqlContext.createDataset(rdd.map(SliceProduct.fromAvro))
+    import spark.implicits._
+    spark.createDataset(rdd.map(SliceProduct.fromAvro))
   }
 
   def replaceSequences(newSequences: SequenceDictionary): SliceDataset = {

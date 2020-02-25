@@ -22,7 +22,7 @@ import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.spark.SparkContext
 import org.apache.spark.api.java.function.{ Function => JFunction }
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{ Dataset, SQLContext }
+import org.apache.spark.sql.Dataset
 import org.apache.spark.sql.functions._
 import org.bdgenomics.adam.converters.AlignmentConverter
 import org.bdgenomics.adam.models.{
@@ -180,9 +180,8 @@ case class ParquetUnboundFragmentDataset private[rdd] (
   protected lazy val optPartitionMap = sc.extractPartitionMap(parquetFilename)
 
   lazy val dataset = {
-    val sqlContext = SQLContext.getOrCreate(sc)
-    import sqlContext.implicits._
-    sqlContext.read.parquet(parquetFilename).as[FragmentProduct]
+    import spark.implicits._
+    spark.read.parquet(parquetFilename).as[FragmentProduct]
   }
 
   def replaceSequences(
@@ -273,9 +272,8 @@ case class RDDBoundFragmentDataset private[rdd] (
    * A SQL Dataset of fragments.
    */
   lazy val dataset: Dataset[FragmentProduct] = {
-    val sqlContext = SQLContext.getOrCreate(rdd.context)
-    import sqlContext.implicits._
-    sqlContext.createDataset(rdd.map(FragmentProduct.fromAvro))
+    import spark.implicits._
+    spark.createDataset(rdd.map(FragmentProduct.fromAvro))
   }
 
   def replaceSequences(

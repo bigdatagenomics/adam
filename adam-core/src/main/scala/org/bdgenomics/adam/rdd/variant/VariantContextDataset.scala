@@ -37,7 +37,7 @@ import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.spark.SparkContext
 import org.apache.spark.api.java.function.{ Function => JFunction }
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{ Dataset, SQLContext }
+import org.apache.spark.sql.Dataset
 import org.bdgenomics.adam.converters.{
   DefaultHeaderLines,
   VariantContextConverter
@@ -228,9 +228,8 @@ case class RDDBoundVariantContextDataset private[rdd] (
    * A SQL Dataset of variant contexts.
    */
   lazy val dataset: Dataset[VariantContextProduct] = {
-    val sqlContext = SQLContext.getOrCreate(rdd.context)
-    import sqlContext.implicits._
-    sqlContext.createDataset(rdd.map(VariantContextProduct.fromModel))
+    import spark.implicits._
+    spark.createDataset(rdd.map(VariantContextProduct.fromModel))
   }
 
   def replaceSequences(

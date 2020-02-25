@@ -45,8 +45,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{
   DataFrame,
   Dataset,
-  SparkSession,
-  SQLContext
+  SparkSession
 }
 import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.converters._
@@ -1516,7 +1515,7 @@ object ADAMContext {
   implicit def sparkContextToADAMContext(sc: SparkContext): ADAMContext = new ADAMContext(sc)
 
   /**
-   * Creates an ADAMContext from a SparkSession. Sets active session, including SQLContext, to input session.
+   * Creates an ADAMContext from a SparkSession.
    *
    * @param ss SparkSession
    * @return ADAMContext
@@ -1594,7 +1593,7 @@ private class NoPrefixFileFilter(private val prefix: String) extends PathFilter 
  * @param sc The SparkContext to wrap.
  */
 class ADAMContext(@transient val sc: SparkContext) extends Serializable with Logging {
-  @transient val spark = SQLContext.getOrCreate(sc).sparkSession
+  @transient val spark = SparkSession.builder().getOrCreate()
   import spark.implicits._
 
   /**
@@ -2876,10 +2875,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     // load avro read group dictionary and convert to samples
     val samples = loadAvroSamples(pathName)
 
-    val sqlContext = SQLContext.getOrCreate(sc)
-    import sqlContext.implicits._
-    val ds = sqlContext.read.parquet(pathName).as[VariantContextProduct]
-
+    val ds = spark.read.parquet(pathName).as[VariantContextProduct]
     new DatasetBoundVariantContextDataset(ds, sd, samples, headers)
   }
 

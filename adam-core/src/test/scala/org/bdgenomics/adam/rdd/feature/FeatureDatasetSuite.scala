@@ -1019,7 +1019,7 @@ class FeatureDatasetSuite extends ADAMFunSuite {
 
     checkSave(slices)
 
-    val sqlContext = SQLContext.getOrCreate(sc)
+    val sqlContext = spark.sqlContext
     import sqlContext.implicits._
 
     val slicesDs: SliceDataset = features.transmuteDataset[Slice, SliceProduct, SliceDataset](
@@ -1050,7 +1050,7 @@ class FeatureDatasetSuite extends ADAMFunSuite {
 
     checkSave(coverage)
 
-    val sqlContext = SQLContext.getOrCreate(sc)
+    val sqlContext = spark.sqlContext
     import sqlContext.implicits._
 
     val coverageDs: CoverageDataset = features.transmuteDataset[Coverage, Coverage, CoverageDataset](
@@ -1078,7 +1078,7 @@ class FeatureDatasetSuite extends ADAMFunSuite {
 
     checkSave(fragments)
 
-    val sqlContext = SQLContext.getOrCreate(sc)
+    val sqlContext = spark.sqlContext
     import sqlContext.implicits._
 
     val fragmentsDs: FragmentDataset = features.transmuteDataset[Fragment, FragmentProduct, FragmentDataset](
@@ -1109,7 +1109,7 @@ class FeatureDatasetSuite extends ADAMFunSuite {
 
     checkSave(reads)
 
-    val sqlContext = SQLContext.getOrCreate(sc)
+    val sqlContext = spark.sqlContext
     import sqlContext.implicits._
 
     val readsDs: AlignmentDataset = features.transmuteDataset[Alignment, AlignmentProduct, AlignmentDataset](
@@ -1140,7 +1140,7 @@ class FeatureDatasetSuite extends ADAMFunSuite {
 
     checkSave(genotypes)
 
-    val sqlContext = SQLContext.getOrCreate(sc)
+    val sqlContext = spark.sqlContext
     import sqlContext.implicits._
 
     val genotypesDs: GenotypeDataset = features.transmuteDataset[Genotype, GenotypeProduct, GenotypeDataset](
@@ -1171,7 +1171,7 @@ class FeatureDatasetSuite extends ADAMFunSuite {
 
     checkSave(variants)
 
-    val sqlContext = SQLContext.getOrCreate(sc)
+    val sqlContext = spark.sqlContext
     import sqlContext.implicits._
 
     val variantsDs: VariantDataset = features.transmuteDataset[Variant, VariantProduct, VariantDataset](

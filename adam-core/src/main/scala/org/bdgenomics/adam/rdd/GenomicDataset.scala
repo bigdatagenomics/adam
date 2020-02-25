@@ -42,7 +42,7 @@ import org.apache.spark.{ SparkContext, SparkFiles }
 import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.api.java.function.{ Function => JFunction, Function2 }
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{ DataFrame, Dataset, SQLContext }
+import org.apache.spark.sql.{ DataFrame, Dataset, SparkSession }
 import org.apache.spark.sql.functions._
 import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.models.{
@@ -128,6 +128,8 @@ private[rdd] object GenomicDataset {
  * @tparam U The type of this GenomicDataset.
  */
 trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logging {
+  @transient val spark = SparkSession.builder().getOrCreate()
+  import spark.implicits._
 
   val uTag: TypeTag[U]
 
@@ -176,8 +178,6 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
    */
   def transformDataFrame(tFn: DataFrame => DataFrame)(
     implicit uTag: TypeTag[U]): V = {
-    val sqlContext = SQLContext.getOrCreate(rdd.context)
-    import sqlContext.implicits._
     transformDataset((ds: Dataset[U]) => {
       tFn(ds.toDF()).as[U]
     })
@@ -192,8 +192,6 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
    *   metadata (sequence dictionary, and etc) are copied without modification.
    */
   def transformDataFrame(tFn: JFunction[DataFrame, DataFrame]): V = {
-    val sqlContext = SQLContext.getOrCreate(rdd.context)
-    import sqlContext.implicits._
     transformDataFrame(tFn.call(_))(uTag)
   }
 
@@ -240,8 +238,6 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
     tFn: DataFrame => DataFrame)(
       implicit yTag: TypeTag[Y],
       convFn: (V, Dataset[Y]) => Z): Z = {
-    val sqlContext = SQLContext.getOrCreate(rdd.context)
-    import sqlContext.implicits._
     transmuteDataset[X, Y, Z]((ds: Dataset[U]) => {
       tFn(ds.toDF()).as[Y]
     })
@@ -258,8 +254,6 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   def transmuteDataFrame[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
     tFn: JFunction[DataFrame, DataFrame],
     convFn: GenomicDatasetConversion[T, U, V, X, Y, Z]): Z = {
-    val sqlContext = SQLContext.getOrCreate(rdd.context)
-    import sqlContext.implicits._
     transmuteDataFrame[X, Y, Z](tFn.call(_))(convFn.yTag,
       (v: V, dsY: Dataset[Y]) => {
         convFn.call(v, dsY)
@@ -3221,10 +3215,9 @@ case class RDDBoundGenericGenomicDataset[T, U <: Product](
   }
 
   lazy val dataset: Dataset[U] = {
-    val sqlContext = SQLContext.getOrCreate(rdd.context)
-    import sqlContext.implicits._
+    import spark.implicits._
     val productRdd: RDD[U] = rdd.map(converter.productFn(_))
-    sqlContext.createDataset(productRdd)
+    spark.createDataset(productRdd)
   }
 
   def replaceSequences(
