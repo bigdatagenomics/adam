@@ -3935,6 +3935,7 @@ abstract class AvroGenomicDataset[T <% IndexedRecord: Manifest, U <: Product, V 
   }
 }
 
+@deprecated("this class will be removed", "ADAM 0.32.0")
 private[rdd] class InstrumentedADAMAvroParquetOutputFormat extends InstrumentedOutputFormat[Void, IndexedRecord] {
   override def outputFormatClass(): Class[_ <: NewOutputFormat[Void, IndexedRecord]] = classOf[AvroParquetOutputFormat[IndexedRecord]]
   override def timerName(): String = WriteADAMRecord.timerName

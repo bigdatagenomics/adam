@@ -59,6 +59,7 @@ class ADAMBAMOutputFormat[K]
  *
  * @tparam K The key type. Keys are not written.
  */
+@deprecated("this class will be removed", "ADAM 0.32.0")
 class InstrumentedADAMBAMOutputFormat[K] extends InstrumentedOutputFormat[K, org.seqdoop.hadoop_bam.SAMRecordWritable] {
   override def timerName(): String = Timers.WriteBAMRecord.timerName
   override def outputFormatClass(): Class[_ <: OutputFormat[K, SAMRecordWritable]] = classOf[ADAMBAMOutputFormat[K]]
@@ -96,6 +97,7 @@ class ADAMBAMOutputFormatHeaderLess[K]
  *
  * @tparam K The key type. Keys are not written.
  */
+@deprecated("this class will be removed", "ADAM 0.32.0")
 class InstrumentedADAMBAMOutputFormatHeaderLess[K] extends InstrumentedOutputFormat[K, org.seqdoop.hadoop_bam.SAMRecordWritable] {
   override def timerName(): String = Timers.WriteBAMRecord.timerName
   override def outputFormatClass(): Class[_ <: OutputFormat[K, SAMRecordWritable]] = classOf[ADAMBAMOutputFormatHeaderLess[K]]

@@ -22,6 +22,7 @@ import org.bdgenomics.utils.instrumentation.Metrics
 /**
  * Contains [[Timers]] that are used to instrument ADAM.
  */
+@deprecated("this object will be removed", "ADAM 0.32.0")
 object Timers extends Metrics {
 
   // Load methods
