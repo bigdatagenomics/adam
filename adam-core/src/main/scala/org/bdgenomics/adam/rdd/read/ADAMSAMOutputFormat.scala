@@ -51,6 +51,7 @@ class ADAMSAMOutputFormat[K]
   }
 }
 
+@deprecated("this class will be removed", "ADAM 0.32.0")
 class InstrumentedADAMSAMOutputFormat[K] extends InstrumentedOutputFormat[K, org.seqdoop.hadoop_bam.SAMRecordWritable] {
   override def timerName(): String = Timers.WriteSAMRecord.timerName
   override def outputFormatClass(): Class[_ <: OutputFormat[K, SAMRecordWritable]] = classOf[ADAMSAMOutputFormat[K]]
@@ -78,6 +79,7 @@ class ADAMSAMOutputFormatHeaderLess[K]
   }
 }
 
+@deprecated("this class will be removed", "ADAM 0.32.0")
 class InstrumentedADAMSAMOutputFormatHeaderLess[K] extends InstrumentedOutputFormat[K, org.seqdoop.hadoop_bam.SAMRecordWritable] {
   override def timerName(): String = Timers.WriteSAMRecord.timerName
   override def outputFormatClass(): Class[_ <: OutputFormat[K, SAMRecordWritable]] = classOf[ADAMSAMOutputFormatHeaderLess[K]]

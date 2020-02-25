@@ -477,6 +477,7 @@ object ADAMShell {
    * @param sc Spark context.
    * @return Return a new metrics listener for the specified Spark context.
    */
+  @deprecated("this method will be removed", "ADAM 0.32.0")
   def createMetricsListener(sc: SparkContext): MetricsListener = {
     val metricsListener = new MetricsListener(new RecordedMetrics())
     sc.addSparkListener(metricsListener)
@@ -489,6 +490,7 @@ object ADAMShell {
    *
    * @param metricsListener Metrics listener.
    */
+  @deprecated("this method will be removed", "ADAM 0.32.0")
   def printMetrics(metricsListener: MetricsListener): Unit = printMetrics(None, metricsListener)
 
   /**
@@ -497,6 +499,7 @@ object ADAMShell {
    * @param totalTime Total execution time, in ns.
    * @param metricsListener Metrics listener.
    */
+  @deprecated("this method will be removed", "ADAM 0.32.0")
   def printMetrics(totalTime: Long, metricsListener: MetricsListener): Unit = printMetrics(Some(totalTime), metricsListener)
 
   /**
@@ -505,6 +508,7 @@ object ADAMShell {
    * @param optTotalTime Optional total execution time, in ns.
    * @param metricsListener Metrics listener.
    */
+  @deprecated("this method will be removed", "ADAM 0.32.0")
   private def printMetrics(optTotalTime: Option[Long], metricsListener: MetricsListener): Unit = {
     val stringWriter = new StringWriter()
     val out = new PrintWriter(stringWriter)

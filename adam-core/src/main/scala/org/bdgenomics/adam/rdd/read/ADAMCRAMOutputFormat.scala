@@ -59,6 +59,7 @@ class ADAMCRAMOutputFormat[K]
  *
  * @tparam K The key type. Keys are not written.
  */
+@deprecated("this class will be removed", "ADAM 0.32.0")
 class InstrumentedADAMCRAMOutputFormat[K] extends InstrumentedOutputFormat[K, org.seqdoop.hadoop_bam.SAMRecordWritable] {
   override def timerName(): String = Timers.WriteCRAMRecord.timerName
   override def outputFormatClass(): Class[_ <: OutputFormat[K, SAMRecordWritable]] = classOf[ADAMCRAMOutputFormat[K]]
@@ -96,6 +97,7 @@ class ADAMCRAMOutputFormatHeaderLess[K]
  *
  * @tparam K The key type. Keys are not written.
  */
+@deprecated("this class will be removed", "ADAM 0.32.0")
 class InstrumentedADAMCRAMOutputFormatHeaderLess[K] extends InstrumentedOutputFormat[K, org.seqdoop.hadoop_bam.SAMRecordWritable] {
   override def timerName(): String = Timers.WriteCRAMRecord.timerName
   override def outputFormatClass(): Class[_ <: OutputFormat[K, SAMRecordWritable]] = classOf[ADAMCRAMOutputFormatHeaderLess[K]]
