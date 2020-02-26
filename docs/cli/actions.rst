@@ -344,7 +344,8 @@ This command takes several optional arguments:
 
 This command does not support Parquet output, so the only `default
 options <#default-args>`__ that this command supports is
-``-print_metrics``.
+``-print_metrics``. Note ``-print_metrics`` is deprecated in ADAM version
+0.31.0 and will be removed in version 0.32.0.
 
 coverage
 ~~~~~~~~~~~~~~

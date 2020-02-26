@@ -19,8 +19,10 @@ optional third argument:
    the second-of-pair reads to.
 
 ``adam2fastq`` only supports the ``-print_metrics`` option from the
-`default options <#default-args>`__. Additionally, ``adam2fastq`` takes
-the following options:
+`default options <#default-args>`__. Note ``-print_metrics`` is deprecated
+in ADAM version 0.31.0 and will be removed in version 0.32.0.
+
+Additionally, ``adam2fastq`` takes the following options:
 
 -  ``-no_projection``: By default, ``adam2fastq`` only projects the
    fields necessary for saving to FASTQ. This option disables that
