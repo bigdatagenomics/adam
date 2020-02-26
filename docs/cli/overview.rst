@@ -51,7 +51,8 @@ commands. These include:
    Parquet files. Defaults to 1MB (1024 \* 1024).
 -  ``-print_metrics``: If provided, prints the
    `instrumentation <https://github.com/bigdatagenomics/utils#instrumentation>`__
-   metrics to the log when the CLI operation terminates.
+   metrics to the log when the CLI operation terminates. Note ``-print_metrics`` is
+   deprecated in ADAM version 0.31.0 and will be removed in version 0.32.0.
 
 Legacy output options
 ---------------------
