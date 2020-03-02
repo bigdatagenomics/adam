@@ -3,12 +3,12 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.bdgenomics.adam</groupId>
-    <artifactId>adam-parent-spark2_2.11</artifactId>
+    <artifactId>adam-parent-spark2_2.12</artifactId>
     <version>0.31.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
-  <artifactId>adam-distribution-spark2_2.11</artifactId>
+  <artifactId>adam-distribution-spark2_2.12</artifactId>
   <packaging>pom</packaging>
   <name>ADAM_${scala.version.prefix}: Distribution</name>
   <build>
