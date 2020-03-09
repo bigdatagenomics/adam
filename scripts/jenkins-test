@@ -155,6 +155,7 @@ SPARK=spark-${SPARK_VERSION}
 if [ ${SCALAVER} == 2.12 ];
 then
     curl \
+        -v \
         -L "https://www.apache.org/dyn/mirrors/mirrors.cgi?action=download&filename=spark/${SPARK}/${SPARK}-bin-without-hadoop-scala-2.12.tgz" \
         -o ${SPARK}-bin-without-hadoop-scala-2.12.tgz
 
@@ -178,6 +179,7 @@ then
     export SPARK_DIST_CLASSPATH=$(hadoop-2.7.7/bin/hadoop classpath)
 else
     curl \
+        -v \
         -L "https://www.apache.org/dyn/mirrors/mirrors.cgi?action=download&filename=spark/${SPARK}/${SPARK}-bin-${HADOOP}.tgz" \
         -o ${SPARK}-bin-${HADOOP}.tgz
 
