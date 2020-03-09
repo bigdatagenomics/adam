@@ -288,7 +288,7 @@ ${ADAM} print ${FRAGMENTS} 1>/dev/null 2>/dev/null
 
 # run flagstat to verify that flagstat runs OK
 echo "Printing read statistics"
-${ADAM} flagstat -print_metrics ${READS}
+${ADAM} flagstat ${READS}
 rm -rf ${ADAM_TMP_DIR}
 popd
 
