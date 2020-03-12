@@ -128,7 +128,7 @@ private[rdd] object GenomicDataset {
  * @tparam U The type of this GenomicDataset.
  */
 trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logging {
-  @transient val spark = SparkSession.builder().getOrCreate()
+  @transient lazy val spark = SparkSession.builder().getOrCreate()
   import spark.implicits._
 
   val uTag: TypeTag[U]

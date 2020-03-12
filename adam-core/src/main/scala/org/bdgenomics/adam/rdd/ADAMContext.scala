@@ -1593,7 +1593,7 @@ private class NoPrefixFileFilter(private val prefix: String) extends PathFilter 
  * @param sc The SparkContext to wrap.
  */
 class ADAMContext(@transient val sc: SparkContext) extends Serializable with Logging {
-  @transient val spark = SparkSession.builder().getOrCreate()
+  @transient lazy val spark = SparkSession.builder().getOrCreate()
   import spark.implicits._
 
   /**
