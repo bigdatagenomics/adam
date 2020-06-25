@@ -162,7 +162,7 @@ then
     export SPARK_HOME=${ADAM_TMP_DIR}/${SPARK}-bin-without-hadoop-scala-2.12
 
     curl \
-        -L "https://www-us.apache.org/dist/hadoop/common/hadoop-2.7.7/hadoop-2.7.7.tar.gz" \
+        -L "https://www.apache.org/dyn/mirrors/mirrors.cgi?action=download&filename=hadoop/core/hadoop-2.7.7/hadoop-2.7.7.tar.gz" \
         -o hadoop-2.7.7.tar.gz
 
     tar xzvf hadoop-2.7.7.tar.gz
