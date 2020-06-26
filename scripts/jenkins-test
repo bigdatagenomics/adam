@@ -150,7 +150,7 @@ SPARK=spark-${SPARK_VERSION}
 # download prepackaged spark assembly
 
 # Spark 2.4.3+ needs special case for Scala 2.12
-if [[ ${SCALA_VERSION} == 2.12 ] && [ ${SPARK_VERSION} == 2.4.6 ]]
+if [ ${SCALA_VERSION} == 2.12 ] && [ ${SPARK_VERSION} == 2.4.6 ]
 then
     curl \
         -L "https://www.apache.org/dyn/mirrors/mirrors.cgi?action=download&filename=spark/${SPARK}/${SPARK}-bin-without-hadoop-scala-2.12.tgz" \
