@@ -137,9 +137,7 @@ popd
 pushd $ADAM_TMP_DIR
 
 # what hadoop version are we on? format string for downloading spark assembly
-if [[ $HADOOP_VERSION =~ ^2\.6 ]]; then
-    HADOOP=hadoop2.6
-elif [[ $HADOOP_VERSION =~ ^2\.7 ]]; then
+if [[ $HADOOP_VERSION =~ ^2\.7 ]]; then
     HADOOP=hadoop2.7
 else
     echo "Unknown Hadoop version."
@@ -155,7 +153,6 @@ SPARK=spark-${SPARK_VERSION}
 if [ ${SCALAVER} == 2.12 ];
 then
     curl \
-        -v \
         -L "https://www.apache.org/dyn/mirrors/mirrors.cgi?action=download&filename=spark/${SPARK}/${SPARK}-bin-without-hadoop-scala-2.12.tgz" \
         -o ${SPARK}-bin-without-hadoop-scala-2.12.tgz
 
