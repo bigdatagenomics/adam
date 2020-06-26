@@ -24,8 +24,7 @@ import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.spark.SparkContext
 import org.apache.spark.api.java.function.{ Function => JFunction }
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{ Dataset, SQLContext }
-import org.bdgenomics.adam.instrumentation.Timers._
+import org.apache.spark.sql.Dataset
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd._
@@ -287,9 +286,8 @@ case class ParquetUnboundFeatureDataset private[rdd] (
   protected lazy val optPartitionMap = sc.extractPartitionMap(parquetFilename)
 
   lazy val dataset = {
-    val sqlContext = SQLContext.getOrCreate(sc)
-    import sqlContext.implicits._
-    sqlContext.read.parquet(parquetFilename).as[FeatureProduct]
+    import spark.implicits._
+    spark.read.parquet(parquetFilename).as[FeatureProduct]
   }
 
   override def replaceSequences(newSequences: SequenceDictionary): FeatureDataset = {
@@ -350,7 +348,7 @@ case class DatasetBoundFeatureDataset private[rdd] (
   }
 
   def toCoverage(): CoverageDataset = {
-    import dataset.sqlContext.implicits._
+    import spark.implicits._
     DatasetBoundCoverageDataset(dataset.toDF
       .select("referenceName", "start", "end", "score", "sampleId")
       .withColumnRenamed("score", "count")
@@ -417,9 +415,8 @@ case class RDDBoundFeatureDataset private[rdd] (
    * A SQL Dataset of reads.
    */
   lazy val dataset: Dataset[FeatureProduct] = {
-    val sqlContext = SQLContext.getOrCreate(rdd.context)
-    import sqlContext.implicits._
-    sqlContext.createDataset(rdd.map(FeatureProduct.fromAvro))
+    import spark.implicits._
+    spark.createDataset(rdd.map(FeatureProduct.fromAvro))
   }
 
   override def replaceSequences(newSequences: SequenceDictionary): FeatureDataset = {

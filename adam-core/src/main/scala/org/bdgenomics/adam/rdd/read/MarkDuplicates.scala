@@ -19,7 +19,6 @@ package org.bdgenomics.adam.rdd.read
 
 import grizzled.slf4j.Logging
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models.{ ReadGroupDictionary, ReferencePosition }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.fragment.FragmentDataset
@@ -53,7 +52,7 @@ private[rdd] object MarkDuplicates extends Serializable with Logging {
   }
 
   private def markReads(reads: Iterable[(ReferencePositionPair, SingleReadBucket)], primaryAreDups: Boolean, secondaryAreDups: Boolean,
-                        ignore: Option[(ReferencePositionPair, SingleReadBucket)] = None) = MarkReads.time {
+                        ignore: Option[(ReferencePositionPair, SingleReadBucket)] = None) = {
     reads.foreach(read => {
       if (ignore.forall(_ != read))
         markReadsInBucket(read._2, primaryAreDups, secondaryAreDups)
@@ -115,7 +114,7 @@ private[rdd] object MarkDuplicates extends Serializable with Logging {
 
     rdd.keyBy(ReferencePositionPair(_))
       .groupBy(leftPositionAndLibrary(_, readGroups))
-      .flatMap(kv => PerformDuplicateMarking.time {
+      .flatMap(kv => {
 
         val leftPos: Option[ReferencePosition] = kv._1._1
         val readsAtLeftPos: Iterable[(ReferencePositionPair, SingleReadBucket)] = kv._2

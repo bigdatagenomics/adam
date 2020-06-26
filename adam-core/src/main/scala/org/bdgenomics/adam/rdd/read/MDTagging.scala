@@ -31,10 +31,10 @@ private[read] case class MDTagging(
     validationStringency: ValidationStringency = ValidationStringency.STRICT) extends Logging {
   @transient val sc = reads.sparkContext
 
-  val mdTagsAdded = sc.accumulator(0L, "MDTags Added")
-  val mdTagsExtant = sc.accumulator(0L, "MDTags Extant")
-  val numUnmappedReads = sc.accumulator(0L, "Unmapped Reads")
-  val incorrectMDTags = sc.accumulator(0L, "Incorrect Extant MDTags")
+  val mdTagsAdded = sc.longAccumulator("MDTags Added")
+  val mdTagsExtant = sc.longAccumulator("MDTags Extant")
+  val numUnmappedReads = sc.longAccumulator("Unmapped Reads")
+  val incorrectMDTags = sc.longAccumulator("Incorrect Extant MDTags")
 
   val taggedReads = addMDTagsBroadcast.cache
 
@@ -43,9 +43,9 @@ private[read] case class MDTagging(
     val cigar = TextCigarCodec.decode(read.getCigar)
     val mdTag = MdTag(read.getSequence, refSeq, cigar, read.getStart)
     if (read.getMismatchingPositions != null) {
-      mdTagsExtant += 1
+      mdTagsExtant.add(1)
       if (mdTag.toString != read.getMismatchingPositions) {
-        incorrectMDTags += 1
+        incorrectMDTags.add(1)
         if (overwriteExistingTags) {
           read.setMismatchingPositions(mdTag.toString)
         } else {
@@ -59,7 +59,7 @@ private[read] case class MDTagging(
       }
     } else {
       read.setMismatchingPositions(mdTag.toString)
-      mdTagsAdded += 1
+      mdTagsAdded.add(1)
     }
     read
   }
@@ -86,7 +86,7 @@ private[read] case class MDTagging(
           }
         }
       }).getOrElse({
-        numUnmappedReads += 1
+        numUnmappedReads.add(1)
         read
       })
     })

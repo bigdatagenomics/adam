@@ -44,15 +44,6 @@ import org.bdgenomics.formats.avro.{
   Slice,
   Variant
 }
-import org.bdgenomics.utils.instrumentation.MetricsListener
-import org.bdgenomics.utils.instrumentation.{
-  Alignment => TextAlignment,
-  ASCIITable,
-  ASCIITableHeader,
-  DurationFormatting,
-  Metrics,
-  RecordedMetrics
-}
 
 /**
  * Utility methods for use in adam-shell.
@@ -469,56 +460,5 @@ object ADAMShell {
     ) ++ keys.map(key => Option(v.getAnnotation().getAttributes().get(key)).getOrElse(""))).toArray
 
     println("\nVariant Info Fields\n" + new ASCIITable(header, rows).toString)
-  }
-
-  /**
-   * Create and return a new metrics listener for the specified Spark context.
-   *
-   * @param sc Spark context.
-   * @return Return a new metrics listener for the specified Spark context.
-   */
-  @deprecated("this method will be removed", "ADAM 0.32.0")
-  def createMetricsListener(sc: SparkContext): MetricsListener = {
-    val metricsListener = new MetricsListener(new RecordedMetrics())
-    sc.addSparkListener(metricsListener)
-    Metrics.initialize(sc)
-    metricsListener
-  }
-
-  /**
-   * Print metrics gathered by the specified metrics listener.
-   *
-   * @param metricsListener Metrics listener.
-   */
-  @deprecated("this method will be removed", "ADAM 0.32.0")
-  def printMetrics(metricsListener: MetricsListener): Unit = printMetrics(None, metricsListener)
-
-  /**
-   * Print metrics gathered by the specified metrics listener.
-   *
-   * @param totalTime Total execution time, in ns.
-   * @param metricsListener Metrics listener.
-   */
-  @deprecated("this method will be removed", "ADAM 0.32.0")
-  def printMetrics(totalTime: Long, metricsListener: MetricsListener): Unit = printMetrics(Some(totalTime), metricsListener)
-
-  /**
-   * Print metrics gathered by the specified metrics listener.
-   *
-   * @param optTotalTime Optional total execution time, in ns.
-   * @param metricsListener Metrics listener.
-   */
-  @deprecated("this method will be removed", "ADAM 0.32.0")
-  private def printMetrics(optTotalTime: Option[Long], metricsListener: MetricsListener): Unit = {
-    val stringWriter = new StringWriter()
-    val out = new PrintWriter(stringWriter)
-    optTotalTime.foreach(t => out.println("Overall Duration: " + DurationFormatting.formatNanosecondDuration(t)))
-    out.println("Metrics:")
-    out.println()
-    Metrics.print(out, Some(metricsListener.metrics.sparkMetrics.stageTimes))
-    out.println()
-    metricsListener.metrics.sparkMetrics.print(out)
-    out.flush()
-    println(stringWriter.getBuffer.toString)
   }
 }

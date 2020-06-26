@@ -33,7 +33,6 @@ import org.bdgenomics.adam.models.{
   ReferenceRegion,
   SnpTable
 }
-import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.formats.avro.Alignment
 import scala.annotation.tailrec
 
@@ -303,16 +302,14 @@ private[read] object BaseQualityRecalibration {
   private[recalibration] def observe(
     read: Alignment,
     readGroups: ReadGroupDictionary,
-    maskedSites: Set[Long] = Set.empty): Array[CovariateKey] = ObservingRead.time {
-    val (toInclude, isMismatch) = ReadResidues.time {
+    maskedSites: Set[Long] = Set.empty): Array[CovariateKey] = {
+    val (toInclude, isMismatch) = {
       computeResiduesToInclude(read, maskedSites)
     }
-    ReadCovariates.time {
-      CovariateSpace(read,
-        toInclude,
-        isMismatch,
-        readGroups)
-    }
+    CovariateSpace(read,
+      toInclude,
+      isMismatch,
+      readGroups)
   }
 
   /**
@@ -328,7 +325,7 @@ private[read] object BaseQualityRecalibration {
   private def observe(
     read: Alignment,
     knownSnps: Broadcast[SnpTable],
-    readGroups: ReadGroupDictionary): Array[CovariateKey] = ObservingRead.time {
+    readGroups: ReadGroupDictionary): Array[CovariateKey] = {
     val maskedSites = knownSnps.value
       .maskedSites(ReferenceRegion.unstranded(read))
     observe(read, readGroups, maskedSites)

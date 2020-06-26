@@ -23,7 +23,7 @@ import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.spark.SparkContext
 import org.apache.spark.api.java.function.{ Function => JFunction }
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{ Dataset, SQLContext }
+import org.apache.spark.sql.Dataset
 import org.bdgenomics.adam.converters.DefaultHeaderLines
 import org.bdgenomics.adam.models.{
   ReferencePosition,
@@ -181,9 +181,8 @@ case class ParquetUnboundGenotypeDataset private[rdd] (
   }
 
   lazy val dataset = {
-    val sqlContext = SQLContext.getOrCreate(sc)
-    import sqlContext.implicits._
-    sqlContext.read.parquet(parquetFilename).as[GenotypeProduct]
+    import spark.implicits._
+    spark.read.parquet(parquetFilename).as[GenotypeProduct]
   }
 
   def replaceSequences(
@@ -260,8 +259,7 @@ case class DatasetBoundGenotypeDataset private[rdd] (
       val variantCopy = variant.copy(annotation = Some(annotationCopy))
       g.copy(variant = Some(variantCopy))
     }
-    val sqlContext = SQLContext.getOrCreate(rdd.context)
-    import sqlContext.implicits._
+    import spark.implicits._
     transformDataset(dataset => dataset.map(copyEnd))
   }
 
@@ -309,9 +307,8 @@ case class RDDBoundGenotypeDataset private[rdd] (
    * A SQL Dataset of genotypes.
    */
   lazy val dataset: Dataset[GenotypeProduct] = {
-    val sqlContext = SQLContext.getOrCreate(rdd.context)
-    import sqlContext.implicits._
-    sqlContext.createDataset(rdd.map(GenotypeProduct.fromAvro))
+    import spark.implicits._
+    spark.createDataset(rdd.map(GenotypeProduct.fromAvro))
   }
 
   def replaceSequences(
@@ -419,8 +416,7 @@ sealed abstract class GenotypeDataset extends MultisampleAvroGenomicDataset[Geno
    * @return Returns the variants described by this GenotypeDataset.
    */
   def toVariants(dedupe: java.lang.Boolean): VariantDataset = {
-    val sqlContext = SQLContext.getOrCreate(rdd.context)
-    import sqlContext.implicits._
+    import spark.implicits._
 
     val notDedupedVariants = dataset.select($"variant.*")
       .as[VariantProduct]

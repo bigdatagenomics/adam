@@ -1435,7 +1435,7 @@ class AlignmentDatasetSuite extends ADAMFunSuite {
     val reads = sc.loadAlignments(smallPath)
     val kmerCounts = reads.countKmersAsDataset(6)
     assert(kmerCounts.count === 1040)
-    val sqlContext = SQLContext.getOrCreate(sc)
+    val sqlContext = spark.sqlContext
     import sqlContext.implicits._
     assert(kmerCounts.toDF().where($"kmer" === "CCAAGA" && $"count" === 3).count === 1)
   }
@@ -1457,7 +1457,7 @@ class AlignmentDatasetSuite extends ADAMFunSuite {
 
     checkSave(slices)
 
-    val sqlContext = SQLContext.getOrCreate(sc)
+    val sqlContext = spark.sqlContext
     import sqlContext.implicits._
 
     val slicesDs: SliceDataset = reads.transmuteDataset[Slice, SliceProduct, SliceDataset](
@@ -1488,7 +1488,7 @@ class AlignmentDatasetSuite extends ADAMFunSuite {
 
     checkSave(coverage)
 
-    val sqlContext = SQLContext.getOrCreate(sc)
+    val sqlContext = spark.sqlContext
     import sqlContext.implicits._
 
     val coverageDs: CoverageDataset = reads.transmuteDataset[Coverage, Coverage, CoverageDataset](
@@ -1516,7 +1516,7 @@ class AlignmentDatasetSuite extends ADAMFunSuite {
 
     checkSave(features)
 
-    val sqlContext = SQLContext.getOrCreate(sc)
+    val sqlContext = spark.sqlContext
     import sqlContext.implicits._
 
     val featuresDs: FeatureDataset = reads.transmuteDataset[Feature, FeatureProduct, FeatureDataset](
@@ -1547,7 +1547,7 @@ class AlignmentDatasetSuite extends ADAMFunSuite {
 
     checkSave(fragments)
 
-    val sqlContext = SQLContext.getOrCreate(sc)
+    val sqlContext = spark.sqlContext
     import sqlContext.implicits._
 
     val fragmentsDs: FragmentDataset = reads.transmuteDataset[Fragment, FragmentProduct, FragmentDataset](
@@ -1578,7 +1578,7 @@ class AlignmentDatasetSuite extends ADAMFunSuite {
 
     checkSave(genotypes)
 
-    val sqlContext = SQLContext.getOrCreate(sc)
+    val sqlContext = spark.sqlContext
     import sqlContext.implicits._
 
     val genotypesDs: GenotypeDataset = reads.transmuteDataset[Genotype, GenotypeProduct, GenotypeDataset](
@@ -1610,7 +1610,7 @@ class AlignmentDatasetSuite extends ADAMFunSuite {
 
     checkSave(variants)
 
-    val sqlContext = SQLContext.getOrCreate(sc)
+    val sqlContext = spark.sqlContext
     import sqlContext.implicits._
 
     val variantsDs: VariantDataset = reads.transmuteDataset[Variant, VariantProduct, VariantDataset](

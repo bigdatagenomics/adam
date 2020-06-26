@@ -29,7 +29,6 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.algorithms.consensus._
 import org.bdgenomics.adam.cli.FileSystemUtils._
-import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.io.FastqRecordReader
 import org.bdgenomics.adam.models.{ ReferenceRegion, SnpTable }
 import org.bdgenomics.adam.projections.{ AlignmentField, Filter }
@@ -334,9 +333,7 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
 
       // create the known sites file, if one is available
       val knownSnps: SnpTable = createKnownSnpsTable(ds.rdd.context)
-      val broadcastedSnps = BroadcastingKnownSnps.time {
-        ds.rdd.context.broadcast(knownSnps)
-      }
+      val broadcastedSnps = ds.rdd.context.broadcast(knownSnps)
 
       // run bqsr
       val bqsredDs = ds.recalibrateBaseQualities(

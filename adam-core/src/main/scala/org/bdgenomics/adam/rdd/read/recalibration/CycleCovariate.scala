@@ -17,7 +17,6 @@
  */
 package org.bdgenomics.adam.rdd.read.recalibration
 
-import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.formats.avro.Alignment
 
 /**
@@ -32,7 +31,7 @@ private[adam] class CycleCovariate extends Covariate[Int] {
    * @return Returns an integer array where the array elements indicate the
    *   sequencer cycle that a base was from.
    */
-  def compute(read: Alignment): Array[Int] = ComputingCycleCovariate.time {
+  def compute(read: Alignment): Array[Int] = {
     val (initial, increment) = initialization(read)
     val seqLength = read.getSequence.length
     val cycleArray = new Array[Int](seqLength)

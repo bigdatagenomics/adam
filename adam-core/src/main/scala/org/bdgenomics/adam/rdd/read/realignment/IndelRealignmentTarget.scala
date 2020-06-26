@@ -23,7 +23,6 @@ import htsjdk.samtools.CigarOperator
 import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.rich.RichAlignment
 import org.bdgenomics.formats.avro.Alignment
-import org.bdgenomics.adam.instrumentation.Timers._
 import scala.collection.JavaConversions._
 import scala.collection.immutable.TreeSet
 
@@ -84,7 +83,7 @@ private[realignment] object IndelRealignmentTarget {
    */
   def apply(
     read: RichAlignment,
-    maxIndelSize: Int): Seq[IndelRealignmentTarget] = CreateIndelRealignmentTargets.time {
+    maxIndelSize: Int): Seq[IndelRealignmentTarget] = {
 
     val region = ReferenceRegion.unstranded(read.record)
     val refId = read.record.getReferenceName

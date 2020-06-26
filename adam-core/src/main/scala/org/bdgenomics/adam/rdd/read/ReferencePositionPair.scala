@@ -19,7 +19,6 @@ package org.bdgenomics.adam.rdd.read
 
 import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import com.esotericsoftware.kryo.io.{ Input, Output }
-import org.bdgenomics.adam.instrumentation.Timers.CreateReferencePositionPair
 import org.bdgenomics.adam.models.{
   ReferencePosition,
   ReferencePositionSerializer
@@ -39,7 +38,7 @@ private[read] object ReferencePositionPair {
    * @return Returns the start position pair for the primary aligned first and
    *   second of pair reads.
    */
-  def apply(singleReadBucket: SingleReadBucket): ReferencePositionPair = CreateReferencePositionPair.time {
+  def apply(singleReadBucket: SingleReadBucket): ReferencePositionPair = {
     val firstOfPair = (singleReadBucket.primaryMapped.filter(_.getReadInFragment == 0) ++
       singleReadBucket.unmapped.filter(_.getReadInFragment == 0)).toSeq
     val secondOfPair = (singleReadBucket.primaryMapped.filter(_.getReadInFragment == 1) ++

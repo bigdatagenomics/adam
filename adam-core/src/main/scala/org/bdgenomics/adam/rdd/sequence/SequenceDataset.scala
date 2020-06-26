@@ -21,8 +21,7 @@ import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.spark.SparkContext
 import org.apache.spark.api.java.function.{ Function => JFunction }
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{ Dataset, SQLContext }
-import org.bdgenomics.adam.instrumentation.Timers._
+import org.apache.spark.sql.Dataset
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.read.ReadDataset
 import org.bdgenomics.adam.rdd.{
@@ -134,9 +133,8 @@ case class ParquetUnboundSequenceDataset private[rdd] (
   protected lazy val optPartitionMap = sc.extractPartitionMap(parquetFilename)
 
   lazy val dataset = {
-    val sqlContext = SQLContext.getOrCreate(sc)
-    import sqlContext.implicits._
-    sqlContext.read.parquet(parquetFilename).as[SequenceProduct]
+    import spark.implicits._
+    spark.read.parquet(parquetFilename).as[SequenceProduct]
   }
 
   def replaceSequences(newSequences: SequenceDictionary): SequenceDataset = {
@@ -193,9 +191,8 @@ case class RDDBoundSequenceDataset private[rdd] (
    * A SQL Dataset of sequences.
    */
   lazy val dataset: Dataset[SequenceProduct] = {
-    val sqlContext = SQLContext.getOrCreate(rdd.context)
-    import sqlContext.implicits._
-    sqlContext.createDataset(rdd.map(SequenceProduct.fromAvro))
+    import spark.implicits._
+    spark.createDataset(rdd.map(SequenceProduct.fromAvro))
   }
 
   def replaceSequences(newSequences: SequenceDictionary): SequenceDataset = {
@@ -382,7 +379,7 @@ sealed abstract class SequenceDataset extends AvroGenomicDataset[Sequence, Seque
    *
    * @return Returns a new SequenceDataset with the sequence dictionary replaced.
    */
-  def createSequenceDictionary(): SequenceDataset = CreateSequenceDictionary.time {
+  def createSequenceDictionary(): SequenceDataset = {
     val sd = new SequenceDictionary(rdd.flatMap(sequence => {
       if (sequence.getName != null) {
         Some(SequenceRecord.fromSequence(sequence))

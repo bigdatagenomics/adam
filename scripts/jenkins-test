@@ -40,7 +40,7 @@ fi
 set -e
 
 # build defaults to Scala 2.11
-if [ ${SCALAVER} == 2.11 ];
+if [ ${SCALA_VERSION} == 2.11 ];
 then
     # shouldn't be able to move to scala 2.11 twice
     set +e
@@ -54,7 +54,7 @@ then
 fi
 
 # move to Scala 2.12 if requested
-if [ ${SCALAVER} == 2.12 ];
+if [ ${SCALA_VERSION} == 2.12 ];
 then
     set +e
     ./scripts/move_to_scala_2.12.sh
@@ -137,9 +137,7 @@ popd
 pushd $ADAM_TMP_DIR
 
 # what hadoop version are we on? format string for downloading spark assembly
-if [[ $HADOOP_VERSION =~ ^2\.6 ]]; then
-    HADOOP=hadoop2.6
-elif [[ $HADOOP_VERSION =~ ^2\.7 ]]; then
+if [[ $HADOOP_VERSION =~ ^2\.7 ]]; then
     HADOOP=hadoop2.7
 else
     echo "Unknown Hadoop version."
@@ -151,8 +149,8 @@ SPARK=spark-${SPARK_VERSION}
     
 # download prepackaged spark assembly
 
-# Spark 2.4.3+ needs special case for Scala 2.12
-if [ ${SCALAVER} == 2.12 ];
+# Spark 2.4.3+ and less than 3.0.0 needs special case for Scala 2.12
+if [ ${SCALA_VERSION} == 2.12 ] && [ ${SPARK_VERSION} == 2.4.6 ]
 then
     curl \
         -L "https://www.apache.org/dyn/mirrors/mirrors.cgi?action=download&filename=spark/${SPARK}/${SPARK}-bin-without-hadoop-scala-2.12.tgz" \
@@ -178,6 +176,7 @@ then
     export SPARK_DIST_CLASSPATH=$(hadoop-2.7.7/bin/hadoop classpath)
 else
     curl \
+        -v \
         -L "https://www.apache.org/dyn/mirrors/mirrors.cgi?action=download&filename=spark/${SPARK}/${SPARK}-bin-${HADOOP}.tgz" \
         -o ${SPARK}-bin-${HADOOP}.tgz
 
@@ -213,20 +212,11 @@ do
     pushd adam-python
     make prepare
     popd
-    	
-    # make a directory to install SparkR into, and set the R user libs path
-    export R_LIBS_USER=${SPARK_HOME}/local_R_libs
-    mkdir -p ${R_LIBS_USER}
-    R CMD INSTALL \
-      -l ${R_LIBS_USER} \
-      ${SPARK_HOME}/R/lib/SparkR/
-    	    
-    export SPARKR_SUBMIT_ARGS="--jars ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} --driver-class-path ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} sparkr-shell"
     	    
     # we can run the python build, now that we have a spark executable
     # -DskipTests appears to skip the python/r tests?
     mvn -U \
-    	-P python,r,distribution \
+    	-P python,distribution \
     	package \
     	-Dsuites=select.no.suites\* \
     	-Dhadoop.version=${HADOOP_VERSION}
@@ -254,7 +244,27 @@ do
     popd
 
 done
-	
+
+if [ ${SPARK_VERSION} == 3.0.0 ]
+then
+    echo "Unable to build R support for Spark 3.0.0, SparkR is not available"
+else
+    # make a directory to install SparkR into, and set the R user libs path
+    export R_LIBS_USER=${SPARK_HOME}/local_R_libs
+    mkdir -p ${R_LIBS_USER}
+    R CMD INSTALL \
+      -l ${R_LIBS_USER} \
+      ${SPARK_HOME}/R/lib/SparkR/
+
+    export SPARKR_SUBMIT_ARGS="--jars ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} --driver-class-path ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} sparkr-shell"
+
+    mvn -U \
+    	-P r \
+    	package \
+    	-Dsuites=select.no.suites\* \
+    	-Dhadoop.version=${HADOOP_VERSION}
+fi
+
 # define filenames
 BAM=mouse_chrM.bam
 READS=${BAM}.reads.adam
@@ -288,13 +298,13 @@ ${ADAM} print ${FRAGMENTS} 1>/dev/null 2>/dev/null
 
 # run flagstat to verify that flagstat runs OK
 echo "Printing read statistics"
-${ADAM} flagstat -print_metrics ${READS}
+${ADAM} flagstat ${READS}
 rm -rf ${ADAM_TMP_DIR}
 popd
 
 pushd ${PROJECT_ROOT}
 # move back to Scala 2.11 as default
-if [ ${SCALAVER} == 2.12 ];
+if [ ${SCALA_VERSION} == 2.12 ];
 then
     set +e
     ./scripts/move_to_scala_2.11.sh
