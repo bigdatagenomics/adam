@@ -149,7 +149,7 @@ SPARK=spark-${SPARK_VERSION}
     
 # download prepackaged spark assembly
 
-# Spark 2.4.3+ needs special case for Scala 2.12
+# Spark 2.4.3+ and less than 3.0.0 needs special case for Scala 2.12
 if [ ${SCALA_VERSION} == 2.12 ] && [ ${SPARK_VERSION} == 2.4.6 ]
 then
     curl \
@@ -212,20 +212,11 @@ do
     pushd adam-python
     make prepare
     popd
-    	
-    # make a directory to install SparkR into, and set the R user libs path
-    export R_LIBS_USER=${SPARK_HOME}/local_R_libs
-    mkdir -p ${R_LIBS_USER}
-    R CMD INSTALL \
-      -l ${R_LIBS_USER} \
-      ${SPARK_HOME}/R/lib/SparkR/
-    	    
-    export SPARKR_SUBMIT_ARGS="--jars ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} --driver-class-path ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} sparkr-shell"
     	    
     # we can run the python build, now that we have a spark executable
     # -DskipTests appears to skip the python/r tests?
     mvn -U \
-    	-P python,r,distribution \
+    	-P python,distribution \
     	package \
     	-Dsuites=select.no.suites\* \
     	-Dhadoop.version=${HADOOP_VERSION}
@@ -253,7 +244,27 @@ do
     popd
 
 done
-	
+
+if [ ${SPARK_VERSION} == 3.0.0 ]
+then
+    echo "Unable to build R support for Spark 3.0.0, SparkR is not available"
+else
+    # make a directory to install SparkR into, and set the R user libs path
+    export R_LIBS_USER=${SPARK_HOME}/local_R_libs
+    mkdir -p ${R_LIBS_USER}
+    R CMD INSTALL \
+      -l ${R_LIBS_USER} \
+      ${SPARK_HOME}/R/lib/SparkR/
+
+    export SPARKR_SUBMIT_ARGS="--jars ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} --driver-class-path ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} sparkr-shell"
+
+    mvn -U \
+    	-P r \
+    	package \
+    	-Dsuites=select.no.suites\* \
+    	-Dhadoop.version=${HADOOP_VERSION}
+fi
+
 # define filenames
 BAM=mouse_chrM.bam
 READS=${BAM}.reads.adam
