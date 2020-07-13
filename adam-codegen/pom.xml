@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.bdgenomics.adam</groupId>
     <artifactId>adam-parent-spark2_2.11</artifactId>
-    <version>0.32.0-SNAPSHOT</version>
+    <version>0.33.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
