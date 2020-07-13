@@ -1,5 +1,31 @@
 # ADAM Changelog #
 
+### Version 0.32.0 ###
+
+**Closed issues:**
+
+ - Jenkins build not producing Spark 3/Scala 2.12 snapshot artifacts [\#2265](https://github.com/bigdatagenomics/adam/issues/2265)
+ - Use SCALA_VERSION instead of SCALAVER in Jenkins config [\#2264](https://github.com/bigdatagenomics/adam/issues/2264)
+ - Update Spark dependency version to 2.4.6 [\#2262](https://github.com/bigdatagenomics/adam/issues/2262)
+ - Spark Issue + Could not initialize class org.apache.spark.sql.execution.datasources.parquet.ParquetSchemaConverter [\#2261](https://github.com/bigdatagenomics/adam/issues/2261)
+ - Bump slf4j dependency to 1.7.30+ [\#2259](https://github.com/bigdatagenomics/adam/issues/2259)
+ - Load Multiple Files into the ADAM Variant schema [\#2258](https://github.com/bigdatagenomics/adam/issues/2258)
+ - Consider ParseMode to replace ValidationStringency [\#2251](https://github.com/bigdatagenomics/adam/issues/2251)
+ - NoClassDefError org.apache.spark.AccumulableParam on Spark 3.0.0 preview [\#2250](https://github.com/bigdatagenomics/adam/issues/2250)
+ - Create a build configuration for Spark 3 preview release(s) [\#2237](https://github.com/bigdatagenomics/adam/issues/2237)
+ - Drop python 2 support for pyadam [\#2221](https://github.com/bigdatagenomics/adam/issues/2221)
+ - NoSuchMethodError: shaded.parquet.org.apache.thrift.EncodingUtils.setBit(BIZ)B [\#2157](https://github.com/bigdatagenomics/adam/issues/2157)
+ - Push to CRAN [\#1851](https://github.com/bigdatagenomics/adam/issues/1851)
+
+**Merged and closed pull requests:**
+
+ - [ADAM-2262] Update Spark dependency version to 2.4.6 [\#2263](https://github.com/bigdatagenomics/adam/pull/2263) ([heuermh](https://github.com/heuermh))
+ - [ADAM-2259] Bump slf4j dependency version to 1.7.30. [\#2260](https://github.com/bigdatagenomics/adam/pull/2260) ([heuermh](https://github.com/heuermh))
+ - bump python version to 0.32.0a0 [\#2257](https://github.com/bigdatagenomics/adam/pull/2257) ([akmorrow13](https://github.com/akmorrow13))
+ - Support Apache Spark 3.x in build [\#2255](https://github.com/bigdatagenomics/adam/pull/2255) ([heuermh](https://github.com/heuermh))
+ - [ADAM-2221] Remove support for Python 2.7 [\#2244](https://github.com/bigdatagenomics/adam/pull/2244) ([akmorrow13](https://github.com/akmorrow13))
+
+
 ### Version 0.31.0 ###
 
 **Closed issues:**
