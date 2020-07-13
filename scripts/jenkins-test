@@ -39,17 +39,11 @@ fi
 
 set -e
 
-# build defaults to Scala 2.11
+# move to Scala 2.11 if requested
 if [ ${SCALA_VERSION} == 2.11 ];
 then
-    # shouldn't be able to move to scala 2.11 twice
     set +e
     ./scripts/move_to_scala_2.11.sh
-    if [[ $? == 0 ]];
-    then
-        echo "We have already moved to Scala 2.11, so running move_to_scala_2.11.sh a second time should fail, but error code was 0 (success)."
-        exit 1
-    fi
     set -e
 fi
 
@@ -58,6 +52,22 @@ if [ ${SCALA_VERSION} == 2.12 ];
 then
     set +e
     ./scripts/move_to_scala_2.12.sh
+    set -e
+fi
+
+# move to Spark 2.x if requested
+if [ ${SPARK_VERSION} == 2.4.6 ];
+then
+    set +e
+    ./scripts/move_to_spark_2.sh
+    set -e
+fi
+
+# move to Spark 3.x if requested
+if [ ${SPARK_VERSION} == 3.0.0 ];
+then
+    set +e
+    ./scripts/move_to_spark_3.sh
     set -e
 fi
 
@@ -303,11 +313,19 @@ rm -rf ${ADAM_TMP_DIR}
 popd
 
 pushd ${PROJECT_ROOT}
-# move back to Scala 2.11 as default
-if [ ${SCALA_VERSION} == 2.12 ];
+
+# move back to Scala 2.12 as default
+if [ ${SCALA_VERSION} == 2.11 ];
 then
     set +e
-    ./scripts/move_to_scala_2.11.sh
+    ./scripts/move_to_scala_2.12.sh
+    set -e
+fi
+# move back to Spark 3.x as default
+if [ ${SPARK_VERSION} == 2.4.6 ];
+then
+    set +e
+    ./scripts/move_to_spark_3.sh
     set -e
 fi
 
