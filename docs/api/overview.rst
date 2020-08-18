@@ -38,6 +38,16 @@ From ADAM version 0.27.0, Scala 2.12 artifacts are also available:
       <version>${adam.version}</version>
     </dependency>
 
+From ADAM version 0.32.0, Spark 3 artifacts are also available:
+
+::
+
+    <dependency>
+      <groupId>org.bdgenomics.adam</groupId>
+      <artifactId>adam-core-spark3_2.12</artifactId>
+      <version>${adam.version}</version>
+    </dependency>
+
 
 Scala apps should depend on ``adam-core``, while Java applications
 should also depend on ``adam-apis``:
