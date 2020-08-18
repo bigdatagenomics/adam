@@ -91,6 +91,7 @@ class ADAMMain @Inject() (commandGroups: List[CommandGroup]) extends Logging {
     }
     println("Built for: Apache Spark %s, Scala %s, and Hadoop %s"
       .format(about.sparkVersion, about.scalaVersion, about.hadoopVersion))
+    println("Cite: doi:10.1145/2723372.2742787")
   }
 
   private def printCommands() {
