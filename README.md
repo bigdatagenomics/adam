@@ -1,8 +1,8 @@
 ADAM
 ====
 
-[![Maven Central](https://img.shields.io/maven-central/v/org.bdgenomics.adam/adam-parent-spark2_2.11.svg?maxAge=600)](http://search.maven.org/#search%7Cga%7C1%7Corg.bdgenomics.adam)
-[![API Documentation](http://javadoc.io/badge/org.bdgenomics.adam/adam-core-spark2_2.11.svg?color=brightgreen&label=scaladoc)](http://javadoc.io/doc/org.bdgenomics.adam/adam-core-spark2_2.11)
+[![Maven Central](https://img.shields.io/maven-central/v/org.bdgenomics.adam/adam-parent-spark3_2.12.svg?maxAge=600)](http://search.maven.org/#search%7Cga%7C1%7Corg.bdgenomics.adam)
+[![API Documentation](http://javadoc.io/badge/org.bdgenomics.adam/adam-core-spark3_2.12.svg?color=brightgreen&label=scaladoc)](http://javadoc.io/doc/org.bdgenomics.adam/adam-core-spark3_2.12)
 
 # Introduction
 
@@ -85,7 +85,7 @@ prebuilt binaries can be downloaded from the [Spark website](http://spark.apache
 
 ADAM's documentation is available at http://adam.readthedocs.io.
 
-ADAM's core API documentation is available at http://javadoc.io/doc/org.bdgenomics.adam/adam-core-spark2_2.11.
+ADAM's core API documentation is available at http://javadoc.io/doc/org.bdgenomics.adam/adam-core-spark3_2.12.
 
 # The ADAM/Big Data Genomics Ecosystem
 
