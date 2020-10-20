@@ -43,5 +43,10 @@
       <artifactId>maven-shade-plugin</artifactId>
       <scope>compile</scope>
     </dependency>
+    <dependency>
+      <groupId>org.scala-lang</groupId>
+      <artifactId>scala-library</artifactId>
+      <scope>provided</scope>
+    </dependency>
   </dependencies>
 </project>
