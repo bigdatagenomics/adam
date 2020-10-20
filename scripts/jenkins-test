@@ -56,7 +56,7 @@ then
 fi
 
 # move to Spark 2.x if requested
-if [ ${SPARK_VERSION} == 2.4.6 ];
+if [ ${SPARK_VERSION} == 2.4.7 ];
 then
     set +e
     ./scripts/move_to_spark_2.sh
@@ -160,7 +160,7 @@ SPARK=spark-${SPARK_VERSION}
 # download prepackaged spark assembly
 
 # Spark 2.4.3+ and less than 3.0.0 needs special case for Scala 2.12
-if [ ${SCALA_VERSION} == 2.12 ] && [ ${SPARK_VERSION} == 2.4.6 ]
+if [ ${SCALA_VERSION} == 2.12 ] && [ ${SPARK_VERSION} == 2.4.7 ]
 then
     curl \
         -L "https://www.apache.org/dyn/mirrors/mirrors.cgi?action=download&filename=spark/${SPARK}/${SPARK}-bin-without-hadoop-scala-2.12.tgz" \
@@ -322,7 +322,7 @@ then
     set -e
 fi
 # move back to Spark 3.x as default
-if [ ${SPARK_VERSION} == 2.4.6 ];
+if [ ${SPARK_VERSION} == 2.4.7 ];
 then
     set +e
     ./scripts/move_to_spark_3.sh
