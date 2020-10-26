@@ -35,6 +35,7 @@ class TranscriptEffectConverterSuite extends ADAMFunSuite {
   final val INVALID_NUMBER = "T|upstream_gene_variant||TAS1R3|ENSG00000169962|transcript|ENST00000339381.5|protein_coding|1/2|c.-485C>T|||4|1/42|not a number|"
   final val INVALID_FRACTION = "T|upstream_gene_variant||TAS1R3|ENSG00000169962|transcript|ENST00000339381.5|protein_coding|not a number/2|c.-485C>T|||4|1/42|453|"
   final val VALID = "T|upstream_gene_variant||TAS1R3|ENSG00000169962|transcript|ENST00000339381.5|protein_coding|1/2|c.-485C>T|||4|1/42|453|"
+  final val VEP_POSITION = "T|upstream_gene_variant||TAS1R3|ENSG00000169962|transcript|ENST00000339381.5|protein_coding|1/2|c.-485C>T|||4-5/420|1/42|453|"
   final val DIFFERENT_ALT = "A|upstream_gene_variant||TAS1R3|ENSG00000169962|transcript|ENST00000339381.5|protein_coding|1/2|c.-485C>T|||4|1/42|453|"
 
   var variant: Variant = null
@@ -168,6 +169,16 @@ class TranscriptEffectConverterSuite extends ADAMFunSuite {
       assert(te.getDistance == 453)
       assert(te.getMessages.isEmpty)
     })
+  }
+
+  test("parse VCF ANN attribute with Ensembl VEP position attribute") {
+    val ann = TranscriptEffectConverter.parseAnn(Seq(VEP_POSITION), ValidationStringency.STRICT)
+    assert(ann.length == 1)
+
+    val te = ann.head
+    assert(te.getAlternateAllele == "T")
+    assert(te.getCdsPosition == 4)
+    assert(te.getCdsLength == 420)
   }
 
   test("convert to transcript effect from null VCF ANN attribute in variant context") {
