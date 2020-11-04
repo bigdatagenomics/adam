@@ -259,7 +259,7 @@ class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializab
   }
 
   override def toString: String = {
-    records.map(_.toString).mkString(",")
+    records.map(_.toString).mkString("SequenceDictionary{", "\n", "}")
   }
 
   private[adam] def toAvro: Seq[Reference] = {
