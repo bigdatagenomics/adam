@@ -184,7 +184,7 @@ class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializab
    * @return Returns a SAM formatted sequence dictionary.
    */
   def toSAMSequenceDictionary: SAMSequenceDictionary = {
-    new SAMSequenceDictionary(records.iterator.map(_.toSAMSequenceRecord).toList)
+    new SAMSequenceDictionary(records.map(_.toSAMSequenceRecord).asJava)
   }
 
   /**
@@ -259,7 +259,7 @@ class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializab
   }
 
   override def toString: String = {
-    records.map(_.toString).fold("SequenceDictionary{")(_ + "\n" + _) + "}"
+    records.map(_.toString).mkString("SequenceDictionary{", "\n", "}")
   }
 
   private[adam] def toAvro: Seq[Reference] = {

@@ -36,16 +36,20 @@ case class Attribute(tag: String, tagType: TagType.Value, value: Any) {
     val byteSequenceTypes = Array(TagType.NumericByteSequence, TagType.NumericUnsignedByteSequence)
     val intSequenceTypes = Array(TagType.NumericIntSequence, TagType.NumericUnsignedIntSequence)
     val shortSequenceTypes = Array(TagType.NumericShortSequence, TagType.NumericUnsignedShortSequence)
+    val sb = new StringBuilder
+    sb.append(tag)
+    sb.append(":")
+    sb.append(tagType)
     if (byteSequenceTypes contains tagType) {
-      "%s:%s,%s".format(tag, tagType, value.asInstanceOf[Array[Byte]].mkString(","))
+      sb.append(",").append(value.asInstanceOf[Array[Byte]].mkString(",")).toString()
     } else if (shortSequenceTypes contains tagType) {
-      "%s:%s,%s".format(tag, tagType, value.asInstanceOf[Array[Short]].mkString(","))
+      sb.append(",").append(value.asInstanceOf[Array[Short]].mkString(",")).toString()
     } else if (intSequenceTypes contains tagType) {
-      "%s:%s,%s".format(tag, tagType, value.asInstanceOf[Array[Int]].mkString(","))
+      sb.append(",").append(value.asInstanceOf[Array[Int]].mkString(",")).toString()
     } else if (tagType == TagType.NumericFloatSequence) {
-      "%s:%s,%s".format(tag, tagType, value.asInstanceOf[Array[Float]].mkString(","))
+      sb.append(",").append(value.asInstanceOf[Array[Float]].mkString(",")).toString()
     } else {
-      "%s:%s:%s".format(tag, tagType, value.toString)
+      sb.append(":").append(value).toString()
     }
   }
 }
