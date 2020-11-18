@@ -335,8 +335,8 @@ class FragmentDatasetSuite extends ADAMFunSuite {
   }
 
   sparkTest("union two genomic datasets of fragments together") {
-    val reads1 = sc.loadAlignments(testFile("bqsr1.sam")).toFragments
-    val reads2 = sc.loadAlignments(testFile("small.sam")).toFragments
+    val reads1 = sc.loadAlignments(testFile("bqsr1.sam")).toFragments()
+    val reads2 = sc.loadAlignments(testFile("small.sam")).toFragments()
     val union = reads1.union(reads2)
     assert(union.rdd.count === (reads1.rdd.count + reads2.rdd.count))
     // all of the contigs small.sam has are in bqsr1.sam
@@ -635,5 +635,19 @@ class FragmentDatasetSuite extends ADAMFunSuite {
     val convertedDataset = fragmentDataset.toAlignments()
 
     assert(convertedRdd.rdd.collect().toSet == convertedDataset.rdd.collect().toSet)
+  }
+
+  sparkTest("Compare unpaired FragmentDataset with optimisation to non-optimised") {
+
+    val alignmentDataset = sc.loadAlignments(testFile("unpaired.sam"))
+
+    val merged = alignmentDataset.toFragments()
+
+    val notMerged = alignmentDataset.toFragments(false)
+
+    assert(merged.rdd.count === notMerged.rdd.count)
+
+    assert(merged.toDF().except(notMerged.toDF()).count() === 0)
+
   }
 }

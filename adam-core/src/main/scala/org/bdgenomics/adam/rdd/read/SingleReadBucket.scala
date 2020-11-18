@@ -105,6 +105,27 @@ private[read] object SingleReadBucket {
   def apply(fragment: Fragment): SingleReadBucket = {
     fromGroupedReads(fragment.getAlignments.toIterable)
   }
+
+  def buildFragmentFromSingleAlignment(alignment: Alignment): Fragment = {
+    buildFragmentFromAlignments(List(alignment), alignment.getReadName, Option(alignment.getReadGroupId), Option(alignment.getInsertSize).map(_.toInt))
+  }
+
+  def buildFragmentFromAlignments(reads: Seq[Alignment], readName: String, readGroupId: Option[String], insertSize: Option[Int]): Fragment = {
+
+    val builder = Fragment.newBuilder()
+      .setName(readName)
+      .setAlignments(seqAsJavaList(reads))
+
+    // is an insert size defined for this fragment?
+    insertSize.foreach(is => {
+      builder.setInsertSize(is)
+    })
+
+    // set read group name, if known
+    readGroupId.foreach(n => builder.setReadGroupId(n))
+
+    builder.build()
+  }
 }
 
 /**
@@ -139,24 +160,17 @@ private[adam] case class SingleReadBucket(
     // want to pay the cost exactly once
     val unionReads = allReads
 
-    // start building fragment
-    val builder = Fragment.newBuilder()
-      .setName(unionReads.head.getReadName)
-      .setAlignments(seqAsJavaList(allReads.toSeq))
+    val firstRead = unionReads.head
 
-    // is an insert size defined for this fragment?
-    primaryMapped.headOption
-      .foreach(r => {
-        Option(r.getInsertSize).foreach(is => {
-          builder.setInsertSize(is.toInt)
-        })
-      })
+    val insertSize = primaryMapped.headOption match {
+      case Some(alignment) => Option(alignment.getInsertSize).map(_.toInt)
+      case None => None
+    }
 
-    // set read group name, if known
-    Option(unionReads.head.getReadGroupId)
-      .foreach(n => builder.setReadGroupId(n))
+    SingleReadBucket.buildFragmentFromAlignments(unionReads.toSeq,
+      firstRead.getReadName, Option(firstRead.getReadGroupId),
+      insertSize)
 
-    builder.build()
   }
 }
 

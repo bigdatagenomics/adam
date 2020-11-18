@@ -130,7 +130,7 @@ class TransformFragments(protected val args: TransformFragmentsArgs) extends BDG
 
     val rdd = if (args.loadAsAlignments) {
       sc.loadAlignments(args.inputPath)
-        .toFragments
+        .toFragments()
     } else {
       sc.loadFragments(args.inputPath)
     }

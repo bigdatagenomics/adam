@@ -208,7 +208,7 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
 
   private def markDuplicateFragments(reads: Alignment*): Array[Alignment] = {
     AlignmentDataset(sc.parallelize(reads), SequenceDictionary.empty, rgd, Seq.empty)
-      .toFragments
+      .toFragments()
       .markDuplicates()
       .toAlignments
       .rdd

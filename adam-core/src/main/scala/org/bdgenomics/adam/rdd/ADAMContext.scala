@@ -3680,7 +3680,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
           .querynameSortedToFragments
       } else {
         info(s"Loading $pathName as BAM/CRAM/SAM and converting to Fragments.")
-        loadBam(pathName, stringency).toFragments
+        loadBam(pathName, stringency).toFragments()
       }
     } else if (isInterleavedFastqExt(trimmedPathName)) {
       info(s"Loading $pathName as interleaved FASTQ and converting to Fragments.")
