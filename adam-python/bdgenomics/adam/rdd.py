@@ -870,16 +870,18 @@ class AlignmentDataset(GenomicDataset):
         return "org.bdgenomics.adam.api.java.AlignmentsTo%s" % self._destClassSuffix(destClass)
 
 
-    def toFragments(self):
+    def toFragments(self, mergePairedReads=True):
         """
         Convert this set of reads into fragments.
 
+        :param mergePairedReads: Merge paired reads into a fragment. Can be set to false when only unpaired
+                                 reads are in the AlignmentDataset. Defaults to true.
         :return: Returns a FragmentDataset where all reads have been grouped
         together by the original sequence fragment they come from.
         :rtype: bdgenomics.adam.rdd.FragmentDataset
         """
 
-        return FragmentDataset(self._jvmRdd.toFragments(), self.sc)
+        return FragmentDataset(self._jvmRdd.toFragments(mergePairedReads), self.sc)
 
 
     def toCoverage(self, collapse = True):
