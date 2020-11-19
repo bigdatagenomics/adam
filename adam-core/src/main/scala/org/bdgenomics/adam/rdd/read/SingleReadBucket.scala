@@ -164,7 +164,7 @@ private[adam] case class SingleReadBucket(
 
     val insertSize = primaryMapped.headOption match {
       case Some(alignment) => Option(alignment.getInsertSize).map(_.toInt)
-      case None => None
+      case None            => None
     }
 
     SingleReadBucket.buildFragmentFromAlignments(unionReads.toSeq,
