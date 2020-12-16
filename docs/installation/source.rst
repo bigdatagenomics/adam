@@ -4,10 +4,6 @@ Building ADAM from Source
 You will need to have `Apache Maven <http://maven.apache.org/>`__
 version 3.3.9 or later installed in order to build ADAM.
 
-    **Note:** The default configuration is for Hadoop 2.7.5. If building
-    against a different version of Hadoop, please pass
-    ``-Dhadoop.version=<HADOOP_VERSION>`` to the Maven command.
-
 .. code:: bash
 
     git clone https://github.com/bigdatagenomics/adam.git
