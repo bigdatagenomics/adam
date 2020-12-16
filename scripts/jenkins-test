@@ -39,73 +39,13 @@ fi
 
 set -e
 
-# move to Scala 2.11 if requested
-if [ ${SCALA_VERSION} == 2.11 ];
-then
-    set +e
-    ./scripts/move_to_scala_2.11.sh
-    set -e
-fi
-
-# move to Scala 2.12 if requested
-if [ ${SCALA_VERSION} == 2.12 ];
-then
-    set +e
-    ./scripts/move_to_scala_2.12.sh
-    set -e
-fi
-
-# move to Spark 2.x if requested
-if [ ${SPARK_VERSION} == 2.4.7 ];
-then
-    set +e
-    ./scripts/move_to_spark_2.sh
-    set -e
-fi
-
-# move to Spark 3.x if requested
-if [ ${SPARK_VERSION} == 3.0.1 ];
-then
-    set +e
-    ./scripts/move_to_spark_3.sh
-    set -e
-fi
-
 # print versions
 echo "Testing ADAM version ${VERSION} on Spark ${SPARK_VERSION} and Hadoop ${HADOOP_VERSION}"
-
-# first, build the sources, run the unit tests, and generate a coverage report
-mvn clean \
-    -Dhadoop.version=${HADOOP_VERSION}
-    
-# if this is a pull request, we need to set the coveralls pr id
-if [[ ! -z $ghprbPullId ]];
-then
-    COVERALLS_PRB_OPTION="-DpullRequest=${ghprbPullId}"
-fi
-
-# coveralls token should not be visible
-set +x +v
-
-if [[ -z ${COVERALLS_REPO_TOKEN} ]];
-then
-    echo "Coveralls token is not set. Exiting..."
-    exit 1
-fi
-
-# if those pass, build the distribution package and the integration tests
-mvn -U \
-    test \
-    -P coverage scoverage:report
-
-# make verbose again
-set -x -v
 
 # if those pass, build the distribution package
 mvn -U \
     -P distribution \
     package \
-    -DskipTests \
     -Dhadoop.version=${HADOOP_VERSION} \
     -DargLine=${ADAM_MVN_TMP_DIR}
 
@@ -285,21 +225,6 @@ rm -rf ${ADAM_TMP_DIR}
 popd
 
 pushd ${PROJECT_ROOT}
-
-# move back to Scala 2.12 as default
-if [ ${SCALA_VERSION} == 2.11 ];
-then
-    set +e
-    ./scripts/move_to_scala_2.12.sh
-    set -e
-fi
-# move back to Spark 3.x as default
-if [ ${SPARK_VERSION} == 2.4.7 ];
-then
-    set +e
-    ./scripts/move_to_spark_3.sh
-    set -e
-fi
 
 # test that the source is formatted correctly
 ./scripts/format-source

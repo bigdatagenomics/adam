@@ -59,15 +59,6 @@ runs tests. To build this module, we require either an active
 `Conda <https://conda.io/>`__ or
 `virtualenv <https://virtualenv.pypa.io/en/stable/>`__ environment.
 
-ADAM can run on both Python 2 and Python 3.
-`To setup and activate a Conda
-environment <https://conda.io/docs/using/envs.html>`__ for Python 2.7, run:
-
-.. code:: bash
-
-    conda create -n adam python=2.7 anaconda
-    source activate adam
-
 `To setup and activate a Conda
 environment <https://conda.io/docs/using/envs.html>`__ for Python 3.6, run:
 

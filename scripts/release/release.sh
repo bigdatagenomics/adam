@@ -29,55 +29,35 @@ echo "releasing from ${commit} on branch ${branch}"
 
 git push origin ${branch}
 
-# do spark 2, scala 2.11 release
-git checkout -b maint_spark2_2.11-${release} ${branch}
-
-cd adam-python
-virtualenv adam-release
-. adam-release/bin/activate
-make develop
-deactivate
-rm -rf adam-release
-cd ..
-
-git commit -a -m "Modifying pom.xml files for Spark 2, Scala 2.11 release."
-mvn --batch-mode \
-  -P distribution \
-  -Dresume=false \
-  -Dtag=adam-parent-spark2_2.11-${release} \
-  -DreleaseVersion=${release} \
-  -DdevelopmentVersion=${devel} \
-  -DbranchName=adam-spark2_2.11-${release} \
-  release:clean \
-  release:prepare \
-  release:perform
-
-if [ $? != 0 ]; then
-  echo "Releasing Spark 2, Scala 2.11 version failed."
-  exit 1
-fi
+#cd adam-python
+#virtualenv adam-release
+#. adam-release/bin/activate
+#make develop
+#deactivate
+#rm -rf adam-release
+#cd ..
 
 # set up python environment for releasing to pypi
-pushd adam-python
-rm -rf release-venv
-virtualenv release-venv
-. release-venv/bin/activate
-pip install pyspark
-pip install twine
-pip install pypandoc
+#pushd adam-python
+#rm -rf release-venv
+#virtualenv release-venv
+#. release-venv/bin/activate
+#pip install pyspark
+#pip install twine
+#pip install pypandoc
 
 # clean any possible extant sdists
-rm -rf dist
+#rm -rf dist
 
 # build sdist and push to pypi
-make sdist
-twine upload dist/*.tar.gz
+#make sdist
+#twine upload dist/*.tar.gz
 
 # deactivate the python virtualenv
-deactivate
-rm -rf release-venv
+#deactivate
+#rm -rf release-venv
 
-popd
+#popd
 
 # build R tarball
 #
@@ -87,36 +67,31 @@ popd
 #
 # We will not be pushing to CRAN until SparkR is reinstated in CRAN. Until then,
 # this tarball will need to be manually attached to the github releases page
-pushd adam-r
-R CMD build bdgenomics.adam
-popd
+#pushd adam-r
+#R CMD build bdgenomics.adam
+#popd
 
-if [ $? != 0 ]; then
-  echo "Releasing bdgenomics.adam to PyPi failed."
-  exit 1
-fi
+#if [ $? != 0 ]; then
+#  echo "Releasing bdgenomics.adam to PyPi failed."
+#  exit 1
+#fi
 
-git checkout master
-
-# do spark 2, scala 2.12 release
-git checkout -b maint_spark2_2.12-${release} ${branch}
-
-./scripts/move_to_scala_2.12.sh
-git commit -a -m "Modifying pom.xml files for Spark 2, Scala 2.12 release."
+# do spark 3, scala 2.12 release
+git checkout -b maint_spark3_2.12-${release} ${branch}
 
 mvn --batch-mode \
   -P distribution \
   -Dresume=false \
-  -Dtag=adam-parent-spark2_2.12-${release} \
+  -Dtag=adam-parent-spark3_2.12-${release} \
   -DreleaseVersion=${release} \
   -DdevelopmentVersion=${devel} \
-  -DbranchName=adam-spark2_2.12-${release} \
+  -DbranchName=adam-spark3_2.12-${release} \
   release:clean \
   release:prepare \
   release:perform
 
 if [ $? != 0 ]; then
-  echo "Releasing Spark 2, Scala 2.12 version failed."
+  echo "Releasing Spark 3, Scala 2.12 version failed."
   exit 1
 fi
 
