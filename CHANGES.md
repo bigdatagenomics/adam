@@ -1,5 +1,26 @@
 # ADAM Changelog #
 
+### Version 0.33.0 ###
+
+**Closed issues:**
+
+ - Update Spark dependency to version 3.0.1 [\#2273](https://github.com/bigdatagenomics/adam/issues/2273)
+ - Add cite DOI link to command line --version output [\#2270](https://github.com/bigdatagenomics/adam/issues/2270)
+ - Support Hadoop 3.2.x in build [\#2267](https://github.com/bigdatagenomics/adam/issues/2267)
+ - Default build to Spark 3/Scala 2.12 [\#2266](https://github.com/bigdatagenomics/adam/issues/2266)
+
+**Merged and closed pull requests:**
+
+ - Performance improvements to SAM reading and processing [\#2280](https://github.com/bigdatagenomics/adam/pull/2280) ([benraha](https://github.com/benraha))
+ - [ADAM-2150] Use interval start as position for Ensembl VEP ANN attributes [\#2278](https://github.com/bigdatagenomics/adam/pull/2278) ([heuermh](https://github.com/heuermh))
+ - Update Spark 2.x dependency version to 2.4.7 [\#2277](https://github.com/bigdatagenomics/adam/pull/2277) ([heuermh](https://github.com/heuermh))
+ - Use explicit provided scope for scala-library dependency [\#2276](https://github.com/bigdatagenomics/adam/pull/2276) ([heuermh](https://github.com/heuermh))
+ - Update Spark dependency version to 3.0.1 [\#2274](https://github.com/bigdatagenomics/adam/pull/2274) ([heuermh](https://github.com/heuermh))
+ - [ADAM-2270] Add cite DOI link to command line --version output [\#2271](https://github.com/bigdatagenomics/adam/pull/2271) ([heuermh](https://github.com/heuermh))
+ - Default doc links to Spark 3/Scala 2.12 [\#2269](https://github.com/bigdatagenomics/adam/pull/2269) ([heuermh](https://github.com/heuermh))
+ - [ADAM-2266] Default build to Spark 3/Scala 2.12 [\#2268](https://github.com/bigdatagenomics/adam/pull/2268) ([heuermh](https://github.com/heuermh))
+
+
 ### Version 0.32.0 ###
 
 **Closed issues:**
