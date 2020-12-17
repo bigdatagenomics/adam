@@ -11,7 +11,7 @@ then
     exit 1
 fi
 
-find . -name "pom.xml" -exec sed -e "s/2.11.12/2.12.8/g" \
+find . -name "pom.xml" -exec sed -e "s/2.11.12/2.12.10/g" \
     -e "s/2.11/2.12/g" \
     -i.2.12.bak '{}' \;
 find . -name "*.2.12.*bak" -exec rm -f {} \;
