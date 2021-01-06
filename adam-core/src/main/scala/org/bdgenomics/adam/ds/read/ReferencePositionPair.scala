@@ -45,7 +45,7 @@ private[read] object ReferencePositionPair {
       singleReadBucket.unmapped.filter(_.getReadInFragment == 1)).toSeq
 
     def getPos(r: Alignment): ReferencePosition = {
-      require(r.sequence != null, "Alignment sequence must not be null!")
+      require(r.getSequence != null, "Alignment sequence must not be null!")
       if (r.getReadMapped) {
         new RichAlignment(r).fivePrimeReferencePosition
       } else {

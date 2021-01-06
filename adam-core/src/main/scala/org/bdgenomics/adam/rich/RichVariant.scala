@@ -31,7 +31,7 @@ object RichVariant {
    * @return Returns a rich variant representing the variant that was genotyped.
    */
   def genotypeToRichVariant(genotype: Genotype): RichVariant = {
-    val variant = Variant.newBuilder(genotype.variant)
+    val variant = Variant.newBuilder(genotype.getVariant)
       .setReferenceName(genotype.getReferenceName)
       .setStart(genotype.getStart)
       .setEnd(genotype.getEnd)

@@ -34,10 +34,10 @@ class CoverageSuite extends ADAMFunSuite {
     val coverageAfterConversion = Coverage(featureToConvert)
 
     // all fields should match between the two
-    assert(coverageAfterConversion.start == featureToConvert.start)
-    assert(coverageAfterConversion.end == featureToConvert.end)
+    assert(coverageAfterConversion.start == featureToConvert.getStart)
+    assert(coverageAfterConversion.end == featureToConvert.getEnd)
     assert(coverageAfterConversion.referenceName == featureToConvert.getReferenceName)
-    assert(coverageAfterConversion.count == featureToConvert.score)
+    assert(coverageAfterConversion.count == featureToConvert.getScore)
   }
 
   sparkTest("Convert to coverage from valid Feature with sampleId") {
@@ -54,11 +54,11 @@ class CoverageSuite extends ADAMFunSuite {
     val coverageAfterConversion = Coverage(featureToConvert)
 
     // all fields should match between the two
-    assert(coverageAfterConversion.start == featureToConvert.start)
-    assert(coverageAfterConversion.end == featureToConvert.end)
+    assert(coverageAfterConversion.start == featureToConvert.getStart)
+    assert(coverageAfterConversion.end == featureToConvert.getEnd)
     assert(coverageAfterConversion.referenceName == featureToConvert.getReferenceName)
-    assert(coverageAfterConversion.count == featureToConvert.score)
-    assert(coverageAfterConversion.optSampleId == Some(featureToConvert.sampleId))
+    assert(coverageAfterConversion.count == featureToConvert.getScore)
+    assert(coverageAfterConversion.optSampleId == Some(featureToConvert.getSampleId))
   }
 
   sparkTest("Convert to coverage from Feature with null/empty contigName fails with correct error") {

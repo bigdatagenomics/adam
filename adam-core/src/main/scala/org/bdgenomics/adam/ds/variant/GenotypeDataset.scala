@@ -448,11 +448,11 @@ sealed abstract class GenotypeDataset extends MultisampleAvroGenomicDataset[Geno
    */
   def copyVariantEndToAttribute(): GenotypeDataset = {
     def copyEnd(g: Genotype): Genotype = {
-      val variant = Option(g.variant).getOrElse(new Variant())
-      val annotation = Option(variant.annotation).getOrElse(new VariantAnnotation())
+      val variant = Option(g.getVariant).getOrElse(new Variant())
+      val annotation = Option(variant.getAnnotation).getOrElse(new VariantAnnotation())
       val attributes = new java.util.HashMap[String, String]()
-      Option(annotation.attributes).map(attributes.putAll(_))
-      attributes.put("END", g.end.toString)
+      Option(annotation.getAttributes).map(attributes.putAll(_))
+      attributes.put("END", g.getEnd.toString)
       val annotationCopy = VariantAnnotation.newBuilder(annotation).setAttributes(attributes).build()
       val variantCopy = Variant.newBuilder(variant).setAnnotation(annotationCopy).build()
       Genotype.newBuilder(g).setVariant(variantCopy).build()

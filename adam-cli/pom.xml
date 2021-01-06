@@ -113,14 +113,8 @@
   </build>
   <dependencies>
     <dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-client</artifactId>
-      <!-- provided scope from parent -->
-    </dependency>
-    <dependency>
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-core_${scala.version.prefix}</artifactId>
-      <!-- provided scope from parent -->
     </dependency>
     <dependency>
       <groupId>org.bdgenomics.utils</groupId>
