@@ -178,7 +178,7 @@ class VariantContextDatasetSuite extends ADAMFunSuite {
     assert(vcs.rdd.count === 17)
 
     // AD should be zero or null after splitting ref=GAAGAAAGAAAGA alt=GAAGAAAGA,GAAGA,G AD 0,0,0
-    val filtered = vcs.toGenotypes().rdd.filter(_.start == 66631043)
+    val filtered = vcs.toGenotypes().rdd.filter(_.getStart == 66631043)
     val referenceReadDepths = filtered.map(_.getAlternateReadDepth).collect()
     val alternateReadDepths = filtered.map(_.getAlternateReadDepth).collect()
 

@@ -291,11 +291,6 @@ class ADAMKryoRegistrator extends KryoRegistrator with Logging {
     kryo.register(classOf[org.bdgenomics.formats.avro.VariantCallingAnnotations],
       new AvroSerializer[org.bdgenomics.formats.avro.VariantCallingAnnotations])
 
-    // org.codehaus.jackson.node
-    kryo.register(classOf[org.codehaus.jackson.node.NullNode])
-    kryo.register(classOf[org.codehaus.jackson.node.BooleanNode])
-    kryo.register(classOf[org.codehaus.jackson.node.TextNode])
-
     // org.apache.spark.internal
     registerByName(kryo, "org.apache.spark.internal.io.FileCommitProtocol$TaskCommitMessage")
 

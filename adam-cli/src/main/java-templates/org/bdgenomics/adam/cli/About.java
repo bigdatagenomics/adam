@@ -24,7 +24,6 @@ public final class About {
     private static final String ARTIFACT_ID = "${project.artifactId}";
     private static final String BUILD_TIMESTAMP = "${build-helper-maven-plugin.build.timestamp}";
     private static final String COMMIT = "${git.commit.id}";
-    private static final String HADOOP_VERSION = "${hadoop.version}";
     private static final String SCALA_VERSION = "${scala.version}";
     private static final String SPARK_VERSION = "${spark.version}";
     private static final String VERSION = "${project.version}";
@@ -54,15 +53,6 @@ public final class About {
      */
     public String commit() {
         return COMMIT;
-    }
-
-    /**
-     * Return the Hadoop compile scope dependency version.
-     *
-     * @return the Hadoop compile scope dependency version
-     */
-    public String hadoopVersion() {
-        return HADOOP_VERSION;
     }
 
     /**

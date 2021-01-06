@@ -694,9 +694,9 @@ class GenotypeDatasetSuite extends ADAMFunSuite {
   sparkTest("round trip gVCF END attribute without nested variant annotations rdd bound") {
     val genotypes = sc.loadGenotypes(testFile("gvcf_multiallelic/multiallelic.vcf"))
     val first = genotypes.sort.rdd.collect.head
-    assert(first.end === 16157602L)
-    assert(first.variant.end === 16157602L)
-    assert(first.variant.annotation === null)
+    assert(first.getEnd === 16157602L)
+    assert(first.getVariant.getEnd === 16157602L)
+    assert(first.getVariant.getAnnotation === null)
 
     val path = new File(tempDir, "test.gvcf.vcf")
     genotypes.copyVariantEndToAttribute.toVariantContexts.saveAsVcf(path.getAbsolutePath,
@@ -707,11 +707,11 @@ class GenotypeDatasetSuite extends ADAMFunSuite {
 
     val vcfGenotypes = sc.loadGenotypes("%s/test.gvcf.vcf".format(tempDir))
     val firstVcfGenotype = vcfGenotypes.sort.rdd.collect.head
-    assert(firstVcfGenotype.end === 16157602L)
+    assert(firstVcfGenotype.getEnd === 16157602L)
     // variant end copied to END attribute before writing, so this is correct
-    assert(firstVcfGenotype.variant.end === 16157602L)
+    assert(firstVcfGenotype.getVariant.getEnd === 16157602L)
     // ...but annotations are not populated on read
-    assert(firstVcfGenotype.variant.annotation === null)
+    assert(firstVcfGenotype.getVariant.getAnnotation === null)
   }
 
   sparkTest("round trip gVCF END attribute without nested variant annotations dataset bound") {
@@ -742,9 +742,9 @@ class GenotypeDatasetSuite extends ADAMFunSuite {
 
     val genotypes = sc.loadGenotypes(testFile("gvcf_multiallelic/multiallelic.vcf"))
     val first = genotypes.sort.rdd.collect.head
-    assert(first.end === 16157602L)
-    assert(first.variant.end === 16157602L)
-    assert(first.variant.annotation.attributes.get("END") === "16157602")
+    assert(first.getEnd === 16157602L)
+    assert(first.getVariant.getEnd === 16157602L)
+    assert(first.getVariant.getAnnotation.getAttributes.get("END") === "16157602")
 
     val path = new File(tempDir, "test.gvcf.vcf")
     genotypes.toVariantContexts.saveAsVcf(path.getAbsolutePath,
@@ -755,9 +755,9 @@ class GenotypeDatasetSuite extends ADAMFunSuite {
 
     val vcfGenotypes = sc.loadGenotypes("%s/test.gvcf.vcf".format(tempDir))
     val firstVcfGenotype = vcfGenotypes.sort.rdd.collect.head
-    assert(firstVcfGenotype.end === 16157602L)
-    assert(firstVcfGenotype.variant.end === 16157602L)
-    assert(firstVcfGenotype.variant.annotation.attributes.get("END") === "16157602")
+    assert(firstVcfGenotype.getEnd === 16157602L)
+    assert(firstVcfGenotype.getVariant.getEnd === 16157602L)
+    assert(firstVcfGenotype.getVariant.getAnnotation.getAttributes.get("END") === "16157602")
   }
 
   sparkTest("round trip gVCF END attribute with nested variant annotations dataset bound") {
