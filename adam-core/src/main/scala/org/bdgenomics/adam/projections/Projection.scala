@@ -31,7 +31,7 @@ object Projection {
                                exclude: Boolean = false): Schema = {
     val projectedSchema = Schema.createRecord(fullSchema.getName, fullSchema.getDoc, fullSchema.getNamespace, fullSchema.isError)
     projectedSchema.setFields(fullSchema.getFields.filter(createFilterPredicate(fields, exclude))
-      .map(p => new Field(p.name, p.schema, p.doc, p.defaultValue, p.order)))
+      .map(p => new Field(p.name, p.schema, p.doc, p.defaultVal, p.order)))
     projectedSchema
   }
 
