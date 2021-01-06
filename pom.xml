@@ -18,13 +18,13 @@
 
   <properties>
     <java.version>1.8</java.version>
-    <avro.version>1.8.2</avro.version>
-    <scala.version>2.12.8</scala.version>
+    <avro.version>1.10.1</avro.version>
+    <scala.version>2.12.10</scala.version>
     <scala.version.prefix>2.12</scala.version.prefix>
-    <spark.version>3.0.1</spark.version>
-    <parquet.version>1.10.1</parquet.version>
+    <spark.version>3.2.0-SNAPSHOT</spark.version>
+    <parquet.version>1.11.1</parquet.version>
     <!-- Edit the following line to configure the Hadoop (HDFS) version. -->
-    <hadoop.version>2.7.5</hadoop.version>
+    <hadoop.version>3.2.1</hadoop.version>
     <hadoop-bam.version>7.9.2</hadoop-bam.version>
     <slf4j.version>1.7.30</slf4j.version>
     <bdg-formats.version>0.15.0</bdg-formats.version>
@@ -35,7 +35,6 @@
   </properties>
 
   <modules>
-    <module>adam-shade</module>
     <module>adam-codegen</module>
     <module>adam-core</module>
     <module>adam-apis</module>
