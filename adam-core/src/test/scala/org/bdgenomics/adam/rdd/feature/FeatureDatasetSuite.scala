@@ -1200,6 +1200,19 @@ class FeatureDatasetSuite extends ADAMFunSuite {
     checkSave(variantContexts)
   }
 
+  sparkTest("filter RDD bound features to reference name") {
+    val features = sc.loadFeatures(testFile("dvl1.200.gff3"))
+    assert(features.filterToReferenceName("1").rdd.count() === 195)
+    assert(features.filterToReferenceName("2").rdd.count() === 0)
+  }
+
+  sparkTest("filter dataset bound features to reference name") {
+    val features = sc.loadFeatures(testFile("dvl1.200.gff3"))
+    val featuresDs = features.transformDataset(ds => ds)
+    assert(featuresDs.filterToReferenceName("1").dataset.count() === 195)
+    assert(featuresDs.filterToReferenceName("2").dataset.count() === 0)
+  }
+
   sparkTest("filter RDD bound features by feature type") {
     val features = sc.loadFeatures(testFile("dvl1.200.gff3"))
     assert(features.filterToFeatureType("gene").rdd.count() === 22)

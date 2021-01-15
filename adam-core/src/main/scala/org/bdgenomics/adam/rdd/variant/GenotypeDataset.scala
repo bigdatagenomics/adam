@@ -283,6 +283,10 @@ case class DatasetBoundGenotypeDataset private[rdd] (
     transformDataset(dataset => dataset.filter(dataset.col("referenceReadDepth") >= minimumReferenceReadDepth))
   }
 
+  override def filterToReferenceName(referenceName: String): GenotypeDataset = {
+    transformDataset(dataset => dataset.filter(dataset.col("referenceName").eqNullSafe(referenceName)))
+  }
+
   override def filterToSample(sampleId: String) = {
     transformDataset(dataset => dataset.filter(dataset.col("sampleId") === sampleId))
   }
@@ -503,6 +507,16 @@ sealed abstract class GenotypeDataset extends MultisampleAvroGenomicDataset[Geno
    */
   def filterByReferenceReadDepth(minimumReferenceReadDepth: Int): GenotypeDataset = {
     transform((rdd: RDD[Genotype]) => rdd.filter(g => Option(g.getReferenceReadDepth).exists(_ >= minimumReferenceReadDepth)))
+  }
+
+  /**
+   * Filter this GenotypeDataset by reference name to those that match the specified reference name.
+   *
+   * @param referenceName Reference name to filter by.
+   * @return GenotypeDataset filtered by the specified reference name.
+   */
+  def filterToReferenceName(referenceName: String): GenotypeDataset = {
+    transform((rdd: RDD[Genotype]) => rdd.filter(g => Option(g.getReferenceName).exists(_.equals(referenceName))))
   }
 
   /**

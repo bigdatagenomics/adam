@@ -264,6 +264,10 @@ case class DatasetBoundVariantDataset private[rdd] (
   override def filterToIndels(): VariantDataset = {
     transformDataset(dataset => dataset.filter("LENGTH(referenceAllele) != LENGTH(alternateAllele)"))
   }
+
+  override def filterToReferenceName(referenceName: String): VariantDataset = {
+    transformDataset(dataset => dataset.filter(dataset.col("referenceName").eqNullSafe(referenceName)))
+  }
 }
 
 case class RDDBoundVariantDataset private[rdd] (
@@ -452,6 +456,16 @@ sealed abstract class VariantDataset extends AvroGenomicDataset[Variant, Variant
       val rv = RichVariant(v)
       rv.isInsertion || rv.isDeletion
     }))
+  }
+
+  /**
+   * Filter this VariantDataset by reference name to those that match the specified reference name.
+   *
+   * @param referenceName Reference name to filter by.
+   * @return VariantDataset filtered by the specified reference name.
+   */
+  def filterToReferenceName(referenceName: String): VariantDataset = {
+    transform((rdd: RDD[Variant]) => rdd.filter(v => Option(v.getReferenceName).exists(_.equals(referenceName))))
   }
 
   /**
