@@ -333,6 +333,10 @@ case class DatasetBoundAlignmentDataset private[rdd] (
     transformDataset(dataset => dataset.filter(dataset.col("readGroupId") isin (readGroupIds: _*)))
   }
 
+  override def filterToReferenceName(referenceName: String): AlignmentDataset = {
+    transformDataset(dataset => dataset.filter(dataset.col("referenceName").eqNullSafe(referenceName)))
+  }
+
   override def filterToSample(readGroupSampleId: String): AlignmentDataset = {
     transformDataset(dataset => dataset.filter(dataset.col("readGroupSampleId") === readGroupSampleId))
   }
@@ -1851,6 +1855,16 @@ sealed abstract class AlignmentDataset extends AvroReadGroupGenomicDataset[Align
    */
   def filterToReadGroups(readGroupIds: Seq[String]): AlignmentDataset = {
     transform((rdd: RDD[Alignment]) => rdd.filter(g => Option(g.getReadGroupId).exists(readGroupIds.contains(_))))
+  }
+
+  /**
+   * Filter this AlignmentDataset by reference name to those that match the specified reference name.
+   *
+   * @param referenceName Reference name to filter by.
+   * @return AlignmentDataset filtered by the specified reference name.
+   */
+  def filterToReferenceName(referenceName: String): AlignmentDataset = {
+    transform((rdd: RDD[Alignment]) => rdd.filter(a => Option(a.getReferenceName).exists(_.equals(referenceName))))
   }
 
   /**

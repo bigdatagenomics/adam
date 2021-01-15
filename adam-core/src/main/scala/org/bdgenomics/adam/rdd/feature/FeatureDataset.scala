@@ -400,6 +400,10 @@ case class DatasetBoundFeatureDataset private[rdd] (
     transformDataset(dataset => dataset.filter(dataset.col("parentIds") isin (parentIds: _*)))
   }
 
+  override def filterToReferenceName(referenceName: String): FeatureDataset = {
+    transformDataset(dataset => dataset.filter(dataset.col("referenceName").eqNullSafe(referenceName)))
+  }
+
   override def filterByAttribute(key: String, value: String): FeatureDataset = {
     transformDataset(dataset => dataset.filter(dataset.col("attributes").getItem(key).eqNullSafe(value)))
   }
@@ -687,6 +691,16 @@ sealed abstract class FeatureDataset extends AvroGenomicDataset[Feature, Feature
    */
   def filterToParents(parentIds: Seq[String]): FeatureDataset = {
     transform((rdd: RDD[Feature]) => rdd.filter(f => Option(f.getParentIds).exists(!Collections.disjoint(_, parentIds))))
+  }
+
+  /**
+   * Filter this FeatureDataset by reference name to those that match the specified reference name.
+   *
+   * @param referenceName Reference name to filter by.
+   * @return FeatureDataset filtered by the specified reference name.
+   */
+  def filterToReferenceName(referenceName: String): FeatureDataset = {
+    transform((rdd: RDD[Feature]) => rdd.filter(f => Option(f.getReferenceName).exists(_.equals(referenceName))))
   }
 
   /**
