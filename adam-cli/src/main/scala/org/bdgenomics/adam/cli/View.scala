@@ -26,7 +26,7 @@ import org.bdgenomics.formats.avro.Alignment
 import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
-class ViewArgs extends Args4jBase with ParquetArgs with ADAMSaveAnyArgs {
+class ViewArgs extends Args4jBase with ParquetArgs with ADAMSaveAnyArgs with CramArgs {
   @Argument(required = true, metaVar = "INPUT", usage = "The ADAM, BAM or SAM file to view", index = 0)
   var inputPath: String = null
 
@@ -169,6 +169,8 @@ class View(val args: ViewArgs) extends BDGSparkCommand[ViewArgs] {
 
   def run(sc: SparkContext) = {
     checkWriteablePath(args.outputPath, sc.hadoopConfiguration)
+
+    args.configureCramFormat(sc)
 
     val reads = sc.loadAlignments(args.inputPath)
       .transform((rdd: RDD[Alignment]) => applyFilters(rdd))

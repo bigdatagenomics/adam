@@ -36,7 +36,7 @@ object CountReadKmers extends BDGCommandCompanion {
   }
 }
 
-class CountReadKmersArgs extends Args4jBase with ParquetArgs {
+class CountReadKmersArgs extends Args4jBase with ParquetArgs with CramArgs {
   @Argument(required = true, metaVar = "INPUT", usage = "The ADAM, BAM or SAM file to count kmers from", index = 0)
   var inputPath: String = null
   @Argument(required = true, metaVar = "OUTPUT", usage = "Location for storing k-mer counts", index = 1)
@@ -54,6 +54,8 @@ class CountReadKmers(protected val args: CountReadKmersArgs) extends BDGSparkCom
 
   def run(sc: SparkContext) {
     checkWriteablePath(args.outputPath, sc.hadoopConfiguration)
+
+    args.configureCramFormat(sc)
 
     // read from disk
     var adamRecords = sc.loadAlignments(

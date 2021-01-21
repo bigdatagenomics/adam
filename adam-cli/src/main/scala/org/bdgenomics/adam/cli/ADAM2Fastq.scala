@@ -28,7 +28,7 @@ import org.bdgenomics.formats.avro.Alignment
 import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
-class ADAM2FastqArgs extends Args4jBase {
+class ADAM2FastqArgs extends Args4jBase with CramArgs {
   @Argument(required = true, metaVar = "INPUT", usage = "The read file to convert", index = 0)
   var inputPath: String = null
   @Argument(required = true, metaVar = "OUTPUT", usage = "Location to write the FASTQ to", index = 1)
@@ -78,6 +78,8 @@ class ADAM2Fastq(val args: ADAM2FastqArgs) extends BDGSparkCommand[ADAM2FastqArg
         )
       else
         None
+
+    args.configureCramFormat(sc)
 
     var reads = sc.loadAlignments(args.inputPath, optProjection = projectionOpt)
 

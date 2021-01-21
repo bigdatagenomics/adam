@@ -37,7 +37,7 @@ object TransformFragments extends BDGCommandCompanion {
   }
 }
 
-class TransformFragmentsArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetArgs {
+class TransformFragmentsArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetArgs with CramArgs {
   @Argument(required = true, metaVar = "INPUT", usage = "The Fragment file to apply the transforms to", index = 0)
   var inputPath: String = null
 
@@ -127,6 +127,8 @@ class TransformFragments(protected val args: TransformFragmentsArgs) extends BDG
     if (args.maxReadLength > 0) {
       FastqRecordReader.setMaxReadLength(sc.hadoopConfiguration, args.maxReadLength)
     }
+
+    args.configureCramFormat(sc)
 
     val rdd = if (args.loadAsAlignments) {
       sc.loadAlignments(args.inputPath)
