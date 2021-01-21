@@ -34,7 +34,7 @@ object FlagStat extends BDGCommandCompanion {
   }
 }
 
-class FlagStatArgs extends Args4jBase {
+class FlagStatArgs extends Args4jBase with CramArgs {
   @Argument(required = true, metaVar = "INPUT", usage = "The ADAM data to return stats for", index = 0)
   var inputPath: String = null
   @Args4jOption(required = false, name = "-o", usage = "Optionally write the stats to this file.")
@@ -66,6 +66,8 @@ class FlagStat(protected val args: FlagStatArgs) extends BDGSparkCommand[FlagSta
     )
 
     val stringency = ValidationStringency.valueOf(args.stringency)
+
+    args.configureCramFormat(sc)
 
     val adamFile = sc.loadAlignments(
       args.inputPath,

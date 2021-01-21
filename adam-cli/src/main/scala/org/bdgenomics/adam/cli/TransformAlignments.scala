@@ -51,7 +51,7 @@ object TransformAlignments extends BDGCommandCompanion {
   }
 }
 
-class TransformAlignmentsArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetArgs {
+class TransformAlignmentsArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetArgs with CramArgs {
 
   @Argument(required = true, metaVar = "INPUT", usage = "The ADAM, BAM or SAM file to apply the transforms to", index = 0)
   var inputPath: String = null
@@ -519,6 +519,8 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
         "only one of -sort_by_name, -sort_by_reference_position, and -sort_by_reference_position_and_index may be specified"
       )
     }
+
+    args.configureCramFormat(sc)
 
     val loadedDs: AlignmentDataset =
       if (args.forceLoadBam) {

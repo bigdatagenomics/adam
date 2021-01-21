@@ -45,7 +45,7 @@ object Coverage extends BDGCommandCompanion {
   }
 }
 
-class CoverageArgs extends Args4jBase with ParquetArgs {
+class CoverageArgs extends Args4jBase with ParquetArgs with CramArgs {
 
   @Argument(required = true, metaVar = "INPUT", usage = "The alignments file to use to calculate depths", index = 0)
   var inputPath: String = null
@@ -87,6 +87,8 @@ class Coverage(protected val args: CoverageArgs) extends BDGSparkCommand[Coverag
     // If saving strand specific coverage, require that only one direction is specified
     require(!(args.onlyNegativeStrands && args.onlyPositiveStrands),
       "Cannot compute coverage for both negative and positive strands separately")
+
+    args.configureCramFormat(sc)
 
     // load alignments
     val alignmentsRdd: AlignmentDataset = sc.loadAlignments(args.inputPath)
