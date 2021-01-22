@@ -467,11 +467,17 @@ sealed abstract class AlignmentDataset extends AvroReadGroupGenomicDataset[Align
   /**
    * Convert this set of reads into fragments.
    *
+   * @param mergePairedReads Merge paired reads into a fragment. Can be set to false when only unpaired
+   *                         reads are in the AlignmentDataset. Defaults to true.
    * @return Returns a FragmentDataset where all reads have been grouped together by
    *   the original sequence fragment they come from.
    */
-  def toFragments(): FragmentDataset = {
-    FragmentDataset(groupReadsByFragment().map(_.toFragment),
+  def toFragments(mergePairedReads: Boolean = true): FragmentDataset = {
+    val fragmentRDD = if (mergePairedReads) groupReadsByFragment().map(_.toFragment)
+    else
+      rdd.map(SingleReadBucket.buildFragmentFromSingleAlignment)
+
+    FragmentDataset(fragmentRDD,
       sequences,
       readGroups,
       processingSteps)
