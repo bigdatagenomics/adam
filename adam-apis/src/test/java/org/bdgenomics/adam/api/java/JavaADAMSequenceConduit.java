@@ -21,8 +21,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import org.bdgenomics.adam.rdd.ADAMContext;
-import org.bdgenomics.adam.rdd.sequence.SequenceDataset;
+import org.bdgenomics.adam.ds.ADAMContext;
+import org.bdgenomics.adam.ds.sequence.SequenceDataset;
 
 /**
  * A simple test class for the JavaADAMRDD/Context. Writes an RDD of sequences

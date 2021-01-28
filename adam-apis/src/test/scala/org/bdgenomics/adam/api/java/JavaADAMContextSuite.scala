@@ -20,8 +20,8 @@ package org.bdgenomics.adam.api.java
 import htsjdk.samtools.ValidationStringency
 import java.util.ArrayList
 import org.bdgenomics.adam.models.ReferenceRegion
-import org.bdgenomics.adam.rdd.ADAMContext
-import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.ds.ADAMContext
+import org.bdgenomics.adam.ds.ADAMContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
 
 class JavaADAMContextSuite extends ADAMFunSuite {

@@ -20,7 +20,7 @@ package org.bdgenomics.adam.cli
 import com.google.common.io.Files
 import java.io.File
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.ds.ADAMContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.Alignment
 

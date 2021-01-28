@@ -21,7 +21,7 @@ import grizzled.slf4j.Logging
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.algorithms.consensus.Consensus
-import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.ds.ADAMContext._
 import org.bdgenomics.formats.avro.Variant
 
 private[adam] class IndelTable(private val table: Map[String, Iterable[Consensus]]) extends Serializable with Logging {

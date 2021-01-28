@@ -395,6 +395,7 @@ setGeneric("toVariantContexts",
 #' Converts this genomic dataset to Variants.
 #'
 #' @param ardd The genomic dataset to apply this to.
+#' @param ... additional argument(s).
 #' @return Returns this genomic dataset of Genotypes as Variants.
 #' @export
 setGeneric("toVariants",

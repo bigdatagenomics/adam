@@ -19,7 +19,7 @@ package org.bdgenomics.adam.util
 
 import org.apache.spark.rdd.RDD
 import org.apache.hadoop.fs.{ FileSystem, Path }
-import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.ds.ADAMContext._
 import org.bdgenomics.formats.avro.Alignment
 import org.seqdoop.hadoop_bam.CRAMInputFormat
 
