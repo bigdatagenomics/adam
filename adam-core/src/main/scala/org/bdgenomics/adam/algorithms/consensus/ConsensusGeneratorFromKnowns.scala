@@ -20,8 +20,8 @@ package org.bdgenomics.adam.algorithms.consensus
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models._
-import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.read.realignment.IndelRealignmentTarget
+import org.bdgenomics.adam.ds.ADAMContext._
+import org.bdgenomics.adam.ds.read.realignment.IndelRealignmentTarget
 import org.bdgenomics.adam.rich.RichAlignment
 import org.bdgenomics.formats.avro.Variant
 import scala.math.max

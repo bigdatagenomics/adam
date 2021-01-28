@@ -20,8 +20,8 @@ package org.bdgenomics.adam.api.java;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.bdgenomics.adam.rdd.ADAMContext;
-import org.bdgenomics.adam.rdd.feature.FeatureDataset;
+import org.bdgenomics.adam.ds.ADAMContext;
+import org.bdgenomics.adam.ds.feature.FeatureDataset;
 
 /**
  * A simple test class for the JavaADAMRDD/Context. Writes an RDD of features to

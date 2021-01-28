@@ -22,8 +22,8 @@ import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.cli.FileSystemUtils._
 import org.bdgenomics.adam.projections.AlignmentField._
 import org.bdgenomics.adam.projections.Projection
-import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.read.AlignmentDataset
+import org.bdgenomics.adam.ds.ADAMContext._
+import org.bdgenomics.adam.ds.read.AlignmentDataset
 import org.bdgenomics.formats.avro.Alignment
 import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }

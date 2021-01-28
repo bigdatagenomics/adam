@@ -32,9 +32,9 @@ import org.bdgenomics.adam.cli.FileSystemUtils._
 import org.bdgenomics.adam.io.FastqRecordReader
 import org.bdgenomics.adam.models.{ ReferenceRegion, SnpTable }
 import org.bdgenomics.adam.projections.{ AlignmentField, Filter }
-import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.ADAMSaveAnyArgs
-import org.bdgenomics.adam.rdd.read.{ AlignmentDataset, QualityScoreBin }
+import org.bdgenomics.adam.ds.ADAMContext._
+import org.bdgenomics.adam.ds.ADAMSaveAnyArgs
+import org.bdgenomics.adam.ds.read.{ AlignmentDataset, QualityScoreBin }
 import org.bdgenomics.adam.rich.RichVariant
 import org.bdgenomics.formats.avro.{ Alignment, ProcessingStep }
 import org.bdgenomics.utils.cli._

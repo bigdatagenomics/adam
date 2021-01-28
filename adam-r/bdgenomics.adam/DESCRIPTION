@@ -21,5 +21,5 @@ Suggests:
 Collate:
     'generics.R'
     'adam-context.R'
-    'rdd.R'
+    'ds.R'
 RoxygenNote: 7.1.1

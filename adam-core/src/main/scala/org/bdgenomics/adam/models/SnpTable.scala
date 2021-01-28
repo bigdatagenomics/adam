@@ -20,7 +20,7 @@ package org.bdgenomics.adam.models
 import com.esotericsoftware.kryo.io.{ Input, Output }
 import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.rdd.variant.VariantDataset
+import org.bdgenomics.adam.ds.variant.VariantDataset
 import scala.annotation.tailrec
 import scala.math.{ max, min }
 

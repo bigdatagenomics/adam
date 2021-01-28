@@ -18,7 +18,7 @@
 
 
 from bdgenomics.adam.adamContext import ADAMContext
-from bdgenomics.adam.rdd import CoverageDataset, FeatureDataset
+from bdgenomics.adam.ds import CoverageDataset, FeatureDataset
 from bdgenomics.adam.test import SparkTestCase
 import os
 

@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.cli
 
 import org.seqdoop.hadoop_bam.CRAMInputFormat
-import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.ds.ADAMContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
 
 class MergeShardsSuite extends ADAMFunSuite {

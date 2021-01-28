@@ -22,9 +22,9 @@ import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.cli.FileSystemUtils._
 import org.bdgenomics.adam.converters.VariantContextConverter
-import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.{ ADAMSaveAnyArgs, GenomicDataset }
-import org.bdgenomics.adam.rdd.variant.GenotypeDataset
+import org.bdgenomics.adam.ds.ADAMContext._
+import org.bdgenomics.adam.ds.{ ADAMSaveAnyArgs, GenomicDataset }
+import org.bdgenomics.adam.ds.variant.GenotypeDataset
 import org.bdgenomics.adam.util.FileExtensions._
 import org.bdgenomics.formats.avro.Genotype
 import org.bdgenomics.utils.cli._

@@ -194,52 +194,52 @@ class ADAMKryoRegistrator extends KryoRegistrator with Logging {
       new org.bdgenomics.adam.models.VariantContextSerializer)
 
     // org.bdgenomics.adam.rdd
-    kryo.register(classOf[org.bdgenomics.adam.rdd.GenomeBins])
+    kryo.register(classOf[org.bdgenomics.adam.ds.GenomeBins])
 
     // IntervalArray registrations for org.bdgenomics.adam.rdd
-    kryo.register(classOf[org.bdgenomics.adam.rdd.read.AlignmentArray],
-      new org.bdgenomics.adam.rdd.read.AlignmentArraySerializer)
-    kryo.register(classOf[org.bdgenomics.adam.rdd.feature.CoverageArray],
-      new org.bdgenomics.adam.rdd.feature.CoverageArraySerializer(kryo))
-    kryo.register(classOf[org.bdgenomics.adam.rdd.feature.FeatureArray],
-      new org.bdgenomics.adam.rdd.feature.FeatureArraySerializer)
-    kryo.register(classOf[org.bdgenomics.adam.rdd.fragment.FragmentArray],
-      new org.bdgenomics.adam.rdd.fragment.FragmentArraySerializer)
-    kryo.register(classOf[org.bdgenomics.adam.rdd.variant.GenotypeArray],
-      new org.bdgenomics.adam.rdd.variant.GenotypeArraySerializer)
-    kryo.register(classOf[org.bdgenomics.adam.rdd.read.ReadArray],
-      new org.bdgenomics.adam.rdd.read.ReadArraySerializer)
-    kryo.register(classOf[org.bdgenomics.adam.rdd.sequence.SequenceArray],
-      new org.bdgenomics.adam.rdd.sequence.SequenceArraySerializer)
-    kryo.register(classOf[org.bdgenomics.adam.rdd.sequence.SliceArray],
-      new org.bdgenomics.adam.rdd.sequence.SliceArraySerializer)
-    kryo.register(classOf[org.bdgenomics.adam.rdd.variant.VariantArray],
-      new org.bdgenomics.adam.rdd.variant.VariantArraySerializer)
-    kryo.register(classOf[org.bdgenomics.adam.rdd.variant.VariantContextArray],
-      new org.bdgenomics.adam.rdd.variant.VariantContextArraySerializer)
+    kryo.register(classOf[org.bdgenomics.adam.ds.read.AlignmentArray],
+      new org.bdgenomics.adam.ds.read.AlignmentArraySerializer)
+    kryo.register(classOf[org.bdgenomics.adam.ds.feature.CoverageArray],
+      new org.bdgenomics.adam.ds.feature.CoverageArraySerializer(kryo))
+    kryo.register(classOf[org.bdgenomics.adam.ds.feature.FeatureArray],
+      new org.bdgenomics.adam.ds.feature.FeatureArraySerializer)
+    kryo.register(classOf[org.bdgenomics.adam.ds.fragment.FragmentArray],
+      new org.bdgenomics.adam.ds.fragment.FragmentArraySerializer)
+    kryo.register(classOf[org.bdgenomics.adam.ds.variant.GenotypeArray],
+      new org.bdgenomics.adam.ds.variant.GenotypeArraySerializer)
+    kryo.register(classOf[org.bdgenomics.adam.ds.read.ReadArray],
+      new org.bdgenomics.adam.ds.read.ReadArraySerializer)
+    kryo.register(classOf[org.bdgenomics.adam.ds.sequence.SequenceArray],
+      new org.bdgenomics.adam.ds.sequence.SequenceArraySerializer)
+    kryo.register(classOf[org.bdgenomics.adam.ds.sequence.SliceArray],
+      new org.bdgenomics.adam.ds.sequence.SliceArraySerializer)
+    kryo.register(classOf[org.bdgenomics.adam.ds.variant.VariantArray],
+      new org.bdgenomics.adam.ds.variant.VariantArraySerializer)
+    kryo.register(classOf[org.bdgenomics.adam.ds.variant.VariantContextArray],
+      new org.bdgenomics.adam.ds.variant.VariantContextArraySerializer)
 
     // org.bdgenomics.adam.rdd.read
-    kryo.register(classOf[org.bdgenomics.adam.rdd.read.FlagStatMetrics])
-    kryo.register(classOf[org.bdgenomics.adam.rdd.read.DuplicateMetrics])
-    kryo.register(classOf[org.bdgenomics.adam.rdd.read.SingleReadBucket],
-      new org.bdgenomics.adam.rdd.read.SingleReadBucketSerializer)
-    kryo.register(classOf[org.bdgenomics.adam.rdd.read.ReferencePositionPair],
-      new org.bdgenomics.adam.rdd.read.ReferencePositionPairSerializer)
+    kryo.register(classOf[org.bdgenomics.adam.ds.read.FlagStatMetrics])
+    kryo.register(classOf[org.bdgenomics.adam.ds.read.DuplicateMetrics])
+    kryo.register(classOf[org.bdgenomics.adam.ds.read.SingleReadBucket],
+      new org.bdgenomics.adam.ds.read.SingleReadBucketSerializer)
+    kryo.register(classOf[org.bdgenomics.adam.ds.read.ReferencePositionPair],
+      new org.bdgenomics.adam.ds.read.ReferencePositionPairSerializer)
 
     // org.bdgenomics.adam.rdd.read.realignment
-    kryo.register(classOf[org.bdgenomics.adam.rdd.read.realignment.IndelRealignmentTarget],
-      new org.bdgenomics.adam.rdd.read.realignment.IndelRealignmentTargetSerializer)
-    kryo.register(classOf[scala.Array[org.bdgenomics.adam.rdd.read.realignment.IndelRealignmentTarget]],
-      new org.bdgenomics.adam.rdd.read.realignment.IndelRealignmentTargetArraySerializer)
-    kryo.register(classOf[org.bdgenomics.adam.rdd.read.realignment.TargetSet],
-      new org.bdgenomics.adam.rdd.read.realignment.TargetSetSerializer)
+    kryo.register(classOf[org.bdgenomics.adam.ds.read.realignment.IndelRealignmentTarget],
+      new org.bdgenomics.adam.ds.read.realignment.IndelRealignmentTargetSerializer)
+    kryo.register(classOf[scala.Array[org.bdgenomics.adam.ds.read.realignment.IndelRealignmentTarget]],
+      new org.bdgenomics.adam.ds.read.realignment.IndelRealignmentTargetArraySerializer)
+    kryo.register(classOf[org.bdgenomics.adam.ds.read.realignment.TargetSet],
+      new org.bdgenomics.adam.ds.read.realignment.TargetSetSerializer)
 
     // org.bdgenomics.adam.rdd.read.recalibration
-    kryo.register(classOf[org.bdgenomics.adam.rdd.read.recalibration.CovariateKey])
-    kryo.register(classOf[org.bdgenomics.adam.rdd.read.recalibration.CycleCovariate])
-    kryo.register(classOf[org.bdgenomics.adam.rdd.read.recalibration.DinucCovariate])
-    kryo.register(classOf[org.bdgenomics.adam.rdd.read.recalibration.RecalibrationTable])
-    kryo.register(classOf[org.bdgenomics.adam.rdd.read.recalibration.Observation])
+    kryo.register(classOf[org.bdgenomics.adam.ds.read.recalibration.CovariateKey])
+    kryo.register(classOf[org.bdgenomics.adam.ds.read.recalibration.CycleCovariate])
+    kryo.register(classOf[org.bdgenomics.adam.ds.read.recalibration.DinucCovariate])
+    kryo.register(classOf[org.bdgenomics.adam.ds.read.recalibration.RecalibrationTable])
+    kryo.register(classOf[org.bdgenomics.adam.ds.read.recalibration.Observation])
 
     // org.bdgenomics.adam.rich
     kryo.register(classOf[org.bdgenomics.adam.rich.RichAlignment])
@@ -352,7 +352,7 @@ class ADAMKryoRegistrator extends KryoRegistrator with Logging {
     kryo.register(classOf[scala.Array[org.bdgenomics.adam.models.ReferenceRegion]])
     kryo.register(classOf[scala.Array[org.bdgenomics.adam.models.SequenceRecord]])
     kryo.register(classOf[scala.Array[org.bdgenomics.adam.models.VariantContext]])
-    kryo.register(classOf[scala.Array[org.bdgenomics.adam.rdd.read.recalibration.CovariateKey]])
+    kryo.register(classOf[scala.Array[org.bdgenomics.adam.ds.read.recalibration.CovariateKey]])
     kryo.register(classOf[scala.Array[org.bdgenomics.adam.rich.RichAlignment]])
     kryo.register(classOf[scala.Array[scala.collection.Seq[_]]])
     kryo.register(classOf[scala.Array[Int]])
