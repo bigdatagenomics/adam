@@ -33,7 +33,7 @@ class ADAMContextTest(SparkTestCase):
         reads = ac.loadAlignments(testFile)
 
         self.assertEqual(reads.toDF().count(), 20)
-        self.assertEqual(reads._jvmRdd.jrdd().count(), 20)
+        self.assertEqual(reads._jvmDataset.jrdd().count(), 20)
 
 
     def test_load_indexed_bam(self):
@@ -56,7 +56,7 @@ class ADAMContextTest(SparkTestCase):
         reads = ac.loadFeatures(testFile)
 
         self.assertEqual(reads.toDF().count(), 15)
-        self.assertEqual(reads._jvmRdd.jrdd().count(), 15)
+        self.assertEqual(reads._jvmDataset.jrdd().count(), 15)
 
 
     def test_load_bed(self):
@@ -67,7 +67,7 @@ class ADAMContextTest(SparkTestCase):
         reads = ac.loadFeatures(testFile)
 
         self.assertEqual(reads.toDF().count(), 10)
-        self.assertEqual(reads._jvmRdd.jrdd().count(), 10)
+        self.assertEqual(reads._jvmDataset.jrdd().count(), 10)
 
 
     def test_load_narrowPeak(self):
@@ -79,7 +79,7 @@ class ADAMContextTest(SparkTestCase):
         reads = ac.loadFeatures(testFile)
 
         self.assertEqual(reads.toDF().count(), 10)
-        self.assertEqual(reads._jvmRdd.jrdd().count(), 10)
+        self.assertEqual(reads._jvmDataset.jrdd().count(), 10)
 
 
     def test_load_interval_list(self):
@@ -90,7 +90,7 @@ class ADAMContextTest(SparkTestCase):
         reads = ac.loadFeatures(testFile)
 
         self.assertEqual(reads.toDF().count(), 369)
-        self.assertEqual(reads._jvmRdd.jrdd().count(), 369)
+        self.assertEqual(reads._jvmDataset.jrdd().count(), 369)
 
 
     def test_load_coverage(self):
@@ -113,7 +113,7 @@ class ADAMContextTest(SparkTestCase):
         reads = ac.loadGenotypes(testFile)
 
         self.assertEqual(reads.toDF().count(), 18)
-        self.assertEqual(reads._jvmRdd.jrdd().count(), 18)
+        self.assertEqual(reads._jvmDataset.jrdd().count(), 18)
         
 
     def test_load_variants(self):
@@ -125,7 +125,7 @@ class ADAMContextTest(SparkTestCase):
         reads = ac.loadVariants(testFile)
 
         self.assertEqual(reads.toDF().count(), 6)
-        self.assertEqual(reads._jvmRdd.jrdd().count(), 6)
+        self.assertEqual(reads._jvmDataset.jrdd().count(), 6)
 
 
     def test_load_slices(self):
@@ -137,7 +137,7 @@ class ADAMContextTest(SparkTestCase):
         slices = ac.loadSlices(testFile, 10000)
 
         self.assertEqual(slices.toDF().count(), 1)
-        self.assertEqual(slices._jvmRdd.jrdd().count(), 1)
+        self.assertEqual(slices._jvmDataset.jrdd().count(), 1)
 
 
     def test_load_dna_sequences(self):
@@ -149,4 +149,4 @@ class ADAMContextTest(SparkTestCase):
         sequences = ac.loadDnaSequences(testFile)
 
         self.assertEqual(sequences.toDF().count(), 1)
-        self.assertEqual(sequences._jvmRdd.jrdd().count(), 1)
+        self.assertEqual(sequences._jvmDataset.jrdd().count(), 1)
