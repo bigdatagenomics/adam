@@ -51,8 +51,8 @@ class GenotypeDatasetTest(SparkTestCase):
 
         savedGenotypes = ac.loadGenotypes(testFile)
 
-        self.assertEqual(genotypes._jvmRdd.jrdd().count(),
-                          savedGenotypes._jvmRdd.jrdd().count())
+        self.assertEqual(genotypes._jvmDataset.jrdd().count(),
+                          savedGenotypes._jvmDataset.jrdd().count())
 
         
     def test_vcf_add_filter(self):

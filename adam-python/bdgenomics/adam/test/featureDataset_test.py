@@ -36,8 +36,8 @@ class FeatureDatasetTest(SparkTestCase):
 
         savedFeatures = ac.loadFeatures(testFile)
 
-        self.assertEqual(features._jvmRdd.jrdd().count(),
-                          savedFeatures._jvmRdd.jrdd().count())
+        self.assertEqual(features._jvmDataset.jrdd().count(),
+                          savedFeatures._jvmDataset.jrdd().count())
 
 
     def test_round_trip_bed(self):
@@ -52,8 +52,8 @@ class FeatureDatasetTest(SparkTestCase):
 
         savedFeatures = ac.loadFeatures(testFile)
 
-        self.assertEqual(features._jvmRdd.jrdd().count(),
-                          savedFeatures._jvmRdd.jrdd().count())
+        self.assertEqual(features._jvmDataset.jrdd().count(),
+                          savedFeatures._jvmDataset.jrdd().count())
 
 
     def test_round_trip_narrowPeak(self):
@@ -68,8 +68,8 @@ class FeatureDatasetTest(SparkTestCase):
 
         savedFeatures = ac.loadFeatures(testFile)
 
-        self.assertEqual(features._jvmRdd.jrdd().count(),
-                          savedFeatures._jvmRdd.jrdd().count())
+        self.assertEqual(features._jvmDataset.jrdd().count(),
+                          savedFeatures._jvmDataset.jrdd().count())
 
 
     def test_round_trip_interval_list(self):
@@ -84,8 +84,8 @@ class FeatureDatasetTest(SparkTestCase):
 
         savedFeatures = ac.loadFeatures(testFile)
 
-        self.assertEqual(features._jvmRdd.jrdd().count(),
-                          savedFeatures._jvmRdd.jrdd().count())
+        self.assertEqual(features._jvmDataset.jrdd().count(),
+                          savedFeatures._jvmDataset.jrdd().count())
 
 
     def test_transform(self):

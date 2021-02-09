@@ -83,8 +83,8 @@ class AlignmentDatasetTest(SparkTestCase):
 
         bamReads = ac.loadAlignments(tmpPath)
 
-        self.assertEqual(bamReads._jvmRdd.jrdd().count(),
-                          reads._jvmRdd.jrdd().count())
+        self.assertEqual(bamReads._jvmDataset.jrdd().count(),
+                          reads._jvmDataset.jrdd().count())
 
 
     def test_count_kmers(self):

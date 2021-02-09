@@ -36,8 +36,8 @@ class VariantDatasetTest(SparkTestCase):
 
         savedVariants = ac.loadVariants(testFile)
 
-        self.assertEqual(variants._jvmRdd.jrdd().count(),
-                          savedVariants._jvmRdd.jrdd().count())
+        self.assertEqual(variants._jvmDataset.jrdd().count(),
+                          savedVariants._jvmDataset.jrdd().count())
 
 
     def test_transform(self):

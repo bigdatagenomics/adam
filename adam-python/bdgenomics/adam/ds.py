@@ -51,17 +51,17 @@ class GenomicDataset(object):
     Wraps an RDD, Dataframe, or Dataset of genomic data with helpful metadata.
     """
 
-    def __init__(self, jvmRdd, sc):
+    def __init__(self, jvmDataset, sc):
         """
         Constructs a Python GenomicDataset from a JVM GenomicDataset.
         Should not be called from user code; should only be called from
         implementing classes.
 
-        :param jvmRdd: Py4j handle to the underlying JVM GenomicDataset.
+        :param jvmDataset: Py4j handle to the underlying JVM GenomicDataset.
         :param pyspark.context.SparkContext sc: Active Spark Context.
         """
 
-        self._jvmRdd = jvmRdd
+        self._jvmDataset = jvmDataset
         self.sc = sc
 
 
@@ -72,7 +72,7 @@ class GenomicDataset(object):
         :return: Returns a new, cached RDD.
         """
 
-        return self._replaceRdd(self._jvmRdd.cache())
+        return self._replaceRdd(self._jvmDataset.cache())
 
 
     def persist(self, sl):
@@ -89,7 +89,7 @@ class GenomicDataset(object):
                                                                           sl.deserialized,
                                                                           sl.replication)
 
-        return self._replaceRdd(self._jvmRdd.persist(jsl))
+        return self._replaceRdd(self._jvmDataset.persist(jsl))
 
 
     def unpersist(self):
@@ -99,7 +99,7 @@ class GenomicDataset(object):
         :return: Returns a new, unpersisted RDD.
         """
 
-        return self._replaceRdd(self._jvmRdd.unpersist())
+        return self._replaceRdd(self._jvmDataset.unpersist())
 
 
     def sort(self):
@@ -110,7 +110,7 @@ class GenomicDataset(object):
         :return: Returns a new, sorted genomic dataset, of the implementing class type.
         """
 
-        return self._replaceRdd(self._jvmRdd.sort())
+        return self._replaceRdd(self._jvmDataset.sort())
 
 
     def sortLexicographically(self):
@@ -121,7 +121,7 @@ class GenomicDataset(object):
         :return: Returns a new, sorted genomic dataset, of the implementing class type.
         """
 
-        return self._replaceRdd(self._jvmRdd.sortLexicographically())
+        return self._replaceRdd(self._jvmDataset.sortLexicographically())
 
 
     def filterByOverlappingRegion(self, query):
@@ -137,7 +137,7 @@ class GenomicDataset(object):
         # translate reference regions into jvm types
         javaRr = query._toJava(self.sc._jvm)
 
-        return self._replaceRdd(self._jvmRdd.filterByOverlappingRegion(javaRr))
+        return self._replaceRdd(self._jvmDataset.filterByOverlappingRegion(javaRr))
 
     def filterByOverlappingRegions(self, querys):
         """
@@ -153,7 +153,7 @@ class GenomicDataset(object):
         # translate reference regions into iterator of jvm types
         javaRrs = iter([q._toJava(self.sc._jvm) for q in querys])
 
-        return self._replaceRdd(self._jvmRdd.filterByOverlappingRegions(javaRrs))
+        return self._replaceRdd(self._jvmDataset.filterByOverlappingRegions(javaRrs))
 
     def union(self, datasets):
         """
@@ -164,7 +164,7 @@ class GenomicDataset(object):
         """
 
 
-        return self._replaceRdd(self._jvmRdd.union(map(lambda x: x._jvmRdd,
+        return self._replaceRdd(self._jvmDataset.union(map(lambda x: x._jvmDataset,
                                                        datasets)))
 
 
@@ -192,7 +192,7 @@ class GenomicDataset(object):
         # apply the lambda to the underlying DF
         dfFn = self._wrapTransformation(tFn)
 
-        return self._replaceRdd(self._jvmRdd.transformDataFrame(dfFn))
+        return self._replaceRdd(self._jvmDataset.transformDataFrame(dfFn))
 
 
     def transmute(self, tFn, destClass, convFn=None):
@@ -219,7 +219,7 @@ class GenomicDataset(object):
         jvm = self.sc._jvm
         convFnInst = getattr(jvm, convFn)()
 
-        return destClass(self._jvmRdd.transmuteDataFrame(dfFn, convFnInst), self.sc)
+        return destClass(self._jvmDataset.transmuteDataFrame(dfFn, convFnInst), self.sc)
 
 
     def _inferConversionFn(self, destClass):
@@ -302,7 +302,7 @@ class GenomicDataset(object):
         if environment is None:
             environment = {}
 
-        return self._replaceRdd(self._jvmRdd.pipe(cmd,
+        return self._replaceRdd(self._jvmDataset.pipe(cmd,
                                                   files,
                                                   environment,
                                                   flankSize,
@@ -328,7 +328,7 @@ class GenomicDataset(object):
           overlapped in the genomic coordinate space.
         """
 
-        return GenomicDataset(self._jvmRdd.broadcastRegionJoin(genomicDataset._jvmRdd,
+        return GenomicDataset(self._jvmDataset.broadcastRegionJoin(genomicDataset._jvmDataset,
                                                                flankSize),
                               self.sc)
 
@@ -353,7 +353,7 @@ class GenomicDataset(object):
           right genomic dataset that did not overlap a key in the left genomic dataset.
         """
 
-        return GenomicDataset(self._jvmRdd.rightOuterBroadcastRegionJoin(genomicDataset._jvmRdd,
+        return GenomicDataset(self._jvmDataset.rightOuterBroadcastRegionJoin(genomicDataset._jvmDataset,
                                                                          flankSize),
                               self.sc)
 
@@ -375,7 +375,7 @@ class GenomicDataset(object):
           overlapped in the genomic coordinate space.
         """
 
-        return GenomicDataset(self._jvmRdd.broadcastRegionJoinAndGroupByRight(genomicDataset._jvmRdd,
+        return GenomicDataset(self._jvmDataset.broadcastRegionJoinAndGroupByRight(genomicDataset._jvmDataset,
                                                                               flankSize),
                               self.sc)
 
@@ -399,7 +399,7 @@ class GenomicDataset(object):
           right genomic dataset that did not overlap a key in the left genomic dataset.
         """
 
-        return GenomicDataset(self._jvmRdd.rightOuterBroadcastRegionJoinAndGroupByRight(genomicDataset._jvmRdd,
+        return GenomicDataset(self._jvmDataset.rightOuterBroadcastRegionJoinAndGroupByRight(genomicDataset._jvmDataset,
                                                                                         flankSize),
                               self.sc)
 
@@ -421,7 +421,7 @@ class GenomicDataset(object):
           overlapped in the genomic coordinate space.
         """
 
-        return GenomicDataset(self._jvmRdd.shuffleRegionJoin(genomicDataset._jvmRdd, flankSize),
+        return GenomicDataset(self._jvmDataset.shuffleRegionJoin(genomicDataset._jvmDataset, flankSize),
                               self.sc)
 
 
@@ -445,7 +445,7 @@ class GenomicDataset(object):
           right genomic dataset that did not overlap a key in the left genomic dataset.
         """
 
-        return GenomicDataset(self._jvmRdd.rightOuterShuffleRegionJoin(genomicDataset._jvmRdd, flankSize),
+        return GenomicDataset(self._jvmDataset.rightOuterShuffleRegionJoin(genomicDataset._jvmDataset, flankSize),
                               self.sc)
 
 
@@ -469,7 +469,7 @@ class GenomicDataset(object):
           left genomic dataset that did not overlap a key in the left genomic dataset.
         """
 
-        return GenomicDataset(self._jvmRdd.leftOuterShuffleRegionJoin(genomicDataset._jvmRdd, flankSize),
+        return GenomicDataset(self._jvmDataset.leftOuterShuffleRegionJoin(genomicDataset._jvmDataset, flankSize),
                               self.sc)
 
 
@@ -494,7 +494,7 @@ class GenomicDataset(object):
           left genomic dataset that did not overlap a key in the left genomic dataset.
         """
 
-        return GenomicDataset(self._jvmRdd.leftOuterShuffleRegionJoinAndGroupByLeft(genomicDataset._jvmRdd, flankSize),
+        return GenomicDataset(self._jvmDataset.leftOuterShuffleRegionJoinAndGroupByLeft(genomicDataset._jvmDataset, flankSize),
                               self.sc)
 
 
@@ -517,7 +517,7 @@ class GenomicDataset(object):
           overlap will be paired with a `None`.
         """
 
-        return GenomicDataset(self._jvmRdd.fullOuterShuffleRegionJoin(genomicDataset._jvmRdd, flankSize),
+        return GenomicDataset(self._jvmDataset.fullOuterShuffleRegionJoin(genomicDataset._jvmDataset, flankSize),
                               self.sc)
 
 
@@ -543,7 +543,7 @@ class GenomicDataset(object):
           right genomic dataset that did not overlap an item in the left genomic dataset.
         """
 
-        return GenomicDataset(self._jvmRdd.rightOuterShuffleRegionJoinAndGroupByLeft(genomicDataset._jvmRdd, flankSize),
+        return GenomicDataset(self._jvmDataset.rightOuterShuffleRegionJoinAndGroupByLeft(genomicDataset._jvmDataset, flankSize),
                               self.sc)
 
 
@@ -566,7 +566,7 @@ class GenomicDataset(object):
           the value they overlapped in the left genomic dataset.
         """
 
-        return GenomicDataset(self._jvmRdd.shuffleRegionJoinAndGroupByLeft(genomicDataset._jvmRdd, flankSize),
+        return GenomicDataset(self._jvmDataset.shuffleRegionJoinAndGroupByLeft(genomicDataset._jvmDataset, flankSize),
                               self.sc)
 
 
@@ -576,7 +576,7 @@ class GenomicDataset(object):
         :return: Returns a dataframe representing this genomic dataset.
         """
 
-        return DataFrame(self._jvmRdd.toDF(), SQLContext(self.sc))
+        return DataFrame(self._jvmDataset.toDF(), SQLContext(self.sc))
 
 
 class VCFSupportingGenomicDataset(GenomicDataset):
@@ -584,17 +584,17 @@ class VCFSupportingGenomicDataset(GenomicDataset):
     Wraps a GenomicDataset with VCF metadata.
     """
 
-    def __init__(self, jvmRdd, sc):
+    def __init__(self, jvmDataset, sc):
         """
         Constructs a Python GenomicDataset from a JVM GenomicDataset.
         Should not be called from user code; should only be called from
         implementing classes.
 
-        :param jvmRdd: Py4j handle to the underlying JVM GenomicDataset.
+        :param jvmDataset: Py4j handle to the underlying JVM GenomicDataset.
         :param pyspark.context.SparkContext sc: Active Spark Context.
         """
 
-        GenomicDataset.__init__(self, jvmRdd, sc)
+        GenomicDataset.__init__(self, jvmDataset, sc)
 
 
     def _javaType(self, lineType):
@@ -642,7 +642,7 @@ class VCFSupportingGenomicDataset(GenomicDataset):
         :return: A new genomic dataset with the new header line added.
         """
 
-        return self._replaceRdd(self._jvmRdd.addFixedArrayFormatHeaderLine(name,
+        return self._replaceRdd(self._jvmDataset.addFixedArrayFormatHeaderLine(name,
                                                                            count,
                                                                            self._javaType(lineType),
                                                                            description))
@@ -663,7 +663,7 @@ class VCFSupportingGenomicDataset(GenomicDataset):
         :return: A new genomic dataset with the new header line added.
         """
 
-        return self._replaceRdd(self._jvmRdd.addScalarFormatHeaderLine(name,
+        return self._replaceRdd(self._jvmDataset.addScalarFormatHeaderLine(name,
                                                                        description,
                                                                        self._javaType(lineType)))
 
@@ -686,7 +686,7 @@ class VCFSupportingGenomicDataset(GenomicDataset):
         :return: A new genomic dataset with the new header line added.
         """
 
-        return self._replaceRdd(self._jvmRdd.addGenotypeArrayFormatHeaderLine(name,
+        return self._replaceRdd(self._jvmDataset.addGenotypeArrayFormatHeaderLine(name,
                                                                               description,
                                                                               self._javaType(lineType)))
 
@@ -709,7 +709,7 @@ class VCFSupportingGenomicDataset(GenomicDataset):
         :return: A new genomic dataset with the new header line added.
         """
 
-        return self._replaceRdd(self._jvmRdd.addAlternateAlleleArrayFormatHeaderLine(name,
+        return self._replaceRdd(self._jvmDataset.addAlternateAlleleArrayFormatHeaderLine(name,
                                                                                      description,
                                                                                      self._javaType(lineType)))
 
@@ -733,7 +733,7 @@ class VCFSupportingGenomicDataset(GenomicDataset):
         :return: A new genomic dataset with the new header line added.
         """
 
-        return self._replaceRdd(self._jvmRdd.addAllAlleleArrayFormatHeaderLine(name,
+        return self._replaceRdd(self._jvmDataset.addAllAlleleArrayFormatHeaderLine(name,
                                                                                description,
                                                                                self._javaType(lineType)))
 
@@ -755,7 +755,7 @@ class VCFSupportingGenomicDataset(GenomicDataset):
         :return: A new genomic dataset with the new header line added.
         """
 
-        return self._replaceRdd(self._jvmRdd.addFixedArrayInfoHeaderLine(name,
+        return self._replaceRdd(self._jvmDataset.addFixedArrayInfoHeaderLine(name,
                                                                          count,
                                                                          self._javaType(lineType),
                                                                          description))
@@ -776,7 +776,7 @@ class VCFSupportingGenomicDataset(GenomicDataset):
         :return: A new genomic dataset with the new header line added.
         """
 
-        return self._replaceRdd(self._jvmRdd.addScalarInfoHeaderLine(name,
+        return self._replaceRdd(self._jvmDataset.addScalarInfoHeaderLine(name,
                                                                      description,
                                                                      self._javaType(lineType)))
 
@@ -799,7 +799,7 @@ class VCFSupportingGenomicDataset(GenomicDataset):
         :return: A new genomic dataset with the new header line added.
         """
 
-        return self._replaceRdd(self._jvmRdd.addAlternateAlleleArrayInfoHeaderLine(name,
+        return self._replaceRdd(self._jvmDataset.addAlternateAlleleArrayInfoHeaderLine(name,
                                                                                    description,
                                                                                    self._javaType(lineType)))
 
@@ -823,7 +823,7 @@ class VCFSupportingGenomicDataset(GenomicDataset):
         :return: A new genomic dataset with the new header line added.
         """
 
-        return self._replaceRdd(self._jvmRdd.addAllAlleleArrayInfoHeaderLine(name,
+        return self._replaceRdd(self._jvmDataset.addAllAlleleArrayInfoHeaderLine(name,
                                                                              description,
                                                                              self._javaType(lineType)))
 
@@ -839,7 +839,7 @@ class VCFSupportingGenomicDataset(GenomicDataset):
         :return: A new genomic dataset with the new header line added.
         """
 
-        return self._replaceRdd(self._jvmRdd.addFilterHeaderLine(name, description))
+        return self._replaceRdd(self._jvmDataset.addFilterHeaderLine(name, description))
 
 
 class AlignmentDataset(GenomicDataset):
@@ -847,17 +847,17 @@ class AlignmentDataset(GenomicDataset):
     Wraps a GenomicDataset with alignment metadata and functions.
     """
 
-    def __init__(self, jvmRdd, sc):
+    def __init__(self, jvmDataset, sc):
         """
         Constructs a Python AlignmentDataset from a JVM AlignmentDataset.
         Should not be called from user code; instead, go through
         bdgenomics.adamContext.ADAMContext.
 
-        :param jvmRdd: Py4j handle to the underlying JVM AlignmentDataset.
+        :param jvmDataset: Py4j handle to the underlying JVM AlignmentDataset.
         :param pyspark.context.SparkContext sc: Active Spark Context.
         """
 
-        GenomicDataset.__init__(self, jvmRdd, sc)
+        GenomicDataset.__init__(self, jvmDataset, sc)
 
 
     def _replaceRdd(self, newRdd):
@@ -879,7 +879,7 @@ class AlignmentDataset(GenomicDataset):
         :rtype: bdgenomics.adam.ds.FragmentDataset
         """
 
-        return FragmentDataset(self._jvmRdd.toFragments(), self.sc)
+        return FragmentDataset(self._jvmDataset.toFragments(), self.sc)
 
 
     def toCoverage(self, collapse = True):
@@ -892,7 +892,7 @@ class AlignmentDataset(GenomicDataset):
         :rtype: bdgenomics.adam.ds.CoverageDataset
         """
 
-        coverage = CoverageDataset(self._jvmRdd.toCoverage(), self.sc)
+        coverage = CoverageDataset(self._jvmDataset.toCoverage(), self.sc)
         if (collapse):
             return coverage.collapse()
         else:
@@ -907,7 +907,7 @@ class AlignmentDataset(GenomicDataset):
         :param bool isSorted: Whether the file is sorted or not.
         """
 
-        self._jvmRdd.save(filePath, isSorted)
+        self._jvmDataset.save(filePath, isSorted)
 
 
     def saveAsSam(self,
@@ -934,7 +934,7 @@ class AlignmentDataset(GenomicDataset):
 
             fileType = self.sc._jvm.org.seqdoop.hadoop_bam.SAMFormat.valueOf(asType)
 
-        self._jvmRdd.saveAsSam(filePath, fileType, asSingleFile, isSorted)
+        self._jvmDataset.saveAsSam(filePath, fileType, asSingleFile, isSorted)
 
 
     def saveAsSamString(self):
@@ -949,7 +949,7 @@ class AlignmentDataset(GenomicDataset):
         :rtype: str
         """
 
-        return self._jvmRdd.saveAsSamString()
+        return self._jvmDataset.saveAsSamString()
 
 
     def countKmers(self, kmerLength):
@@ -961,7 +961,7 @@ class AlignmentDataset(GenomicDataset):
         :rtype: DataFrame containing "kmer" string and "count" long.
         """
 
-        return DataFrame(self._jvmRdd.countKmersAsDataset(kmerLength).toDF(),
+        return DataFrame(self._jvmDataset.countKmersAsDataset(kmerLength).toDF(),
                          SQLContext(self.sc))
 
 
@@ -972,7 +972,7 @@ class AlignmentDataset(GenomicDataset):
         :return: Returns a new genomic dataset containing sorted alignments.
         :rtype: bdgenomics.adam.ds.AlignmentDataset
         """
-        return AlignmentDataset(self._jvmRdd.sortByReadName(),
+        return AlignmentDataset(self._jvmDataset.sortByReadName(),
                                   self.sc)
 
     def sortByReferencePosition(self):
@@ -986,7 +986,7 @@ class AlignmentDataset(GenomicDataset):
         :return: Returns a new genomic dataset containing sorted alignments.
         :rtype: bdgenomics.adam.ds.AlignmentDataset
         """
-        return AlignmentDataset(self._jvmRdd.sortByReferencePosition(),
+        return AlignmentDataset(self._jvmDataset.sortByReferencePosition(),
                                   self.sc)
 
 
@@ -1002,7 +1002,7 @@ class AlignmentDataset(GenomicDataset):
         :rtype: bdgenomics.adam.ds.AlignmentDataset
         """
 
-        return AlignmentDataset(self._jvmRdd.sortByReferencePositionAndIndex(),
+        return AlignmentDataset(self._jvmDataset.sortByReferencePositionAndIndex(),
                                   self.sc)
 
 
@@ -1015,7 +1015,7 @@ class AlignmentDataset(GenomicDataset):
         :rtype: bdgenomics.adam.ds.AlignmentDataset
         """
 
-        return AlignmentDataset(self._jvmRdd.markDuplicates(),
+        return AlignmentDataset(self._jvmDataset.markDuplicates(),
                                   self.sc)
 
 
@@ -1029,7 +1029,7 @@ class AlignmentDataset(GenomicDataset):
         :param bdgenomics.adam.ds.VariantDataset knownSnps: A table of known SNPs to mask valid variants.
         :param bdgenomics.adam.stringency validationStringency:
         """
-        return AlignmentDataset(self._jvmRdd.recalibrateBaseQualities(knownSnps._jvmRdd,
+        return AlignmentDataset(self._jvmDataset.recalibrateBaseQualities(knownSnps._jvmDataset,
                                                                          _toJava(validationStringency, self.sc._jvm)))
 
 
@@ -1062,7 +1062,7 @@ class AlignmentDataset(GenomicDataset):
         """
 
         consensusModel = self.sc._jvm.org.bdgenomics.adam.algorithms.consensus.ConsensusGenerator.fromReads()
-        return AlignmentDataset(self._jvmRdd.realignIndels(consensusModel,
+        return AlignmentDataset(self._jvmDataset.realignIndels(consensusModel,
                                                                  isSorted,
                                                                  maxIndelSize,
                                                                  maxConsensusNumber,
@@ -1104,8 +1104,8 @@ class AlignmentDataset(GenomicDataset):
         :rtype: bdgenomics.adam.ds.AlignmentDataset
         """
 
-        consensusModel = self.sc._jvm.org.bdgenomics.adam.algorithms.consensus.ConsensusGenerator.fromKnownIndels(knownIndels._jvmRdd, 0)
-        return AlignmentDataset(self._jvmRdd.realignIndels(consensusModel,
+        consensusModel = self.sc._jvm.org.bdgenomics.adam.algorithms.consensus.ConsensusGenerator.fromKnownIndels(knownIndels._jvmDataset, 0)
+        return AlignmentDataset(self._jvmDataset.realignIndels(consensusModel,
                                                                  isSorted,
                                                                  maxIndelSize,
                                                                  maxConsensusNumber,
@@ -1122,7 +1122,7 @@ class AlignmentDataset(GenomicDataset):
         :return: Returns a tuple of (failedQualityMetrics, passedQualityMetrics)
         """
 
-        return self._jvmRdd.flagStat()
+        return self._jvmDataset.flagStat()
 
 
     def saveAsPairedFastq(self,
@@ -1151,7 +1151,7 @@ class AlignmentDataset(GenomicDataset):
         level to cache reads at between passes.
         """
 
-        self._jvmRdd.saveAsPairedFastq(fileName1, fileName2,
+        self._jvmDataset.saveAsPairedFastq(fileName1, fileName2,
                                         outputOriginalBaseQualities,
                                         _toJava(validationStringency, self.sc._jvm),
                                         persistLevel)
@@ -1177,7 +1177,7 @@ class AlignmentDataset(GenomicDataset):
         Default is false.
         """
 
-        self._jvmRdd.saveAsFastq(fileName,
+        self._jvmDataset.saveAsFastq(fileName,
                                   outputOriginalBaseQualities,
                                   sort,
                                   _toJava(validationStringency, self.sc._jvm))
@@ -1200,7 +1200,7 @@ class AlignmentDataset(GenomicDataset):
         :return: Returns a genomic dataset with the pair information recomputed.
         :rtype: bdgenomics.adam.ds.AlignmentDataset
         """
-        return AlignmentDataset(self._jvmRdd.reassembleReadPairs(rdd._jrdd,
+        return AlignmentDataset(self._jvmDataset.reassembleReadPairs(rdd._jrdd,
                                                                        _toJava(validationStringency, self.sc._jvm)),
                                       self.sc)
 
@@ -1216,17 +1216,17 @@ class CoverageDataset(GenomicDataset):
         return CoverageDataset(newRdd, self.sc)
 
 
-    def __init__(self, jvmRdd, sc):
+    def __init__(self, jvmDataset, sc):
         """
         Constructs a Python CoverageDataset from a JVM CoverageDataset.
         Should not be called from user code; instead, go through
         bdgenomics.adamContext.ADAMContext.
 
-        :param jvmRdd: Py4j handle to the underlying JVM CoverageDataset.
+        :param jvmDataset: Py4j handle to the underlying JVM CoverageDataset.
         :param pyspark.context.SparkContext sc: Active Spark Context.
         """
 
-        GenomicDataset.__init__(self, jvmRdd, sc)
+        GenomicDataset.__init__(self, jvmDataset, sc)
 
 
     def save(self, filePath, asSingleFile = False, disableFastConcat = False):
@@ -1238,7 +1238,7 @@ class CoverageDataset(GenomicDataset):
         single file.
         """
 
-        self._jvmRdd.save(filePath, asSingleFile, disableFastConcat)
+        self._jvmDataset.save(filePath, asSingleFile, disableFastConcat)
 
 
     def collapse(self):
@@ -1254,7 +1254,7 @@ class CoverageDataset(GenomicDataset):
         :rtype: bdgenomics.adam.ds.CoverageDataset
         """
 
-        return CoverageDataset(self._jvmRdd.collapse(), self.sc)
+        return CoverageDataset(self._jvmDataset.collapse(), self.sc)
 
 
     def toFeatures(self):
@@ -1265,7 +1265,7 @@ class CoverageDataset(GenomicDataset):
         :rtype: bdgenomics.adam.ds.FeatureDataset
         """
 
-        return FeatureDataset(self._jvmRdd.toFeatures(), self.sc)
+        return FeatureDataset(self._jvmDataset.toFeatures(), self.sc)
 
 
     def coverage(self, bpPerBin = 1):
@@ -1281,7 +1281,7 @@ class CoverageDataset(GenomicDataset):
         :rtype: bdgenomics.adam.ds.CoverageDataset
         """
 
-        return CoverageDataset(self._jvmRdd.coverage(bpPerBin), self.sc)
+        return CoverageDataset(self._jvmDataset.coverage(bpPerBin), self.sc)
 
 
     def aggregatedCoverage(self, bpPerBin = 1):
@@ -1297,7 +1297,7 @@ class CoverageDataset(GenomicDataset):
         :rtype: bdgenomics.adam.ds.CoverageDataset
         """
 
-        return CoverageDataset(self._jvmRdd.aggregatedCoverage(bpPerBin), self.sc)
+        return CoverageDataset(self._jvmDataset.aggregatedCoverage(bpPerBin), self.sc)
 
 
     def flatten(self):
@@ -1310,7 +1310,7 @@ class CoverageDataset(GenomicDataset):
         :rtype: bdgenomics.adam.ds.CoverageDataset
         """
 
-        return CoverageDataset(self._jvmRdd.flatten(), self.sc)
+        return CoverageDataset(self._jvmDataset.flatten(), self.sc)
 
 
     def _inferConversionFn(self, destClass):
@@ -1328,17 +1328,17 @@ class FeatureDataset(GenomicDataset):
         return FeatureDataset(newRdd, self.sc)
 
 
-    def __init__(self, jvmRdd, sc):
+    def __init__(self, jvmDataset, sc):
         """
         Constructs a Python FeatureDataset from a JVM FeatureDataset.
         Should not be called from user code; instead, go through
         bdgenomics.adamContext.ADAMContext.
 
-        :param jvmRdd: Py4j handle to the underlying JVM FeatureDataset.
+        :param jvmDataset: Py4j handle to the underlying JVM FeatureDataset.
         :param pyspark.context.SparkContext sc: Active Spark Context.
         """
 
-        GenomicDataset.__init__(self, jvmRdd, sc)
+        GenomicDataset.__init__(self, jvmDataset, sc)
 
 
     def save(self, filePath, asSingleFile = False, disableFastConcat = False):
@@ -1358,7 +1358,7 @@ class FeatureDataset(GenomicDataset):
         of the fast concatenation engine for saving to HDFS.
         """
 
-        self._jvmRdd.save(filePath, asSingleFile, disableFastConcat)
+        self._jvmDataset.save(filePath, asSingleFile, disableFastConcat)
 
 
     def toCoverage(self):
@@ -1369,7 +1369,7 @@ class FeatureDataset(GenomicDataset):
         :rtype: bdgenomics.adam.ds.CoverageDataset.
         """
 
-        return CoverageDataset(self._jvmRdd.toCoverage(), self.sc)
+        return CoverageDataset(self._jvmDataset.toCoverage(), self.sc)
 
 
     def _inferConversionFn(self, destClass):
@@ -1387,17 +1387,17 @@ class FragmentDataset(GenomicDataset):
         return FragmentDataset(newRdd, self.sc)
 
 
-    def __init__(self, jvmRdd, sc):
+    def __init__(self, jvmDataset, sc):
         """
         Constructs a Python FragmentDataset from a JVM FragmentDataset.
         Should not be called from user code; instead, go through
         bdgenomics.adamContext.ADAMContext.
 
-        :param jvmRdd: Py4j handle to the underlying JVM FragmentDataset.
+        :param jvmDataset: Py4j handle to the underlying JVM FragmentDataset.
         :param pyspark.context.SparkContext sc: Active Spark Context.
         """
 
-        GenomicDataset.__init__(self, jvmRdd, sc)
+        GenomicDataset.__init__(self, jvmDataset, sc)
 
 
     def toAlignments(self):
@@ -1409,7 +1409,7 @@ class FragmentDataset(GenomicDataset):
         :rtype: bdgenomics.adam.ds.AlignmentDataset
         """
 
-        return AlignmentDataset(self._jvmRdd.toAlignments(), self.sc)
+        return AlignmentDataset(self._jvmDataset.toAlignments(), self.sc)
 
 
     def markDuplicates(self):
@@ -1421,7 +1421,7 @@ class FragmentDataset(GenomicDataset):
         :rtype: bdgenomics.adam.ds.FragmentDataset
         """
 
-        return FragmentDataset(self._jvmRdd.markDuplicates(), self.sc)
+        return FragmentDataset(self._jvmDataset.markDuplicates(), self.sc)
 
 
     def save(self, filePath):
@@ -1431,7 +1431,7 @@ class FragmentDataset(GenomicDataset):
         :param str filePath: Path to save fragments to.
         """
 
-        self._jvmRdd.save(filePath)
+        self._jvmDataset.save(filePath)
 
 
     def _inferConversionFn(self, destClass):
@@ -1449,17 +1449,17 @@ class GenotypeDataset(VCFSupportingGenomicDataset):
         return GenotypeDataset(newRdd, self.sc)
 
 
-    def __init__(self, jvmRdd, sc):
+    def __init__(self, jvmDataset, sc):
         """
         Constructs a Python GenotypeDataset from a JVM GenotypeDataset.
         Should not be called from user code; instead, go through
         bdgenomics.adamContext.ADAMContext.
 
-        :param jvmRdd: Py4j handle to the underlying JVM GenotypeDataset.
+        :param jvmDataset: Py4j handle to the underlying JVM GenotypeDataset.
         :param pyspark.context.SparkContext sc: Active Spark Context.
         """
 
-        GenomicDataset.__init__(self, jvmRdd, sc)
+        GenomicDataset.__init__(self, jvmDataset, sc)
 
 
     def saveAsParquet(self, filePath):
@@ -1469,7 +1469,7 @@ class GenotypeDataset(VCFSupportingGenomicDataset):
         :param str filePath: Path to save file to.
         """
 
-        self._jvmRdd.saveAsParquet(filePath)
+        self._jvmDataset.saveAsParquet(filePath)
 
 
     def toVariantContexts(self):
@@ -1477,7 +1477,7 @@ class GenotypeDataset(VCFSupportingGenomicDataset):
         :return: These genotypes, converted to variant contexts.
         """
 
-        vcs = self._jvmRdd.toVariantContexts()
+        vcs = self._jvmDataset.toVariantContexts()
         return VariantContextDataset(vcs, self.sc)
 
 
@@ -1492,7 +1492,7 @@ class GenotypeDataset(VCFSupportingGenomicDataset):
         genotype record.
         :return: Returns the variants described by this GenotypeDataset.
         """
-        return VariantDataset(self._jvmRdd.toVariants(dedupe), self.sc)
+        return VariantDataset(self._jvmDataset.toVariants(dedupe), self.sc)
 
 
     def _inferConversionFn(self, destClass):
@@ -1508,17 +1508,17 @@ class SliceDataset(GenomicDataset):
         return SliceDataset(newRdd, self.sc)
 
 
-    def __init__(self, jvmRdd, sc):
+    def __init__(self, jvmDataset, sc):
         """
         Constructs a Python SliceDataset from a JVM
         SliceDataset. Should not be called from user code;
         instead, go through bdgenomics.adamContext.ADAMContext.
 
-        :param jvmRdd: Py4j handle to the underlying JVM SliceDataset.
+        :param jvmDataset: Py4j handle to the underlying JVM SliceDataset.
         :param pyspark.context.SparkContext sc: Active Spark Context.
         """
 
-        GenomicDataset.__init__(self, jvmRdd, sc)
+        GenomicDataset.__init__(self, jvmDataset, sc)
 
 
     def save(self, fileName):
@@ -1532,7 +1532,7 @@ class SliceDataset(GenomicDataset):
         :param str fileName: Path to save to.
         """
 
-        self._jvmRdd.save(fileName)
+        self._jvmDataset.save(fileName)
 
 
     def flankAdjacentFragments(self, flankLength):
@@ -1547,7 +1547,7 @@ class SliceDataset(GenomicDataset):
         :rtype: bdgenomics.adam.ds.SliceDataset
         """
 
-        return SliceDataset(self._jvmRdd.flankAdjacentFragments(flankLength),
+        return SliceDataset(self._jvmDataset.flankAdjacentFragments(flankLength),
                         self.sc)
 
 
@@ -1560,7 +1560,7 @@ class SliceDataset(GenomicDataset):
         :rtype: pyspark.rdd.RDD[str,long]
         """
 
-        return RDD(self._jvmRdd.countKmers(kmerLength), self.sc)
+        return RDD(self._jvmDataset.countKmers(kmerLength), self.sc)
 
 
     def _inferConversionFn(self, destClass):
@@ -1578,17 +1578,17 @@ class VariantDataset(VCFSupportingGenomicDataset):
         return VariantDataset(newRdd, self.sc)
 
 
-    def __init__(self, jvmRdd, sc):
+    def __init__(self, jvmDataset, sc):
         """
         Constructs a Python VariantDataset from a JVM VariantDataset.
         Should not be called from user code; instead, go through
         bdgenomics.adamContext.ADAMContext.
 
-        :param jvmRdd: Py4j handle to the underlying JVM VariantDataset.
+        :param jvmDataset: Py4j handle to the underlying JVM VariantDataset.
         :param pyspark.context.SparkContext sc: Active Spark Context.
         """
 
-        GenomicDataset.__init__(self, jvmRdd, sc)
+        GenomicDataset.__init__(self, jvmDataset, sc)
 
 
     def toVariantContexts(self):
@@ -1596,7 +1596,7 @@ class VariantDataset(VCFSupportingGenomicDataset):
         :return: These variants, converted to variant contexts.
         """
 
-        vcs = self._jvmRdd.toVariantContexts()
+        vcs = self._jvmDataset.toVariantContexts()
         return VariantContextDataset(vcs, self.sc)
 
 
@@ -1607,7 +1607,7 @@ class VariantDataset(VCFSupportingGenomicDataset):
         :param str filePath: Path to save file to.
         """
 
-        self._jvmRdd.saveAsParquet(filePath)
+        self._jvmDataset.saveAsParquet(filePath)
 
 
     def _inferConversionFn(self, destClass):
@@ -1625,17 +1625,17 @@ class VariantContextDataset(VCFSupportingGenomicDataset):
         return VariantContextDataset(newRdd, self.sc)
 
 
-    def __init__(self, jvmRdd, sc):
+    def __init__(self, jvmDataset, sc):
         """
         Constructs a Python VariantContextDataset from a JVM VariantContextDataset.
         Should not be called from user code; instead, go through
         bdgenomics.adamContext.ADAMContext.
 
-        :param jvmRdd: Py4j handle to the underlying JVM VariantContextDataset.
+        :param jvmDataset: Py4j handle to the underlying JVM VariantContextDataset.
         :param pyspark.context.SparkContext sc: Active Spark Context.
         """
 
-        VCFSupportingGenomicDataset.__init__(self, jvmRdd, sc)
+        VCFSupportingGenomicDataset.__init__(self, jvmDataset, sc)
 
 
     def saveAsVcf(self,
@@ -1658,7 +1658,7 @@ class VariantContextDataset(VCFSupportingGenomicDataset):
         of the fast concatenation engine for saving to HDFS.
         """
 
-        self._jvmRdd.saveAsVcf(filePath,
+        self._jvmDataset.saveAsVcf(filePath,
                                asSingleFile,
                                deferMerging,
                                disableFastConcat,
@@ -1673,17 +1673,17 @@ class ReadDataset(GenomicDataset):
         return ReadRDD(newRdd, self.sc)
 
 
-    def __init__(self, jvmRdd, sc):
+    def __init__(self, jvmDataset, sc):
         """
         Constructs a Python ReadDataset from a JVM
         ReadDataset. Should not be called from user code;
         instead, go through bdgenomics.adamContext.ADAMContext.
 
-        :param jvmRdd: Py4j handle to the underlying JVM ReadDataset.
+        :param jvmDataset: Py4j handle to the underlying JVM ReadDataset.
         :param pyspark.context.SparkContext sc: Active Spark Context.
         """
 
-        GenomicDataset.__init__(self, jvmRdd, sc)
+        GenomicDataset.__init__(self, jvmDataset, sc)
 
 
     def save(self, fileName):
@@ -1696,7 +1696,7 @@ class ReadDataset(GenomicDataset):
         :param str fileName: Path to save to.
         """
 
-        self._jvmRdd.save(fileName)
+        self._jvmDataset.save(fileName)
 
 
     def _inferConversionFn(self, destClass):
@@ -1712,17 +1712,17 @@ class SequenceDataset(GenomicDataset):
         return SequenceDataset(newRdd, self.sc)
 
 
-    def __init__(self, jvmRdd, sc):
+    def __init__(self, jvmDataset, sc):
         """
         Constructs a Python SequenceDataset from a JVM
         SequenceDataset. Should not be called from user code;
         instead, go through bdgenomics.adamContext.ADAMContext.
 
-        :param jvmRdd: Py4j handle to the underlying JVM SequenceDataset.
+        :param jvmDataset: Py4j handle to the underlying JVM SequenceDataset.
         :param pyspark.context.SparkContext sc: Active Spark Context.
         """
 
-        GenomicDataset.__init__(self, jvmRdd, sc)
+        GenomicDataset.__init__(self, jvmDataset, sc)
 
 # slice(maximumLength)
 # slice(region)
@@ -1739,7 +1739,7 @@ class SequenceDataset(GenomicDataset):
         :param str fileName: Path to save to.
         """
 
-        self._jvmRdd.save(fileName)
+        self._jvmDataset.save(fileName)
 
 
     def _inferConversionFn(self, destClass):
