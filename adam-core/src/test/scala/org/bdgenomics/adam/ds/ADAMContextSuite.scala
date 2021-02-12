@@ -405,8 +405,8 @@ class ADAMContextSuite extends ADAMFunSuite {
 
     // see https://github.com/bigdatagenomics/adam/issues/1894
     val withSequenceDictionary = gRdd.createSequenceDictionary()
-    assert(withSequenceDictionary.sequences.records.size === 1)
-    assert(withSequenceDictionary.sequences.records.head.name === "HLA-DQB1*05:01:01:02")
+    assert(withSequenceDictionary.references.records.size === 1)
+    assert(withSequenceDictionary.references.records.head.name === "HLA-DQB1*05:01:01:02")
 
     val sequences = gRdd.rdd.collect
     assert(sequences.length === 1)
@@ -528,7 +528,7 @@ class ADAMContextSuite extends ADAMFunSuite {
 
     assert(vcs.samples.size === 8)
     assert(vcs.headerLines.size === 154)
-    assert(vcs.sequences.size === 31)
+    assert(vcs.references.size === 31)
 
     val variants = vcs.toVariants
     assert(variants.rdd.count === 778)
@@ -763,7 +763,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     val features: RDD[Feature] = featureDs.rdd
     assert(features.count === 10)
 
-    val sequences = featureDs.sequences
+    val sequences = featureDs.references
     assert(sequences.records.size === 93)
     assert(sequences("chr1").isDefined)
     assert(sequences("chr1").get.length === 249250621L)
@@ -780,7 +780,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     val features: RDD[Feature] = featureDs.rdd
     assert(features.count === 197)
 
-    val sequences = featureDs.sequences
+    val sequences = featureDs.references
     assert(sequences.records.size === 93)
     assert(sequences("chr1").isDefined)
     assert(sequences("chr1").get.length === 249250621L)
@@ -830,7 +830,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     alignments.saveAsParquet(outputDir)
     val df = spark.read.parquet(outputDir)
     val reloaded = sc.loadAlignments(df)
-    assert(reloaded.sequences.isEmpty)
+    assert(reloaded.references.isEmpty)
     assert(reloaded.readGroups.isEmpty)
     assert(reloaded.processingSteps.isEmpty)
     assert(reloaded.rdd.collect().deep == alignments.rdd.collect().deep)
@@ -843,7 +843,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     features.saveAsParquet(outputDir)
     val df = spark.read.parquet(outputDir)
     val reloaded = sc.loadFeatures(df)
-    assert(reloaded.sequences.isEmpty)
+    assert(reloaded.references.isEmpty)
     assert(reloaded.samples.isEmpty)
     assert(reloaded.rdd.collect().deep == features.rdd.collect().deep)
   }
@@ -855,7 +855,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     fragments.saveAsParquet(outputDir)
     val df = spark.read.parquet(outputDir)
     val reloaded = sc.loadFragments(df)
-    assert(reloaded.sequences.isEmpty)
+    assert(reloaded.references.isEmpty)
     assert(reloaded.readGroups.isEmpty)
     assert(reloaded.processingSteps.isEmpty)
     assert(reloaded.rdd.collect().deep == fragments.rdd.collect().deep)
@@ -868,7 +868,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     genotypes.saveAsParquet(outputDir)
     val df = spark.read.parquet(outputDir)
     val reloaded = sc.loadGenotypes(df)
-    assert(reloaded.sequences.isEmpty)
+    assert(reloaded.references.isEmpty)
     assert(reloaded.samples.isEmpty)
     assert(reloaded.headerLines === DefaultHeaderLines.allHeaderLines)
     assert(reloaded.rdd.collect().deep == genotypes.rdd.collect().deep)
@@ -880,8 +880,8 @@ class ADAMContextSuite extends ADAMFunSuite {
     val outputDir = tmpLocation()
     genotypes.saveAsParquet(outputDir)
     val df = spark.read.parquet(outputDir)
-    val reloaded = sc.loadGenotypes(df, genotypes.sequences, genotypes.samples, headerLines = Seq.empty)
-    assert(reloaded.sequences == genotypes.sequences)
+    val reloaded = sc.loadGenotypes(df, genotypes.references, genotypes.samples, headerLines = Seq.empty)
+    assert(reloaded.references == genotypes.references)
     assert(reloaded.samples == genotypes.samples)
     assert(reloaded.headerLines.isEmpty)
     assert(reloaded.rdd.collect().deep == genotypes.rdd.collect().deep)
@@ -894,7 +894,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     reads.saveAsParquet(outputDir)
     val df = spark.read.parquet(outputDir)
     val reloaded = sc.loadReads(df)
-    assert(reloaded.sequences.isEmpty)
+    assert(reloaded.references.isEmpty)
     assert(reloaded.rdd.collect().deep == reads.rdd.collect().deep)
   }
 
@@ -905,7 +905,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     sequences.saveAsParquet(outputDir)
     val df = spark.read.parquet(outputDir)
     val reloaded = sc.loadSequences(df)
-    assert(reloaded.sequences.isEmpty)
+    assert(reloaded.references.isEmpty)
     assert(reloaded.rdd.collect().deep == sequences.rdd.collect().deep)
   }
 
@@ -916,7 +916,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     slices.saveAsParquet(outputDir)
     val df = spark.read.parquet(outputDir)
     val reloaded = sc.loadSlices(df)
-    assert(reloaded.sequences.isEmpty)
+    assert(reloaded.references.isEmpty)
     assert(reloaded.rdd.collect().deep == slices.rdd.collect().deep)
   }
 
@@ -927,7 +927,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     vcs.saveAsParquet(outputDir)
     val df = spark.read.parquet(outputDir)
     val reloaded = sc.loadVariantContexts(df)
-    assert(reloaded.sequences.isEmpty)
+    assert(reloaded.references.isEmpty)
     assert(reloaded.samples.isEmpty)
     assert(reloaded.headerLines == DefaultHeaderLines.allHeaderLines)
     // note: weaker assertion than other types, vc models don't equal each other
@@ -940,8 +940,8 @@ class ADAMContextSuite extends ADAMFunSuite {
     val outputDir = tmpLocation()
     vcs.saveAsParquet(outputDir)
     val df = spark.read.parquet(outputDir)
-    val reloaded = sc.loadVariantContexts(df, vcs.sequences, vcs.samples, headerLines = Seq.empty)
-    assert(reloaded.sequences == vcs.sequences)
+    val reloaded = sc.loadVariantContexts(df, vcs.references, vcs.samples, headerLines = Seq.empty)
+    assert(reloaded.references == vcs.references)
     assert(reloaded.samples == vcs.samples)
     assert(reloaded.headerLines.isEmpty)
     assert(reloaded.rdd.collect().length == vcs.rdd.collect().length)
@@ -954,7 +954,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     variants.saveAsParquet(outputDir)
     val df = spark.read.parquet(outputDir)
     val reloaded = sc.loadVariants(df)
-    assert(reloaded.sequences.isEmpty)
+    assert(reloaded.references.isEmpty)
     assert(reloaded.headerLines === DefaultHeaderLines.allHeaderLines)
     assert(reloaded.rdd.collect().deep == variants.rdd.collect().deep)
   }
@@ -965,8 +965,8 @@ class ADAMContextSuite extends ADAMFunSuite {
     val outputDir = tmpLocation()
     variants.saveAsParquet(outputDir)
     val df = spark.read.parquet(outputDir)
-    val reloaded = sc.loadVariants(df, variants.sequences, headerLines = Seq.empty)
-    assert(reloaded.sequences == variants.sequences)
+    val reloaded = sc.loadVariants(df, variants.references, headerLines = Seq.empty)
+    assert(reloaded.references == variants.references)
     assert(reloaded.headerLines.isEmpty)
     assert(reloaded.rdd.collect().deep == variants.rdd.collect().deep)
   }
@@ -978,7 +978,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     alignments.saveAsParquet(outputDir)
     val df = spark.read.parquet(outputDir)
     val reloaded = sc.loadAlignments(df, outputDir)
-    assert(reloaded.sequences == alignments.sequences)
+    assert(reloaded.references == alignments.references)
     assert(reloaded.readGroups == alignments.readGroups)
     assert(reloaded.processingSteps == alignments.processingSteps)
     assert(reloaded.rdd.collect().deep == alignments.rdd.collect().deep)
@@ -991,7 +991,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     features.saveAsParquet(outputDir)
     val df = spark.read.parquet(outputDir)
     val reloaded = sc.loadFeatures(df, outputDir)
-    assert(reloaded.sequences == features.sequences)
+    assert(reloaded.references == features.references)
     assert(reloaded.samples.isEmpty)
     assert(reloaded.rdd.collect().deep == features.rdd.collect().deep)
   }
@@ -1003,7 +1003,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     fragments.saveAsParquet(outputDir)
     val df = spark.read.parquet(outputDir)
     val reloaded = sc.loadFragments(df, outputDir)
-    assert(reloaded.sequences == fragments.sequences)
+    assert(reloaded.references == fragments.references)
     assert(reloaded.readGroups == fragments.readGroups)
     assert(reloaded.processingSteps == fragments.processingSteps)
     assert(reloaded.rdd.collect().deep == fragments.rdd.collect().deep)
@@ -1016,7 +1016,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     gts.saveAsParquet(outputDir)
     val df = spark.read.parquet(outputDir)
     val reloaded = sc.loadGenotypes(df, outputDir)
-    assert(reloaded.sequences == gts.sequences)
+    assert(reloaded.references == gts.references)
     assert(reloaded.headerLines.toSet == gts.headerLines.toSet)
     assert(reloaded.samples == gts.samples)
     assert(reloaded.rdd.collect().deep == gts.rdd.collect().deep)
@@ -1029,7 +1029,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     vcs.saveAsParquet(outputDir)
     val df = spark.read.parquet(outputDir)
     val reloaded = sc.loadVariantContexts(df, outputDir)
-    assert(reloaded.sequences == vcs.sequences)
+    assert(reloaded.references == vcs.references)
     assert(reloaded.headerLines.toSet == vcs.headerLines.toSet)
     assert(reloaded.samples == vcs.samples)
     assert(reloaded.rdd.collect().length == vcs.rdd.collect().length)
@@ -1042,7 +1042,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     variants.saveAsParquet(outputDir)
     val df = spark.read.parquet(outputDir)
     val reloaded = sc.loadVariants(df, outputDir)
-    assert(reloaded.sequences == variants.sequences)
+    assert(reloaded.references == variants.references)
     assert(reloaded.headerLines.toSet == variants.headerLines.toSet)
     assert(reloaded.rdd.collect().deep == variants.rdd.collect().deep)
   }

@@ -58,7 +58,7 @@ case class IndexedFastaFile(sc: SparkContext,
 
   // Get sequence dictionary. If sequence dictionary is not defined,
   // generate sequence dictionary from file
-  val sequences =
+  val references =
     try {
       SequenceDictionary(ref.getSequenceDictionary)
     } catch {

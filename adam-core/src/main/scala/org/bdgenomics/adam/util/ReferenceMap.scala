@@ -29,25 +29,25 @@ import org.bdgenomics.adam.serialization.AvroSerializer
 import org.bdgenomics.formats.avro.Slice
 
 /**
- * A broadcastable ReferenceFile backed by a map containing contig name ->
+ * A broadcastable ReferenceFile backed by a map containing reference name ->
  * Seq[Slice] pairs.
  *
- * @param contigMap a map containing a Seq of slices per contig.
+ * @param referenceMap a map containing a Seq of slices per contig.
  */
-case class ReferenceContigMap(contigMap: Map[String, Seq[Slice]]) extends ReferenceFile {
+case class ReferenceMap(referenceMap: Map[String, Seq[Slice]]) extends ReferenceFile {
 
   private def keys(): String = {
-    contigMap.keys.toList.sortBy(x => x).mkString(", ")
+    referenceMap.keys.toList.sortBy(x => x).mkString(", ")
   }
 
   override def toString(): String = {
-    "ReferenceContigMap(%s)".format(keys())
+    "ReferenceMap(%s)".format(keys())
   }
 
   /**
-   * The sequence dictionary corresponding to the contigs in this collection of fragments.
+   * The reference sequence dictionary corresponding to the contigs in this collection of fragments.
    */
-  val sequences: SequenceDictionary = new SequenceDictionary(contigMap.map(r =>
+  val references: SequenceDictionary = new SequenceDictionary(referenceMap.map(r =>
     SequenceRecord(r._1, r._2.map(_.getEnd).max)).toVector)
 
   /**
@@ -57,11 +57,11 @@ case class ReferenceContigMap(contigMap: Map[String, Seq[Slice]]) extends Refere
    * @return The reference sequence at the desired locus.
    */
   override def extract(region: ReferenceRegion): String = {
-    contigMap
+    referenceMap
       .getOrElse(
         region.referenceName,
         throw new Exception(
-          "Contig %s not found in reference map with keys: %s".format(region.referenceName, keys())
+          "Reference %s not found in reference map with keys: %s".format(region.referenceName, keys())
         )
       )
       .dropWhile(s => s.getStart + s.getSequence.length < region.start)
@@ -90,19 +90,19 @@ case class ReferenceContigMap(contigMap: Map[String, Seq[Slice]]) extends Refere
 }
 
 /**
- * Companion object for creating a ReferenceContigMap from an RDD of slices.
+ * Companion object for creating a ReferenceMap from an RDD of slices.
  */
-object ReferenceContigMap {
+object ReferenceMap {
 
   /**
-   * Builds a ReferenceContigMap from an RDD of slices.
+   * Builds a ReferenceMap from an RDD of slices.
    *
    * @param slices RDD of slices describing a genome reference.
    * @return Returns a serializable wrapper around these slices that enables
    *   random access into the reference genome.
    */
-  def apply(slices: RDD[Slice]): ReferenceContigMap = {
-    ReferenceContigMap(
+  def apply(slices: RDD[Slice]): ReferenceMap = {
+    ReferenceMap(
       slices
         .groupBy(_.getName)
         .mapValues(_.toSeq.sortBy(_.getStart))
@@ -112,12 +112,12 @@ object ReferenceContigMap {
   }
 }
 
-class ReferenceContigMapSerializer extends Serializer[ReferenceContigMap] {
+class ReferenceMapSerializer extends Serializer[ReferenceMap] {
   private val sliceSerializer = new AvroSerializer[Slice]
 
-  def write(kryo: Kryo, out: Output, record: ReferenceContigMap) = {
-    out.writeInt(record.contigMap.size)
-    record.contigMap.foreach(p => {
+  def write(kryo: Kryo, out: Output, record: ReferenceMap) = {
+    out.writeInt(record.referenceMap.size)
+    record.referenceMap.foreach(p => {
       out.writeString(p._1)
       out.writeInt(p._2.size)
       p._2.foreach(slice => {
@@ -126,7 +126,7 @@ class ReferenceContigMapSerializer extends Serializer[ReferenceContigMap] {
     })
   }
 
-  def read(kryo: Kryo, in: Input, clazz: Class[ReferenceContigMap]): ReferenceContigMap = {
+  def read(kryo: Kryo, in: Input, clazz: Class[ReferenceMap]): ReferenceMap = {
     val n = in.readInt()
     val array = new Array[(String, Seq[Slice])](n)
     (0 until n).foreach(idx => {
@@ -138,6 +138,6 @@ class ReferenceContigMapSerializer extends Serializer[ReferenceContigMap] {
       })
       array(idx) = (key, sliceArray.toSeq)
     })
-    ReferenceContigMap(array.toMap)
+    ReferenceMap(array.toMap)
   }
 }

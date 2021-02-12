@@ -340,15 +340,15 @@ class FragmentDatasetSuite extends ADAMFunSuite {
     val union = reads1.union(reads2)
     assert(union.rdd.count === (reads1.rdd.count + reads2.rdd.count))
     // all of the contigs small.sam has are in bqsr1.sam
-    assert(union.sequences.size === reads1.sequences.size)
+    assert(union.references.size === reads1.references.size)
     // small.sam has no read groups
     assert(union.readGroups.size === reads1.readGroups.size)
   }
 
   sparkTest("load parquet to sql, save, re-read from avro") {
     def testMetadata(fRdd: FragmentDataset) {
-      val sequenceRdd = fRdd.addSequence(SequenceRecord("aSequence", 1000L))
-      assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
+      val sequenceRdd = fRdd.addReference(SequenceRecord("aSequence", 1000L))
+      assert(sequenceRdd.references.containsReferenceName("aSequence"))
 
       val rgDataset = fRdd.addReadGroup(ReadGroup("test", "aRg"))
       assert(rgDataset.readGroups("aRg").sampleId === "test")
@@ -627,9 +627,9 @@ class FragmentDatasetSuite extends ADAMFunSuite {
 
   sparkTest("dataset and rdd conversion to alignments are equivalent") {
     val fragments = sc.loadFragments(testFile("small.sam"))
-    val fragmentRdd = RDDBoundFragmentDataset(fragments.rdd, fragments.sequences,
+    val fragmentRdd = RDDBoundFragmentDataset(fragments.rdd, fragments.references,
       fragments.readGroups, fragments.processingSteps, None)
-    val fragmentDataset = DatasetBoundFragmentDataset(fragments.dataset, fragments.sequences,
+    val fragmentDataset = DatasetBoundFragmentDataset(fragments.dataset, fragments.references,
       fragments.readGroups, fragments.processingSteps)
     val convertedRdd = fragmentRdd.toAlignments()
     val convertedDataset = fragmentDataset.toAlignments()

@@ -33,7 +33,7 @@ import org.apache.avro.file.DataFileWriter
 import org.apache.avro.generic.IndexedRecord
 import org.apache.avro.specific.{ SpecificDatumWriter, SpecificRecordBase }
 import org.apache.hadoop.fs.{ FileSystem, Path }
-import org.apache.hadoop.mapreduce.{ Job, OutputFormat => NewOutputFormat }
+import org.apache.hadoop.mapreduce.Job
 import org.apache.parquet.avro.AvroParquetOutputFormat
 import org.apache.parquet.hadoop.ParquetOutputFormat
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
@@ -261,7 +261,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   override def toString = "%s with %d reference sequences"
-    .format(getClass.getSimpleName, sequences.size)
+    .format(getClass.getSimpleName, references.size)
 
   /**
    * Saves Avro data to a Hadoop file system.
@@ -342,7 +342,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
    * @param pathName The path to save metadata to.
    */
   protected def saveMetadata(pathName: String): Unit = {
-    saveSequences(pathName)
+    saveReferences(pathName)
   }
 
   /**
@@ -391,15 +391,15 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
    * The sequence dictionary describing the reference assembly this dataset is
    * aligned to.
    */
-  val sequences: SequenceDictionary
+  val references: SequenceDictionary
 
   /**
-   * Replaces the sequence dictionary attached to a GenomicDataset.
+   * Replaces the reference sequence dictionary attached to a GenomicDataset.
    *
-   * @param newSequences The new sequence dictionary to attach.
-   * @return Returns a new GenomicDataset with the sequences replaced.
+   * @param newReferences The new reference sequence dictionary to attach.
+   * @return Returns a new GenomicDataset with the reference sequences replaced.
    */
-  def replaceSequences(newSequences: SequenceDictionary): V
+  def replaceReferences(newReferences: SequenceDictionary): V
 
   /**
    * Caches underlying RDD in memory.
@@ -430,23 +430,23 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Appends sequence metadata to the current genomic dataset.
+   * Appends reference sequence metadata to the current genomic dataset.
    *
-   * @param sequencesToAdd The new sequences to append.
-   * @return Returns a new GenomicDataset with the sequences appended.
+   * @param referencesToAdd The new reference sequences to append.
+   * @return Returns a new GenomicDataset with the reference sequences appended.
    */
-  def addSequences(sequencesToAdd: SequenceDictionary): V = {
-    replaceSequences(sequences ++ sequencesToAdd)
+  def addReferences(referencesToAdd: SequenceDictionary): V = {
+    replaceReferences(references ++ referencesToAdd)
   }
 
   /**
-   * Appends metadata for a single sequence to the current genomic dataset.
+   * Appends metadata for a single reference sequence to the current genomic dataset.
    *
-   * @param sequenceToAdd The sequence to add.
-   * @return Returns a new GenomicDataset with this sequence appended.
+   * @param referenceToAdd The reference sequence to add.
+   * @return Returns a new GenomicDataset with this reference sequence appended.
    */
-  def addSequence(sequenceToAdd: SequenceRecord): V = {
-    addSequences(SequenceDictionary(sequenceToAdd))
+  def addReference(referenceToAdd: SequenceRecord): V = {
+    addReferences(SequenceDictionary(referenceToAdd))
   }
 
   /**
@@ -457,18 +457,18 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
   }
 
   /**
-   * Save the sequence dictionary to disk.
+   * Save the reference sequence dictionary to disk.
    *
-   * @param pathName The path to save the sequence dictionary to.
+   * @param pathName The path to save the reference sequence dictionary to.
    */
-  protected def saveSequences(pathName: String): Unit = {
+  protected def saveReferences(pathName: String): Unit = {
     // convert sequence dictionary to avro form and save
-    val references = sequences.toAvro
+    val refs = references.toAvro
 
     saveAvro("%s/_references.avro".format(pathName),
       rdd.context,
       Reference.SCHEMA$,
-      references)
+      refs)
   }
 
   /**
@@ -540,11 +540,11 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
 
   // The partition map is structured as follows:
   // The outer option is for whether or not there is a partition map.
-  //   - This is None in the case that we don't know the bounds on each 
+  //   - This is None in the case that we don't know the bounds on each
   //     partition.
   // The Array is the length of the number of partitions.
   // The inner option is in case there is no data on a partition.
-  // The (ReferenceRegion, ReferenceRegion) tuple contains the bounds of the 
+  // The (ReferenceRegion, ReferenceRegion) tuple contains the bounds of the
   //   partition, such that the lowest start is first and the highest end is
   //   second.
   protected val optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]
@@ -642,7 +642,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
            stringency: ValidationStringency = ValidationStringency.STRICT)(
              implicit tTag: ClassTag[T]): V = {
 
-    require(sequences.hasSequenceOrdering,
+    require(references.hasSequenceOrdering,
       "Sequence Dictionary does not have ordering defined.")
 
     replaceRdd(rdd.flatMap(elem => {
@@ -660,12 +660,12 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
           stringency)
       } else {
         val referenceName = coveredRegions.head.referenceName
-        val sr = sequences(referenceName)
+        val sr = references(referenceName)
 
         if (sr.isEmpty) {
           throwWarnOrNone[((Int, Long), T)](
             "Element %s has reference name %s not in dictionary %s.".format(
-              elem, referenceName, sequences),
+              elem, referenceName, references),
             stringency)
         } else {
           Some(((sr.get.index.get, coveredRegions.head.start), elem))
@@ -792,12 +792,12 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
     val tFormatter: W = tFormatterCompanion.apply(this.asInstanceOf[V])
 
     // make bins
-    val seqLengths = sequences.records.toSeq.map(rec => (rec.name, rec.length)).toMap
+    val seqLengths = references.records.map(rec => (rec.name, rec.length)).toMap
     val totalLength = seqLengths.values.sum
-    val bins = GenomeBins(totalLength / rdd.partitions.size, seqLengths)
+    val bins = GenomeBins(totalLength / rdd.partitions.length, seqLengths)
 
     // if the input rdd is mapped, then we need to repartition
-    val partitionedRdd = if (sequences.records.size > 0) {
+    val partitionedRdd = if (references.records.nonEmpty) {
       // get region covered, expand region by flank size, and tag with bins
       val binKeyedRdd = rdd.flatMap(r => {
 
@@ -879,8 +879,8 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
     val newRdd = convFn(this.asInstanceOf[V], pipedRdd)
 
     // if the original rdd was aligned and the final rdd is aligned, then we must filter
-    if (newRdd.sequences.isEmpty ||
-      sequences.isEmpty) {
+    if (newRdd.references.isEmpty ||
+      references.isEmpty) {
       newRdd
     } else {
       def filterPartition(idx: Int, iter: Iterator[X]): Iterator[X] = {
@@ -895,7 +895,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
           val regions = newRdd.getReferenceRegions(x)
 
           // are there any regions that overlap our current region
-          !regions.forall(!_.overlaps(region))
+          regions.exists(_.overlaps(region))
         })
       }
 
@@ -1159,7 +1159,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
     RDDBoundGenericGenomicDataset[(T, X), (U, Y)](InnerTreeRegionJoin[T, X]().broadcastAndJoin(
       buildTree(flattenRddByRegions().map(f => (f._1.pad(flankSize), f._2))),
       genomicDataset.flattenRddByRegions()),
-      sequences ++ genomicDataset.sequences,
+      references ++ genomicDataset.references,
       GenericConverter[(T, X), (U, Y)](kv => {
         // pad by -1 * flankSize to undo pad from preprocessing
         getReferenceRegions(kv._1).map(_.pad(-1 * flankSize)) ++
@@ -1223,7 +1223,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
     RDDBoundGenericGenomicDataset[(X, T), (Y, U)](InnerTreeRegionJoin[X, T]().join(
       broadcast.broadcastTree,
       flattenRddByRegions()),
-      sequences ++ broadcast.backingDataset.sequences,
+      references ++ broadcast.backingDataset.references,
       GenericConverter[(X, T), (Y, U)](kv => {
         broadcast.backingDataset.getReferenceRegions(kv._1) ++
           getReferenceRegions(kv._2)
@@ -1321,7 +1321,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
     RDDBoundGenericGenomicDataset[(Option[T], X), (Option[U], Y)](RightOuterTreeRegionJoin[T, X]().broadcastAndJoin(
       buildTree(flattenRddByRegions().map(f => (f._1.pad(flankSize), f._2))),
       genomicDataset.flattenRddByRegions()),
-      sequences ++ genomicDataset.sequences,
+      references ++ genomicDataset.references,
       GenericConverter[(Option[T], X), (Option[U], Y)](kv => {
         // pad by -1 * flankSize to undo pad from preprocessing
         Seq(kv._1.map(v => getReferenceRegions(v)
@@ -1363,7 +1363,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
     RDDBoundGenericGenomicDataset[(Option[X], T), (Option[Y], U)](RightOuterTreeRegionJoin[X, T]().join(
       broadcast.broadcastTree,
       flattenRddByRegions()),
-      sequences ++ broadcast.backingDataset.sequences,
+      references ++ broadcast.backingDataset.references,
       GenericConverter[(Option[X], T), (Option[Y], U)](kv => {
         Seq(kv._1.map(v => broadcast.backingDataset.getReferenceRegions(v))).flatten.flatten ++
           getReferenceRegions(kv._2)
@@ -1485,7 +1485,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
     RDDBoundGenericGenomicDataset[(Iterable[T], X), (Seq[U], Y)](InnerTreeRegionJoinAndGroupByRight[T, X]().broadcastAndJoin(
       buildTree(flattenRddByRegions().map(f => (f._1.pad(flankSize), f._2))),
       genomicDataset.flattenRddByRegions()),
-      sequences ++ genomicDataset.sequences,
+      references ++ genomicDataset.references,
       GenericConverter[(Iterable[T], X), (Seq[U], Y)](kv => {
         // pad by -1 * flankSize to undo pad from preprocessing
         (kv._1.flatMap(getReferenceRegions) ++
@@ -1525,7 +1525,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
     RDDBoundGenericGenomicDataset[(Iterable[X], T), (Seq[Y], U)](InnerTreeRegionJoinAndGroupByRight[X, T]().join(
       broadcast.broadcastTree,
       flattenRddByRegions()),
-      sequences ++ broadcast.backingDataset.sequences,
+      references ++ broadcast.backingDataset.references,
       GenericConverter[(Iterable[X], T), (Seq[Y], U)](kv => {
         // pad by -1 * flankSize to undo pad from preprocessing
         (kv._1.flatMap(broadcast.backingDataset.getReferenceRegions) ++
@@ -1655,7 +1655,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
     RDDBoundGenericGenomicDataset[(Iterable[T], X), (Seq[U], Y)](RightOuterTreeRegionJoinAndGroupByRight[T, X]().broadcastAndJoin(
       buildTree(flattenRddByRegions().map(f => (f._1.pad(flankSize), f._2))),
       genomicDataset.flattenRddByRegions()),
-      sequences ++ genomicDataset.sequences,
+      references ++ genomicDataset.references,
       GenericConverter[(Iterable[T], X), (Seq[U], Y)](kv => {
         // pad by -1 * flankSize to undo pad from preprocessing
         Seq(kv._1.map(v => getReferenceRegions(v)
@@ -1697,7 +1697,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
     RDDBoundGenericGenomicDataset[(Iterable[X], T), (Seq[Y], U)](RightOuterTreeRegionJoinAndGroupByRight[X, T]().join(
       broadcast.broadcastTree,
       flattenRddByRegions()),
-      sequences ++ broadcast.backingDataset.sequences,
+      references ++ broadcast.backingDataset.references,
       GenericConverter[(Iterable[X], T), (Seq[Y], U)](kv => {
         // pad by -1 * flankSize to undo pad from preprocessing
         Seq(kv._1.map(v => broadcast.backingDataset.getReferenceRegions(v))).flatten.flatten ++
@@ -1849,13 +1849,13 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
     val (leftRddToJoin, rightRddToJoin) =
       prepareForShuffleRegionJoin(genomicDataset, optPartitions, flankSize)
 
-    // what sequences do we wind up with at the end?
-    val combinedSequences = sequences ++ genomicDataset.sequences
+    // what reference sequences do we wind up with at the end?
+    val combinedReferences = references ++ genomicDataset.references
 
     RDDBoundGenericGenomicDataset[(T, X), (U, Y)](
       InnerShuffleRegionJoin[T, X](leftRddToJoin, rightRddToJoin)
         .compute(),
-      combinedSequences,
+      combinedReferences,
       GenericConverter[(T, X), (U, Y)](kv => {
         // pad by -1 * flankSize to undo pad from preprocessing
         getReferenceRegions(kv._1).map(_.pad(-1 * flankSize)) ++
@@ -2004,14 +2004,14 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
     val (leftRddToJoin, rightRddToJoin) =
       prepareForShuffleRegionJoin(genomicDataset, optPartitions, flankSize)
 
-    // what sequences do we wind up with at the end?
-    val combinedSequences = sequences ++ genomicDataset.sequences
+    // what reference sequences do we wind up with at the end?
+    val combinedReferences = references ++ genomicDataset.references
 
     RDDBoundGenericGenomicDataset[(Option[T], X), (Option[U], Y)](
       LeftOuterShuffleRegionJoin[X, T](rightRddToJoin, leftRddToJoin)
         .compute()
         .map(_.swap),
-      combinedSequences,
+      combinedReferences,
       GenericConverter[(Option[T], X), (Option[U], Y)](kv => {
         // pad by -1 * flankSize to undo pad from preprocessing
         Seq(kv._1.map(v => getReferenceRegions(v)
@@ -2167,13 +2167,13 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
     val (leftRddToJoin, rightRddToJoin) =
       prepareForShuffleRegionJoin(genomicDataset, optPartitions, flankSize)
 
-    // what sequences do we wind up with at the end?
-    val combinedSequences = sequences ++ genomicDataset.sequences
+    // what reference sequences do we wind up with at the end?
+    val combinedReferences = references ++ genomicDataset.references
 
     RDDBoundGenericGenomicDataset[(T, Option[X]), (U, Option[Y])](
       LeftOuterShuffleRegionJoin[T, X](leftRddToJoin, rightRddToJoin)
         .compute(),
-      combinedSequences,
+      combinedReferences,
       GenericConverter[(T, Option[X]), (U, Option[Y])](kv => {
         // pad by -1 * flankSize to undo pad from preprocessing
         getReferenceRegions(kv._1).map(_.pad(-1 * flankSize)) ++
@@ -2331,13 +2331,13 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
     val (leftRddToJoin, rightRddToJoin) =
       prepareForShuffleRegionJoin(genomicDataset, optPartitions, flankSize)
 
-    // what sequences do we wind up with at the end?
-    val combinedSequences = sequences ++ genomicDataset.sequences
+    // what reference sequences do we wind up with at the end?
+    val combinedReferences = references ++ genomicDataset.references
 
     RDDBoundGenericGenomicDataset[(T, Iterable[X]), (U, Seq[Y])](
       LeftOuterShuffleRegionJoinAndGroupByLeft[T, X](leftRddToJoin, rightRddToJoin)
         .compute(),
-      combinedSequences,
+      combinedReferences,
       GenericConverter[(T, Iterable[X]), (U, Seq[Y])](kv => {
         // pad by -1 * flankSize to undo flank from preprocessing
         getReferenceRegions(kv._1).map(_.pad(-1 * flankSize)) ++
@@ -2491,13 +2491,13 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
     val (leftRddToJoin, rightRddToJoin) =
       prepareForShuffleRegionJoin(genomicDataset, optPartitions, flankSize)
 
-    // what sequences do we wind up with at the end?
-    val combinedSequences = sequences ++ genomicDataset.sequences
+    // what reference sequences do we wind up with at the end?
+    val combinedReferences = references ++ genomicDataset.references
 
     RDDBoundGenericGenomicDataset[(Option[T], Option[X]), (Option[U], Option[Y])](
       FullOuterShuffleRegionJoin[T, X](leftRddToJoin, rightRddToJoin)
         .compute(),
-      combinedSequences,
+      combinedReferences,
       GenericConverter[(Option[T], Option[X]), (Option[U], Option[Y])](kv => {
         // pad by -1 * flankSize to undo pad from preprocessing
         Seq(kv._1.map(v => getReferenceRegions(v).map(_.pad(-1 * flankSize))),
@@ -2648,13 +2648,13 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
     val (leftRddToJoin, rightRddToJoin) =
       prepareForShuffleRegionJoin(genomicDataset, optPartitions, flankSize)
 
-    // what sequences do we wind up with at the end?
-    val combinedSequences = sequences ++ genomicDataset.sequences
+    // what reference sequences do we wind up with at the end?
+    val combinedReferences = references ++ genomicDataset.references
 
     RDDBoundGenericGenomicDataset[(T, Iterable[X]), (U, Seq[Y])](
       InnerShuffleRegionJoinAndGroupByLeft[T, X](leftRddToJoin, rightRddToJoin)
         .compute(),
-      combinedSequences,
+      combinedReferences,
       GenericConverter[(T, Iterable[X]), (U, Seq[Y])](kv => {
         // pad by -1 * flankSize to undo pad from preprocessing
         getReferenceRegions(kv._1)
@@ -2816,13 +2816,13 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
     val (leftRddToJoin, rightRddToJoin) =
       prepareForShuffleRegionJoin(genomicDataset, optPartitions, flankSize)
 
-    // what sequences do we wind up with at the end?
-    val combinedSequences = sequences ++ genomicDataset.sequences
+    // what reference sequences do we wind up with at the end?
+    val combinedReferences = references ++ genomicDataset.references
 
     RDDBoundGenericGenomicDataset[(Option[T], Iterable[X]), (Option[U], Seq[Y])](
       RightOuterShuffleRegionJoinAndGroupByLeft[T, X](leftRddToJoin, rightRddToJoin)
         .compute(),
-      combinedSequences,
+      combinedReferences,
       GenericConverter[(Option[T], Iterable[X]), (Option[U], Seq[Y])](kv => {
         // pad by -1 * flankSize to undo pad from preprocessing
         kv._1.toSeq.flatMap(v => getReferenceRegions(v)
@@ -2957,7 +2957,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
           .map(p => {
             val (referenceName, indexedRegions) = p
 
-            val regions: Seq[(ReferenceRegion, Int)] = if (indexedRegions.size == 1) {
+            val regions: Seq[(ReferenceRegion, Int)] = if (indexedRegions.length == 1) {
               // if we only have a single partition for this reference, extend the
               // region to cover the whole reference sequence
               Seq((ReferenceRegion.all(indexedRegions.head._1.referenceName),
@@ -2981,15 +2981,15 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
             (referenceName, regions)
           })
 
-      // the above map does not contain sequences who exist in the sequence
+      // the above map does not contain reference sequences who exist in the sequence
       // dictionary but who are not seen in a record at the start/end of a
       // partition
       //
       // here, we loop over the sequence records, check if they are in the map,
       // and create a record if the sequence is not in the map
       var lastIdx = 0
-      val missingSequences: Map[String, Seq[(ReferenceRegion, Int)]] =
-        sequences.records
+      val missingReferences: Map[String, Seq[(ReferenceRegion, Int)]] =
+        references.records
           .sortBy(_.name)
           .flatMap(sr => {
             pMap.get(sr.name)
@@ -3002,7 +3002,7 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
                 })
           }).toMap
 
-      pMap ++ missingSequences
+      pMap ++ missingReferences
     }
 
     val finalPartitionedRDD = {
@@ -3140,7 +3140,7 @@ private[ds] case class TagHolder[T, U <: Product: TypeTag]()(
 
 case class DatasetBoundGenericGenomicDataset[T, U <: Product](
     dataset: Dataset[U],
-    sequences: SequenceDictionary,
+    references: SequenceDictionary,
     converter: GenericConverter[T, U],
     tagHolder: TagHolder[T, U]) extends GenericGenomicDataset[T, U] {
 
@@ -3154,9 +3154,9 @@ case class DatasetBoundGenericGenomicDataset[T, U <: Product](
     dataset.rdd.map(converter.unproductFn(_))
   }
 
-  def replaceSequences(
-    newSequences: SequenceDictionary): GenericGenomicDataset[T, U] = {
-    copy(sequences = newSequences)
+  def replaceReferences(
+    newReferences: SequenceDictionary): GenericGenomicDataset[T, U] = {
+    copy(references = newReferences)
   }
 
   // this cannot be in the GenericGenomicDataset trait due to need for the
@@ -3164,7 +3164,7 @@ case class DatasetBoundGenericGenomicDataset[T, U <: Product](
   def union(datasets: GenericGenomicDataset[T, U]*): GenericGenomicDataset[T, U] = {
     val iterableDatasets = datasets.toSeq
     RDDBoundGenericGenomicDataset(rdd.context.union(rdd, iterableDatasets.map(_.rdd): _*),
-      iterableDatasets.map(_.sequences).fold(sequences)(_ ++ _),
+      iterableDatasets.map(_.references).fold(references)(_ ++ _),
       converter,
       tagHolder)
   }
@@ -3176,7 +3176,7 @@ case class DatasetBoundGenericGenomicDataset[T, U <: Product](
     newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): GenericGenomicDataset[T, U] = {
 
     RDDBoundGenericGenomicDataset(newRdd,
-      sequences,
+      references,
       converter,
       tagHolder,
       optPartitionMap = newPartitionMap)
@@ -3186,14 +3186,14 @@ case class DatasetBoundGenericGenomicDataset[T, U <: Product](
   // implicit classtag
   override def transformDataset(tFn: Dataset[U] => Dataset[U]): GenericGenomicDataset[T, U] = {
     DatasetBoundGenericGenomicDataset(tFn(dataset),
-      sequences,
+      references,
       converter,
       tagHolder)
   }
 
   override def transformDataset(tFn: JFunction[Dataset[U], Dataset[U]]): GenericGenomicDataset[T, U] = {
     DatasetBoundGenericGenomicDataset(tFn.call(dataset),
-      sequences,
+      references,
       converter,
       tagHolder)
   }
@@ -3201,7 +3201,7 @@ case class DatasetBoundGenericGenomicDataset[T, U <: Product](
 
 case class RDDBoundGenericGenomicDataset[T, U <: Product](
     rdd: RDD[T],
-    sequences: SequenceDictionary,
+    references: SequenceDictionary,
     converter: GenericConverter[T, U],
     @transient tagHolder: TagHolder[T, U],
     optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None) extends GenericGenomicDataset[T, U] {
@@ -3220,9 +3220,9 @@ case class RDDBoundGenericGenomicDataset[T, U <: Product](
     spark.createDataset(productRdd)
   }
 
-  def replaceSequences(
-    newSequences: SequenceDictionary): GenericGenomicDataset[T, U] = {
-    copy(sequences = newSequences)
+  def replaceReferences(
+    newReferences: SequenceDictionary): GenericGenomicDataset[T, U] = {
+    copy(references = newReferences)
   }
 
   // this cannot be in the GenericGenomicDataset trait due to need for the
@@ -3230,7 +3230,7 @@ case class RDDBoundGenericGenomicDataset[T, U <: Product](
   def union(datasets: GenericGenomicDataset[T, U]*): GenericGenomicDataset[T, U] = {
     val iterableDatasets = datasets.toSeq
     RDDBoundGenericGenomicDataset(rdd.context.union(rdd, iterableDatasets.map(_.rdd): _*),
-      iterableDatasets.map(_.sequences).fold(sequences)(_ ++ _),
+      iterableDatasets.map(_.references).fold(references)(_ ++ _),
       converter,
       tagHolder)
   }
@@ -3242,7 +3242,7 @@ case class RDDBoundGenericGenomicDataset[T, U <: Product](
     newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): GenericGenomicDataset[T, U] = {
 
     RDDBoundGenericGenomicDataset(newRdd,
-      sequences,
+      references,
       converter,
       tagHolder,
       optPartitionMap = newPartitionMap)
@@ -3252,14 +3252,14 @@ case class RDDBoundGenericGenomicDataset[T, U <: Product](
   // implicit classtag
   override def transformDataset(tFn: Dataset[U] => Dataset[U]): GenericGenomicDataset[T, U] = {
     DatasetBoundGenericGenomicDataset(tFn(dataset),
-      sequences,
+      references,
       converter,
       tagHolder)
   }
 
   override def transformDataset(tFn: JFunction[Dataset[U], Dataset[U]]): GenericGenomicDataset[T, U] = {
     DatasetBoundGenericGenomicDataset(tFn.call(dataset),
-      sequences,
+      references,
       converter,
       tagHolder)
   }
@@ -3284,7 +3284,7 @@ trait MultisampleGenomicDataset[T, U <: Product, V <: MultisampleGenomicDataset[
   }
 
   override def toString = "%s with %d reference sequences and %d samples"
-    .format(getClass.getSimpleName, sequences.size, samples.size)
+    .format(getClass.getSimpleName, references.size, samples.size)
 
   /**
    * The samples who have data contained in this GenomicDataset.
@@ -3390,8 +3390,8 @@ trait GenomicDatasetWithLineage[T, U <: Product, V <: GenomicDatasetWithLineage[
   /**
    * Merges a new processing record with the extant computational lineage.
    *
-   * @param newProcessingStep
-   * @return Returns a new GenomicDataset with new read groups merged in.
+   * @param newProcessingStep The new processing step to attach to this genomic dataset.
+   * @return Returns a new GenomicDataset with new processing lineage attached.
    */
   def addProcessingStep(newProcessingStep: ProcessingStep): V = {
     replaceProcessingSteps(processingSteps :+ newProcessingStep)
@@ -3408,7 +3408,7 @@ abstract class AvroReadGroupGenomicDataset[T <% IndexedRecord: Manifest, U <: Pr
     with GenomicDatasetWithLineage[T, U, V] {
 
   override def toString = "%s with %d reference sequences, %d read groups, and %d processing steps"
-    .format(getClass.getSimpleName, sequences.size, readGroups.size, processingSteps.size)
+    .format(getClass.getSimpleName, references.size, readGroups.size, processingSteps.size)
 
   /**
    * A dictionary describing the read groups attached to this GenomicDataset.
@@ -3478,7 +3478,7 @@ abstract class AvroReadGroupGenomicDataset[T <% IndexedRecord: Manifest, U <: Pr
   override protected def saveMetadata(pathName: String): Unit = {
     savePartitionMap(pathName)
     saveProcessingSteps(pathName)
-    saveSequences(pathName)
+    saveReferences(pathName)
     saveReadGroups(pathName)
   }
 }
@@ -3749,7 +3749,7 @@ abstract class MultisampleAvroGenomicDataset[T <% IndexedRecord: Manifest, U <: 
 
   override protected def saveMetadata(pathName: String): Unit = {
     savePartitionMap(pathName)
-    saveSequences(pathName)
+    saveReferences(pathName)
     saveSamples(pathName)
   }
 }
@@ -3838,7 +3838,7 @@ abstract class AvroGenomicDataset[T <% IndexedRecord: Manifest, U <: Product, V 
       saveAvro("%s/_partitionMap.avro".format(pathName),
         rdd.context,
         schema,
-        sequences.toAvro)
+        references.toAvro)
     }
   }
 
@@ -3852,7 +3852,7 @@ abstract class AvroGenomicDataset[T <% IndexedRecord: Manifest, U <: Product, V 
    */
   override protected def saveMetadata(pathName: String): Unit = {
     savePartitionMap(pathName)
-    saveSequences(pathName)
+    saveReferences(pathName)
   }
 
   /**

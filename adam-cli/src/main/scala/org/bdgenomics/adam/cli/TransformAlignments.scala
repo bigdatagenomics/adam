@@ -595,7 +595,7 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
     }
 
     val rdd = aDs.rdd
-    val sd = aDs.sequences
+    val sd = aDs.references
     val rgd = aDs.readGroups
     val pgs = aDs.processingSteps
 
@@ -619,7 +619,7 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
 
     // if we have a second rdd that we are merging in, process the merger here
     val (mergedRdd, mergedSd, mergedRgd, mergedPgs) = concatOpt.fold((rdd, sd, rgd, pgs))(t => {
-      (rdd ++ t.rdd, sd ++ t.sequences, rgd ++ t.readGroups, pgs ++ t.processingSteps)
+      (rdd ++ t.rdd, sd ++ t.references, rgd ++ t.readGroups, pgs ++ t.processingSteps)
     })
 
     // make a new aligned read rdd, that merges the two RDDs together
@@ -637,7 +637,7 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
     }
 
     if (args.partitionByStartPos) {
-      if (outputDs.sequences.isEmpty) {
+      if (outputDs.references.isEmpty) {
         warn("This dataset is not aligned and therefore will not benefit from being saved as a partitioned dataset")
       }
       outputDs.saveAsPartitionedParquet(args.outputPath, partitionSize = args.partitionedBinSize)

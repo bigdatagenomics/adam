@@ -119,7 +119,7 @@ object SliceDataset {
 case class ParquetUnboundSliceDataset private[ds] (
     @transient private val sc: SparkContext,
     private val parquetFilename: String,
-    sequences: SequenceDictionary) extends SliceDataset {
+    references: SequenceDictionary) extends SliceDataset {
 
   lazy val rdd: RDD[Slice] = {
     sc.loadParquet(parquetFilename)
@@ -132,14 +132,14 @@ case class ParquetUnboundSliceDataset private[ds] (
     spark.read.parquet(parquetFilename).as[SliceProduct]
   }
 
-  def replaceSequences(newSequences: SequenceDictionary): SliceDataset = {
-    copy(sequences = newSequences)
+  def replaceReferences(newReferences: SequenceDictionary): SliceDataset = {
+    copy(references = newReferences)
   }
 }
 
 case class DatasetBoundSliceDataset private[ds] (
   dataset: Dataset[SliceProduct],
-  sequences: SequenceDictionary,
+  references: SequenceDictionary,
   override val isPartitioned: Boolean = true,
   override val optPartitionBinSize: Option[Int] = Some(1000000),
   override val optLookbackPartitions: Option[Int] = Some(1)) extends SliceDataset
@@ -172,14 +172,14 @@ case class DatasetBoundSliceDataset private[ds] (
     copy(dataset = tFn.call(dataset))
   }
 
-  def replaceSequences(newSequences: SequenceDictionary): SliceDataset = {
-    copy(sequences = newSequences)
+  def replaceReferences(newReferences: SequenceDictionary): SliceDataset = {
+    copy(references = newReferences)
   }
 }
 
 case class RDDBoundSliceDataset private[ds] (
     rdd: RDD[Slice],
-    sequences: SequenceDictionary,
+    references: SequenceDictionary,
     optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends SliceDataset {
 
   /**
@@ -190,8 +190,8 @@ case class RDDBoundSliceDataset private[ds] (
     spark.createDataset(rdd.map(SliceProduct.fromAvro))
   }
 
-  def replaceSequences(newSequences: SequenceDictionary): SliceDataset = {
-    copy(sequences = newSequences)
+  def replaceReferences(newReferences: SequenceDictionary): SliceDataset = {
+    copy(references = newReferences)
   }
 }
 
@@ -210,17 +210,17 @@ sealed abstract class SliceDataset extends AvroGenomicDataset[Slice, SliceProduc
   def union(datasets: SliceDataset*): SliceDataset = {
     val iterableDatasets = datasets.toSeq
     SliceDataset(rdd.context.union(rdd, iterableDatasets.map(_.rdd): _*),
-      iterableDatasets.map(_.sequences).fold(sequences)(_ ++ _))
+      iterableDatasets.map(_.references).fold(references)(_ ++ _))
   }
 
   override def transformDataset(
     tFn: Dataset[SliceProduct] => Dataset[SliceProduct]): SliceDataset = {
-    DatasetBoundSliceDataset(tFn(dataset), sequences)
+    DatasetBoundSliceDataset(tFn(dataset), references)
   }
 
   override def transformDataset(
     tFn: JFunction[Dataset[SliceProduct], Dataset[SliceProduct]]): SliceDataset = {
-    DatasetBoundSliceDataset(tFn.call(dataset), sequences)
+    DatasetBoundSliceDataset(tFn.call(dataset), references)
   }
 
   /**
@@ -274,7 +274,7 @@ sealed abstract class SliceDataset extends AvroGenomicDataset[Slice, SliceProduc
         .setAttributes(slice.getAttributes)
         .build()
     }
-    ReadDataset(rdd.map(toRead), sequences)
+    ReadDataset(rdd.map(toRead), references)
   }
 
   /**
@@ -293,7 +293,7 @@ sealed abstract class SliceDataset extends AvroGenomicDataset[Slice, SliceProduc
         .setAttributes(slice.getAttributes)
         .build()
     }
-    SequenceDataset(rdd.map(toSequence), sequences)
+    SequenceDataset(rdd.map(toSequence), references)
   }
 
   /**
@@ -313,7 +313,7 @@ sealed abstract class SliceDataset extends AvroGenomicDataset[Slice, SliceProduc
       .collect
       .toVector)
 
-    replaceSequences(sd)
+    replaceReferences(sd)
   }
 
   /**
@@ -499,7 +499,7 @@ sealed abstract class SliceDataset extends AvroGenomicDataset[Slice, SliceProduc
    */
   def flankAdjacent(flankLength: Int): SliceDataset = {
     replaceRdd(FlankSlices(rdd,
-      sequences,
+      references,
       flankLength))
   }
 
@@ -539,7 +539,7 @@ sealed abstract class SliceDataset extends AvroGenomicDataset[Slice, SliceProduc
    */
   protected def replaceRdd(newRdd: RDD[Slice],
                            newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): SliceDataset = {
-    RDDBoundSliceDataset(newRdd, sequences, newPartitionMap)
+    RDDBoundSliceDataset(newRdd, references, newPartitionMap)
   }
 
   /**

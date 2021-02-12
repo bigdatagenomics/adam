@@ -73,7 +73,7 @@ class TwoBitFile(byteAccess: ByteAccess) extends ReferenceFile {
   /**
    * The sequence dictionary corresponding to the reference sequences in this two bit file.
    */
-  val sequences = new SequenceDictionary(seqRecords.toVector
+  val references = new SequenceDictionary(seqRecords.toVector
     .map(r => SequenceRecord(r._1,
       r._2.dnaSize,
       index = Some(r._2.seqIdx))))

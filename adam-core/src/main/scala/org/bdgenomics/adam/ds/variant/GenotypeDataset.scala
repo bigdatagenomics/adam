@@ -170,7 +170,7 @@ object GenotypeDataset extends Serializable {
 case class ParquetUnboundGenotypeDataset private[ds] (
     @transient private val sc: SparkContext,
     private val parquetFilename: String,
-    sequences: SequenceDictionary,
+    references: SequenceDictionary,
     @transient samples: Seq[Sample],
     @transient headerLines: Seq[VCFHeaderLine]) extends GenotypeDataset {
 
@@ -185,9 +185,9 @@ case class ParquetUnboundGenotypeDataset private[ds] (
     spark.read.parquet(parquetFilename).as[GenotypeProduct]
   }
 
-  def replaceSequences(
-    newSequences: SequenceDictionary): GenotypeDataset = {
-    copy(sequences = newSequences)
+  def replaceReferences(
+    newReferences: SequenceDictionary): GenotypeDataset = {
+    copy(references = newReferences)
   }
 
   def replaceHeaderLines(newHeaderLines: Seq[VCFHeaderLine]): GenotypeDataset = {
@@ -201,7 +201,7 @@ case class ParquetUnboundGenotypeDataset private[ds] (
 
 case class DatasetBoundGenotypeDataset private[ds] (
   dataset: Dataset[GenotypeProduct],
-  sequences: SequenceDictionary,
+  references: SequenceDictionary,
   @transient samples: Seq[Sample],
   @transient headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines,
   override val isPartitioned: Boolean = true,
@@ -237,9 +237,9 @@ case class DatasetBoundGenotypeDataset private[ds] (
     copy(dataset = tFn.call(dataset))
   }
 
-  def replaceSequences(
-    newSequences: SequenceDictionary): GenotypeDataset = {
-    copy(sequences = newSequences)
+  def replaceReferences(
+    newReferences: SequenceDictionary): GenotypeDataset = {
+    copy(references = newReferences)
   }
 
   def replaceHeaderLines(newHeaderLines: Seq[VCFHeaderLine]): GenotypeDataset = {
@@ -302,7 +302,7 @@ case class DatasetBoundGenotypeDataset private[ds] (
 
 case class RDDBoundGenotypeDataset private[ds] (
     rdd: RDD[Genotype],
-    sequences: SequenceDictionary,
+    references: SequenceDictionary,
     @transient samples: Seq[Sample],
     @transient headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines,
     optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None) extends GenotypeDataset {
@@ -315,9 +315,9 @@ case class RDDBoundGenotypeDataset private[ds] (
     spark.createDataset(rdd.map(GenotypeProduct.fromAvro))
   }
 
-  def replaceSequences(
-    newSequences: SequenceDictionary): GenotypeDataset = {
-    copy(sequences = newSequences)
+  def replaceReferences(
+    newReferences: SequenceDictionary): GenotypeDataset = {
+    copy(references = newReferences)
   }
 
   def replaceHeaderLines(newHeaderLines: Seq[VCFHeaderLine]): GenotypeDataset = {
@@ -352,7 +352,7 @@ sealed abstract class GenotypeDataset extends MultisampleAvroGenomicDataset[Geno
 
   override protected def saveMetadata(filePath: String): Unit = {
     savePartitionMap(filePath)
-    saveSequences(filePath)
+    saveReferences(filePath)
     saveSamples(filePath)
     saveVcfHeaders(filePath)
   }
@@ -360,7 +360,7 @@ sealed abstract class GenotypeDataset extends MultisampleAvroGenomicDataset[Geno
   def union(datasets: GenotypeDataset*): GenotypeDataset = {
     val iterableDatasets = datasets.toSeq
     GenotypeDataset(rdd.context.union(rdd, iterableDatasets.map(_.rdd): _*),
-      iterableDatasets.map(_.sequences).fold(sequences)(_ ++ _),
+      iterableDatasets.map(_.references).fold(references)(_ ++ _),
       (samples ++ iterableDatasets.flatMap(_.samples)).distinct,
       (headerLines ++ iterableDatasets.flatMap(_.headerLines)).distinct)
   }
@@ -372,12 +372,12 @@ sealed abstract class GenotypeDataset extends MultisampleAvroGenomicDataset[Geno
 
   override def transformDataset(
     tFn: Dataset[GenotypeProduct] => Dataset[GenotypeProduct]): GenotypeDataset = {
-    DatasetBoundGenotypeDataset(tFn(dataset), sequences, samples, headerLines)
+    DatasetBoundGenotypeDataset(tFn(dataset), references, samples, headerLines)
   }
 
   override def transformDataset(
     tFn: JFunction[Dataset[GenotypeProduct], Dataset[GenotypeProduct]]): GenotypeDataset = {
-    DatasetBoundGenotypeDataset(tFn.call(dataset), sequences, samples, headerLines)
+    DatasetBoundGenotypeDataset(tFn.call(dataset), references, samples, headerLines)
   }
 
   /**
@@ -394,7 +394,7 @@ sealed abstract class GenotypeDataset extends MultisampleAvroGenomicDataset[Geno
         }
       }
 
-    VariantContextDataset(vcRdd, sequences, samples, headerLines)
+    VariantContextDataset(vcRdd, references, samples, headerLines)
   }
 
   /**
@@ -438,7 +438,7 @@ sealed abstract class GenotypeDataset extends MultisampleAvroGenomicDataset[Geno
       notDedupedVariants
     }
 
-    VariantDataset(maybeDedupedVariants, sequences, headerLines)
+    VariantDataset(maybeDedupedVariants, references, headerLines)
   }
 
   /**
@@ -526,7 +526,7 @@ sealed abstract class GenotypeDataset extends MultisampleAvroGenomicDataset[Geno
    * return GenotypeDataset filtered by sample.
    */
   def filterToSample(sampleId: String): GenotypeDataset = {
-    transform((rdd: RDD[Genotype]) => rdd.filter(g => Option(g.getSampleId).exists(_ == sampleId)))
+    transform((rdd: RDD[Genotype]) => rdd.filter(g => Option(g.getSampleId).contains(sampleId)))
   }
 
   /**
@@ -564,7 +564,7 @@ sealed abstract class GenotypeDataset extends MultisampleAvroGenomicDataset[Geno
    */
   protected def replaceRdd(newRdd: RDD[Genotype],
                            newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): GenotypeDataset = {
-    RDDBoundGenotypeDataset(newRdd, sequences, samples, headerLines, newPartitionMap)
+    RDDBoundGenotypeDataset(newRdd, references, samples, headerLines, newPartitionMap)
   }
 
   /**

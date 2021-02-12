@@ -122,9 +122,9 @@ class CoverageDatasetSuite extends ADAMFunSuite {
 
   sparkTest("correctly saves coverage") {
     def testMetadata(cRdd: CoverageDataset) {
-      val sequenceRdd = cRdd.addSequence(SequenceRecord("aSequence", 1000L))
+      val sequenceRdd = cRdd.addReference(SequenceRecord("aSequence", 1000L))
       val sampleRdd = cRdd.addSample(Sample.newBuilder().setName("Sample").build())
-      assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
+      assert(sequenceRdd.references.containsReferenceName("aSequence"))
       assert(sampleRdd.samples.map(r => r.getName).contains("Sample"))
     }
 
@@ -491,41 +491,41 @@ class CoverageDatasetSuite extends ADAMFunSuite {
   sparkTest("copy coverage rdd") {
     val sd = sc.loadSequenceDictionary(testFile("hg19.genome"))
     val coverage = sc.loadCoverage(testFile("sample_coverage.bed"), optSequenceDictionary = Some(sd))
-    assert(coverage.sequences.containsReferenceName("chr1"))
+    assert(coverage.references.containsReferenceName("chr1"))
 
-    val copy = CoverageDataset.apply(coverage.rdd, coverage.sequences, Seq.empty)
+    val copy = CoverageDataset.apply(coverage.rdd, coverage.references, Seq.empty)
     assert(copy.rdd.count() === coverage.rdd.count())
-    assert(copy.sequences.containsReferenceName("chr1"))
+    assert(copy.references.containsReferenceName("chr1"))
   }
 
   sparkTest("copy coverage dataset") {
     val sd = sc.loadSequenceDictionary(testFile("hg19.genome"))
     val coverage = sc.loadCoverage(testFile("sample_coverage.bed"), optSequenceDictionary = Some(sd))
-    assert(coverage.sequences.containsReferenceName("chr1"))
+    assert(coverage.references.containsReferenceName("chr1"))
 
-    val copy = CoverageDataset.apply(coverage.dataset, coverage.sequences, coverage.samples)
+    val copy = CoverageDataset.apply(coverage.dataset, coverage.references, coverage.samples)
     assert(copy.dataset.count() === coverage.dataset.count())
-    assert(copy.sequences.containsReferenceName("chr1"))
+    assert(copy.references.containsReferenceName("chr1"))
   }
 
   sparkTest("copy coverage rdd without sequence dictionary") {
     val sd = sc.loadSequenceDictionary(testFile("hg19.genome"))
     val coverage = sc.loadCoverage(testFile("sample_coverage.bed"), optSequenceDictionary = Some(sd))
-    assert(coverage.sequences.containsReferenceName("chr1"))
+    assert(coverage.references.containsReferenceName("chr1"))
 
     val copy = CoverageDataset.apply(coverage.rdd)
     assert(copy.rdd.count() === coverage.rdd.count())
-    assert(copy.sequences.containsReferenceName("chr1") === false)
+    assert(copy.references.containsReferenceName("chr1") === false)
   }
 
   sparkTest("copy coverage dataset without sequence dictionary") {
     val sd = sc.loadSequenceDictionary(testFile("hg19.genome"))
     val coverage = sc.loadCoverage(testFile("sample_coverage.bed"), optSequenceDictionary = Some(sd))
-    assert(coverage.sequences.containsReferenceName("chr1"))
+    assert(coverage.references.containsReferenceName("chr1"))
 
     val copy = CoverageDataset.apply(coverage.dataset)
     assert(copy.dataset.count() === coverage.dataset.count())
-    assert(copy.sequences.containsReferenceName("chr1") == false)
+    assert(copy.references.containsReferenceName("chr1") == false)
   }
 
   sparkTest("transform dataset via java API") {

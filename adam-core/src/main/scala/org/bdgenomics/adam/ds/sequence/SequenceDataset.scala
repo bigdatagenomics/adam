@@ -24,24 +24,14 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Dataset
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.ds.read.ReadDataset
-import org.bdgenomics.adam.ds.{
-  DatasetBoundGenomicDataset,
-  AvroGenomicDataset,
-  JavaSaveArgs
-}
+import org.bdgenomics.adam.ds.{ AvroGenomicDataset, DatasetBoundGenomicDataset, JavaSaveArgs }
 import org.bdgenomics.adam.ds.ADAMContext._
 import org.bdgenomics.adam.serialization.AvroSerializer
 import org.bdgenomics.adam.sql.{ Sequence => SequenceProduct }
-import org.bdgenomics.formats.avro.{
-  Read,
-  Sequence,
-  Slice,
-  Strand
-}
-import org.bdgenomics.utils.interval.array.{
-  IntervalArray,
-  IntervalArraySerializer
-}
+import org.bdgenomics.formats.avro.{ Read, Sequence, Slice, Strand }
+import org.bdgenomics.utils.interval.array.{ IntervalArray, IntervalArraySerializer }
+
+import scala.collection.mutable
 import scala.collection.mutable.MutableList
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
@@ -124,7 +114,7 @@ object SequenceDataset {
 case class ParquetUnboundSequenceDataset private[ds] (
     @transient private val sc: SparkContext,
     private val parquetFilename: String,
-    sequences: SequenceDictionary) extends SequenceDataset {
+    references: SequenceDictionary) extends SequenceDataset {
 
   lazy val rdd: RDD[Sequence] = {
     sc.loadParquet(parquetFilename)
@@ -137,14 +127,14 @@ case class ParquetUnboundSequenceDataset private[ds] (
     spark.read.parquet(parquetFilename).as[SequenceProduct]
   }
 
-  def replaceSequences(newSequences: SequenceDictionary): SequenceDataset = {
-    copy(sequences = newSequences)
+  def replaceReferences(newReferences: SequenceDictionary): SequenceDataset = {
+    copy(references = newReferences)
   }
 }
 
 case class DatasetBoundSequenceDataset private[ds] (
   dataset: Dataset[SequenceProduct],
-  sequences: SequenceDictionary,
+  references: SequenceDictionary,
   override val isPartitioned: Boolean = true,
   override val optPartitionBinSize: Option[Int] = Some(1000000),
   override val optLookbackPartitions: Option[Int] = Some(1)) extends SequenceDataset
@@ -177,14 +167,14 @@ case class DatasetBoundSequenceDataset private[ds] (
     copy(dataset = tFn.call(dataset))
   }
 
-  def replaceSequences(newSequences: SequenceDictionary): SequenceDataset = {
-    copy(sequences = newSequences)
+  def replaceReferences(newReferences: SequenceDictionary): SequenceDataset = {
+    copy(references = newReferences)
   }
 }
 
 case class RDDBoundSequenceDataset private[ds] (
     rdd: RDD[Sequence],
-    sequences: SequenceDictionary,
+    references: SequenceDictionary,
     optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends SequenceDataset {
 
   /**
@@ -195,8 +185,8 @@ case class RDDBoundSequenceDataset private[ds] (
     spark.createDataset(rdd.map(SequenceProduct.fromAvro))
   }
 
-  def replaceSequences(newSequences: SequenceDictionary): SequenceDataset = {
-    copy(sequences = newSequences)
+  def replaceReferences(newReferences: SequenceDictionary): SequenceDataset = {
+    copy(references = newReferences)
   }
 }
 
@@ -215,17 +205,17 @@ sealed abstract class SequenceDataset extends AvroGenomicDataset[Sequence, Seque
   def union(datasets: SequenceDataset*): SequenceDataset = {
     val iterableDatasets = datasets.toSeq
     SequenceDataset(rdd.context.union(rdd, iterableDatasets.map(_.rdd): _*),
-      iterableDatasets.map(_.sequences).fold(sequences)(_ ++ _))
+      iterableDatasets.map(_.references).fold(references)(_ ++ _))
   }
 
   override def transformDataset(
     tFn: Dataset[SequenceProduct] => Dataset[SequenceProduct]): SequenceDataset = {
-    DatasetBoundSequenceDataset(tFn(dataset), sequences)
+    DatasetBoundSequenceDataset(tFn(dataset), references)
   }
 
   override def transformDataset(
     tFn: JFunction[Dataset[SequenceProduct], Dataset[SequenceProduct]]): SequenceDataset = {
-    DatasetBoundSequenceDataset(tFn.call(dataset), sequences)
+    DatasetBoundSequenceDataset(tFn.call(dataset), references)
   }
 
   /**
@@ -237,7 +227,7 @@ sealed abstract class SequenceDataset extends AvroGenomicDataset[Sequence, Seque
    */
   def slice(maximumLength: Long): SliceDataset = {
     def sliceSequence(sequence: Sequence): Seq[Slice] = {
-      val slices: MutableList[Slice] = MutableList()
+      val slices: mutable.MutableList[Slice] = mutable.MutableList()
 
       val sb = Slice.newBuilder
         .setName(sequence.getName)
@@ -265,7 +255,7 @@ sealed abstract class SequenceDataset extends AvroGenomicDataset[Sequence, Seque
       }
       slices
     }
-    SliceDataset(rdd.flatMap(sliceSequence), sequences)
+    SliceDataset(rdd.flatMap(sliceSequence), references)
   }
 
   /**
@@ -347,7 +337,7 @@ sealed abstract class SequenceDataset extends AvroGenomicDataset[Sequence, Seque
         .setAttributes(sequence.getAttributes)
         .build()
     }
-    ReadDataset(rdd.map(toRead), sequences)
+    ReadDataset(rdd.map(toRead), references)
   }
 
   /**
@@ -370,7 +360,7 @@ sealed abstract class SequenceDataset extends AvroGenomicDataset[Sequence, Seque
         .setAttributes(sequence.getAttributes)
         .build()
     }
-    SliceDataset(rdd.map(toSlice), sequences)
+    SliceDataset(rdd.map(toSlice), references)
   }
 
   /**
@@ -390,7 +380,7 @@ sealed abstract class SequenceDataset extends AvroGenomicDataset[Sequence, Seque
       .collect
       .toVector)
 
-    replaceSequences(sd)
+    replaceReferences(sd)
   }
 
   /**
@@ -457,7 +447,7 @@ sealed abstract class SequenceDataset extends AvroGenomicDataset[Sequence, Seque
    */
   protected def replaceRdd(newRdd: RDD[Sequence],
                            newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): SequenceDataset = {
-    RDDBoundSequenceDataset(newRdd, sequences, newPartitionMap)
+    RDDBoundSequenceDataset(newRdd, references, newPartitionMap)
   }
 
   /**

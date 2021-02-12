@@ -20,7 +20,7 @@ package org.bdgenomics.adam.models
 import htsjdk.samtools.{ SAMFileHeader, SAMSequenceDictionary, SAMSequenceRecord }
 import htsjdk.variant.vcf.VCFHeader
 import org.bdgenomics.formats.avro.{ Reference, Sequence, Slice }
-import scala.collection.JavaConversions.{ asScalaIterator, seqAsJavaList }
+import scala.collection.JavaConversions.asScalaIterator
 import scala.collection.JavaConverters._
 import scala.collection._
 
@@ -65,7 +65,7 @@ object SequenceDictionary {
   /**
    * Creates a sequence dictionary from a sequence of Avro References.
    *
-   * @param contigs Seq of Reference records.
+   * @param references Seq of Reference records.
    * @return Returns a sequence dictionary.
    */
   def fromAvro(references: Seq[Reference]): SequenceDictionary = {
@@ -323,7 +323,7 @@ case class SequenceRecord(
     species: Option[String],
     index: Option[Int]) extends Serializable {
 
-  assert(name != null && !name.isEmpty, "SequenceRecord.name is null or empty")
+  assert(name != null && name.nonEmpty, "SequenceRecord.name is null or empty")
   assert(length > 0, "SequenceRecord.length <= 0")
 
   /**
@@ -399,7 +399,7 @@ case class SequenceRecord(
     md5.foreach(builder.setMd5)
     url.foreach(builder.setSourceUri)
     val sourceAccessions = refseq ++ genbank
-    if (!sourceAccessions.isEmpty) {
+    if (sourceAccessions.nonEmpty) {
       builder.setSourceAccessions(sourceAccessions.toList.asJava)
     }
     species.foreach(builder.setSpecies)
@@ -478,10 +478,10 @@ object SequenceRecord {
   }
 
   /**
-   * Builds a sequence record from an Avro Contig.
+   * Builds a sequence record from an Avro Reference.
    *
-   * @param contig Contig record to build from.
-   * @return This Contig record as a SequenceRecord.
+   * @param reference Reference record to build from.
+   * @return This Reference record as a SequenceRecord.
    */
   def fromADAMReference(reference: Reference): SequenceRecord = {
     SequenceRecord(

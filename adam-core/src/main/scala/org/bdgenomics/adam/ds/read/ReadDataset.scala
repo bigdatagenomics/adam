@@ -115,7 +115,7 @@ object ReadDataset {
 case class ParquetUnboundReadDataset private[ds] (
     @transient private val sc: SparkContext,
     private val parquetFilename: String,
-    sequences: SequenceDictionary) extends ReadDataset {
+    references: SequenceDictionary) extends ReadDataset {
 
   lazy val rdd: RDD[Read] = {
     sc.loadParquet(parquetFilename)
@@ -128,14 +128,14 @@ case class ParquetUnboundReadDataset private[ds] (
     spark.read.parquet(parquetFilename).as[ReadProduct]
   }
 
-  def replaceSequences(newSequences: SequenceDictionary): ReadDataset = {
-    copy(sequences = newSequences)
+  def replaceReferences(newReferences: SequenceDictionary): ReadDataset = {
+    copy(references = newReferences)
   }
 }
 
 case class DatasetBoundReadDataset private[ds] (
   dataset: Dataset[ReadProduct],
-  sequences: SequenceDictionary,
+  references: SequenceDictionary,
   override val isPartitioned: Boolean = true,
   override val optPartitionBinSize: Option[Int] = Some(1000000),
   override val optLookbackPartitions: Option[Int] = Some(1)) extends ReadDataset
@@ -168,14 +168,14 @@ case class DatasetBoundReadDataset private[ds] (
     copy(dataset = tFn.call(dataset))
   }
 
-  def replaceSequences(newSequences: SequenceDictionary): ReadDataset = {
-    copy(sequences = newSequences)
+  def replaceReferences(newReferences: SequenceDictionary): ReadDataset = {
+    copy(references = newReferences)
   }
 }
 
 case class RDDBoundReadDataset private[ds] (
     rdd: RDD[Read],
-    sequences: SequenceDictionary,
+    references: SequenceDictionary,
     optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends ReadDataset {
 
   /**
@@ -186,8 +186,8 @@ case class RDDBoundReadDataset private[ds] (
     spark.createDataset(rdd.map(ReadProduct.fromAvro))
   }
 
-  def replaceSequences(newSequences: SequenceDictionary): ReadDataset = {
-    copy(sequences = newSequences)
+  def replaceReferences(newReferences: SequenceDictionary): ReadDataset = {
+    copy(references = newReferences)
   }
 }
 
@@ -206,17 +206,17 @@ sealed abstract class ReadDataset extends AvroGenomicDataset[Read, ReadProduct, 
   def union(datasets: ReadDataset*): ReadDataset = {
     val iterableDatasets = datasets.toSeq
     ReadDataset(rdd.context.union(rdd, iterableDatasets.map(_.rdd): _*),
-      iterableDatasets.map(_.sequences).fold(sequences)(_ ++ _))
+      iterableDatasets.map(_.references).fold(references)(_ ++ _))
   }
 
   override def transformDataset(
     tFn: Dataset[ReadProduct] => Dataset[ReadProduct]): ReadDataset = {
-    DatasetBoundReadDataset(tFn(dataset), sequences)
+    DatasetBoundReadDataset(tFn(dataset), references)
   }
 
   override def transformDataset(
     tFn: JFunction[Dataset[ReadProduct], Dataset[ReadProduct]]): ReadDataset = {
-    DatasetBoundReadDataset(tFn.call(dataset), sequences)
+    DatasetBoundReadDataset(tFn.call(dataset), references)
   }
 
   /**
@@ -233,7 +233,7 @@ sealed abstract class ReadDataset extends AvroGenomicDataset[Read, ReadProduct, 
         .build()
     }
     AlignmentDataset(rdd.map(toAlignment),
-      sequences,
+      references,
       ReadGroupDictionary.empty,
       processingSteps = Seq.empty)
   }
@@ -254,7 +254,7 @@ sealed abstract class ReadDataset extends AvroGenomicDataset[Read, ReadProduct, 
         .setAttributes(read.getAttributes)
         .build()
     }
-    SequenceDataset(rdd.map(toSequence), sequences)
+    SequenceDataset(rdd.map(toSequence), references)
   }
 
   /**
@@ -277,7 +277,7 @@ sealed abstract class ReadDataset extends AvroGenomicDataset[Read, ReadProduct, 
         .setAttributes(read.getAttributes)
         .build()
     }
-    SliceDataset(rdd.map(toSlice), sequences)
+    SliceDataset(rdd.map(toSlice), references)
   }
 
   /**
@@ -338,7 +338,7 @@ sealed abstract class ReadDataset extends AvroGenomicDataset[Read, ReadProduct, 
    */
   protected def replaceRdd(newRdd: RDD[Read],
                            newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): ReadDataset = {
-    RDDBoundReadDataset(newRdd, sequences, newPartitionMap)
+    RDDBoundReadDataset(newRdd, references, newPartitionMap)
   }
 
   /**

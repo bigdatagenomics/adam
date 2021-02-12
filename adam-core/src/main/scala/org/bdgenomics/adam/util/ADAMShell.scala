@@ -17,22 +17,18 @@
  */
 package org.bdgenomics.adam.util
 
-import java.io.{ StringWriter, PrintWriter }
 import htsjdk.variant.vcf.{
   VCFFormatHeaderLine,
   VCFInfoHeaderLine,
   VCFFilterHeaderLine,
   VCFHeaderLine
 }
-import org.apache.spark.SparkContext
-import org.bdgenomics.adam.models.VariantContext
 import org.bdgenomics.adam.ds.feature.FeatureDataset
 import org.bdgenomics.adam.ds.read.{ AlignmentDataset, ReadDataset }
 import org.bdgenomics.adam.ds.sequence.{ SequenceDataset, SliceDataset }
 import org.bdgenomics.adam.ds.variant.{
   GenotypeDataset,
-  VariantDataset,
-  VariantContextDataset
+  VariantDataset
 }
 import org.bdgenomics.formats.avro.{
   Alignment,

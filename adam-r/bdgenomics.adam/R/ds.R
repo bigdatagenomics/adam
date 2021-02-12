@@ -269,7 +269,7 @@ setMethod("pipe",
 #'
 #' @param ardd The genomic dataset to apply this to.
 #' @return A new genomic dataset where the genomic dataset of genomic data has been replaced, but the
-#'    metadata (sequence dictionary, and etc) is copied without modification.
+#'    metadata (reference sequence dictionary, and etc) is copied without modification.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
@@ -285,7 +285,7 @@ setMethod("cache",
 #' @param ardd The genomic dataset to apply this to.
 #' @param sl the StorageLevel to persist in.
 #' @return A new genomic dataset where the genomic dataset of genomic data has been replaced, but the
-#'    metadata (sequence dictionary, and etc) is copied without modification.
+#'    metadata (reference sequence dictionary, and etc) is copied without modification.
 #'
 #' @importFrom SparkR sparkR.callJMethod sparkR.callJStatic
 #'
@@ -302,7 +302,7 @@ setMethod("persist",
 #'
 #' @param ardd The genomic dataset to apply this to.
 #' @return A new genomic dataset where the genomic dataset of genomic data has been replaced, but the
-#'    metadata (sequence dictionary, and etc) is copied without modification.
+#'    metadata (reference sequence dictionary, and etc) is copied without modification.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
@@ -378,7 +378,7 @@ setMethod("wrapTransformation",
 #' @param ardd The genomic dataset to apply this to.
 #' @param tFn A function that transforms the underlying DataFrame as a DataFrame.
 #' @return A new genomic dataset where the DataFrame of genomic data has been replaced, but the
-#'    metadata (sequence dictionary, and etc) is copied without modification.
+#'    metadata (reference sequence dictionary, and etc) is copied without modification.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
@@ -435,7 +435,7 @@ setMethod("destClassSuffix",
 #' @param destClass The destination class of this transmutation.
 #' @param convFn The name of the ADAM GenomicDatasetConversion class to use.
 #' @return A new genomic dataset where the genomic dataset of genomic data has been replaced, but the
-#'   metadata (sequence dictionary, and etc) is copied without modification.
+#'   metadata (reference sequence dictionary, and etc) is copied without modification.
 #'
 #' @importFrom SparkR sparkR.callJMethod sparkR.callJStatic
 #'
@@ -947,7 +947,7 @@ setMethod("sortByReferencePosition",
 #'
 #' Sorts alignments by the location where reads are aligned. Unaligned reads are
 #' put at the end and sorted by read name. References are ordered by index that
-#' they are ordered in the sequence metadata.
+#' they are ordered in the reference sequence metadata.
 #'
 #' @param ardd The genomic dataset to apply this to.
 #' @return A new, sorted AlignmentDataset.

@@ -192,7 +192,7 @@ fall into several general categories:
    -  ``-sort_by_reference_position_and_index``: Sorts alignments by the
       location where the reads are aligned. Unaligned reads are put at the
       end and sorted by read name. References are ordered by index that they
-      are ordered in the SequenceDictionary.
+      are ordered in the reference SequenceDictionary.
    -  ``-sort_fastq_output``: Ignored if not saving to FASTQ. If saving
       to FASTQ, sorts the output reads by read name.
 

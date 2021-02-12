@@ -701,7 +701,7 @@ class FeatureDatasetSuite extends ADAMFunSuite {
 
   def sd = {
     sc.loadBam(testFile("small.1.sam"))
-      .sequences
+      .references
   }
 
   sparkTest("use shuffle join to pull down features mapped to targets") {
@@ -710,7 +710,7 @@ class FeatureDatasetSuite extends ADAMFunSuite {
 
     val features = sc.loadFeatures(featuresPath)
       .transform((rdd: RDD[Feature]) => rdd.repartition(1))
-      .replaceSequences(sd)
+      .replaceReferences(sd)
     val targets = sc.loadFeatures(targetsPath)
       .transform((rdd: RDD[Feature]) => rdd.repartition(1))
 
@@ -740,7 +740,7 @@ class FeatureDatasetSuite extends ADAMFunSuite {
 
     val features = sc.loadFeatures(featuresPath)
       .transform((rdd: RDD[Feature]) => rdd.repartition(1))
-      .replaceSequences(sd)
+      .replaceReferences(sd)
     val targets = sc.loadFeatures(targetsPath)
       .transform((rdd: RDD[Feature]) => rdd.repartition(1))
 
@@ -766,7 +766,7 @@ class FeatureDatasetSuite extends ADAMFunSuite {
 
     val features = sc.loadFeatures(featuresPath)
       .transform((rdd: RDD[Feature]) => rdd.repartition(1))
-      .replaceSequences(sd)
+      .replaceReferences(sd)
     val targets = sc.loadFeatures(targetsPath)
       .transform((rdd: RDD[Feature]) => rdd.repartition(1))
 
@@ -792,7 +792,7 @@ class FeatureDatasetSuite extends ADAMFunSuite {
 
     val features = sc.loadFeatures(featuresPath)
       .transform((rdd: RDD[Feature]) => rdd.repartition(1))
-      .replaceSequences(sd)
+      .replaceReferences(sd)
     val targets = sc.loadFeatures(targetsPath)
       .transform((rdd: RDD[Feature]) => rdd.repartition(1))
 
@@ -822,7 +822,7 @@ class FeatureDatasetSuite extends ADAMFunSuite {
 
     val features = sc.loadFeatures(featuresPath)
       .transform((rdd: RDD[Feature]) => rdd.repartition(1))
-      .replaceSequences(sd)
+      .replaceReferences(sd)
     val targets = sc.loadFeatures(targetsPath)
       .transform((rdd: RDD[Feature]) => rdd.repartition(1))
 
@@ -848,7 +848,7 @@ class FeatureDatasetSuite extends ADAMFunSuite {
 
     val features = sc.loadFeatures(featuresPath)
       .transform((rdd: RDD[Feature]) => rdd.repartition(1))
-      .replaceSequences(sd)
+      .replaceReferences(sd)
     val targets = sc.loadFeatures(targetsPath)
       .transform((rdd: RDD[Feature]) => rdd.repartition(1))
 
@@ -889,13 +889,13 @@ class FeatureDatasetSuite extends ADAMFunSuite {
 @SQ	SN:chr1	LN:249250621
 @SQ	SN:chr2	LN:243199373
      */
-    assert(features.sequences.containsReferenceName("chr1"))
-    assert(features.sequences.apply("chr1").isDefined)
-    assert(features.sequences.apply("chr1").get.length >= 249250621L)
+    assert(features.references.containsReferenceName("chr1"))
+    assert(features.references.apply("chr1").isDefined)
+    assert(features.references.apply("chr1").get.length >= 249250621L)
 
-    assert(features.sequences.containsReferenceName("chr2"))
-    assert(features.sequences.apply("chr2").isDefined)
-    assert(features.sequences.apply("chr2").get.length >= 243199373L)
+    assert(features.references.containsReferenceName("chr2"))
+    assert(features.references.apply("chr2").isDefined)
+    assert(features.references.apply("chr2").get.length >= 243199373L)
   }
 
   sparkTest("don't lose any features when piping as BED format") {
@@ -952,9 +952,9 @@ class FeatureDatasetSuite extends ADAMFunSuite {
 
   sparkTest("load parquet to sql, save, re-read from avro") {
     def testMetadata(fRdd: FeatureDataset) {
-      val sequenceRdd = fRdd.addSequence(SequenceRecord("aSequence", 1000L))
+      val sequenceRdd = fRdd.addReference(SequenceRecord("aSequence", 1000L))
       val sampleRdd = fRdd.addSample(Sample.newBuilder().setName("Sample").build())
-      assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
+      assert(sequenceRdd.references.containsReferenceName("aSequence"))
       assert(sampleRdd.samples.map(r => r.getName).contains("Sample"))
     }
 
@@ -981,8 +981,8 @@ class FeatureDatasetSuite extends ADAMFunSuite {
 
   sparkTest("load partitioned parquet to sql, save, re-read from avro") {
     def testMetadata(fRdd: FeatureDataset) {
-      val sequenceRdd = fRdd.addSequence(SequenceRecord("aSequence", 1000L))
-      assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
+      val sequenceRdd = fRdd.addReference(SequenceRecord("aSequence", 1000L))
+      assert(sequenceRdd.references.containsReferenceName("aSequence"))
     }
 
     val inputPath = testFile("small.1.bed")

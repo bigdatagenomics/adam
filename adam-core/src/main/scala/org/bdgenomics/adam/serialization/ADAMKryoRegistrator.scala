@@ -246,8 +246,8 @@ class ADAMKryoRegistrator extends KryoRegistrator with Logging {
     kryo.register(classOf[org.bdgenomics.adam.rich.RichVariant])
 
     // org.bdgenomics.adam.util
-    kryo.register(classOf[org.bdgenomics.adam.util.ReferenceContigMap],
-      new org.bdgenomics.adam.util.ReferenceContigMapSerializer)
+    kryo.register(classOf[org.bdgenomics.adam.util.ReferenceMap],
+      new org.bdgenomics.adam.util.ReferenceMapSerializer)
     kryo.register(classOf[org.bdgenomics.adam.util.TwoBitFile],
       new org.bdgenomics.adam.util.TwoBitFileSerializer)
 

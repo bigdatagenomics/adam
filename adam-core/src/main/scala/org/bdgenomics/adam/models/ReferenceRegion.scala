@@ -104,7 +104,7 @@ object ReferenceRegion {
       .split(",")
       .map(_.trim)
       .map(token => {
-        require(!token.isEmpty, "reference region must not be empty")
+        require(token.nonEmpty, "reference region must not be empty")
         val colonIdx = token.lastIndexOf(":")
         if (colonIdx == -1) {
           all(token)
@@ -497,7 +497,7 @@ case class ReferenceRegion(
    * @return True if regions are adjacent.
    */
   def isAdjacent(other: ReferenceRegion): Boolean = {
-    distance(other).exists(_ == 1)
+    distance(other).contains(1)
   }
 
   /**

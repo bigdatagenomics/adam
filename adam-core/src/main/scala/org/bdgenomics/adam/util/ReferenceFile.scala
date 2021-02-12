@@ -34,5 +34,5 @@ trait ReferenceFile extends Serializable {
   /*
    * Stores SequenceDictionary for ReferenceFile
    */
-  def sequences: SequenceDictionary
+  def references: SequenceDictionary
 }

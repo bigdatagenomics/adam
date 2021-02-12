@@ -25,9 +25,9 @@ class IndexedFastaFileSuite extends ADAMFunSuite {
 
   val filePath = resourceUrl("HLA_DQB1_05_01_01_02.fa").getPath
 
-  sparkTest("correctly generates sequence dictionary from .dict file") {
+  sparkTest("correctly generates reference sequence dictionary from .dict file") {
     val indexedFasta = IndexedFastaFile(sc, filePath)
-    assert(indexedFasta.sequences.records.length == 1)
+    assert(indexedFasta.references.records.length == 1)
   }
 
   sparkTest("correctly gets sequence") {

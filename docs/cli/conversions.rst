@@ -81,4 +81,4 @@ Additionally, ``transformFragments`` takes the following options:
 -  ``-sort_by_reference_position_and_index``: Sorts alignments by the
    location where the reads are aligned. Unaligned reads are put at the
    end and sorted by read name. References are ordered by index that they
-   are ordered in the SequenceDictionary.
+   are ordered in the reference SequenceDictionary.
