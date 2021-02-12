@@ -107,7 +107,7 @@ class VariantContextDatasetSuite extends ADAMFunSuite {
     val vc2 = sc.loadVcf(testFile("small.vcf"))
     val union = vc1.union(vc2)
     assert(union.rdd.count === (vc1.rdd.count + vc2.rdd.count))
-    assert(union.sequences.size === (vc1.sequences.size + vc2.sequences.size))
+    assert(union.references.size === (vc1.references.size + vc2.references.size))
     assert(union.samples.size === 4)
   }
 
@@ -131,8 +131,8 @@ class VariantContextDatasetSuite extends ADAMFunSuite {
     assert(variant.getFiltersPassed === true)
     assert(variant.getFiltersFailed.isEmpty)
 
-    assert(vcRdd.sequences.records.size === 1)
-    assert(vcRdd.sequences.records(0).name === "chr11")
+    assert(vcRdd.references.records.size === 1)
+    assert(vcRdd.references.records(0).name === "chr11")
   }
 
   sparkTest("can write as a single file via simple saveAsVcf method, then read in .vcf file") {
@@ -141,8 +141,8 @@ class VariantContextDatasetSuite extends ADAMFunSuite {
     assert(path.exists)
     val vcRdd = sc.loadVcf("%s/test_single.vcf".format(tempDir))
     assert(vcRdd.rdd.count === 1)
-    assert(vcRdd.sequences.records.size === 1)
-    assert(vcRdd.sequences.records(0).name === "chr11")
+    assert(vcRdd.references.records.size === 1)
+    assert(vcRdd.references.records(0).name === "chr11")
   }
 
   sparkTest("can write as a single file via full saveAsVcf method, then read in .vcf file") {
@@ -155,8 +155,8 @@ class VariantContextDatasetSuite extends ADAMFunSuite {
     assert(path.exists)
     val vcRdd = sc.loadVcf("%s/test_single.vcf".format(tempDir))
     assert(vcRdd.rdd.count === 1)
-    assert(vcRdd.sequences.records.size === 1)
-    assert(vcRdd.sequences.records(0).name === "chr11")
+    assert(vcRdd.references.records.size === 1)
+    assert(vcRdd.references.records(0).name === "chr11")
   }
 
   sparkTest("transform a vcf file with bad header") {
@@ -340,8 +340,8 @@ class VariantContextDatasetSuite extends ADAMFunSuite {
 
   sparkTest("test metadata") {
     def testMetadata(vRdd: VariantContextDataset) {
-      val sequenceRdd = vRdd.addSequence(SequenceRecord("aSequence", 1000L))
-      assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
+      val sequenceRdd = vRdd.addReference(SequenceRecord("aSequence", 1000L))
+      assert(sequenceRdd.references.containsReferenceName("aSequence"))
 
       val headerRdd = vRdd.addHeaderLine(new VCFHeaderLine("ABC", "123"))
       assert(headerRdd.headerLines.exists(_.getKey == "ABC"))
@@ -523,7 +523,7 @@ class VariantContextDatasetSuite extends ADAMFunSuite {
 
   sparkTest("save and reload from partitioned parquet") {
     def testMetadata(vcs: VariantContextDataset) {
-      assert(vcs.sequences.containsReferenceName("13"))
+      assert(vcs.references.containsReferenceName("13"))
       assert(vcs.samples.isEmpty)
       assert(vcs.headerLines.exists(_.getKey == "GATKCommandLine"))
     }

@@ -181,7 +181,7 @@ object VariantContextDataset extends Serializable {
 
 case class DatasetBoundVariantContextDataset private[ds] (
   dataset: Dataset[VariantContextProduct],
-  sequences: SequenceDictionary,
+  references: SequenceDictionary,
   @transient samples: Seq[Sample],
   @transient headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines,
   override val isPartitioned: Boolean = true,
@@ -203,9 +203,9 @@ case class DatasetBoundVariantContextDataset private[ds] (
     copy(dataset = tFn.call(dataset))
   }
 
-  def replaceSequences(
-    newSequences: SequenceDictionary): VariantContextDataset = {
-    copy(sequences = newSequences)
+  def replaceReferences(
+    newReferences: SequenceDictionary): VariantContextDataset = {
+    copy(references = newReferences)
   }
 
   def replaceHeaderLines(newHeaderLines: Seq[VCFHeaderLine]): VariantContextDataset = {
@@ -219,7 +219,7 @@ case class DatasetBoundVariantContextDataset private[ds] (
 
 case class RDDBoundVariantContextDataset private[ds] (
     rdd: RDD[VariantContext],
-    sequences: SequenceDictionary,
+    references: SequenceDictionary,
     @transient samples: Seq[Sample],
     @transient headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines,
     optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None) extends VariantContextDataset {
@@ -232,9 +232,9 @@ case class RDDBoundVariantContextDataset private[ds] (
     spark.createDataset(rdd.map(VariantContextProduct.fromModel))
   }
 
-  def replaceSequences(
-    newSequences: SequenceDictionary): VariantContextDataset = {
-    copy(sequences = newSequences)
+  def replaceReferences(
+    newReferences: SequenceDictionary): VariantContextDataset = {
+    copy(references = newReferences)
   }
 
   def replaceHeaderLines(newHeaderLines: Seq[VCFHeaderLine]): VariantContextDataset = {
@@ -268,7 +268,7 @@ sealed abstract class VariantContextDataset extends MultisampleGenomicDataset[Va
   }
 
   override protected def saveMetadata(filePath: String): Unit = {
-    saveSequences(filePath)
+    saveReferences(filePath)
     saveSamples(filePath)
     saveVcfHeaders(filePath)
   }
@@ -289,12 +289,12 @@ sealed abstract class VariantContextDataset extends MultisampleGenomicDataset[Va
 
   override def transformDataset(
     tFn: Dataset[VariantContextProduct] => Dataset[VariantContextProduct]): VariantContextDataset = {
-    DatasetBoundVariantContextDataset(tFn(dataset), sequences, samples, headerLines)
+    DatasetBoundVariantContextDataset(tFn(dataset), references, samples, headerLines)
   }
 
   override def transformDataset(
     tFn: JFunction[Dataset[VariantContextProduct], Dataset[VariantContextProduct]]): VariantContextDataset = {
-    DatasetBoundVariantContextDataset(tFn.call(dataset), sequences, samples, headerLines)
+    DatasetBoundVariantContextDataset(tFn.call(dataset), references, samples, headerLines)
   }
 
   /**
@@ -314,7 +314,7 @@ sealed abstract class VariantContextDataset extends MultisampleGenomicDataset[Va
     val iterableDatasets = datasets.toSeq
     VariantContextDataset(
       rdd.context.union(rdd, iterableDatasets.map(_.rdd): _*),
-      iterableDatasets.map(_.sequences).fold(sequences)(_ ++ _),
+      iterableDatasets.map(_.references).fold(references)(_ ++ _),
       (samples ++ iterableDatasets.flatMap(_.samples)).distinct,
       (headerLines ++ iterableDatasets.flatMap(_.headerLines)).distinct)
   }
@@ -324,7 +324,7 @@ sealed abstract class VariantContextDataset extends MultisampleGenomicDataset[Va
    */
   def toGenotypes(): GenotypeDataset = {
     new RDDBoundGenotypeDataset(rdd.flatMap(_.genotypes),
-      sequences,
+      references,
       samples,
       headerLines,
       optPartitionMap = optPartitionMap)
@@ -335,7 +335,7 @@ sealed abstract class VariantContextDataset extends MultisampleGenomicDataset[Va
    */
   def toVariants(): VariantDataset = {
     new RDDBoundVariantDataset(rdd.map(_.variant.variant),
-      sequences,
+      references,
       headerLines.filter(hl => hl match {
         case fl: VCFFormatHeaderLine => false
         case _                       => true
@@ -393,7 +393,7 @@ sealed abstract class VariantContextDataset extends MultisampleGenomicDataset[Va
     val header = new VCFHeader(
       headerLines.toSet,
       samples.map(_.getId))
-    header.setSequenceDictionary(sequences.toSAMSequenceDictionary)
+    header.setSequenceDictionary(references.toSAMSequenceDictionary)
 
     val converter = VariantContextConverter(headerLines,
       stringency,
@@ -458,7 +458,7 @@ sealed abstract class VariantContextDataset extends MultisampleGenomicDataset[Va
     val header = new VCFHeader(
       headerLines.toSet,
       samples.map(_.getId))
-    header.setSequenceDictionary(sequences.toSAMSequenceDictionary)
+    header.setSequenceDictionary(references.toSAMSequenceDictionary)
 
     // write header
     val headPath = new Path("%s_head".format(filePath))
@@ -537,7 +537,7 @@ sealed abstract class VariantContextDataset extends MultisampleGenomicDataset[Va
   protected def replaceRdd(newRdd: RDD[VariantContext],
                            newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): VariantContextDataset = {
     RDDBoundVariantContextDataset(newRdd,
-      sequences,
+      references,
       samples,
       headerLines,
       newPartitionMap)

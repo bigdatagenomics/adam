@@ -129,7 +129,7 @@ class VariantDatasetSuite extends ADAMFunSuite {
     val variant2 = sc.loadVariants(testFile("small.vcf"))
     val union = variant1.union(variant2)
     assert(union.rdd.count === (variant1.rdd.count + variant2.rdd.count))
-    assert(union.sequences.size === (variant1.sequences.size + variant2.sequences.size))
+    assert(union.references.size === (variant1.references.size + variant2.references.size))
   }
 
   sparkTest("round trip to parquet") {
@@ -360,7 +360,7 @@ class VariantDatasetSuite extends ADAMFunSuite {
     val variants = sc.loadVariants(variantsPath)
     val variantContexts = variants.toVariantContexts
 
-    assert(variantContexts.sequences.containsReferenceName("1"))
+    assert(variantContexts.references.containsReferenceName("1"))
     assert(variantContexts.samples.isEmpty)
 
     val vcs = variantContexts.rdd.collect
@@ -374,8 +374,8 @@ class VariantDatasetSuite extends ADAMFunSuite {
 
   sparkTest("load parquet to sql, save, re-read from avro") {
     def testMetadata(vRdd: VariantDataset) {
-      val sequenceRdd = vRdd.addSequence(SequenceRecord("aSequence", 1000L))
-      assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
+      val sequenceRdd = vRdd.addReference(SequenceRecord("aSequence", 1000L))
+      assert(sequenceRdd.references.containsReferenceName("aSequence"))
 
       val headerRdd = vRdd.addHeaderLine(new VCFHeaderLine("ABC", "123"))
       assert(headerRdd.headerLines.exists(_.getKey == "ABC"))

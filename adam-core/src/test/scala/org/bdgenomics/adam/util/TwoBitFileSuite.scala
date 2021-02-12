@@ -52,7 +52,7 @@ class TwoBitFileSuite extends ADAMFunSuite {
     val file = new File(testFile("hg19.chrM.2bit"))
     val byteAccess = new LocalFileByteAccess(file)
     val twoBitFile = new TwoBitFile(byteAccess)
-    val dict = twoBitFile.sequences
+    val dict = twoBitFile.references
     assert(dict.records.length == 1)
     assert(dict.records.head.length == 16571)
     assert(dict.records.head.index.isDefined)

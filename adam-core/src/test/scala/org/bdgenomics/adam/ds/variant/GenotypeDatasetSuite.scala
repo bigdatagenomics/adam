@@ -111,7 +111,7 @@ class GenotypeDatasetSuite extends ADAMFunSuite {
     val genotype2 = sc.loadGenotypes(testFile("small.vcf"))
     val union = genotype1.union(genotype2)
     assert(union.rdd.count === (genotype1.rdd.count + genotype2.rdd.count))
-    assert(union.sequences.size === (genotype1.sequences.size + genotype2.sequences.size))
+    assert(union.references.size === (genotype1.references.size + genotype2.references.size))
     assert(union.samples.size === 4)
   }
 
@@ -339,7 +339,7 @@ class GenotypeDatasetSuite extends ADAMFunSuite {
     val genotypes = sc.loadGenotypes(genotypesPath)
     val variantContexts = genotypes.toVariantContexts
 
-    assert(variantContexts.sequences.containsReferenceName("1"))
+    assert(variantContexts.references.containsReferenceName("1"))
     assert(variantContexts.samples.nonEmpty)
 
     val vcs = variantContexts.rdd.collect
@@ -353,8 +353,8 @@ class GenotypeDatasetSuite extends ADAMFunSuite {
 
   sparkTest("load parquet to sql, save, re-read from avro") {
     def testMetadata(gDataset: GenotypeDataset) {
-      val sequenceRdd = gDataset.addSequence(SequenceRecord("aSequence", 1000L))
-      assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
+      val sequenceRdd = gDataset.addReference(SequenceRecord("aSequence", 1000L))
+      assert(sequenceRdd.references.containsReferenceName("aSequence"))
 
       val headerRdd = gDataset.addHeaderLine(new VCFHeaderLine("ABC", "123"))
       assert(headerRdd.headerLines.exists(_.getKey == "ABC"))

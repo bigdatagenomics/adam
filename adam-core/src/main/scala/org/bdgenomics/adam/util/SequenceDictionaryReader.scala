@@ -20,21 +20,21 @@ package org.bdgenomics.adam.util
 import java.io.{ BufferedWriter, OutputStreamWriter }
 import htsjdk.samtools.SAMSequenceDictionaryCodec
 import htsjdk.samtools.util.BufferedLineReader
-import org.apache.hadoop.fs.{ FileSystem, Path }
+import org.apache.hadoop.fs.Path
 import org.apache.spark.SparkContext
 import org.bdgenomics.adam.models.SequenceDictionary
 
 /**
- * Object for reading sequence dictionary files (.dict) from disk.
+ * Object for reading reference sequence dictionary files (.dict) from disk.
  */
 object SequenceDictionaryReader {
 
   /**
-   * Populates a SequenceDictionary from a .dict file on disk.
+   * Populates a reference SequenceDictionary from a .dict file on disk.
    *
    * @param filePath The path to read the dictionary from.
    * @param sc The SparkContext to use for configuration.
-   * @return Returns a populated sequence dictionary.
+   * @return Returns a populated reference sequence dictionary.
    */
   def apply(filePath: String,
             sc: SparkContext): SequenceDictionary = {

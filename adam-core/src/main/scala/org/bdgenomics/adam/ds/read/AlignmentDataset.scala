@@ -223,7 +223,7 @@ object AlignmentDataset extends Serializable {
 case class ParquetUnboundAlignmentDataset private[ds] (
     @transient private val sc: SparkContext,
     private val parquetFilename: String,
-    sequences: SequenceDictionary,
+    references: SequenceDictionary,
     readGroups: ReadGroupDictionary,
     @transient val processingSteps: Seq[ProcessingStep]) extends AlignmentDataset {
 
@@ -238,9 +238,9 @@ case class ParquetUnboundAlignmentDataset private[ds] (
     spark.read.parquet(parquetFilename).as[AlignmentProduct]
   }
 
-  def replaceSequences(
-    newSequences: SequenceDictionary): AlignmentDataset = {
-    copy(sequences = newSequences)
+  def replaceReferences(
+    newReferences: SequenceDictionary): AlignmentDataset = {
+    copy(references = newReferences)
   }
 
   def replaceReadGroups(newReadGroups: ReadGroupDictionary): AlignmentDataset = {
@@ -255,7 +255,7 @@ case class ParquetUnboundAlignmentDataset private[ds] (
 
 case class DatasetBoundAlignmentDataset private[ds] (
   dataset: Dataset[AlignmentProduct],
-  sequences: SequenceDictionary,
+  references: SequenceDictionary,
   readGroups: ReadGroupDictionary,
   @transient val processingSteps: Seq[ProcessingStep],
   override val isPartitioned: Boolean = true,
@@ -291,9 +291,9 @@ case class DatasetBoundAlignmentDataset private[ds] (
     copy(dataset = tFn.call(dataset))
   }
 
-  def replaceSequences(
-    newSequences: SequenceDictionary): AlignmentDataset = {
-    copy(sequences = newSequences)
+  def replaceReferences(
+    newReferences: SequenceDictionary): AlignmentDataset = {
+    copy(references = newReferences)
   }
 
   def replaceReadGroups(newReadGroups: ReadGroupDictionary): AlignmentDataset = {
@@ -348,7 +348,7 @@ case class DatasetBoundAlignmentDataset private[ds] (
 
 case class RDDBoundAlignmentDataset private[ds] (
     rdd: RDD[Alignment],
-    sequences: SequenceDictionary,
+    references: SequenceDictionary,
     readGroups: ReadGroupDictionary,
     @transient val processingSteps: Seq[ProcessingStep],
     optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends AlignmentDataset {
@@ -379,12 +379,12 @@ case class RDDBoundAlignmentDataset private[ds] (
       }).reduceByKey(_ + _)
         .map(r => Coverage(r._1._2, r._2.toDouble, Option(r._1._1)))
 
-    RDDBoundCoverageDataset(covCounts, sequences, readGroups.toSamples, None)
+    RDDBoundCoverageDataset(covCounts, references, readGroups.toSamples, None)
   }
 
-  def replaceSequences(
-    newSequences: SequenceDictionary): AlignmentDataset = {
-    copy(sequences = newSequences)
+  def replaceReferences(
+    newReferences: SequenceDictionary): AlignmentDataset = {
+    copy(references = newReferences)
   }
 
   def replaceReadGroups(newReadGroups: ReadGroupDictionary): AlignmentDataset = {
@@ -410,7 +410,7 @@ sealed abstract class AlignmentDataset extends AvroReadGroupGenomicDataset[Align
   override def transformDataset(
     tFn: Dataset[AlignmentProduct] => Dataset[AlignmentProduct]): AlignmentDataset = {
     DatasetBoundAlignmentDataset(dataset,
-      sequences,
+      references,
       readGroups,
       processingSteps)
       .transformDataset(tFn)
@@ -419,7 +419,7 @@ sealed abstract class AlignmentDataset extends AvroReadGroupGenomicDataset[Align
   override def transformDataset(
     tFn: JFunction[Dataset[AlignmentProduct], Dataset[AlignmentProduct]]): AlignmentDataset = {
     DatasetBoundAlignmentDataset(dataset,
-      sequences,
+      references,
       readGroups,
       processingSteps)
       .transformDataset(tFn)
@@ -445,7 +445,7 @@ sealed abstract class AlignmentDataset extends AvroReadGroupGenomicDataset[Align
   protected def replaceRdd(newRdd: RDD[Alignment],
                            newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): AlignmentDataset = {
     RDDBoundAlignmentDataset(newRdd,
-      sequences,
+      references,
       readGroups,
       processingSteps,
       newPartitionMap)
@@ -459,7 +459,7 @@ sealed abstract class AlignmentDataset extends AvroReadGroupGenomicDataset[Align
   def union(datasets: AlignmentDataset*): AlignmentDataset = {
     val iterableDatasets = datasets.toSeq
     AlignmentDataset(rdd.context.union(rdd, iterableDatasets.map(_.rdd): _*),
-      iterableDatasets.map(_.sequences).fold(sequences)(_ ++ _),
+      iterableDatasets.map(_.references).fold(references)(_ ++ _),
       iterableDatasets.map(_.readGroups).fold(readGroups)(_ ++ _),
       iterableDatasets.map(_.processingSteps).fold(processingSteps)(_ ++ _))
   }
@@ -472,7 +472,7 @@ sealed abstract class AlignmentDataset extends AvroReadGroupGenomicDataset[Align
    */
   def toFragments(): FragmentDataset = {
     FragmentDataset(groupReadsByFragment().map(_.toFragment),
-      sequences,
+      references,
       readGroups,
       processingSteps)
   }
@@ -493,7 +493,7 @@ sealed abstract class AlignmentDataset extends AvroReadGroupGenomicDataset[Align
       Option(Alignment.getSequence).foreach(sequence => builder.setLength(sequence.length().toLong))
       builder.build()
     }
-    ReadDataset(rdd.map(toRead), sequences)
+    ReadDataset(rdd.map(toRead), references)
   }
 
   /**
@@ -515,7 +515,7 @@ sealed abstract class AlignmentDataset extends AvroReadGroupGenomicDataset[Align
    */
   private[ds] def querynameSortedToFragments: FragmentDataset = {
     FragmentDataset(locallyGroupReadsByFragment().map(_.toFragment),
-      sequences,
+      references,
       readGroups,
       processingSteps)
   }
@@ -551,7 +551,7 @@ sealed abstract class AlignmentDataset extends AvroReadGroupGenomicDataset[Align
       .withColumnRenamed("sum(count)", "count")
       .as[Coverage]
 
-    DatasetBoundCoverageDataset(covCounts, sequences, readGroups.toSamples)
+    DatasetBoundCoverageDataset(covCounts, references, readGroups.toSamples)
   }
 
   /**
@@ -722,7 +722,7 @@ sealed abstract class AlignmentDataset extends AvroReadGroupGenomicDataset[Align
     val adamRecordConverter = new AlignmentConverter
 
     // create header and set sort order if needed
-    val header = adamRecordConverter.createSAMHeader(sequences, readGroups)
+    val header = adamRecordConverter.createSAMHeader(references, readGroups)
     header.setSortOrder(sortOrder)
 
     // get program records and attach to header
@@ -873,9 +873,9 @@ sealed abstract class AlignmentDataset extends AvroReadGroupGenomicDataset[Align
       // do validation here
 
       require(sortOrder != SAMFileHeader.SortOrder.unsorted, "To save as CRAM, input must be sorted.")
-      require(sequences.records.forall(_.md5.isDefined),
+      require(references.records.forall(_.md5.isDefined),
         "To save as CRAM, all sequences must have an attached MD5. See %s".format(
-          sequences))
+          references))
       val refSource = conf.get(CRAMInputFormat.REFERENCE_SOURCE_PATH_PROPERTY)
       require(refSource != null,
         "To save as CRAM, the reference source must be set in your config as %s.".format(
@@ -1011,7 +1011,7 @@ sealed abstract class AlignmentDataset extends AvroReadGroupGenomicDataset[Align
       } else {
         ReferencePosition(s"~~~${r.getReadName}", 0)
       }
-    }), sequences.stripIndices.sorted)
+    }), references.stripIndices.sorted)
   }
 
   /**
@@ -1026,19 +1026,19 @@ sealed abstract class AlignmentDataset extends AvroReadGroupGenomicDataset[Align
    * @see sortByReferencePosition
    */
   def sortByReferencePositionAndIndex(): AlignmentDataset = {
-    info("Sorting alignments by reference index, using %s.".format(sequences))
+    info("Sorting alignments by reference index, using %s.".format(references))
 
     import scala.math.Ordering.{ Int => ImplicitIntOrdering, _ }
 
     // NOTE: In order to keep unmapped reads from swamping a single partition
     // we sort the unmapped reads by read name. To do this, we hash the sequence name
     // and add the max reference index
-    val maxReferenceIndex = sequences.records.flatMap(_.index).max
+    val maxReferenceIndex = references.records.flatMap(_.index).max
     replaceRdd(rdd.sortBy(r => {
       if (r.getReadMapped) {
-        val sr = sequences(r.getReferenceName)
+        val sr = references(r.getReferenceName)
         require(sr.isDefined, "Read %s has reference name %s not in dictionary %s.".format(
-          r, r.getReferenceName, sequences))
+          r, r.getReferenceName, references))
         require(sr.get.index.isDefined,
           "Reference %s from sequence dictionary lacks an index.".format(sr))
 
@@ -1834,7 +1834,7 @@ sealed abstract class AlignmentDataset extends AvroReadGroupGenomicDataset[Align
    * @return AlignmentDataset filtered by read group.
    */
   def filterToReadGroup(readGroupId: String): AlignmentDataset = {
-    transform((rdd: RDD[Alignment]) => rdd.filter(g => Option(g.getReadGroupId).exists(_ == readGroupId)))
+    transform((rdd: RDD[Alignment]) => rdd.filter(g => Option(g.getReadGroupId).contains(readGroupId)))
   }
 
   /**
@@ -1874,7 +1874,7 @@ sealed abstract class AlignmentDataset extends AvroReadGroupGenomicDataset[Align
    * @return AlignmentDataset filtered by the specified sample.
    */
   def filterToSample(readGroupSampleId: String): AlignmentDataset = {
-    transform((rdd: RDD[Alignment]) => rdd.filter(g => Option(g.getReadGroupSampleId).exists(_ == readGroupSampleId)))
+    transform((rdd: RDD[Alignment]) => rdd.filter(g => Option(g.getReadGroupSampleId).contains(readGroupSampleId)))
   }
 
   /**

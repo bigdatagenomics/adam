@@ -48,7 +48,7 @@ trait AnySAMInFormatterCompanion[T <: AnySAMInFormatter[T]] extends InFormatterC
     val arc = new AlignmentConverter
 
     // build a header and set the sort order
-    val header = arc.createSAMHeader(gDataset.sequences, gDataset.readGroups)
+    val header = arc.createSAMHeader(gDataset.references, gDataset.readGroups)
     header.setSortOrder(SAMFileHeader.SortOrder.coordinate)
 
     // construct the in formatter

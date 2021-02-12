@@ -116,7 +116,8 @@ With an ``ADAMContext``, you can load:
 
    -  From Parquet using ``loadParquetCoverage`` (Scala only)
    -  From Parquet or any of the feature file formats using ``loadCoverage`` (Scala only)
-   -  Contig sequence as a broadcastable ``ReferenceFile`` using ``loadReferenceFile``, which supports
+
+-  Reference sequences as a broadcastable ``ReferenceFile`` using ``loadReferenceFile``, which supports
       2bit files, FASTA, and Parquet (Scala only)
 
 The methods labeled "Scala only" may be usable from Java, but may not be

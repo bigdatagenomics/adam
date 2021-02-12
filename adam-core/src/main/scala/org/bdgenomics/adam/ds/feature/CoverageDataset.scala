@@ -122,7 +122,7 @@ object CoverageDataset {
 case class ParquetUnboundCoverageDataset private[ds] (
     @transient private val sc: SparkContext,
     private val parquetFilename: String,
-    sequences: SequenceDictionary,
+    references: SequenceDictionary,
     @transient samples: Seq[Sample]) extends CoverageDataset {
 
   lazy val rdd: RDD[Coverage] = {
@@ -142,11 +142,11 @@ case class ParquetUnboundCoverageDataset private[ds] (
   }
 
   override def toFeatures(): FeatureDataset = {
-    ParquetUnboundFeatureDataset(sc, parquetFilename, sequences, samples)
+    ParquetUnboundFeatureDataset(sc, parquetFilename, references, samples)
   }
 
-  override def replaceSequences(newSequences: SequenceDictionary): CoverageDataset = {
-    copy(sequences = newSequences)
+  override def replaceReferences(newReferences: SequenceDictionary): CoverageDataset = {
+    copy(references = newReferences)
   }
 
   override def replaceSamples(newSamples: Iterable[Sample]): CoverageDataset = {
@@ -156,7 +156,7 @@ case class ParquetUnboundCoverageDataset private[ds] (
 
 case class DatasetBoundCoverageDataset private[ds] (
   dataset: Dataset[Coverage],
-  sequences: SequenceDictionary,
+  references: SequenceDictionary,
   @transient samples: Seq[Sample],
   override val isPartitioned: Boolean = false,
   override val optPartitionBinSize: Option[Int] = None,
@@ -171,11 +171,11 @@ case class DatasetBoundCoverageDataset private[ds] (
 
   override def toFeatures(): FeatureDataset = {
     import spark.implicits._
-    DatasetBoundFeatureDataset(dataset.map(_.toSqlFeature), sequences, samples)
+    DatasetBoundFeatureDataset(dataset.map(_.toSqlFeature), references, samples)
   }
 
-  override def replaceSequences(newSequences: SequenceDictionary): CoverageDataset = {
-    copy(sequences = newSequences)
+  override def replaceReferences(newReferences: SequenceDictionary): CoverageDataset = {
+    copy(references = newReferences)
   }
 
   override def replaceSamples(newSamples: Iterable[Sample]): CoverageDataset = {
@@ -185,7 +185,7 @@ case class DatasetBoundCoverageDataset private[ds] (
 
 case class RDDBoundCoverageDataset private[ds] (
     rdd: RDD[Coverage],
-    sequences: SequenceDictionary,
+    references: SequenceDictionary,
     @transient samples: Seq[Sample],
     optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends CoverageDataset {
 
@@ -196,11 +196,11 @@ case class RDDBoundCoverageDataset private[ds] (
 
   override def toFeatures(): FeatureDataset = {
     val features = rdd.map(_.toFeature)
-    new RDDBoundFeatureDataset(features, sequences, samples, optPartitionMap = optPartitionMap)
+    new RDDBoundFeatureDataset(features, references, samples, optPartitionMap = optPartitionMap)
   }
 
-  override def replaceSequences(newSequences: SequenceDictionary): CoverageDataset = {
-    copy(sequences = newSequences)
+  override def replaceReferences(newReferences: SequenceDictionary): CoverageDataset = {
+    copy(references = newReferences)
   }
 
   override def replaceSamples(newSamples: Iterable[Sample]): CoverageDataset = {
@@ -224,7 +224,7 @@ abstract class CoverageDataset
 
   def union(datasets: CoverageDataset*): CoverageDataset = {
     val iterableDatasets = datasets.toSeq
-    val mergedSequences = iterableDatasets.map(_.sequences).fold(sequences)(_ ++ _)
+    val mergedSequences = iterableDatasets.map(_.references).fold(references)(_ ++ _)
     val mergedSamples = (samples ++ iterableDatasets.flatMap(_.samples)).distinct.toSeq
 
     if (iterableDatasets.forall(dataset => dataset match {
@@ -256,12 +256,12 @@ abstract class CoverageDataset
 
   override def transformDataset(
     tFn: Dataset[Coverage] => Dataset[Coverage]): CoverageDataset = {
-    DatasetBoundCoverageDataset(tFn(dataset), sequences, samples)
+    DatasetBoundCoverageDataset(tFn(dataset), references, samples)
   }
 
   override def transformDataset(
     tFn: JFunction[Dataset[Coverage], Dataset[Coverage]]): CoverageDataset = {
-    DatasetBoundCoverageDataset(tFn.call(dataset), sequences, samples)
+    DatasetBoundCoverageDataset(tFn.call(dataset), references, samples)
   }
 
   /**
@@ -463,7 +463,7 @@ abstract class CoverageDataset
    */
   protected def replaceRdd(newRdd: RDD[Coverage],
                            newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): CoverageDataset = {
-    RDDBoundCoverageDataset(newRdd, sequences, samples, newPartitionMap)
+    RDDBoundCoverageDataset(newRdd, references, samples, newPartitionMap)
   }
 
   /**

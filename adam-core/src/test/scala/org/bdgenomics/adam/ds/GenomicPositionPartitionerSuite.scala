@@ -115,7 +115,7 @@ class GenomicPositionPartitionerSuite extends ADAMFunSuite {
     val gDataset = sc.loadAlignments(filename, optProjection = Some(p))
     val rdd = gDataset.rdd
 
-    val parter = GenomicPositionPartitioner(parts, gDataset.sequences)
+    val parter = GenomicPositionPartitioner(parts, gDataset.references)
 
     assert(rdd.count() === 200)
 
@@ -143,7 +143,7 @@ class GenomicPositionPartitionerSuite extends ADAMFunSuite {
     val gDataset = sc.loadAlignments(filename)
     val rdd = gDataset.rdd
 
-    val parter = GenomicPositionPartitioner(parts, gDataset.sequences)
+    val parter = GenomicPositionPartitioner(parts, gDataset.references)
 
     val p = {
       import org.bdgenomics.adam.projections.AlignmentField._

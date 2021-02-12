@@ -226,7 +226,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
       .setAlternateAllele("A")
       .build
     val variantRdd = VariantDataset(sc.parallelize(Seq(indel)),
-      artificialReadsRdd.sequences, DefaultHeaderLines.allHeaderLines)
+      artificialReadsRdd.references, DefaultHeaderLines.allHeaderLines)
     val knowns = ConsensusGenerator.fromKnownIndels(variantRdd)
     val artificialRealignedReadsCollected = artificialRealignedReads(cg = knowns)
       .collect()
@@ -254,7 +254,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
       .setAlternateAllele("A")
       .build
     val variantRdd = VariantDataset(sc.parallelize(Seq(indel)),
-      artificialReadsRdd.sequences, DefaultHeaderLines.allHeaderLines)
+      artificialReadsRdd.references, DefaultHeaderLines.allHeaderLines)
     val knowns = ConsensusGenerator.fromKnownIndels(variantRdd)
     val union = ConsensusGenerator.union(knowns, ConsensusGenerator.fromReads)
     val artificialRealignedReadsCollected = artificialRealignedReads(cg = union)

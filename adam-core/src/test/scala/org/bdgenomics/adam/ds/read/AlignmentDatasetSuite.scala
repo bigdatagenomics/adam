@@ -668,8 +668,8 @@ class AlignmentDatasetSuite extends ADAMFunSuite {
 
   sparkTest("load parquet to sql, save, re-read from avro") {
     def testMetadata(arRdd: AlignmentDataset) {
-      val sequenceRdd = arRdd.addSequence(SequenceRecord("aSequence", 1000L))
-      assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
+      val sequenceRdd = arRdd.addReference(SequenceRecord("aSequence", 1000L))
+      assert(sequenceRdd.references.containsReferenceName("aSequence"))
 
       val rgDataset = arRdd.addReadGroup(ReadGroup("test", "aRg"))
       assert(rgDataset.readGroups("aRg").sampleId === "test")
@@ -704,8 +704,8 @@ class AlignmentDatasetSuite extends ADAMFunSuite {
 
   sparkTest("load from sam, save as partitioned parquet, and re-read from partitioned parquet") {
     def testMetadata(arRdd: AlignmentDataset) {
-      val sequenceRdd = arRdd.addSequence(SequenceRecord("aSequence", 1000L))
-      assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
+      val sequenceRdd = arRdd.addReference(SequenceRecord("aSequence", 1000L))
+      assert(sequenceRdd.references.containsReferenceName("aSequence"))
 
       val rgDataset = arRdd.addReadGroup(ReadGroup("test", "aRg"))
       assert(rgDataset.readGroups("aRg").sampleId === "test")
@@ -1417,7 +1417,7 @@ class AlignmentDatasetSuite extends ADAMFunSuite {
     val union = reads1.union(reads2)
     assert(union.rdd.count === (reads1.rdd.count + reads2.rdd.count))
     // all of the contigs small.sam has are in bqsr1.sam
-    assert(union.sequences.size === reads1.sequences.size)
+    assert(union.references.size === reads1.references.size)
     // small.sam has no read groups
     assert(union.readGroups.size === reads1.readGroups.size)
   }
@@ -1864,7 +1864,7 @@ class AlignmentDatasetSuite extends ADAMFunSuite {
   sparkTest("convert alignments to reads") {
     val alignments = sc.loadAlignments(testFile("small.sam"))
     val reads = alignments.toReads()
-    assert(alignments.sequences === reads.sequences)
+    assert(alignments.references === reads.references)
     assert(alignments.rdd.count === reads.rdd.count)
 
     val first = reads.rdd.sortBy(_.getName).first()

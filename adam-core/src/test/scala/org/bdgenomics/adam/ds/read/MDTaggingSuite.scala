@@ -19,7 +19,7 @@ package org.bdgenomics.adam.ds.read
 
 import htsjdk.samtools.ValidationStringency
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.util.{ ADAMFunSuite, ReferenceContigMap }
+import org.bdgenomics.adam.util.{ ADAMFunSuite, ReferenceMap }
 import org.bdgenomics.formats.avro.{ Alignment, Reference, Slice }
 
 class MDTaggingSuite extends ADAMFunSuite {
@@ -88,7 +88,7 @@ class MDTaggingSuite extends ADAMFunSuite {
       )
     }
 
-    check(MDTagging(reads, ReferenceContigMap(makeFrags(fs: _*))))
+    check(MDTagging(reads, ReferenceMap(makeFrags(fs: _*))))
   }
 
   sparkTest("test adding MDTags over boundary") {
@@ -182,7 +182,7 @@ class MDTaggingSuite extends ADAMFunSuite {
   sparkTest("try realigning a read on a missing contig, stringency == STRICT") {
     val read = (chr2, 15, 35, "AAAAACCCCCCCCCCGGGGG", "20M") → "20"
     val tagger = MDTagging(makeReads(read)._2,
-      ReferenceContigMap(makeFrags((chr1, 0, "TTTTTTTTTT"))))
+      ReferenceMap(makeFrags((chr1, 0, "TTTTTTTTTT"))))
     intercept[Exception] {
       tagger.taggedReads.collect
     }
@@ -191,7 +191,7 @@ class MDTaggingSuite extends ADAMFunSuite {
   sparkTest("try realigning a read on a missing contig, stringency == LENIENT") {
     val read = (chr2, 15, 35, "AAAAACCCCCCCCCCGGGGG", "20M") → "20"
     val tagger = MDTagging(makeReads(read)._2,
-      ReferenceContigMap(makeFrags((chr1, 0, "TTTTTTTTTT"))),
+      ReferenceMap(makeFrags((chr1, 0, "TTTTTTTTTT"))),
       validationStringency = ValidationStringency.LENIENT)
     assert(tagger.taggedReads.collect.size === 1)
   }

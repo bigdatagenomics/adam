@@ -276,7 +276,7 @@ object FeatureDataset {
 case class ParquetUnboundFeatureDataset private[ds] (
     @transient private val sc: SparkContext,
     private val parquetFilename: String,
-    sequences: SequenceDictionary,
+    references: SequenceDictionary,
     @transient samples: Seq[Sample]) extends FeatureDataset {
 
   lazy val rdd: RDD[Feature] = {
@@ -290,8 +290,8 @@ case class ParquetUnboundFeatureDataset private[ds] (
     spark.read.parquet(parquetFilename).as[FeatureProduct]
   }
 
-  override def replaceSequences(newSequences: SequenceDictionary): FeatureDataset = {
-    copy(sequences = newSequences)
+  override def replaceReferences(newReferences: SequenceDictionary): FeatureDataset = {
+    copy(references = newReferences)
   }
 
   override def replaceSamples(newSamples: Iterable[Sample]): FeatureDataset = {
@@ -299,13 +299,13 @@ case class ParquetUnboundFeatureDataset private[ds] (
   }
 
   def toCoverage(): CoverageDataset = {
-    ParquetUnboundCoverageDataset(sc, parquetFilename, sequences, samples)
+    ParquetUnboundCoverageDataset(sc, parquetFilename, references, samples)
   }
 }
 
 case class DatasetBoundFeatureDataset private[ds] (
   dataset: Dataset[FeatureProduct],
-  sequences: SequenceDictionary,
+  references: SequenceDictionary,
   @transient samples: Seq[Sample],
   override val isPartitioned: Boolean = true,
   override val optPartitionBinSize: Option[Int] = Some(1000000),
@@ -339,8 +339,8 @@ case class DatasetBoundFeatureDataset private[ds] (
     copy(dataset = tFn.call(dataset))
   }
 
-  override def replaceSequences(newSequences: SequenceDictionary): FeatureDataset = {
-    copy(sequences = newSequences)
+  override def replaceReferences(newReferences: SequenceDictionary): FeatureDataset = {
+    copy(references = newReferences)
   }
 
   override def replaceSamples(newSamples: Iterable[Sample]): FeatureDataset = {
@@ -353,7 +353,7 @@ case class DatasetBoundFeatureDataset private[ds] (
       .select("referenceName", "start", "end", "score", "sampleId")
       .withColumnRenamed("score", "count")
       .withColumnRenamed("sampleId", "optSampleId")
-      .as[Coverage], sequences, samples)
+      .as[Coverage], references, samples)
   }
 
   override def filterToFeatureType(featureType: String): FeatureDataset = {
@@ -411,7 +411,7 @@ case class DatasetBoundFeatureDataset private[ds] (
 
 case class RDDBoundFeatureDataset private[ds] (
     rdd: RDD[Feature],
-    sequences: SequenceDictionary,
+    references: SequenceDictionary,
     @transient samples: Seq[Sample],
     optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends FeatureDataset {
 
@@ -423,8 +423,8 @@ case class RDDBoundFeatureDataset private[ds] (
     spark.createDataset(rdd.map(FeatureProduct.fromAvro))
   }
 
-  override def replaceSequences(newSequences: SequenceDictionary): FeatureDataset = {
-    copy(sequences = newSequences)
+  override def replaceReferences(newReferences: SequenceDictionary): FeatureDataset = {
+    copy(references = newReferences)
   }
 
   override def replaceSamples(newSamples: Iterable[Sample]): FeatureDataset = {
@@ -433,7 +433,7 @@ case class RDDBoundFeatureDataset private[ds] (
 
   def toCoverage(): CoverageDataset = {
     val coverageRdd = rdd.map(f => Coverage(f))
-    RDDBoundCoverageDataset(coverageRdd, sequences, samples, optPartitionMap)
+    RDDBoundCoverageDataset(coverageRdd, references, samples, optPartitionMap)
   }
 }
 
@@ -457,25 +457,25 @@ sealed abstract class FeatureDataset extends AvroGenomicDataset[Feature, Feature
    */
   override protected def saveMetadata(pathName: String): Unit = {
     savePartitionMap(pathName)
-    saveSequences(pathName)
+    saveReferences(pathName)
     saveSamples(pathName)
   }
 
   def union(datasets: FeatureDataset*): FeatureDataset = {
     val iterableDatasets = datasets.toSeq
     FeatureDataset(rdd.context.union(rdd, iterableDatasets.map(_.rdd): _*),
-      iterableDatasets.map(_.sequences).fold(sequences)(_ ++ _),
+      iterableDatasets.map(_.references).fold(references)(_ ++ _),
       iterableDatasets.map(_.samples).fold(samples)(_ ++ _))
   }
 
   override def transformDataset(
     tFn: Dataset[FeatureProduct] => Dataset[FeatureProduct]): FeatureDataset = {
-    DatasetBoundFeatureDataset(tFn(dataset), sequences, samples)
+    DatasetBoundFeatureDataset(tFn(dataset), references, samples)
   }
 
   override def transformDataset(
     tFn: JFunction[Dataset[FeatureProduct], Dataset[FeatureProduct]]): FeatureDataset = {
-    DatasetBoundFeatureDataset(tFn.call(dataset), sequences, samples)
+    DatasetBoundFeatureDataset(tFn.call(dataset), references, samples)
   }
 
   /**
@@ -720,7 +720,7 @@ sealed abstract class FeatureDataset extends AvroGenomicDataset[Feature, Feature
    */
   protected def replaceRdd(newRdd: RDD[Feature],
                            newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): FeatureDataset = {
-    new RDDBoundFeatureDataset(newRdd, sequences, samples, newPartitionMap)
+    new RDDBoundFeatureDataset(newRdd, references, samples, newPartitionMap)
   }
 
   /**
@@ -849,7 +849,7 @@ sealed abstract class FeatureDataset extends AvroGenomicDataset[Feature, Feature
       val headPath = new Path("%s_head".format(fileName))
       SAMHeaderWriter.writeHeader(fs,
         headPath,
-        sequences)
+        references)
 
       // write tail entries
       val tailPath = new Path("%s_tail".format(fileName))

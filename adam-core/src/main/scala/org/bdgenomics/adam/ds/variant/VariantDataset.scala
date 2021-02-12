@@ -155,7 +155,7 @@ object VariantDataset extends Serializable {
 case class ParquetUnboundVariantDataset private[ds] (
     @transient private val sc: SparkContext,
     private val parquetFilename: String,
-    sequences: SequenceDictionary,
+    references: SequenceDictionary,
     @transient headerLines: Seq[VCFHeaderLine]) extends VariantDataset {
 
   lazy val rdd: RDD[Variant] = {
@@ -169,9 +169,9 @@ case class ParquetUnboundVariantDataset private[ds] (
     spark.read.parquet(parquetFilename).as[VariantProduct]
   }
 
-  def replaceSequences(
-    newSequences: SequenceDictionary): VariantDataset = {
-    copy(sequences = newSequences)
+  def replaceReferences(
+    newReferences: SequenceDictionary): VariantDataset = {
+    copy(references = newReferences)
   }
 
   def replaceHeaderLines(newHeaderLines: Seq[VCFHeaderLine]): VariantDataset = {
@@ -181,7 +181,7 @@ case class ParquetUnboundVariantDataset private[ds] (
 
 case class DatasetBoundVariantDataset private[ds] (
   dataset: Dataset[VariantProduct],
-  sequences: SequenceDictionary,
+  references: SequenceDictionary,
   @transient headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines,
   override val isPartitioned: Boolean = true,
   override val optPartitionBinSize: Option[Int] = Some(1000000),
@@ -216,9 +216,9 @@ case class DatasetBoundVariantDataset private[ds] (
     copy(dataset = tFn.call(dataset))
   }
 
-  def replaceSequences(
-    newSequences: SequenceDictionary): VariantDataset = {
-    copy(sequences = newSequences)
+  def replaceReferences(
+    newReferences: SequenceDictionary): VariantDataset = {
+    copy(references = newReferences)
   }
 
   def replaceHeaderLines(newHeaderLines: Seq[VCFHeaderLine]): VariantDataset = {
@@ -272,7 +272,7 @@ case class DatasetBoundVariantDataset private[ds] (
 
 case class RDDBoundVariantDataset private[ds] (
     rdd: RDD[Variant],
-    sequences: SequenceDictionary,
+    references: SequenceDictionary,
     @transient headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines,
     optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None) extends VariantDataset {
 
@@ -284,9 +284,9 @@ case class RDDBoundVariantDataset private[ds] (
     spark.createDataset(rdd.map(VariantProduct.fromAvro))
   }
 
-  def replaceSequences(
-    newSequences: SequenceDictionary): VariantDataset = {
-    copy(sequences = newSequences)
+  def replaceReferences(
+    newReferences: SequenceDictionary): VariantDataset = {
+    copy(references = newReferences)
   }
 
   def replaceHeaderLines(newHeaderLines: Seq[VCFHeaderLine]): VariantDataset = {
@@ -317,7 +317,7 @@ sealed abstract class VariantDataset extends AvroGenomicDataset[Variant, Variant
 
   override protected def saveMetadata(filePath: String): Unit = {
     savePartitionMap(filePath)
-    saveSequences(filePath)
+    saveReferences(filePath)
     saveVcfHeaders(filePath)
   }
 
@@ -329,18 +329,18 @@ sealed abstract class VariantDataset extends AvroGenomicDataset[Variant, Variant
   def union(rdds: VariantDataset*): VariantDataset = {
     val iterableRdds = rdds.toSeq
     VariantDataset(rdd.context.union(rdd, iterableRdds.map(_.rdd): _*),
-      iterableRdds.map(_.sequences).fold(sequences)(_ ++ _),
+      iterableRdds.map(_.references).fold(references)(_ ++ _),
       (headerLines ++ iterableRdds.flatMap(_.headerLines)).distinct)
   }
 
   override def transformDataset(
     tFn: Dataset[VariantProduct] => Dataset[VariantProduct]): VariantDataset = {
-    DatasetBoundVariantDataset(tFn(dataset), sequences, headerLines)
+    DatasetBoundVariantDataset(tFn(dataset), references, headerLines)
   }
 
   override def transformDataset(
     tFn: JFunction[Dataset[VariantProduct], Dataset[VariantProduct]]): VariantDataset = {
-    DatasetBoundVariantDataset(tFn.call(dataset), sequences, headerLines)
+    DatasetBoundVariantDataset(tFn.call(dataset), references, headerLines)
   }
 
   /**
@@ -348,7 +348,7 @@ sealed abstract class VariantDataset extends AvroGenomicDataset[Variant, Variant
    */
   def toVariantContexts(): VariantContextDataset = {
     new RDDBoundVariantContextDataset(rdd.map(VariantContext(_)),
-      sequences,
+      references,
       Seq.empty[Sample],
       headerLines,
       optPartitionMap = optPartitionMap)
@@ -371,7 +371,7 @@ sealed abstract class VariantDataset extends AvroGenomicDataset[Variant, Variant
    * @return VariantDataset filtered by quality.
    */
   def filterByQuality(minimumQuality: Double): VariantDataset = {
-    transform((rdd: RDD[Variant]) => rdd.filter(v => !(Option(v.getSplitFromMultiAllelic).exists(_ == true)) && Option(v.getQuality).exists(_ >= minimumQuality)))
+    transform((rdd: RDD[Variant]) => rdd.filter(v => !Option(v.getSplitFromMultiAllelic).contains(true) && Option(v.getQuality).exists(_ >= minimumQuality)))
   }
 
   /**
@@ -474,7 +474,7 @@ sealed abstract class VariantDataset extends AvroGenomicDataset[Variant, Variant
    */
   protected def replaceRdd(newRdd: RDD[Variant],
                            newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): VariantDataset = {
-    RDDBoundVariantDataset(newRdd, sequences, headerLines, newPartitionMap)
+    RDDBoundVariantDataset(newRdd, references, headerLines, newPartitionMap)
   }
 
   /**
