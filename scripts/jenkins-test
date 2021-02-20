@@ -167,9 +167,9 @@ do
 
 done
 
-if [ ${SPARK_VERSION} == 3.0.1 ]
+if [ ${SPARK_VERSION} == 3.0.2 ]
 then
-    echo "Unable to build R support for Spark 3.0.1, SparkR is not available"
+    echo "Unable to build R support for Spark 3.0.2, SparkR is not available"
 else
     # make a directory to install SparkR into, and set the R user libs path
     export R_LIBS_USER=${SPARK_HOME}/local_R_libs
