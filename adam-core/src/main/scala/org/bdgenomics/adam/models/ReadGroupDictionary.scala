@@ -206,6 +206,10 @@ object ReadGroup {
       Option(readGroup.getPlatform),
       Option(readGroup.getPlatformUnit))
   }
+
+  def fromAvro(readGroups: Seq[ReadGroupMetadata]): ReadGroupDictionary = {
+    new ReadGroupDictionary(readGroups.map(rgm => ReadGroup.fromAvro(rgm)))
+  }
 }
 
 /**

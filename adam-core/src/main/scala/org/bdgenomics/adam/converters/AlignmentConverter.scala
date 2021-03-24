@@ -17,16 +17,218 @@
  */
 package org.bdgenomics.adam.converters
 
-import htsjdk.samtools.{ SAMFileHeader, SAMRecord }
-import org.bdgenomics.adam.models._
+import grizzled.slf4j.Logging
+import htsjdk.samtools.{
+  SAMFileHeader,
+  SAMProgramRecord,
+  SAMReadGroupRecord,
+  SAMRecord,
+  SAMUtils
+}
+import org.bdgenomics.adam.models.{
+  Alphabet,
+  Attribute,
+  ReadGroupDictionary,
+  SequenceDictionary
+}
 import org.bdgenomics.adam.rich.RichAlignment
-import org.bdgenomics.formats.avro.{ Alignment, Fragment }
-import scala.collection.JavaConversions._
+import org.bdgenomics.adam.util.AttributeUtils
+import org.bdgenomics.formats.avro.{
+  Alignment,
+  Fragment,
+  ProcessingStep
+}
+import scala.collection.JavaConverters._
 
 /**
- * This class contains methods to convert Alignments to other formats.
+ * Conversions between Alignments and other formats.
  */
-class AlignmentConverter extends Serializable {
+class AlignmentConverter extends Serializable with Logging {
+
+  /**
+   * Returns true if a tag should not be kept in the attributes field.
+   *
+   * The SAM/BAM format supports attributes, which is a key/value pair map. In
+   * ADAM, we have promoted some of these fields to "primary" fields, so that we
+   * can more efficiently access them. These include the MD tag, which describes
+   * substitutions against the reference; the OQ tag, which describes the
+   * original read base quality scores; and the OP and OC tags, which describe the
+   * original read alignment position and CIGAR.
+   *
+   * @param attrTag Tag name to check.
+   * @return Returns true if the tag should be skipped.
+   */
+  private[converters] def skipTag(attrTag: String): Boolean = attrTag match {
+    case "OQ" => true
+    case "OP" => true
+    case "OC" => true
+    case "MD" => true
+    case _    => false
+  }
+
+  /**
+   * Converts a SAM record into an Avro Alignment.
+   *
+   * @param samRecord Record to convert.
+   * @return Returns the original record converted into Avro.
+   */
+  def convert(samRecord: SAMRecord): Alignment = {
+    try {
+      val cigar: String = samRecord.getCigarString
+      val startTrim = if (cigar == "*") {
+        0
+      } else {
+        val count = cigar.takeWhile(_.isDigit).toInt
+        val operator = cigar.dropWhile(_.isDigit).head
+
+        if (operator == 'H') {
+          count
+        } else {
+          0
+        }
+      }
+      val endTrim = if (cigar.endsWith("H")) {
+        // must reverse string as takeWhile is not implemented in reverse direction
+        cigar.dropRight(1).reverse.takeWhile(_.isDigit).reverse.toInt
+      } else {
+        0
+      }
+
+      val builder: Alignment.Builder = Alignment.newBuilder
+        .setReadName(samRecord.getReadName)
+        .setSequence(samRecord.getReadString)
+        .setCigar(cigar)
+        .setBasesTrimmedFromStart(startTrim)
+        .setBasesTrimmedFromEnd(endTrim)
+        .setOriginalQualityScores(SAMUtils.phredToFastq(samRecord.getOriginalBaseQualities))
+
+      // if the quality scores string is "*", then we null it in the record
+      // or, in other words, we only set the quality scores if it is not "*"
+      val qualityScores = samRecord.getBaseQualityString
+      if (qualityScores != "*") {
+        builder.setQualityScores(qualityScores)
+      }
+
+      // Only set the reference information if the read is aligned, matching the mate reference
+      // This prevents looking up a -1 in the sequence dictionary
+      val readReference: Int = samRecord.getReferenceIndex
+      if (readReference != SAMRecord.NO_ALIGNMENT_REFERENCE_INDEX) {
+        builder.setReferenceName(samRecord.getReferenceName)
+
+        // set read alignment flag
+        val start: Int = samRecord.getAlignmentStart
+        assert(start != 0, "Start cannot equal 0 if reference is set.")
+        builder.setStart(start - 1L)
+
+        // set OP and OC flags, if applicable
+        if (samRecord.getAttribute("OP") != null) {
+          builder.setOriginalStart(samRecord.getIntegerAttribute("OP").toLong - 1)
+          builder.setOriginalCigar(samRecord.getStringAttribute("OC"))
+        }
+
+        val end = start.toLong - 1 + samRecord.getCigar.getReferenceLength
+        builder.setEnd(end)
+        // set mapping quality
+        val mapq: Int = samRecord.getMappingQuality
+
+        if (mapq != SAMRecord.UNKNOWN_MAPPING_QUALITY) {
+          builder.setMappingQuality(mapq)
+        }
+
+      }
+
+      // set mapping flags
+      // oddly enough, it appears that reads can show up with mapping
+      // info (mapq, cigar, position)
+      // even if the read unmapped flag is set...
+
+      // While the meaning of the ReadMapped, ReadNegativeStand,
+      // PrimaryAlignmentFlag and SupplementaryAlignmentFlag
+      // are unclear when the read is not mapped or reference is not defined,
+      // it is nonetheless favorable to set these flags in the ADAM file
+      // in same way as they appear in the input BAM inorder to match exactly
+      // the statistics output by other programs, specifically Samtools Flagstat
+
+      builder.setReadMapped(!samRecord.getReadUnmappedFlag)
+      builder.setReadNegativeStrand(samRecord.getReadNegativeStrandFlag)
+      builder.setPrimaryAlignment(!samRecord.getNotPrimaryAlignmentFlag)
+      builder.setSupplementaryAlignment(samRecord.getSupplementaryAlignmentFlag)
+
+      // Position of the mate/next segment
+      val mateReference: Int = samRecord.getMateReferenceIndex
+
+      if (mateReference != SAMRecord.NO_ALIGNMENT_REFERENCE_INDEX) {
+        builder.setMateReferenceName(samRecord.getMateReferenceName)
+
+        val mateStart = samRecord.getMateAlignmentStart
+        if (mateStart > 0) {
+          // We subtract one here to be 0-based offset
+          builder.setMateAlignmentStart(mateStart - 1L)
+        }
+      }
+
+      // The Avro scheme defines all flags as defaulting to 'false'. We only
+      // need to set the flags that are true.
+      if (samRecord.getFlags != 0) {
+        if (samRecord.getReadPairedFlag) {
+          builder.setReadPaired(true)
+          if (samRecord.getMateNegativeStrandFlag) {
+            builder.setMateNegativeStrand(true)
+          }
+          if (!samRecord.getMateUnmappedFlag) {
+            builder.setMateMapped(true)
+          }
+          if (samRecord.getProperPairFlag) {
+            builder.setProperPair(true)
+          }
+          if (samRecord.getFirstOfPairFlag) {
+            builder.setReadInFragment(0)
+          }
+          if (samRecord.getSecondOfPairFlag) {
+            builder.setReadInFragment(1)
+          }
+        }
+        if (samRecord.getDuplicateReadFlag) {
+          builder.setDuplicateRead(true)
+        }
+        if (samRecord.getReadFailsVendorQualityCheckFlag) {
+          builder.setFailedVendorQualityChecks(true)
+        }
+      }
+
+      var tags = List[Attribute]()
+      val tlen = samRecord.getInferredInsertSize
+      if (tlen != 0) {
+        builder.setInsertSize(tlen.toLong)
+      }
+      if (samRecord.getAttributes != null) {
+        samRecord.getAttributes.asScala.foreach {
+          attr =>
+            if (attr.tag == "MD") {
+              builder.setMismatchingPositions(attr.value.toString)
+            } else if (!skipTag(attr.tag)) {
+              tags ::= AttributeUtils.convertSAMTagAndValue(attr)
+            }
+        }
+      }
+      if (tags.nonEmpty) {
+        builder.setAttributes(tags.mkString("\t"))
+      }
+
+      val recordGroup: SAMReadGroupRecord = samRecord.getReadGroup
+      if (recordGroup != null) {
+        builder.setReadGroupId(recordGroup.getReadGroupId)
+          .setReadGroupSampleId(recordGroup.getSample)
+      }
+
+      builder.build
+    } catch {
+      case t: Throwable => {
+        error("Conversion of read: " + samRecord + " failed.")
+        throw t
+      }
+    }
+  }
 
   /**
    * Prepare a single record for conversion to FASTQ and similar formats by
@@ -329,7 +531,7 @@ class AlignmentConverter extends Serializable {
       .foreach(builder.setAttribute("MD", _))
     Option(adamRecord.getOriginalQualityScores)
       .map(s => s.getBytes.map(v => (v - 33).toByte)) // not ascii, but short int
-      .foreach(builder.setOriginalBaseQualities(_))
+      .foreach(builder.setOriginalBaseQualities)
     Option(adamRecord.getOriginalCigar)
       .foreach(builder.setAttribute("OC", _))
     Option(adamRecord.getOriginalStart)
@@ -373,7 +575,7 @@ class AlignmentConverter extends Serializable {
    *         Alignment per sequence in the Fragment.
    */
   def convertFragment(fragment: Fragment): Iterable[Alignment] = {
-    asScalaBuffer(fragment.getAlignments).toIterable
+    asScalaBuffer(fragment.getAlignments)
   }
 }
 
@@ -383,7 +585,47 @@ class AlignmentConverter extends Serializable {
  * Singleton object exists due to cross reference from
  * org.bdgenomics.adam.rdd.read.AlignmentDatasetFunctions.
  */
-private[adam] object AlignmentConverter extends Serializable {
+object AlignmentConverter extends Serializable {
+
+  /**
+   * Return the references in the specified SAM file header.
+   *
+   * @param header SAM file header
+   * @return the references in the specified SAM file header
+   */
+  def references(header: SAMFileHeader): SequenceDictionary = {
+    SequenceDictionary(header)
+  }
+
+  /**
+   * Return the read groups in the specified SAM file header.
+   *
+   * @param header SAM file header
+   * @return the read groups in the specified SAM file header
+   */
+  def readGroups(header: SAMFileHeader): ReadGroupDictionary = {
+    ReadGroupDictionary.fromSAMHeader(header)
+  }
+
+  /**
+   * Return the processing steps in the specified SAM file header.
+   *
+   * @param header SAM file header
+   * @return the processing steps in the specified SAM file header
+   */
+  def processingSteps(header: SAMFileHeader): Seq[ProcessingStep] = {
+    val programRecords = header.getProgramRecords().asScala
+    programRecords.map(convertSAMProgramRecord)
+  }
+
+  private def convertSAMProgramRecord(record: SAMProgramRecord): ProcessingStep = {
+    val builder = ProcessingStep.newBuilder.setId(record.getId)
+    Option(record.getPreviousProgramGroupId).foreach(builder.setPreviousId)
+    Option(record.getProgramVersion).foreach(builder.setVersion)
+    Option(record.getProgramName).foreach(builder.setProgramName)
+    Option(record.getCommandLine).foreach(builder.setCommandLine)
+    builder.build
+  }
 
   /**
    * Checks to see if a read name has a index suffix.

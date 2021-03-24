@@ -19,7 +19,7 @@ package org.bdgenomics.adam.ds.read
 
 import htsjdk.samtools._
 import java.io.InputStream
-import org.bdgenomics.adam.converters.SAMRecordConverter
+import org.bdgenomics.adam.converters.AlignmentConverter
 import org.bdgenomics.adam.ds.OutFormatter
 import org.bdgenomics.formats.avro.Alignment
 import scala.annotation.tailrec
@@ -55,7 +55,7 @@ private case class SAMIteratorConverter(val reader: SamReader) extends Iterator[
   val iter = reader.iterator()
 
   // make converter and empty dicts
-  val converter = new SAMRecordConverter
+  val converter = new AlignmentConverter
 
   def hasNext: Boolean = {
     iter.hasNext

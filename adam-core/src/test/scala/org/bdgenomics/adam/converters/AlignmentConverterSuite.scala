@@ -163,14 +163,14 @@ class AlignmentConverterSuite extends FunSuite {
   }
 
   def getSAMRecordFromReadName(readName: String): (Alignment, Alignment) = {
-    val samToADAMConverter = new SAMRecordConverter
+    val alignmentConverter = new AlignmentConverter
     val SAMTestFile = new File(getClass.getClassLoader.getResource("bqsr1.sam").getFile)
     val newSAMReader = SamReaderFactory.makeDefault().open(SAMTestFile)
 
     // Obtain SAMRecord
     val newSAMRecord = newSAMReader.iterator().dropWhile(r => r.getReadName != readName)
-    val firstRecord = samToADAMConverter.convert(newSAMRecord.next())
-    val secondRecord = samToADAMConverter.convert(newSAMRecord.next())
+    val firstRecord = alignmentConverter.convert(newSAMRecord.next())
+    val secondRecord = alignmentConverter.convert(newSAMRecord.next())
     (firstRecord, secondRecord)
   }
 
@@ -335,6 +335,108 @@ class AlignmentConverterSuite extends FunSuite {
     val fragment = Fragment.newBuilder().setAlignments(List(record)).build()
     val converted = adamRecordConverter.convertFragment(fragment)
     assert(converted.head.getReadNegativeStrand)
+  }
+  test("testing the fields in an Alignment obtained from a mapped samRecord conversion") {
+
+    val testRecordConverter = new AlignmentConverter
+    val testFileString = getClass.getClassLoader.getResource("reads12.sam").getFile
+    val testFile = new File(testFileString)
+
+    // Iterator of SamReads in the file that each have a samRecord for conversion
+    val testIterator = SamReaderFactory.makeDefault().open(testFile)
+    val testSAMRecord = testIterator.iterator().next()
+
+    // set the oq, md, oc, and op attributes
+    testSAMRecord.setOriginalBaseQualities("*****".getBytes.map(v => (v - 33).toByte))
+    testSAMRecord.setAttribute("MD", "100")
+    testSAMRecord.setAttribute("OC", "100M")
+    testSAMRecord.setAttribute("OP", 1)
+
+    // Convert samRecord to Alignment
+    val testAlignment = testRecordConverter.convert(testSAMRecord)
+
+    // Validating Conversion
+    assert(testAlignment.getCigar === testSAMRecord.getCigarString)
+    assert(testAlignment.getDuplicateRead === testSAMRecord.getDuplicateReadFlag)
+    assert(testAlignment.getEnd.toInt === testSAMRecord.getAlignmentEnd)
+    assert(testAlignment.getMappingQuality.toInt === testSAMRecord.getMappingQuality)
+    assert(testAlignment.getStart.toInt === (testSAMRecord.getAlignmentStart - 1))
+    assert(testAlignment.getReadInFragment == 0)
+    assert(testAlignment.getFailedVendorQualityChecks === testSAMRecord.getReadFailsVendorQualityCheckFlag)
+    assert(!testAlignment.getPrimaryAlignment === testSAMRecord.getNotPrimaryAlignmentFlag)
+    assert(!testAlignment.getReadMapped === testSAMRecord.getReadUnmappedFlag)
+    assert(testAlignment.getReadName === testSAMRecord.getReadName)
+    assert(testAlignment.getReadNegativeStrand === testSAMRecord.getReadNegativeStrandFlag)
+    assert(!testAlignment.getReadPaired)
+    assert(testAlignment.getReadInFragment != 1)
+    assert(testAlignment.getSupplementaryAlignment === testSAMRecord.getSupplementaryAlignmentFlag)
+    assert(testAlignment.getOriginalQualityScores === "*****")
+    assert(testAlignment.getMismatchingPositions === "100")
+    assert(testAlignment.getOriginalCigar === "100M")
+    assert(testAlignment.getOriginalStart === 0L)
+    assert(testAlignment.getAttributes === "XS:i:0\tAS:i:75\tNM:i:0")
+  }
+
+  test("testing the fields in an Alignment obtained from an unmapped samRecord conversion") {
+
+    val testRecordConverter = new AlignmentConverter
+    val testFileString = getClass.getClassLoader.getResource("reads12.sam").getFile
+    val testFile = new File(testFileString)
+
+    // Iterator of SamReads in the file that each have a samRecord for conversion
+    val testIterator = SamReaderFactory.makeDefault().open(testFile)
+    val testSAMRecord = testIterator.iterator().next()
+
+    // Convert samRecord to Alignment
+    val testAlignment = testRecordConverter.convert(testSAMRecord)
+
+    // Validating Conversion
+    assert(testAlignment.getCigar === testSAMRecord.getCigarString)
+    assert(testAlignment.getDuplicateRead === testSAMRecord.getDuplicateReadFlag)
+    assert(testAlignment.getEnd.toInt === testSAMRecord.getAlignmentEnd)
+    assert(testAlignment.getMappingQuality.toInt === testSAMRecord.getMappingQuality)
+    assert(testAlignment.getStart.toInt === (testSAMRecord.getAlignmentStart - 1))
+    assert(testAlignment.getReadInFragment == 0)
+    assert(testAlignment.getFailedVendorQualityChecks === testSAMRecord.getReadFailsVendorQualityCheckFlag)
+    assert(!testAlignment.getPrimaryAlignment === testSAMRecord.getNotPrimaryAlignmentFlag)
+    assert(!testAlignment.getReadMapped === testSAMRecord.getReadUnmappedFlag)
+    assert(testAlignment.getReadName === testSAMRecord.getReadName)
+    assert(testAlignment.getReadNegativeStrand === testSAMRecord.getReadNegativeStrandFlag)
+    assert(!testAlignment.getReadPaired)
+    assert(testAlignment.getReadInFragment != 1)
+    assert(testAlignment.getSupplementaryAlignment === testSAMRecord.getSupplementaryAlignmentFlag)
+  }
+
+  test("'*' quality gets nulled out") {
+
+    val newRecordConverter = new AlignmentConverter
+    val newTestFile = new File(getClass.getClassLoader.getResource("unmapped.sam").getFile)
+    val newSAMReader = SamReaderFactory.makeDefault().open(newTestFile)
+
+    // Obtain SAMRecord
+    val newSAMRecordIter = {
+      val samIter = asScalaIterator(newSAMReader.iterator())
+      samIter.toIterable.dropWhile(!_.getReadUnmappedFlag)
+    }
+    val newSAMRecord = newSAMRecordIter.toIterator.next()
+
+    // null out quality
+    newSAMRecord.setBaseQualityString("*")
+
+    // Conversion
+    val newAlignment = newRecordConverter.convert(newSAMRecord)
+
+    // Validating Conversion
+    assert(newAlignment.getQualityScores === null)
+  }
+
+  test("don't keep denormalized fields") {
+    val rc = new AlignmentConverter
+
+    assert(rc.skipTag("MD"))
+    assert(rc.skipTag("OQ"))
+    assert(rc.skipTag("OP"))
+    assert(rc.skipTag("OC"))
   }
 }
 
