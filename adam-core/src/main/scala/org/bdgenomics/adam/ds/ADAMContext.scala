@@ -2053,9 +2053,9 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       sc.newAPIHadoopFile(pathName, classOf[AnySAMInputFormat], classOf[LongWritable],
         classOf[SAMRecordWritable], ContextUtil.getConfiguration(job))
     }
-    val samRecordConverter = new SAMRecordConverter
+    val alignmentConverter = new AlignmentConverter
 
-    AlignmentDataset(records.map(p => samRecordConverter.convert(p._2.get)),
+    AlignmentDataset(records.map(p => alignmentConverter.convert(p._2.get)),
       seqDict,
       readGroups,
       programs)
@@ -2167,8 +2167,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       classOf[SAMRecordWritable],
       conf)
 
-    val samRecordConverter = new SAMRecordConverter
-    AlignmentDataset(records.map(p => samRecordConverter.convert(p._2.get)),
+    val alignmentConverter = new AlignmentConverter
+    AlignmentDataset(records.map(p => alignmentConverter.convert(p._2.get)),
       seqDict,
       readGroups,
       programs)
