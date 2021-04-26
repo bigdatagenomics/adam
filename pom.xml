@@ -333,12 +333,12 @@
       <dependency>
         <groupId>commons-io</groupId>
         <artifactId>commons-io</artifactId>
-        <version>2.7</version>
+        <version>2.8.0</version>
       </dependency>
       <dependency>
         <groupId>it.unimi.dsi</groupId>
         <artifactId>fastutil</artifactId>
-        <version>6.6.5</version>
+        <version>8.5.4</version>
       </dependency>
       <dependency>
         <groupId>org.scala-lang</groupId>
@@ -454,7 +454,7 @@
       <dependency>
         <groupId>net.razorvine</groupId>
         <artifactId>pyrolite</artifactId>
-        <version>4.9</version>
+        <version>5.0</version>
         <scope>provided</scope>
         <exclusions>
           <exclusion>
@@ -493,7 +493,7 @@
       <dependency>
         <artifactId>commons-codec</artifactId>
         <groupId>commons-codec</groupId>
-        <version>1.11</version>
+        <version>1.15</version>
       </dependency>
       <dependency>
         <groupId>org.apache.parquet</groupId>
@@ -555,23 +555,23 @@
       <dependency>
         <groupId>org.apache.httpcomponents</groupId>
         <artifactId>httpclient</artifactId>
-        <version>4.5.7</version>
+        <version>4.5.13</version>
       </dependency>
      <dependency>
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
-        <version>29.0-jre</version>
+        <version>30.1.1-jre</version>
       </dependency>
       <dependency>
         <groupId>org.mockito</groupId>
         <artifactId>mockito-core</artifactId>
-        <version>2.25.1</version>
+        <version>3.9.0</version>
         <scope>test</scope>
       </dependency>
       <dependency>
         <groupId>net.codingwell</groupId>
         <artifactId>scala-guice_${scala.version.prefix}</artifactId>
-        <version>4.2.1</version>
+        <version>5.0.0</version>
       </dependency>
       <dependency>
         <groupId>org.bdgenomics.adam</groupId>
