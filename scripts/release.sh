@@ -29,53 +29,6 @@ echo "releasing from ${commit} on branch ${branch}"
 
 git push origin ${branch}
 
-#cd adam-python
-#virtualenv adam-release
-#. adam-release/bin/activate
-#make develop
-#deactivate
-#rm -rf adam-release
-#cd ..
-
-# set up python environment for releasing to pypi
-#pushd adam-python
-#rm -rf release-venv
-#virtualenv release-venv
-#. release-venv/bin/activate
-#pip install pyspark
-#pip install twine
-#pip install pypandoc
-
-# clean any possible extant sdists
-#rm -rf dist
-
-# build sdist and push to pypi
-#make sdist
-#twine upload dist/*.tar.gz
-
-# deactivate the python virtualenv
-#deactivate
-#rm -rf release-venv
-
-#popd
-
-# build R tarball
-#
-# !!!!!
-# NOTE:
-# !!!!!
-#
-# We will not be pushing to CRAN until SparkR is reinstated in CRAN. Until then,
-# this tarball will need to be manually attached to the github releases page
-#pushd adam-r
-#R CMD build bdgenomics.adam
-#popd
-
-#if [ $? != 0 ]; then
-#  echo "Releasing bdgenomics.adam to PyPi failed."
-#  exit 1
-#fi
-
 # do spark 3, scala 2.12 release
 git checkout -b maint_spark3_2.12-${release} ${branch}
 
