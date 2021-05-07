@@ -1,5 +1,23 @@
 # ADAM Changelog #
 
+### Version 0.35.0 ###
+
+**Closed issues:**
+
+ - Migrate CI off Jenkins [\#2307](https://github.com/bigdatagenomics/adam/issues/2307)
+ - Provide access to header to model conversions [\#2304](https://github.com/bigdatagenomics/adam/issues/2304)
+
+**Merged and closed pull requests:**
+
+ - [ADAM-2307] Remove Jenkins and Travis CI configuration [\#2312](https://github.com/bigdatagenomics/adam/pull/2312) ([heuermh](https://github.com/heuermh))
+ - Add initial GitHub Actions CI configuration [\#2311](https://github.com/bigdatagenomics/adam/pull/2311) ([heuermh](https://github.com/heuermh))
+ - Add paired fastq argument to transformFragments [\#2310](https://github.com/bigdatagenomics/adam/pull/2310) ([heuermh](https://github.com/heuermh))
+ - Update dependency and maven plugin versions [\#2309](https://github.com/bigdatagenomics/adam/pull/2309) ([heuermh](https://github.com/heuermh))
+ - Bump commons-io from 2.6 to 2.7 [\#2308](https://github.com/bigdatagenomics/adam/pull/2308) ([dependabot[bot]](https://github.com/apps/dependabot))
+ - Bump guava from 27.0-jre to 29.0-jre [\#2306](https://github.com/bigdatagenomics/adam/pull/2306) ([dependabot[bot]](https://github.com/apps/dependabot))
+ - [ADAM-2304] Provide access to header to model conversions [\#2305](https://github.com/bigdatagenomics/adam/pull/2305) ([heuermh](https://github.com/heuermh))
+
+
 ### Version 0.34.0 ###
 
 **Closed issues:**
