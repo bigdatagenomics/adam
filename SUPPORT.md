@@ -8,7 +8,7 @@ The primary mechanism for communication between ADAM developers and users is the
 
 ### Join the ADAM IRC channel
 
-If you prefer IRC, you can often find ADAM developers and users on [Freenode IRC](https://freenode.net/) in the #adamdev room.
+If you prefer IRC, you can often find ADAM developers and users on [Libera.Chat](https://libera.chat/) in the #adamdev room.
 
 
 ### Join the ADAM developers mailing list
