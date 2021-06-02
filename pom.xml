@@ -21,7 +21,7 @@
     <avro.version>1.8.2</avro.version>
     <scala.version>2.12.10</scala.version>
     <scala.version.prefix>2.12</scala.version.prefix>
-    <spark.version>3.1.1</spark.version>
+    <spark.version>3.1.2</spark.version>
     <parquet.version>1.10.1</parquet.version>
     <hadoop.version>3.2.1</hadoop.version>
     <hadoop-bam.version>7.9.2</hadoop-bam.version>
