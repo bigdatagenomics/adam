@@ -483,17 +483,18 @@ sealed abstract class AlignmentDataset extends AvroReadGroupGenomicDataset[Align
    * @return Return this genomic dataset of alignments converted to a ReadDataset.
    */
   def toReads(): ReadDataset = {
-    def toRead(Alignment: Alignment): Read = {
+    def toRead(alignment: Alignment): Read = {
       val builder = Read.newBuilder()
         .setAlphabet(org.bdgenomics.formats.avro.Alphabet.DNA)
-        .setName(Alignment.getReadName)
-        .setSequence(Alignment.getSequence)
-        .setQualityScores(Alignment.getQualityScores)
+        .setName(alignment.getReadName)
+        .setSequence(alignment.getSequence)
+        .setQualityScores(alignment.getQualityScores)
 
-      Option(Alignment.getSequence).foreach(sequence => builder.setLength(sequence.length().toLong))
+      Option(alignment.getSequence).foreach(sequence => builder.setLength(sequence.length().toLong))
+      Option(alignment.getReadGroupSampleId).foreach(sampleId => builder.setSampleId(sampleId))
       builder.build()
     }
-    ReadDataset(rdd.map(toRead), references)
+    ReadDataset(rdd.map(toRead), references, readGroups.toSamples)
   }
 
   /**

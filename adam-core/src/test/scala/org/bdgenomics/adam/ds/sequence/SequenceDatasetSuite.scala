@@ -42,6 +42,7 @@ class SequenceDatasetSuite extends ADAMFunSuite {
     .setAlphabet(Alphabet.DNA)
     .setSequence("actg")
     .setLength(4L)
+    .setSampleId("sampleId")
     .build
 
   val s2 = Sequence.newBuilder()
@@ -50,9 +51,10 @@ class SequenceDatasetSuite extends ADAMFunSuite {
     .setAlphabet(Alphabet.DNA)
     .setSequence("actg")
     .setLength(4L)
+    .setSampleId("sampleId")
     .build
 
-  val sd = SequenceDictionary(
+  val references = SequenceDictionary(
     SequenceRecord("name1", 4),
     SequenceRecord("name2", 4)
   )
@@ -68,9 +70,9 @@ class SequenceDatasetSuite extends ADAMFunSuite {
     assert(SequenceDataset(sequences).rdd.count === 2)
   }
 
-  sparkTest("create a new sequence genomic dataset with sequence dictionary") {
+  sparkTest("create a new sequence genomic dataset with references") {
     val sequences: RDD[Sequence] = sc.parallelize(Seq(s1, s2))
-    assert(SequenceDataset(sequences, sd).rdd.count === 2)
+    assert(SequenceDataset(sequences, references, Seq.empty).rdd.count === 2)
   }
 
   sparkTest("save as parquet") {
@@ -112,6 +114,7 @@ class SequenceDatasetSuite extends ADAMFunSuite {
     assert(r1.getLength === 4L)
     assert(r1.getSequence === "actg")
     assert(r1.getQualityScores === "BBBB")
+    assert(r1.getSampleId === "sampleId")
 
     val r2 = reads(1)
     assert(r2.getName === "name2")
@@ -120,6 +123,7 @@ class SequenceDatasetSuite extends ADAMFunSuite {
     assert(r2.getLength === 4L)
     assert(r2.getSequence === "actg")
     assert(r2.getQualityScores === "BBBB")
+    assert(r2.getSampleId === "sampleId")
   }
 
   sparkTest("convert sequences to slices") {
@@ -137,6 +141,7 @@ class SequenceDatasetSuite extends ADAMFunSuite {
     assert(slice1.getStart === 0L)
     assert(slice1.getEnd === 4L)
     assert(slice1.getStrand === Strand.INDEPENDENT)
+    assert(slice1.getSampleId === "sampleId")
 
     val slice2 = slices(1)
     assert(slice2.getName === "name2")
@@ -148,6 +153,7 @@ class SequenceDatasetSuite extends ADAMFunSuite {
     assert(slice2.getStart === 0L)
     assert(slice2.getEnd === 4L)
     assert(slice2.getStrand === Strand.INDEPENDENT)
+    assert(slice2.getSampleId === "sampleId")
   }
 
   sparkTest("slice sequences to a maximum length") {
@@ -173,6 +179,7 @@ class SequenceDatasetSuite extends ADAMFunSuite {
     assert(slice1.getStrand === Strand.INDEPENDENT)
     assert(slice1.getIndex === 0)
     assert(slice1.getSlices === 2)
+    assert(slice1.getSampleId === "sampleId")
 
     val slice2 = slices(1)
     assert(slice2.getName === "name1")
@@ -186,6 +193,7 @@ class SequenceDatasetSuite extends ADAMFunSuite {
     assert(slice2.getStrand === Strand.INDEPENDENT)
     assert(slice2.getIndex === 1)
     assert(slice2.getSlices === 2)
+    assert(slice2.getSampleId === "sampleId")
 
     val slice3 = slices(2)
     assert(slice3.getName === "name2")
@@ -199,6 +207,7 @@ class SequenceDatasetSuite extends ADAMFunSuite {
     assert(slice3.getStrand === Strand.INDEPENDENT)
     assert(slice3.getIndex === 0)
     assert(slice3.getSlices === 2)
+    assert(slice3.getSampleId === "sampleId")
 
     val slice4 = slices(3)
     assert(slice4.getName === "name2")
@@ -212,6 +221,7 @@ class SequenceDatasetSuite extends ADAMFunSuite {
     assert(slice4.getStrand === Strand.INDEPENDENT)
     assert(slice4.getIndex === 1)
     assert(slice4.getSlices === 2)
+    assert(slice4.getSampleId === "sampleId")
   }
 
   sparkTest("slice sequences shorter than maximum length") {
@@ -231,6 +241,7 @@ class SequenceDatasetSuite extends ADAMFunSuite {
     assert(slice1.getStrand === Strand.INDEPENDENT)
     assert(slice1.getIndex === 0)
     assert(slice1.getSlices === 1)
+    assert(slice1.getSampleId === "sampleId")
 
     val slice2 = slices(1)
     assert(slice2.getName === "name2")
@@ -244,6 +255,7 @@ class SequenceDatasetSuite extends ADAMFunSuite {
     assert(slice2.getStrand === Strand.INDEPENDENT)
     assert(slice2.getIndex === 0)
     assert(slice2.getSlices === 1)
+    assert(slice2.getSampleId === "sampleId")
   }
 
   sparkTest("filter sequences by overlapping region") {
@@ -257,6 +269,7 @@ class SequenceDatasetSuite extends ADAMFunSuite {
     assert(sequence1.getAlphabet === Alphabet.DNA)
     assert(sequence1.getLength === 4L)
     assert(sequence1.getSequence === "actg")
+    assert(sequence1.getSampleId === "sampleId")
   }
 
   sparkTest("filter sequences failing to overlap region") {
@@ -276,6 +289,7 @@ class SequenceDatasetSuite extends ADAMFunSuite {
     assert(sequence1.getAlphabet === Alphabet.DNA)
     assert(sequence1.getLength === 4L)
     assert(sequence1.getSequence === "actg")
+    assert(sequence1.getSampleId === "sampleId")
 
     val sequence2 = filtered(1)
     assert(sequence2.getName === "name2")
@@ -283,6 +297,7 @@ class SequenceDatasetSuite extends ADAMFunSuite {
     assert(sequence2.getAlphabet === Alphabet.DNA)
     assert(sequence2.getLength === 4L)
     assert(sequence2.getSequence === "actg")
+    assert(sequence2.getSampleId === "sampleId")
   }
 
   sparkTest("filter sequences failing to overlap regions") {
@@ -306,6 +321,7 @@ class SequenceDatasetSuite extends ADAMFunSuite {
     assert(slice1.getStart === 1L)
     assert(slice1.getEnd === 3L)
     assert(slice1.getStrand === Strand.INDEPENDENT)
+    assert(slice1.getSampleId === "sampleId")
   }
 
   sparkTest("slice sequences overlapping a larger region") {
@@ -323,6 +339,7 @@ class SequenceDatasetSuite extends ADAMFunSuite {
     assert(slice1.getStart === 0L)
     assert(slice1.getEnd === 4L)
     assert(slice1.getStrand === Strand.INDEPENDENT)
+    assert(slice1.getSampleId === "sampleId")
   }
 
   sparkTest("slice sequences failing to overlap a region") {
@@ -347,6 +364,7 @@ class SequenceDatasetSuite extends ADAMFunSuite {
     assert(slice1.getStart === 1L)
     assert(slice1.getEnd === 3L)
     assert(slice1.getStrand === Strand.INDEPENDENT)
+    assert(slice1.getSampleId === "sampleId")
 
     val slice2 = slices(1)
     assert(slice2.getName === "name2")
@@ -358,6 +376,7 @@ class SequenceDatasetSuite extends ADAMFunSuite {
     assert(slice2.getStart === 1L)
     assert(slice2.getEnd === 3L)
     assert(slice2.getStrand === Strand.INDEPENDENT)
+    assert(slice2.getSampleId === "sampleId")
   }
 
   sparkTest("slice sequences overlapping larger regions") {
@@ -376,6 +395,7 @@ class SequenceDatasetSuite extends ADAMFunSuite {
     assert(slice1.getStart === 0L)
     assert(slice1.getEnd === 4L)
     assert(slice1.getStrand === Strand.INDEPENDENT)
+    assert(slice1.getSampleId === "sampleId")
 
     val slice2 = slices(1)
     assert(slice2.getName === "name2")
@@ -387,6 +407,7 @@ class SequenceDatasetSuite extends ADAMFunSuite {
     assert(slice2.getStart === 0L)
     assert(slice2.getEnd === 4L)
     assert(slice2.getStrand === Strand.INDEPENDENT)
+    assert(slice2.getSampleId === "sampleId")
   }
 
   sparkTest("slice sequences failing to overlap regions") {

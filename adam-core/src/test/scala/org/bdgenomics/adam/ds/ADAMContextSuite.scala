@@ -404,9 +404,9 @@ class ADAMContextSuite extends ADAMFunSuite {
     val gRdd = sc.loadFastaDna(inputPath)
 
     // see https://github.com/bigdatagenomics/adam/issues/1894
-    val withSequenceDictionary = gRdd.createSequenceDictionary()
-    assert(withSequenceDictionary.references.records.size === 1)
-    assert(withSequenceDictionary.references.records.head.name === "HLA-DQB1*05:01:01:02")
+    val withReferences = gRdd.createReferences()
+    assert(withReferences.references.records.size === 1)
+    assert(withReferences.references.records.head.name === "HLA-DQB1*05:01:01:02")
 
     val sequences = gRdd.rdd.collect
     assert(sequences.length === 1)

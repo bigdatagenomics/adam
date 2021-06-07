@@ -26,20 +26,23 @@ import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.ds.ADAMContext._
 import org.bdgenomics.adam.ds.sequence.{ SequenceDataset, SliceDataset }
 import org.bdgenomics.adam.ds.{
-  DatasetBoundGenomicDataset,
   AvroGenomicDataset,
-  JavaSaveArgs
+  DatasetBoundGenomicDataset,
+  JavaSaveArgs,
+  MultisampleGenomicDataset
 }
 import org.bdgenomics.adam.serialization.AvroSerializer
 import org.bdgenomics.adam.sql.{ Read => ReadProduct }
 import org.bdgenomics.formats.avro.{
   Alignment,
   Read,
+  Sample,
   Sequence,
   Slice,
   Strand
 }
 import org.bdgenomics.utils.interval.array.{ IntervalArray, IntervalArraySerializer }
+import scala.collection.JavaConverters.asScalaBuffer
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 
@@ -76,46 +79,52 @@ object ReadDataset {
    * @param ds A Dataset of genomic Reads.
    */
   def apply(ds: Dataset[ReadProduct]): ReadDataset = {
-    DatasetBoundReadDataset(ds, SequenceDictionary.empty)
+    DatasetBoundReadDataset(ds, SequenceDictionary.empty, Seq.empty[Sample])
   }
 
   /**
    * A genomic dataset that wraps a dataset of Read data.
    *
    * @param ds A Dataset of genomic Reads.
-   * @param sequences The reference genome these data are aligned to.
+   * @param references The reference genome these data are aligned to.
+   * @param samples Samples for these reads.
    */
   def apply(ds: Dataset[ReadProduct],
-            sequences: SequenceDictionary): ReadDataset = {
-    DatasetBoundReadDataset(ds, sequences)
+            references: SequenceDictionary,
+            samples: Iterable[Sample]): ReadDataset = {
+    DatasetBoundReadDataset(ds, references, samples.toSeq)
   }
 
   /**
-   * Builds a ReadDataset with an empty sequence dictionary.
+   * A genomic dataset that wraps an RDD of Read data.
    *
    * @param rdd The underlying Read RDD to build from.
    * @return Returns a new ReadDataset.
    */
   def apply(rdd: RDD[Read]): ReadDataset = {
-    ReadDataset(rdd, SequenceDictionary.empty)
+    ReadDataset(rdd, SequenceDictionary.empty, Iterable.empty[Sample])
   }
 
   /**
-   * Builds a ReadDataset given a sequence dictionary.
+   * A genomic dataset that wraps an RDD of Read data.
    *
    * @param rdd The underlying Read RDD to build from.
-   * @param sd The sequence dictionary for this ReadDataset.
+   * @param references The reference genome these data are aligned to.
+   * @param samples Samples for these reads.
    * @return Returns a new ReadDataset.
    */
-  def apply(rdd: RDD[Read], sd: SequenceDictionary): ReadDataset = {
-    RDDBoundReadDataset(rdd, sd, None)
+  def apply(rdd: RDD[Read],
+            references: SequenceDictionary,
+            samples: Iterable[Sample]): ReadDataset = {
+    RDDBoundReadDataset(rdd, references, samples.toSeq, None)
   }
 }
 
 case class ParquetUnboundReadDataset private[ds] (
     @transient private val sc: SparkContext,
     private val parquetFilename: String,
-    references: SequenceDictionary) extends ReadDataset {
+    references: SequenceDictionary,
+    @transient samples: Seq[Sample]) extends ReadDataset {
 
   lazy val rdd: RDD[Read] = {
     sc.loadParquet(parquetFilename)
@@ -123,7 +132,7 @@ case class ParquetUnboundReadDataset private[ds] (
 
   protected lazy val optPartitionMap = sc.extractPartitionMap(parquetFilename)
 
-  lazy val dataset = {
+  lazy val dataset: Dataset[ReadProduct] = {
     import spark.implicits._
     spark.read.parquet(parquetFilename).as[ReadProduct]
   }
@@ -131,17 +140,30 @@ case class ParquetUnboundReadDataset private[ds] (
   def replaceReferences(newReferences: SequenceDictionary): ReadDataset = {
     copy(references = newReferences)
   }
+
+  override def replaceSamples(newSamples: Iterable[Sample]): ReadDataset = {
+    copy(samples = newSamples.toSeq)
+  }
+
+  override def filterToSample(sampleId: String): ReadDataset = {
+    transformDataset(dataset => dataset.filter(dataset.col("sampleId") === sampleId))
+  }
+
+  override def filterToSamples(sampleIds: Seq[String]): ReadDataset = {
+    transformDataset(dataset => dataset.filter(dataset.col("sampleId") isin (sampleIds: _*)))
+  }
 }
 
 case class DatasetBoundReadDataset private[ds] (
   dataset: Dataset[ReadProduct],
   references: SequenceDictionary,
+  @transient samples: Seq[Sample],
   override val isPartitioned: Boolean = true,
   override val optPartitionBinSize: Option[Int] = Some(1000000),
   override val optLookbackPartitions: Option[Int] = Some(1)) extends ReadDataset
     with DatasetBoundGenomicDataset[Read, ReadProduct, ReadDataset] {
 
-  lazy val rdd = dataset.rdd.map(_.toAvro)
+  lazy val rdd: RDD[Read] = dataset.rdd.map(_.toAvro)
   protected lazy val optPartitionMap = None
 
   override def saveAsParquet(filePath: String,
@@ -171,11 +193,16 @@ case class DatasetBoundReadDataset private[ds] (
   def replaceReferences(newReferences: SequenceDictionary): ReadDataset = {
     copy(references = newReferences)
   }
+
+  override def replaceSamples(newSamples: Iterable[Sample]): ReadDataset = {
+    copy(samples = newSamples.toSeq)
+  }
 }
 
 case class RDDBoundReadDataset private[ds] (
     rdd: RDD[Read],
     references: SequenceDictionary,
+    @transient samples: Seq[Sample],
     optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends ReadDataset {
 
   /**
@@ -189,9 +216,14 @@ case class RDDBoundReadDataset private[ds] (
   def replaceReferences(newReferences: SequenceDictionary): ReadDataset = {
     copy(references = newReferences)
   }
+
+  override def replaceSamples(newSamples: Iterable[Sample]): ReadDataset = {
+    copy(samples = newSamples.toSeq)
+  }
 }
 
-sealed abstract class ReadDataset extends AvroGenomicDataset[Read, ReadProduct, ReadDataset] {
+sealed abstract class ReadDataset extends AvroGenomicDataset[Read, ReadProduct, ReadDataset]
+    with MultisampleGenomicDataset[Read, ReadProduct, ReadDataset] {
 
   protected val productFn = ReadProduct.fromAvro(_)
   protected val unproductFn = (r: ReadProduct) => r.toAvro
@@ -203,20 +235,57 @@ sealed abstract class ReadDataset extends AvroGenomicDataset[Read, ReadProduct, 
     IntervalArray(rdd, ReadArray.apply(_, _))
   }
 
+  override protected def saveMetadata(pathName: String): Unit = {
+    savePartitionMap(pathName)
+    saveReferences(pathName)
+    saveSamples(pathName)
+  }
+
   def union(datasets: ReadDataset*): ReadDataset = {
     val iterableDatasets = datasets.toSeq
     ReadDataset(rdd.context.union(rdd, iterableDatasets.map(_.rdd): _*),
-      iterableDatasets.map(_.references).fold(references)(_ ++ _))
+      iterableDatasets.map(_.references).fold(references)(_ ++ _),
+      iterableDatasets.map(_.samples).fold(samples)(_ ++ _))
   }
 
   override def transformDataset(
     tFn: Dataset[ReadProduct] => Dataset[ReadProduct]): ReadDataset = {
-    DatasetBoundReadDataset(tFn(dataset), references)
+    DatasetBoundReadDataset(tFn(dataset), references, samples)
   }
 
   override def transformDataset(
     tFn: JFunction[Dataset[ReadProduct], Dataset[ReadProduct]]): ReadDataset = {
-    DatasetBoundReadDataset(tFn.call(dataset), references)
+    DatasetBoundReadDataset(tFn.call(dataset), references, samples)
+  }
+
+  /**
+   * Filter this ReadDataset by sample to those that match the specified sample.
+   *
+   * @param sampleId Sample to filter by.
+   * return ReadDataset filtered by sample.
+   */
+  def filterToSample(sampleId: String): ReadDataset = {
+    transform((rdd: RDD[Read]) => rdd.filter(r => Option(r.getSampleId).contains(sampleId)))
+  }
+
+  /**
+   * (Java-specific) Filter this ReadDataset by sample to those that match the specified samples.
+   *
+   * @param sampleIds List of samples to filter by.
+   * return ReadDataset filtered by one or more samples.
+   */
+  def filterToSamples(sampleIds: java.util.List[String]): ReadDataset = {
+    filterToSamples(asScalaBuffer(sampleIds))
+  }
+
+  /**
+   * (Scala-specific) Filter this ReadDataset by sample to those that match the specified samples.
+   *
+   * @param sampleIds Sequence of samples to filter by.
+   * return ReadDataset filtered by one or more samples.
+   */
+  def filterToSamples(sampleIds: Seq[String]): ReadDataset = {
+    transform((rdd: RDD[Read]) => rdd.filter(r => Option(r.getSampleId).exists(sampleIds.contains(_))))
   }
 
   /**
@@ -245,16 +314,18 @@ sealed abstract class ReadDataset extends AvroGenomicDataset[Read, ReadProduct, 
    */
   def toSequences: SequenceDataset = {
     def toSequence(read: Read): Sequence = {
-      Sequence.newBuilder()
+      val sb = Sequence.newBuilder()
         .setName(read.getName)
         .setDescription(read.getDescription)
         .setAlphabet(read.getAlphabet)
         .setSequence(read.getSequence)
         .setLength(read.getLength)
         .setAttributes(read.getAttributes)
-        .build()
+
+      Option(read.getSampleId).foreach(sampleId => sb.setSampleId(sampleId))
+      sb.build()
     }
-    SequenceDataset(rdd.map(toSequence), references)
+    SequenceDataset(rdd.map(toSequence), references, samples)
   }
 
   /**
@@ -264,7 +335,7 @@ sealed abstract class ReadDataset extends AvroGenomicDataset[Read, ReadProduct, 
    */
   def toSlices: SliceDataset = {
     def toSlice(read: Read): Slice = {
-      Slice.newBuilder()
+      val sb = Slice.newBuilder()
         .setName(read.getName)
         .setDescription(read.getDescription)
         .setAlphabet(read.getAlphabet)
@@ -275,9 +346,11 @@ sealed abstract class ReadDataset extends AvroGenomicDataset[Read, ReadProduct, 
         .setEnd(read.getLength)
         .setStrand(Strand.INDEPENDENT)
         .setAttributes(read.getAttributes)
-        .build()
+
+      Option(read.getSampleId).foreach(sampleId => sb.setSampleId(sampleId))
+      sb.build()
     }
-    SliceDataset(rdd.map(toSlice), references)
+    SliceDataset(rdd.map(toSlice), references, samples)
   }
 
   /**
@@ -338,7 +411,7 @@ sealed abstract class ReadDataset extends AvroGenomicDataset[Read, ReadProduct, 
    */
   protected def replaceRdd(newRdd: RDD[Read],
                            newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): ReadDataset = {
-    RDDBoundReadDataset(newRdd, references, newPartitionMap)
+    RDDBoundReadDataset(newRdd, references, samples, newPartitionMap)
   }
 
   /**

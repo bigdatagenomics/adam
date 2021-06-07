@@ -42,6 +42,7 @@ class SliceDatasetSuite extends ADAMFunSuite {
     .setEnd(3L)
     .setStrand(Strand.INDEPENDENT)
     .setLength(4L)
+    .setSampleId("sampleId")
     .build
 
   val s2 = Slice.newBuilder()
@@ -53,6 +54,7 @@ class SliceDatasetSuite extends ADAMFunSuite {
     .setEnd(3L)
     .setStrand(Strand.INDEPENDENT)
     .setLength(4L)
+    .setSampleId("sampleId")
     .build
 
   val s3 = Slice.newBuilder()
@@ -64,9 +66,10 @@ class SliceDatasetSuite extends ADAMFunSuite {
     .setEnd(7L)
     .setStrand(Strand.INDEPENDENT)
     .setLength(4L)
+    .setSampleId("sampleId")
     .build
 
-  val sd = SequenceDictionary(
+  val references = SequenceDictionary(
     SequenceRecord("name1", 4),
     SequenceRecord("name2", 4)
   )
@@ -76,9 +79,9 @@ class SliceDatasetSuite extends ADAMFunSuite {
     assert(SliceDataset(slices).rdd.count === 3)
   }
 
-  sparkTest("create a new slice genomic dataset with sequence dictionary") {
+  sparkTest("create a new slice genomic dataset with references") {
     val slices: RDD[Slice] = sc.parallelize(Seq(s1, s2, s3))
-    assert(SliceDataset(slices, sd).rdd.count === 3)
+    assert(SliceDataset(slices, references, Seq.empty).rdd.count === 3)
   }
 
   sparkTest("merge slices into a sequence genomic dataset") {
@@ -140,6 +143,7 @@ class SliceDatasetSuite extends ADAMFunSuite {
     assert(r1.getLength === 4L)
     assert(r1.getSequence === "actg")
     assert(r1.getQualityScores === "BBBB")
+    assert(r1.getSampleId === "sampleId")
 
     val r2 = reads(1)
     assert(r2.getName === "name2")
@@ -148,6 +152,7 @@ class SliceDatasetSuite extends ADAMFunSuite {
     assert(r2.getLength === 4L)
     assert(r2.getSequence === "aatt")
     assert(r2.getQualityScores === "BBBB")
+    assert(r2.getSampleId === "sampleId")
   }
 
   sparkTest("convert slices to sequences") {
@@ -161,6 +166,7 @@ class SliceDatasetSuite extends ADAMFunSuite {
     assert(sequence1.getAlphabet === Alphabet.DNA)
     assert(sequence1.getLength === 4L)
     assert(sequence1.getSequence === "actg")
+    assert(sequence1.getSampleId === "sampleId")
 
     val sequence2 = sequences(1)
     assert(sequence2.getName === "name2")
@@ -168,5 +174,6 @@ class SliceDatasetSuite extends ADAMFunSuite {
     assert(sequence2.getAlphabet === Alphabet.DNA)
     assert(sequence2.getLength === 4L)
     assert(sequence2.getSequence === "aatt")
+    assert(sequence2.getSampleId === "sampleId")
   }
 }

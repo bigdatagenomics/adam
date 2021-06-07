@@ -31,6 +31,7 @@ import org.bdgenomics.formats.avro.{
   Alphabet,
   Feature,
   Read,
+  Sample,
   Strand
 }
 
@@ -43,6 +44,7 @@ class ReadDatasetSuite extends ADAMFunSuite {
     .setLength(4L)
     .setSequence("actg")
     .setQualityScores("9999")
+    .setSampleId("sampleId")
     .build
 
   val r2 = Read.newBuilder()
@@ -52,11 +54,18 @@ class ReadDatasetSuite extends ADAMFunSuite {
     .setLength(4L)
     .setSequence("actg")
     .setQualityScores("9999")
+    .setSampleId("sampleId")
     .build
 
-  val sd = SequenceDictionary(
+  val references = SequenceDictionary(
     SequenceRecord("name1", 4),
     SequenceRecord("name2", 4)
+  )
+
+  val samples = Seq(
+    Sample.newBuilder()
+      .setId("sampleId")
+      .build
   )
 
   def tempLocation(suffix: String = ".adam"): String = {
@@ -70,9 +79,15 @@ class ReadDatasetSuite extends ADAMFunSuite {
     assert(ReadDataset(reads).rdd.count === 2)
   }
 
-  sparkTest("create a new read genomic dataset with sequence dictionary") {
-    val reads: RDD[Read] = sc.parallelize(Seq(r1, r2))
-    assert(ReadDataset(reads, sd).rdd.count === 2)
+  sparkTest("create a new read genomic dataset with references") {
+    val reads = ReadDataset(sc.parallelize(Seq(r1, r2)), references, Seq.empty)
+    assert(reads.references.containsReferenceName("name1"))
+    assert(reads.references.containsReferenceName("name2"))
+  }
+
+  sparkTest("create a new read genomic dataset with samples") {
+    val reads = ReadDataset(sc.parallelize(Seq(r1, r2)), references, samples)
+    assert(reads.samples.size === 1)
   }
 
   sparkTest("save as parquet") {
@@ -165,6 +180,7 @@ class ReadDatasetSuite extends ADAMFunSuite {
     assert(s1.getAlphabet === Alphabet.DNA)
     assert(s1.getLength === 4L)
     assert(s1.getSequence === "actg")
+    assert(s1.getSampleId === "sampleId")
 
     val s2 = sequences(1)
     assert(s2.getName === "name2")
@@ -172,6 +188,7 @@ class ReadDatasetSuite extends ADAMFunSuite {
     assert(s2.getAlphabet === Alphabet.DNA)
     assert(s2.getLength === 4L)
     assert(s2.getSequence === "actg")
+    assert(s2.getSampleId === "sampleId")
   }
 
   sparkTest("convert reads to slices") {
@@ -189,6 +206,7 @@ class ReadDatasetSuite extends ADAMFunSuite {
     assert(s1.getStart === 0L)
     assert(s1.getEnd === 4L)
     assert(s1.getStrand === Strand.INDEPENDENT)
+    assert(s1.getSampleId === "sampleId")
 
     val s2 = slices(1)
     assert(s2.getName === "name2")
@@ -200,5 +218,6 @@ class ReadDatasetSuite extends ADAMFunSuite {
     assert(s2.getStart === 0L)
     assert(s2.getEnd === 4L)
     assert(s2.getStrand === Strand.INDEPENDENT)
+    assert(s2.getSampleId === "sampleId")
   }
 }

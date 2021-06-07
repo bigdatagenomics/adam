@@ -152,7 +152,7 @@ private[adam] object TranscriptEffectConverter extends Serializable with Logging
     val effects = parseEffects(fields(1))
     val (rank, total) = parseFraction(fields(8))
     val (cdnaPosition, cdnaLength) = parseFraction(fields(11))
-    val (cdsPosition, cdsLength) = parseFraction(fields(12))
+    val (codingSequencePosition, codingSequenceLength) = parseFraction(fields(12))
     val (proteinPosition, proteinLength) = parseFraction(fields(13))
     val messages = parseMessages(fields(15))
 
@@ -171,8 +171,8 @@ private[adam] object TranscriptEffectConverter extends Serializable with Logging
     setIfNotEmpty(proteinHgvs, te.setProteinHgvs(_))
     cdnaPosition.foreach(te.setCdnaPosition(_))
     cdnaLength.foreach(te.setCdnaLength(_))
-    cdsPosition.foreach(te.setCdsPosition(_))
-    cdsLength.foreach(te.setCdsLength(_))
+    codingSequencePosition.foreach(te.setCodingSequencePosition(_))
+    codingSequenceLength.foreach(te.setCodingSequenceLength(_))
     proteinPosition.foreach(te.setProteinPosition(_))
     proteinLength.foreach(te.setProteinLength(_))
     setIfNotEmpty(distance, (s: String) => te.setDistance(Integer.parseInt(s)))
@@ -283,7 +283,7 @@ private[adam] object TranscriptEffectConverter extends Serializable with Logging
         Option(te.getTranscriptHgvs).getOrElse(""), // 9
         Option(te.getProteinHgvs).getOrElse(""), // 10
         toFraction(te.getCdnaPosition, te.getCdnaLength), // 11
-        toFraction(te.getCdsPosition, te.getCdsLength), // 12
+        toFraction(te.getCodingSequencePosition, te.getCodingSequenceLength), // 12
         toFraction(te.getProteinPosition, te.getProteinLength), // 13
         Option(te.getDistance).getOrElse(""),
         te.getMessages.asScala.mkString("&")
