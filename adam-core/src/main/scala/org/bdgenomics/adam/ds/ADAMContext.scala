@@ -197,7 +197,7 @@ object ADAMContext {
     rdd: RDD[Genotype]): GenotypeDataset = {
     new RDDBoundGenotypeDataset(rdd,
       gDataset.references,
-      Seq.empty,
+      gDataset.samples,
       DefaultHeaderLines.allHeaderLines,
       None)
   }
@@ -207,44 +207,44 @@ object ADAMContext {
     ds: Dataset[GenotypeProduct]): GenotypeDataset = {
     new DatasetBoundGenotypeDataset(ds,
       gDataset.references,
-      Seq.empty,
+      gDataset.samples,
       DefaultHeaderLines.allHeaderLines)
   }
 
   implicit def coverageToReadsConversionFn(
     gDataset: CoverageDataset,
     rdd: RDD[Read]): ReadDataset = {
-    new RDDBoundReadDataset(rdd, gDataset.references, None)
+    new RDDBoundReadDataset(rdd, gDataset.references, gDataset.samples, None)
   }
 
   implicit def coverageToReadsDatasetConversionFn(
     gDataset: CoverageDataset,
     ds: Dataset[ReadProduct]): ReadDataset = {
-    new DatasetBoundReadDataset(ds, gDataset.references)
+    new DatasetBoundReadDataset(ds, gDataset.references, gDataset.samples)
   }
 
   implicit def coverageToSequencesConversionFn(
     gDataset: CoverageDataset,
     rdd: RDD[Sequence]): SequenceDataset = {
-    new RDDBoundSequenceDataset(rdd, gDataset.references, None)
+    new RDDBoundSequenceDataset(rdd, gDataset.references, gDataset.samples, None)
   }
 
   implicit def coverageToSequencesDatasetConversionFn(
     gDataset: CoverageDataset,
     ds: Dataset[SequenceProduct]): SequenceDataset = {
-    new DatasetBoundSequenceDataset(ds, gDataset.references)
+    new DatasetBoundSequenceDataset(ds, gDataset.references, gDataset.samples)
   }
 
   implicit def coverageToSlicesConversionFn(
     gDataset: CoverageDataset,
     rdd: RDD[Slice]): SliceDataset = {
-    new RDDBoundSliceDataset(rdd, gDataset.references, None)
+    new RDDBoundSliceDataset(rdd, gDataset.references, gDataset.samples, None)
   }
 
   implicit def coverageToSlicesDatasetConversionFn(
     gDataset: CoverageDataset,
     ds: Dataset[SliceProduct]): SliceDataset = {
-    new DatasetBoundSliceDataset(ds, gDataset.references)
+    new DatasetBoundSliceDataset(ds, gDataset.references, gDataset.samples)
   }
 
   implicit def coverageToVariantsConversionFn(
@@ -269,7 +269,7 @@ object ADAMContext {
     rdd: RDD[VariantContext]): VariantContextDataset = {
     VariantContextDataset(rdd,
       gDataset.references,
-      Seq.empty,
+      gDataset.samples,
       DefaultHeaderLines.allHeaderLines)
   }
 
@@ -336,7 +336,7 @@ object ADAMContext {
     rdd: RDD[Genotype]): GenotypeDataset = {
     new RDDBoundGenotypeDataset(rdd,
       gDataset.references,
-      Seq.empty,
+      gDataset.samples,
       DefaultHeaderLines.allHeaderLines,
       None)
   }
@@ -346,44 +346,44 @@ object ADAMContext {
     ds: Dataset[GenotypeProduct]): GenotypeDataset = {
     new DatasetBoundGenotypeDataset(ds,
       gDataset.references,
-      Seq.empty,
+      gDataset.samples,
       DefaultHeaderLines.allHeaderLines)
   }
 
   implicit def featuresToReadsConversionFn(
     gDataset: FeatureDataset,
     rdd: RDD[Read]): ReadDataset = {
-    new RDDBoundReadDataset(rdd, gDataset.references, None)
+    new RDDBoundReadDataset(rdd, gDataset.references, gDataset.samples, None)
   }
 
   implicit def featuresToReadsDatasetConversionFn(
     gDataset: FeatureDataset,
     ds: Dataset[ReadProduct]): ReadDataset = {
-    new DatasetBoundReadDataset(ds, gDataset.references)
+    new DatasetBoundReadDataset(ds, gDataset.references, gDataset.samples)
   }
 
   implicit def featuresToSequencesConversionFn(
     gDataset: FeatureDataset,
     rdd: RDD[Sequence]): SequenceDataset = {
-    new RDDBoundSequenceDataset(rdd, gDataset.references, None)
+    new RDDBoundSequenceDataset(rdd, gDataset.references, gDataset.samples, None)
   }
 
   implicit def featuresToSequencesDatasetConversionFn(
     gDataset: FeatureDataset,
     ds: Dataset[SequenceProduct]): SequenceDataset = {
-    new DatasetBoundSequenceDataset(ds, gDataset.references)
+    new DatasetBoundSequenceDataset(ds, gDataset.references, gDataset.samples)
   }
 
   implicit def featuresToSlicesConversionFn(
     gDataset: FeatureDataset,
     rdd: RDD[Slice]): SliceDataset = {
-    new RDDBoundSliceDataset(rdd, gDataset.references, None)
+    new RDDBoundSliceDataset(rdd, gDataset.references, gDataset.samples, None)
   }
 
   implicit def featuresToSlicesDatasetConversionFn(
     gDataset: FeatureDataset,
     ds: Dataset[SliceProduct]): SliceDataset = {
-    new DatasetBoundSliceDataset(ds, gDataset.references)
+    new DatasetBoundSliceDataset(ds, gDataset.references, gDataset.samples)
   }
 
   implicit def featuresToVariantsConversionFn(
@@ -408,7 +408,7 @@ object ADAMContext {
     rdd: RDD[VariantContext]): VariantContextDataset = {
     VariantContextDataset(rdd,
       gDataset.references,
-      Seq.empty,
+      gDataset.samples,
       DefaultHeaderLines.allHeaderLines)
   }
 
@@ -417,25 +417,35 @@ object ADAMContext {
   implicit def fragmentsToCoverageConversionFn(
     gDataset: FragmentDataset,
     rdd: RDD[Coverage]): CoverageDataset = {
-    new RDDBoundCoverageDataset(rdd, gDataset.references, Seq.empty[Sample], None)
+    new RDDBoundCoverageDataset(rdd,
+      gDataset.references,
+      gDataset.readGroups.toSamples,
+      None)
   }
 
   implicit def fragmentsToCoverageDatasetConversionFn(
     gDataset: FragmentDataset,
     ds: Dataset[Coverage]): CoverageDataset = {
-    new DatasetBoundCoverageDataset(ds, gDataset.references, Seq.empty[Sample])
+    new DatasetBoundCoverageDataset(ds,
+      gDataset.references,
+      gDataset.readGroups.toSamples)
   }
 
   implicit def fragmentsToFeaturesConversionFn(
     gDataset: FragmentDataset,
     rdd: RDD[Feature]): FeatureDataset = {
-    new RDDBoundFeatureDataset(rdd, gDataset.references, Seq.empty[Sample], None)
+    new RDDBoundFeatureDataset(rdd,
+      gDataset.references,
+      gDataset.readGroups.toSamples,
+      None)
   }
 
   implicit def fragmentsToFeaturesDatasetConversionFn(
     gDataset: FragmentDataset,
     ds: Dataset[FeatureProduct]): FeatureDataset = {
-    new DatasetBoundFeatureDataset(ds, gDataset.references, Seq.empty[Sample])
+    new DatasetBoundFeatureDataset(ds,
+      gDataset.references,
+      gDataset.readGroups.toSamples)
   }
 
   implicit def fragmentsToFragmentsConversionFn(gDataset: FragmentDataset,
@@ -485,37 +495,52 @@ object ADAMContext {
   implicit def fragmentsToReadsConversionFn(
     gDataset: FragmentDataset,
     rdd: RDD[Read]): ReadDataset = {
-    new RDDBoundReadDataset(rdd, gDataset.references, None)
+    new RDDBoundReadDataset(rdd,
+      gDataset.references,
+      gDataset.readGroups.toSamples,
+      None)
   }
 
   implicit def fragmentsToReadsDatasetConversionFn(
     gDataset: FragmentDataset,
     ds: Dataset[ReadProduct]): ReadDataset = {
-    new DatasetBoundReadDataset(ds, gDataset.references)
+    new DatasetBoundReadDataset(ds,
+      gDataset.references,
+      gDataset.readGroups.toSamples)
   }
 
   implicit def fragmentsToSequencesConversionFn(
     gDataset: FragmentDataset,
     rdd: RDD[Sequence]): SequenceDataset = {
-    new RDDBoundSequenceDataset(rdd, gDataset.references, None)
+    new RDDBoundSequenceDataset(rdd,
+      gDataset.references,
+      gDataset.readGroups.toSamples,
+      None)
   }
 
   implicit def fragmentsToSequencesDatasetConversionFn(
     gDataset: FragmentDataset,
     ds: Dataset[SequenceProduct]): SequenceDataset = {
-    new DatasetBoundSequenceDataset(ds, gDataset.references)
+    new DatasetBoundSequenceDataset(ds,
+      gDataset.references,
+      gDataset.readGroups.toSamples)
   }
 
   implicit def fragmentsToSlicesConversionFn(
     gDataset: FragmentDataset,
     rdd: RDD[Slice]): SliceDataset = {
-    new RDDBoundSliceDataset(rdd, gDataset.references, None)
+    new RDDBoundSliceDataset(rdd,
+      gDataset.references,
+      gDataset.readGroups.toSamples,
+      None)
   }
 
   implicit def fragmentsToSlicesDatasetConversionFn(
     gDataset: FragmentDataset,
     ds: Dataset[SliceProduct]): SliceDataset = {
-    new DatasetBoundSliceDataset(ds, gDataset.references)
+    new DatasetBoundSliceDataset(ds,
+      gDataset.references,
+      gDataset.readGroups.toSamples)
   }
 
   implicit def fragmentsToVariantsConversionFn(
@@ -591,19 +616,19 @@ object ADAMContext {
   implicit def genericToReadsConversionFn[Y <: GenericGenomicDataset[_, _]](
     gDataset: Y,
     rdd: RDD[Read]): ReadDataset = {
-    new RDDBoundReadDataset(rdd, gDataset.references, None)
+    new RDDBoundReadDataset(rdd, gDataset.references, Seq.empty[Sample], None)
   }
 
   implicit def genericToSequencesConversionFn[Y <: GenericGenomicDataset[_, _]](
     gDataset: Y,
     rdd: RDD[Sequence]): SequenceDataset = {
-    new RDDBoundSequenceDataset(rdd, gDataset.references, None)
+    new RDDBoundSequenceDataset(rdd, gDataset.references, Seq.empty[Sample], None)
   }
 
   implicit def genericToSlicesConversionFn[Y <: GenericGenomicDataset[_, _]](
     gDataset: Y,
     rdd: RDD[Slice]): SliceDataset = {
-    new RDDBoundSliceDataset(rdd, gDataset.references, None)
+    new RDDBoundSliceDataset(rdd, gDataset.references, Seq.empty[Sample], None)
   }
 
   implicit def genericToVariantsConversionFn[Y <: GenericGenomicDataset[_, _]](
@@ -630,25 +655,35 @@ object ADAMContext {
   implicit def AlignmentsToCoverageConversionFn(
     gDataset: AlignmentDataset,
     rdd: RDD[Coverage]): CoverageDataset = {
-    new RDDBoundCoverageDataset(rdd, gDataset.references, Seq.empty[Sample], None)
+    new RDDBoundCoverageDataset(rdd,
+      gDataset.references,
+      gDataset.readGroups.toSamples,
+      None)
   }
 
   implicit def AlignmentsToCoverageDatasetConversionFn(
     gDataset: AlignmentDataset,
     ds: Dataset[Coverage]): CoverageDataset = {
-    new DatasetBoundCoverageDataset(ds, gDataset.references, Seq.empty[Sample])
+    new DatasetBoundCoverageDataset(ds,
+      gDataset.references,
+      gDataset.readGroups.toSamples)
   }
 
   implicit def AlignmentsToFeaturesConversionFn(
     gDataset: AlignmentDataset,
     rdd: RDD[Feature]): FeatureDataset = {
-    new RDDBoundFeatureDataset(rdd, gDataset.references, Seq.empty[Sample], None)
+    new RDDBoundFeatureDataset(rdd,
+      gDataset.references,
+      gDataset.readGroups.toSamples,
+      None)
   }
 
   implicit def AlignmentsToFeaturesDatasetConversionFn(
     gDataset: AlignmentDataset,
     ds: Dataset[FeatureProduct]): FeatureDataset = {
-    new DatasetBoundFeatureDataset(ds, gDataset.references, Seq.empty[Sample])
+    new DatasetBoundFeatureDataset(ds,
+      gDataset.references,
+      gDataset.readGroups.toSamples)
   }
 
   implicit def AlignmentsToFragmentsConversionFn(
@@ -698,37 +733,52 @@ object ADAMContext {
   implicit def AlignmentsToReadsConversionFn(
     gDataset: AlignmentDataset,
     rdd: RDD[Read]): ReadDataset = {
-    new RDDBoundReadDataset(rdd, gDataset.references, None)
+    new RDDBoundReadDataset(rdd,
+      gDataset.references,
+      gDataset.readGroups.toSamples,
+      None)
   }
 
   implicit def AlignmentsToReadsDatasetConversionFn(
     gDataset: AlignmentDataset,
     ds: Dataset[ReadProduct]): ReadDataset = {
-    new DatasetBoundReadDataset(ds, gDataset.references)
+    new DatasetBoundReadDataset(ds,
+      gDataset.references,
+      gDataset.readGroups.toSamples)
   }
 
   implicit def AlignmentsToSequencesConversionFn(
     gDataset: AlignmentDataset,
     rdd: RDD[Sequence]): SequenceDataset = {
-    new RDDBoundSequenceDataset(rdd, gDataset.references, None)
+    new RDDBoundSequenceDataset(rdd,
+      gDataset.references,
+      gDataset.readGroups.toSamples,
+      None)
   }
 
   implicit def AlignmentsToSequencesDatasetConversionFn(
     gDataset: AlignmentDataset,
     ds: Dataset[SequenceProduct]): SequenceDataset = {
-    new DatasetBoundSequenceDataset(ds, gDataset.references)
+    new DatasetBoundSequenceDataset(ds,
+      gDataset.references,
+      gDataset.readGroups.toSamples)
   }
 
   implicit def AlignmentsToSlicesConversionFn(
     gDataset: AlignmentDataset,
     rdd: RDD[Slice]): SliceDataset = {
-    new RDDBoundSliceDataset(rdd, gDataset.references, None)
+    new RDDBoundSliceDataset(rdd,
+      gDataset.references,
+      gDataset.readGroups.toSamples,
+      None)
   }
 
   implicit def AlignmentsToSlicesDatasetConversionFn(
     gDataset: AlignmentDataset,
     ds: Dataset[SliceProduct]): SliceDataset = {
-    new DatasetBoundSliceDataset(ds, gDataset.references)
+    new DatasetBoundSliceDataset(ds,
+      gDataset.references,
+      gDataset.readGroups.toSamples)
   }
 
   implicit def AlignmentsToVariantsConversionFn(
@@ -779,25 +829,25 @@ object ADAMContext {
   implicit def genotypesToCoverageConversionFn(
     gDataset: GenotypeDataset,
     rdd: RDD[Coverage]): CoverageDataset = {
-    new RDDBoundCoverageDataset(rdd, gDataset.references, Seq.empty[Sample], None)
+    new RDDBoundCoverageDataset(rdd, gDataset.references, gDataset.samples, None)
   }
 
   implicit def genotypesToCoverageDatasetConversionFn(
     gDataset: GenotypeDataset,
     ds: Dataset[Coverage]): CoverageDataset = {
-    new DatasetBoundCoverageDataset(ds, gDataset.references, Seq.empty[Sample])
+    new DatasetBoundCoverageDataset(ds, gDataset.references, gDataset.samples)
   }
 
   implicit def genotypesToFeaturesConversionFn(
     gDataset: GenotypeDataset,
     rdd: RDD[Feature]): FeatureDataset = {
-    new RDDBoundFeatureDataset(rdd, gDataset.references, Seq.empty[Sample], None)
+    new RDDBoundFeatureDataset(rdd, gDataset.references, gDataset.samples, None)
   }
 
   implicit def genotypesToFeaturesDatasetConversionFn(
     gDataset: GenotypeDataset,
     ds: Dataset[FeatureProduct]): FeatureDataset = {
-    new DatasetBoundFeatureDataset(ds, gDataset.references, Seq.empty[Sample])
+    new DatasetBoundFeatureDataset(ds, gDataset.references, gDataset.samples)
   }
 
   implicit def genotypesToFragmentsConversionFn(
@@ -829,37 +879,37 @@ object ADAMContext {
   implicit def genotypesToReadsConversionFn(
     gDataset: GenotypeDataset,
     rdd: RDD[Read]): ReadDataset = {
-    new RDDBoundReadDataset(rdd, gDataset.references, None)
+    new RDDBoundReadDataset(rdd, gDataset.references, gDataset.samples, None)
   }
 
   implicit def genotypesToReadsDatasetConversionFn(
     gDataset: GenotypeDataset,
     ds: Dataset[ReadProduct]): ReadDataset = {
-    new DatasetBoundReadDataset(ds, gDataset.references)
+    new DatasetBoundReadDataset(ds, gDataset.references, gDataset.samples)
   }
 
   implicit def genotypesToSequencesConversionFn(
     gDataset: GenotypeDataset,
     rdd: RDD[Sequence]): SequenceDataset = {
-    new RDDBoundSequenceDataset(rdd, gDataset.references, None)
+    new RDDBoundSequenceDataset(rdd, gDataset.references, gDataset.samples, None)
   }
 
   implicit def genotypesToSequencesDatasetConversionFn(
     gDataset: GenotypeDataset,
     ds: Dataset[SequenceProduct]): SequenceDataset = {
-    new DatasetBoundSequenceDataset(ds, gDataset.references)
+    new DatasetBoundSequenceDataset(ds, gDataset.references, gDataset.samples)
   }
 
   implicit def genotypesToSlicesConversionFn(
     gDataset: GenotypeDataset,
     rdd: RDD[Slice]): SliceDataset = {
-    new RDDBoundSliceDataset(rdd, gDataset.references, None)
+    new RDDBoundSliceDataset(rdd, gDataset.references, gDataset.samples, None)
   }
 
   implicit def genotypesToSlicesDatasetConversionFn(
     gDataset: GenotypeDataset,
     ds: Dataset[SliceProduct]): SliceDataset = {
-    new DatasetBoundSliceDataset(ds, gDataset.references)
+    new DatasetBoundSliceDataset(ds, gDataset.references, gDataset.samples)
   }
 
   implicit def genotypesToVariantsConversionFn(
@@ -888,25 +938,25 @@ object ADAMContext {
   implicit def readsToCoverageConversionFn(
     gDataset: ReadDataset,
     rdd: RDD[Coverage]): CoverageDataset = {
-    new RDDBoundCoverageDataset(rdd, gDataset.references, Seq.empty, None)
+    new RDDBoundCoverageDataset(rdd, gDataset.references, gDataset.samples, None)
   }
 
   implicit def readsToCoverageDatasetConversionFn(
     gDataset: ReadDataset,
     ds: Dataset[Coverage]): CoverageDataset = {
-    new DatasetBoundCoverageDataset(ds, gDataset.references, Seq.empty)
+    new DatasetBoundCoverageDataset(ds, gDataset.references, gDataset.samples)
   }
 
   implicit def readsToFeaturesConversionFn(
     gDataset: ReadDataset,
     rdd: RDD[Feature]): FeatureDataset = {
-    new RDDBoundFeatureDataset(rdd, gDataset.references, Seq.empty, None)
+    new RDDBoundFeatureDataset(rdd, gDataset.references, gDataset.samples, None)
   }
 
   implicit def readsToFeaturesDatasetConversionFn(
     gDataset: ReadDataset,
     ds: Dataset[FeatureProduct]): FeatureDataset = {
-    new DatasetBoundFeatureDataset(ds, gDataset.references, Seq.empty)
+    new DatasetBoundFeatureDataset(ds, gDataset.references, gDataset.samples)
   }
 
   implicit def readsToFragmentsConversionFn(
@@ -952,7 +1002,7 @@ object ADAMContext {
     rdd: RDD[Genotype]): GenotypeDataset = {
     new RDDBoundGenotypeDataset(rdd,
       gDataset.references,
-      Seq.empty,
+      gDataset.samples,
       DefaultHeaderLines.allHeaderLines,
       None)
   }
@@ -962,7 +1012,7 @@ object ADAMContext {
     ds: Dataset[GenotypeProduct]): GenotypeDataset = {
     new DatasetBoundGenotypeDataset(ds,
       gDataset.references,
-      Seq.empty,
+      gDataset.samples,
       DefaultHeaderLines.allHeaderLines)
   }
 
@@ -975,25 +1025,25 @@ object ADAMContext {
   implicit def readsToSequencesConversionFn(
     gDataset: ReadDataset,
     rdd: RDD[Sequence]): SequenceDataset = {
-    new RDDBoundSequenceDataset(rdd, gDataset.references, None)
+    new RDDBoundSequenceDataset(rdd, gDataset.references, gDataset.samples, None)
   }
 
   implicit def readsToSequencesDatasetConversionFn(
     gDataset: ReadDataset,
     ds: Dataset[SequenceProduct]): SequenceDataset = {
-    new DatasetBoundSequenceDataset(ds, gDataset.references)
+    new DatasetBoundSequenceDataset(ds, gDataset.references, gDataset.samples)
   }
 
   implicit def readsToSlicesConversionFn(
     gDataset: ReadDataset,
     rdd: RDD[Slice]): SliceDataset = {
-    new RDDBoundSliceDataset(rdd, gDataset.references, None)
+    new RDDBoundSliceDataset(rdd, gDataset.references, gDataset.samples, None)
   }
 
   implicit def readsToSlicesDatasetConversionFn(
     gDataset: ReadDataset,
     ds: Dataset[SliceProduct]): SliceDataset = {
-    new DatasetBoundSliceDataset(ds, gDataset.references)
+    new DatasetBoundSliceDataset(ds, gDataset.references, gDataset.samples)
   }
 
   implicit def readsToVariantsConversionFn(
@@ -1018,7 +1068,7 @@ object ADAMContext {
     rdd: RDD[VariantContext]): VariantContextDataset = {
     VariantContextDataset(rdd,
       gDataset.references,
-      Seq.empty,
+      gDataset.samples,
       DefaultHeaderLines.allHeaderLines)
   }
 
@@ -1027,25 +1077,25 @@ object ADAMContext {
   implicit def sequencesToCoverageConversionFn(
     gDataset: SequenceDataset,
     rdd: RDD[Coverage]): CoverageDataset = {
-    new RDDBoundCoverageDataset(rdd, gDataset.references, Seq.empty, None)
+    new RDDBoundCoverageDataset(rdd, gDataset.references, gDataset.samples, None)
   }
 
   implicit def sequencesToCoverageDatasetConversionFn(
     gDataset: SequenceDataset,
     ds: Dataset[Coverage]): CoverageDataset = {
-    new DatasetBoundCoverageDataset(ds, gDataset.references, Seq.empty)
+    new DatasetBoundCoverageDataset(ds, gDataset.references, gDataset.samples)
   }
 
   implicit def sequencesToFeaturesConversionFn(
     gDataset: SequenceDataset,
     rdd: RDD[Feature]): FeatureDataset = {
-    new RDDBoundFeatureDataset(rdd, gDataset.references, Seq.empty, None)
+    new RDDBoundFeatureDataset(rdd, gDataset.references, gDataset.samples, None)
   }
 
   implicit def sequencesToFeaturesDatasetConversionFn(
     gDataset: SequenceDataset,
     ds: Dataset[FeatureProduct]): FeatureDataset = {
-    new DatasetBoundFeatureDataset(ds, gDataset.references, Seq.empty)
+    new DatasetBoundFeatureDataset(ds, gDataset.references, gDataset.samples)
   }
 
   implicit def sequencesToFragmentsConversionFn(
@@ -1101,20 +1151,20 @@ object ADAMContext {
     ds: Dataset[GenotypeProduct]): GenotypeDataset = {
     new DatasetBoundGenotypeDataset(ds,
       gDataset.references,
-      Seq.empty,
+      gDataset.samples,
       DefaultHeaderLines.allHeaderLines)
   }
 
   implicit def sequencesToReadsConversionFn(
     gDataset: SequenceDataset,
     rdd: RDD[Read]): ReadDataset = {
-    new RDDBoundReadDataset(rdd, gDataset.references, None)
+    new RDDBoundReadDataset(rdd, gDataset.references, gDataset.samples, None)
   }
 
   implicit def sequencesToReadsDatasetConversionFn(
     gDataset: SequenceDataset,
     ds: Dataset[ReadProduct]): ReadDataset = {
-    new DatasetBoundReadDataset(ds, gDataset.references)
+    new DatasetBoundReadDataset(ds, gDataset.references, gDataset.samples)
   }
 
   implicit def sequencesToSequencesConversionFn(gDataset: SequenceDataset,
@@ -1126,13 +1176,13 @@ object ADAMContext {
   implicit def sequencesToSlicesConversionFn(
     gDataset: SequenceDataset,
     rdd: RDD[Slice]): SliceDataset = {
-    new RDDBoundSliceDataset(rdd, gDataset.references, None)
+    new RDDBoundSliceDataset(rdd, gDataset.references, gDataset.samples, None)
   }
 
   implicit def sequencesToSlicesDatasetConversionFn(
     gDataset: SequenceDataset,
     ds: Dataset[SliceProduct]): SliceDataset = {
-    new DatasetBoundSliceDataset(ds, gDataset.references)
+    new DatasetBoundSliceDataset(ds, gDataset.references, gDataset.samples)
   }
 
   implicit def sequencesToVariantsConversionFn(
@@ -1157,7 +1207,7 @@ object ADAMContext {
     rdd: RDD[VariantContext]): VariantContextDataset = {
     VariantContextDataset(rdd,
       gDataset.references,
-      Seq.empty,
+      gDataset.samples,
       DefaultHeaderLines.allHeaderLines)
   }
 
@@ -1166,25 +1216,25 @@ object ADAMContext {
   implicit def slicesToCoverageConversionFn(
     gDataset: SliceDataset,
     rdd: RDD[Coverage]): CoverageDataset = {
-    new RDDBoundCoverageDataset(rdd, gDataset.references, Seq.empty, None)
+    new RDDBoundCoverageDataset(rdd, gDataset.references, gDataset.samples, None)
   }
 
   implicit def slicesToCoverageDatasetConversionFn(
     gDataset: SliceDataset,
     ds: Dataset[Coverage]): CoverageDataset = {
-    new DatasetBoundCoverageDataset(ds, gDataset.references, Seq.empty)
+    new DatasetBoundCoverageDataset(ds, gDataset.references, gDataset.samples)
   }
 
   implicit def slicesToFeaturesConversionFn(
     gDataset: SliceDataset,
     rdd: RDD[Feature]): FeatureDataset = {
-    new RDDBoundFeatureDataset(rdd, gDataset.references, Seq.empty, None)
+    new RDDBoundFeatureDataset(rdd, gDataset.references, gDataset.samples, None)
   }
 
   implicit def slicesToFeaturesDatasetConversionFn(
     gDataset: SliceDataset,
     ds: Dataset[FeatureProduct]): FeatureDataset = {
-    new DatasetBoundFeatureDataset(ds, gDataset.references, Seq.empty)
+    new DatasetBoundFeatureDataset(ds, gDataset.references, gDataset.samples)
   }
 
   implicit def slicesToFragmentsConversionFn(
@@ -1230,7 +1280,7 @@ object ADAMContext {
     rdd: RDD[Genotype]): GenotypeDataset = {
     new RDDBoundGenotypeDataset(rdd,
       gDataset.references,
-      Seq.empty,
+      gDataset.samples,
       DefaultHeaderLines.allHeaderLines,
       None)
   }
@@ -1240,32 +1290,32 @@ object ADAMContext {
     ds: Dataset[GenotypeProduct]): GenotypeDataset = {
     new DatasetBoundGenotypeDataset(ds,
       gDataset.references,
-      Seq.empty,
+      gDataset.samples,
       DefaultHeaderLines.allHeaderLines)
   }
 
   implicit def slicesToReadsConversionFn(
     gDataset: SliceDataset,
     rdd: RDD[Read]): ReadDataset = {
-    new RDDBoundReadDataset(rdd, gDataset.references, None)
+    new RDDBoundReadDataset(rdd, gDataset.references, gDataset.samples, None)
   }
 
   implicit def slicesToReadsDatasetConversionFn(
     gDataset: SliceDataset,
     ds: Dataset[ReadProduct]): ReadDataset = {
-    new DatasetBoundReadDataset(ds, gDataset.references)
+    new DatasetBoundReadDataset(ds, gDataset.references, gDataset.samples)
   }
 
   implicit def slicesToSequencesConversionFn(
     gDataset: SliceDataset,
     rdd: RDD[Sequence]): SequenceDataset = {
-    new RDDBoundSequenceDataset(rdd, gDataset.references, None)
+    new RDDBoundSequenceDataset(rdd, gDataset.references, gDataset.samples, None)
   }
 
   implicit def slicesToSequencesDatasetConversionFn(
     gDataset: SliceDataset,
     ds: Dataset[SequenceProduct]): SequenceDataset = {
-    new DatasetBoundSequenceDataset(ds, gDataset.references)
+    new DatasetBoundSequenceDataset(ds, gDataset.references, gDataset.samples)
   }
 
   implicit def slicesToSlicesConversionFn(gDataset: SliceDataset,
@@ -1296,7 +1346,7 @@ object ADAMContext {
     rdd: RDD[VariantContext]): VariantContextDataset = {
     VariantContextDataset(rdd,
       gDataset.references,
-      Seq.empty,
+      gDataset.samples,
       DefaultHeaderLines.allHeaderLines)
   }
 
@@ -1386,37 +1436,37 @@ object ADAMContext {
   implicit def variantsToReadsConversionFn(
     gDataset: VariantDataset,
     rdd: RDD[Read]): ReadDataset = {
-    new RDDBoundReadDataset(rdd, gDataset.references, None)
+    new RDDBoundReadDataset(rdd, gDataset.references, Seq.empty, None)
   }
 
   implicit def variantsToReadsDatasetConversionFn(
     gDataset: VariantDataset,
     ds: Dataset[ReadProduct]): ReadDataset = {
-    new DatasetBoundReadDataset(ds, gDataset.references)
+    new DatasetBoundReadDataset(ds, gDataset.references, Seq.empty)
   }
 
   implicit def variantsToSequencesConversionFn(
     gDataset: VariantDataset,
     rdd: RDD[Sequence]): SequenceDataset = {
-    new RDDBoundSequenceDataset(rdd, gDataset.references, None)
+    new RDDBoundSequenceDataset(rdd, gDataset.references, Seq.empty, None)
   }
 
   implicit def variantsToSequencesDatasetConversionFn(
     gDataset: VariantDataset,
     ds: Dataset[SequenceProduct]): SequenceDataset = {
-    new DatasetBoundSequenceDataset(ds, gDataset.references)
+    new DatasetBoundSequenceDataset(ds, gDataset.references, Seq.empty)
   }
 
   implicit def variantsToSlicesConversionFn(
     gDataset: VariantDataset,
     rdd: RDD[Slice]): SliceDataset = {
-    new RDDBoundSliceDataset(rdd, gDataset.references, None)
+    new RDDBoundSliceDataset(rdd, gDataset.references, Seq.empty, None)
   }
 
   implicit def variantsToSlicesDatasetConversionFn(
     gDataset: VariantDataset,
     ds: Dataset[SliceProduct]): SliceDataset = {
-    new DatasetBoundSliceDataset(ds, gDataset.references)
+    new DatasetBoundSliceDataset(ds, gDataset.references, Seq.empty)
   }
 
   implicit def variantsToVariantsConversionFn(gDataset: VariantDataset,
@@ -1481,19 +1531,19 @@ object ADAMContext {
   implicit def variantContextsToReadsConversionFn(
     gDataset: VariantContextDataset,
     rdd: RDD[Read]): ReadDataset = {
-    new RDDBoundReadDataset(rdd, gDataset.references, None)
+    new RDDBoundReadDataset(rdd, gDataset.references, gDataset.samples, None)
   }
 
   implicit def variantContextsToSequencesConversionFn(
     gDataset: VariantContextDataset,
     rdd: RDD[Sequence]): SequenceDataset = {
-    new RDDBoundSequenceDataset(rdd, gDataset.references, None)
+    new RDDBoundSequenceDataset(rdd, gDataset.references, gDataset.samples, None)
   }
 
   implicit def variantContextsToSlicesConversionFn(
     gDataset: VariantContextDataset,
     rdd: RDD[Slice]): SliceDataset = {
-    new RDDBoundSliceDataset(rdd, gDataset.references, None)
+    new RDDBoundSliceDataset(rdd, gDataset.references, gDataset.samples, None)
   }
 
   implicit def variantContextsToVariantsConversionFn(
@@ -1593,7 +1643,7 @@ private class NoPrefixFileFilter(private val prefix: String) extends PathFilter 
  * @param sc The SparkContext to wrap.
  */
 class ADAMContext(@transient val sc: SparkContext) extends Serializable with Logging {
-  @transient lazy val spark = SparkSession.builder().getOrCreate()
+  @transient lazy val spark: SparkSession = SparkSession.builder().getOrCreate()
   import spark.implicits._
 
   /**
@@ -2490,8 +2540,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   Globs/directories are supported.
    * @param optReadGroup The optional read group identifier to associate to the unaligned alignment
    *   records. Defaults to None.
-   * @param persistLevel An optional persistance level to set. If this level is
-   *   set, then reads will be cached (at the given persistance) level as part of
+   * @param persistLevel An optional persistence level to set. If this level is
+   *   set, then reads will be cached (at the given persistence) level as part of
    *   validation. Defaults to StorageLevel.MEMORY_ONLY.
    * @param stringency The validation stringency to use when validating paired FASTQ format.
    *   Defaults to ValidationStringency.STRICT.
@@ -3746,17 +3796,19 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     optPredicate: Option[FilterPredicate] = None,
     optProjection: Option[Schema] = None): ReadDataset = {
 
-    val sd = loadAvroSequenceDictionary(pathName)
+    val references = loadAvroSequenceDictionary(pathName)
+    val samples = loadAvroSamples(pathName)
 
     (optPredicate, optProjection) match {
       case (None, None) => {
         ParquetUnboundReadDataset(
-          sc, pathName, sd)
+          sc, pathName, references, samples)
       }
       case (_, _) => {
         val rdd = loadParquet[Read](pathName, optPredicate, optProjection)
         RDDBoundReadDataset(rdd,
-          sd,
+          references,
+          samples,
           optPartitionMap = extractPartitionMap(pathName))
       }
     }
@@ -3778,17 +3830,19 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     optPredicate: Option[FilterPredicate] = None,
     optProjection: Option[Schema] = None): SequenceDataset = {
 
-    val sd = loadAvroSequenceDictionary(pathName)
+    val references = loadAvroSequenceDictionary(pathName)
+    val samples = loadAvroSamples(pathName)
 
     (optPredicate, optProjection) match {
       case (None, None) => {
         ParquetUnboundSequenceDataset(
-          sc, pathName, sd)
+          sc, pathName, references, samples)
       }
       case (_, _) => {
         val rdd = loadParquet[Sequence](pathName, optPredicate, optProjection)
         RDDBoundSequenceDataset(rdd,
-          sd,
+          references,
+          samples,
           optPartitionMap = extractPartitionMap(pathName))
       }
     }
@@ -3810,17 +3864,19 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     optPredicate: Option[FilterPredicate] = None,
     optProjection: Option[Schema] = None): SliceDataset = {
 
-    val sd = loadAvroSequenceDictionary(pathName)
+    val references = loadAvroSequenceDictionary(pathName)
+    val samples = loadAvroSamples(pathName)
 
     (optPredicate, optProjection) match {
       case (None, None) => {
         ParquetUnboundSliceDataset(
-          sc, pathName, sd)
+          sc, pathName, references, samples)
       }
       case (_, _) => {
         val rdd = loadParquet[Slice](pathName, optPredicate, optProjection)
         RDDBoundSliceDataset(rdd,
-          sd,
+          references,
+          samples,
           optPartitionMap = extractPartitionMap(pathName))
       }
     }
@@ -4300,7 +4356,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   def loadReads(df: DataFrame, metadataPathName: String): ReadDataset = {
     info(s"Loading metadata from path name $metadataPathName")
     val references = loadAvroSequenceDictionary(metadataPathName)
-    loadReads(df, references)
+    val samples = loadAvroSamples(metadataPathName)
+    loadReads(df, references, samples)
   }
 
   /**
@@ -4308,12 +4365,14 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *
    * @param df Data frame to load from.
    * @param references References for the ReadDataset, may be empty.
-   * @return Returns a new ReadDataset loaded from the specified data frame and references.
+   * @param samples Samples for the ReadDataset, may be empty.
+   * @return Returns a new ReadDataset loaded from the specified data frame, references, and samples.
    */
   def loadReads(
     df: DataFrame,
-    references: SequenceDictionary): ReadDataset = {
-    ReadDataset(df.as[ReadProduct], references)
+    references: SequenceDictionary,
+    samples: Iterable[Sample]): ReadDataset = {
+    ReadDataset(df.as[ReadProduct], references, samples)
   }
 
   // sequences
@@ -4340,7 +4399,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   def loadSequences(df: DataFrame, metadataPathName: String): SequenceDataset = {
     info(s"Loading metadata from path name $metadataPathName")
     val references = loadAvroSequenceDictionary(metadataPathName)
-    loadSequences(df, references)
+    val samples = loadAvroSamples(metadataPathName)
+    loadSequences(df, references, samples)
   }
 
   /**
@@ -4348,12 +4408,14 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *
    * @param df Data frame to load from.
    * @param references References for the SequenceDataset, may be empty.
-   * @return Returns a new SequenceDataset loaded from the specified data frame and references.
+   * @param samples Samples for the SequenceDataset, may be empty.
+   * @return Returns a new SequenceDataset loaded from the specified data frame, references, and samples.
    */
   def loadSequences(
     df: DataFrame,
-    references: SequenceDictionary): SequenceDataset = {
-    SequenceDataset(df.as[SequenceProduct], references)
+    references: SequenceDictionary,
+    samples: Iterable[Sample]): SequenceDataset = {
+    SequenceDataset(df.as[SequenceProduct], references, samples)
   }
 
   // slices
@@ -4380,7 +4442,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   def loadSlices(df: DataFrame, metadataPathName: String): SliceDataset = {
     info(s"Loading metadata from path name $metadataPathName")
     val references = loadAvroSequenceDictionary(metadataPathName)
-    loadSlices(df, references)
+    val samples = loadAvroSamples(metadataPathName)
+    loadSlices(df, references, samples)
   }
 
   /**
@@ -4388,12 +4451,14 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *
    * @param df Data frame to load from.
    * @param references References for the SliceDataset, may be empty.
+   * @param samples Samples for the SliceDataset, may be empty.
    * @return Returns a new SliceDataset loaded from the specified data frame and references.
    */
   def loadSlices(
     df: DataFrame,
-    references: SequenceDictionary): SliceDataset = {
-    SliceDataset(df.as[SliceProduct], references)
+    references: SequenceDictionary,
+    samples: Iterable[Sample]): SliceDataset = {
+    SliceDataset(df.as[SliceProduct], references, samples)
   }
 
   // variant contexts

@@ -70,7 +70,7 @@ class TransformSequences(val args: TransformSequencesArgs)
       case Alphabet.PROTEIN => sc.loadProteinSequences(args.sequencesFile, optPredicate = None, optProjection = None)
       case Alphabet.RNA     => sc.loadRnaSequences(args.sequencesFile, optPredicate = None, optProjection = None)
     }
-    val maybeCreateReference = if (args.createReference) sequences.createSequenceDictionary() else sequences
+    val maybeCreateReference = if (args.createReference) sequences.createReferences() else sequences
     maybeCreateReference.save(args.outputPath, args.single, args.disableFastConcat)
   }
 }

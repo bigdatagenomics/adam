@@ -120,8 +120,9 @@ object FeatureDataset {
   /**
    * A GenomicDataset that wraps a Dataset of Feature data given a sequence dictionary.
    *
-   * @param ds A Dataset of genomic Features.
+   * @param ds A Dataset of genomic features.
    * @param sd The reference genome these data are aligned to.
+   * @param samples Samples for these genomic features, if any.
    */
   def apply(ds: Dataset[FeatureProduct],
             sequences: SequenceDictionary,
@@ -416,7 +417,7 @@ case class RDDBoundFeatureDataset private[ds] (
     optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends FeatureDataset {
 
   /**
-   * A SQL Dataset of reads.
+   * A SQL Dataset of features.
    */
   lazy val dataset: Dataset[FeatureProduct] = {
     import spark.implicits._

@@ -69,7 +69,7 @@ class TransformSlices(val args: TransformSlicesArgs)
       optPredicate = None,
       optProjection = None
     )
-    val maybeCreateReference = if (args.createReference) slices.createSequenceDictionary() else slices
+    val maybeCreateReference = if (args.createReference) slices.createReferences() else slices
     maybeCreateReference.save(args.outputPath, args.single, args.disableFastConcat)
   }
 }

@@ -24,15 +24,26 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Dataset
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.ds.read.ReadDataset
-import org.bdgenomics.adam.ds.{ AvroGenomicDataset, DatasetBoundGenomicDataset, JavaSaveArgs }
+import org.bdgenomics.adam.ds.{
+  AvroGenomicDataset,
+  DatasetBoundGenomicDataset,
+  JavaSaveArgs,
+  MultisampleGenomicDataset
+}
 import org.bdgenomics.adam.ds.ADAMContext._
 import org.bdgenomics.adam.serialization.AvroSerializer
 import org.bdgenomics.adam.sql.{ Sequence => SequenceProduct }
-import org.bdgenomics.formats.avro.{ Read, Sequence, Slice, Strand }
+import org.bdgenomics.formats.avro.{
+  Read,
+  Sample,
+  Sequence,
+  Slice,
+  Strand
+}
 import org.bdgenomics.utils.interval.array.{ IntervalArray, IntervalArraySerializer }
 
+import scala.collection.JavaConverters.asScalaBuffer
 import scala.collection.mutable
-import scala.collection.mutable.MutableList
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 
@@ -75,46 +86,52 @@ object SequenceDataset {
    * @param ds A Dataset of sequences.
    */
   def apply(ds: Dataset[SequenceProduct]): SequenceDataset = {
-    DatasetBoundSequenceDataset(ds, SequenceDictionary.empty)
+    DatasetBoundSequenceDataset(ds, SequenceDictionary.empty, Seq.empty[Sample])
   }
 
   /**
    * A genomic dataset that wraps a dataset of Sequence data.
    *
    * @param ds A Dataset of sequences.
-   * @param sequences The reference genome these data are aligned to.
+   * @param references The reference genome these data are aligned to.
+   * @param samples Samples for these sequences.
    */
   def apply(ds: Dataset[SequenceProduct],
-            sequences: SequenceDictionary): SequenceDataset = {
-    DatasetBoundSequenceDataset(ds, sequences)
+            references: SequenceDictionary,
+            samples: Iterable[Sample]): SequenceDataset = {
+    DatasetBoundSequenceDataset(ds, references, samples.toSeq)
   }
 
   /**
-   * Builds a SequenceDataset with an empty sequence dictionary.
+   * A genomic dataset that wraps an RDD of Sequence data.
    *
    * @param rdd The underlying Sequence RDD to build from.
    * @return Returns a new SequenceDataset.
    */
   def apply(rdd: RDD[Sequence]): SequenceDataset = {
-    SequenceDataset(rdd, SequenceDictionary.empty)
+    SequenceDataset(rdd, SequenceDictionary.empty, Iterable.empty[Sample])
   }
 
   /**
-   * Builds a SequenceDataset given a sequence dictionary.
+   * A genomic dataset that wraps an RDD of Sequence data.
    *
    * @param rdd The underlying Sequence RDD to build from.
-   * @param sd The sequence dictionary for this SequenceDataset.
+   * @param references The reference genome these data are aligned to.
+   * @param samples Samples for these sequences.
    * @return Returns a new SequenceDataset.
    */
-  def apply(rdd: RDD[Sequence], sd: SequenceDictionary): SequenceDataset = {
-    RDDBoundSequenceDataset(rdd, sd, None)
+  def apply(rdd: RDD[Sequence],
+            references: SequenceDictionary,
+            samples: Iterable[Sample]): SequenceDataset = {
+    RDDBoundSequenceDataset(rdd, references, samples.toSeq, None)
   }
 }
 
 case class ParquetUnboundSequenceDataset private[ds] (
     @transient private val sc: SparkContext,
     private val parquetFilename: String,
-    references: SequenceDictionary) extends SequenceDataset {
+    references: SequenceDictionary,
+    @transient samples: Seq[Sample]) extends SequenceDataset {
 
   lazy val rdd: RDD[Sequence] = {
     sc.loadParquet(parquetFilename)
@@ -122,7 +139,7 @@ case class ParquetUnboundSequenceDataset private[ds] (
 
   protected lazy val optPartitionMap = sc.extractPartitionMap(parquetFilename)
 
-  lazy val dataset = {
+  lazy val dataset: Dataset[SequenceProduct] = {
     import spark.implicits._
     spark.read.parquet(parquetFilename).as[SequenceProduct]
   }
@@ -130,17 +147,30 @@ case class ParquetUnboundSequenceDataset private[ds] (
   def replaceReferences(newReferences: SequenceDictionary): SequenceDataset = {
     copy(references = newReferences)
   }
+
+  override def replaceSamples(newSamples: Iterable[Sample]): SequenceDataset = {
+    copy(samples = newSamples.toSeq)
+  }
+
+  override def filterToSample(sampleId: String): SequenceDataset = {
+    transformDataset(dataset => dataset.filter(dataset.col("sampleId") === sampleId))
+  }
+
+  override def filterToSamples(sampleIds: Seq[String]): SequenceDataset = {
+    transformDataset(dataset => dataset.filter(dataset.col("sampleId") isin (sampleIds: _*)))
+  }
 }
 
 case class DatasetBoundSequenceDataset private[ds] (
   dataset: Dataset[SequenceProduct],
   references: SequenceDictionary,
+  @transient samples: Seq[Sample],
   override val isPartitioned: Boolean = true,
   override val optPartitionBinSize: Option[Int] = Some(1000000),
   override val optLookbackPartitions: Option[Int] = Some(1)) extends SequenceDataset
     with DatasetBoundGenomicDataset[Sequence, SequenceProduct, SequenceDataset] {
 
-  lazy val rdd = dataset.rdd.map(_.toAvro)
+  lazy val rdd: RDD[Sequence] = dataset.rdd.map(_.toAvro)
   protected lazy val optPartitionMap = None
 
   override def saveAsParquet(filePath: String,
@@ -170,11 +200,16 @@ case class DatasetBoundSequenceDataset private[ds] (
   def replaceReferences(newReferences: SequenceDictionary): SequenceDataset = {
     copy(references = newReferences)
   }
+
+  override def replaceSamples(newSamples: Iterable[Sample]): SequenceDataset = {
+    copy(samples = newSamples.toSeq)
+  }
 }
 
 case class RDDBoundSequenceDataset private[ds] (
     rdd: RDD[Sequence],
     references: SequenceDictionary,
+    @transient samples: Seq[Sample],
     optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends SequenceDataset {
 
   /**
@@ -188,9 +223,14 @@ case class RDDBoundSequenceDataset private[ds] (
   def replaceReferences(newReferences: SequenceDictionary): SequenceDataset = {
     copy(references = newReferences)
   }
+
+  override def replaceSamples(newSamples: Iterable[Sample]): SequenceDataset = {
+    copy(samples = newSamples.toSeq)
+  }
 }
 
-sealed abstract class SequenceDataset extends AvroGenomicDataset[Sequence, SequenceProduct, SequenceDataset] {
+sealed abstract class SequenceDataset extends AvroGenomicDataset[Sequence, SequenceProduct, SequenceDataset]
+    with MultisampleGenomicDataset[Sequence, SequenceProduct, SequenceDataset] {
 
   protected val productFn = SequenceProduct.fromAvro(_)
   protected val unproductFn = (s: SequenceProduct) => s.toAvro
@@ -202,20 +242,57 @@ sealed abstract class SequenceDataset extends AvroGenomicDataset[Sequence, Seque
     IntervalArray(rdd, SequenceArray.apply(_, _))
   }
 
+  override protected def saveMetadata(pathName: String): Unit = {
+    savePartitionMap(pathName)
+    saveReferences(pathName)
+    saveSamples(pathName)
+  }
+
   def union(datasets: SequenceDataset*): SequenceDataset = {
     val iterableDatasets = datasets.toSeq
     SequenceDataset(rdd.context.union(rdd, iterableDatasets.map(_.rdd): _*),
-      iterableDatasets.map(_.references).fold(references)(_ ++ _))
+      iterableDatasets.map(_.references).fold(references)(_ ++ _),
+      iterableDatasets.map(_.samples).fold(samples)(_ ++ _))
   }
 
   override def transformDataset(
     tFn: Dataset[SequenceProduct] => Dataset[SequenceProduct]): SequenceDataset = {
-    DatasetBoundSequenceDataset(tFn(dataset), references)
+    DatasetBoundSequenceDataset(tFn(dataset), references, samples)
   }
 
   override def transformDataset(
     tFn: JFunction[Dataset[SequenceProduct], Dataset[SequenceProduct]]): SequenceDataset = {
-    DatasetBoundSequenceDataset(tFn.call(dataset), references)
+    DatasetBoundSequenceDataset(tFn.call(dataset), references, samples)
+  }
+
+  /**
+   * Filter this SequenceDataset by sample to those that match the specified sample.
+   *
+   * @param sampleId Sample to filter by.
+   * return SequenceDataset filtered by sample.
+   */
+  def filterToSample(sampleId: String): SequenceDataset = {
+    transform((rdd: RDD[Sequence]) => rdd.filter(s => Option(s.getSampleId).contains(sampleId)))
+  }
+
+  /**
+   * (Java-specific) Filter this SequenceDataset by sample to those that match the specified samples.
+   *
+   * @param sampleIds List of samples to filter by.
+   * return SequenceDataset filtered by one or more samples.
+   */
+  def filterToSamples(sampleIds: java.util.List[String]): SequenceDataset = {
+    filterToSamples(asScalaBuffer(sampleIds))
+  }
+
+  /**
+   * (Scala-specific) Filter this SequenceDataset by sample to those that match the specified samples.
+   *
+   * @param sampleIds Sequence of samples to filter by.
+   * return SequenceDataset filtered by one or more samples.
+   */
+  def filterToSamples(sampleIds: Seq[String]): SequenceDataset = {
+    transform((rdd: RDD[Sequence]) => rdd.filter(s => Option(s.getSampleId).exists(sampleIds.contains(_))))
   }
 
   /**
@@ -238,6 +315,8 @@ sealed abstract class SequenceDataset extends AvroGenomicDataset[Sequence, Seque
         .setTotalLength(sequence.getLength)
         .setAttributes(sequence.getAttributes)
 
+      Option(sequence.getSampleId).foreach(sampleId => sb.setSampleId(sampleId))
+
       var index = 0
       var count = (sequence.getLength / maximumLength).toInt
       if (sequence.getLength % maximumLength != 0) count += 1
@@ -255,7 +334,7 @@ sealed abstract class SequenceDataset extends AvroGenomicDataset[Sequence, Seque
       }
       slices
     }
-    SliceDataset(rdd.flatMap(sliceSequence), references)
+    SliceDataset(rdd.flatMap(sliceSequence), references, samples)
   }
 
   /**
@@ -267,7 +346,7 @@ sealed abstract class SequenceDataset extends AvroGenomicDataset[Sequence, Seque
   private def slice(sequence: Sequence, region: ReferenceRegion): Slice = {
     // region may be open-ended
     val end = math.min(sequence.getLength, region.end)
-    Slice.newBuilder()
+    val sb = Slice.newBuilder()
       .setName(sequence.getName)
       .setDescription(sequence.getDescription)
       .setAlphabet(sequence.getAlphabet)
@@ -278,7 +357,9 @@ sealed abstract class SequenceDataset extends AvroGenomicDataset[Sequence, Seque
       .setEnd(end)
       .setStrand(region.strand) // perhaps Sequence should have strand?
       .setAttributes(sequence.getAttributes)
-      .build()
+
+    Option(sequence.getSampleId).foreach(sampleId => sb.setSampleId(sampleId))
+    sb.build()
   }
 
   /**
@@ -289,7 +370,7 @@ sealed abstract class SequenceDataset extends AvroGenomicDataset[Sequence, Seque
    *    to overlap the specified region.
    */
   def slice(region: ReferenceRegion): SliceDataset = {
-    SliceDataset(filterByOverlappingRegion(region).rdd.map(sequence => slice(sequence, region)))
+    SliceDataset(filterByOverlappingRegion(region).rdd.map(sequence => slice(sequence, region)), references, samples)
   }
 
   /**
@@ -317,7 +398,7 @@ sealed abstract class SequenceDataset extends AvroGenomicDataset[Sequence, Seque
    *    to overlap the specified regions.
    */
   def slice(regions: Iterable[ReferenceRegion]): SliceDataset = {
-    SliceDataset(filterByOverlappingRegions(regions).rdd.flatMap(sequence => slice(sequence, regions)))
+    SliceDataset(filterByOverlappingRegions(regions).rdd.flatMap(sequence => slice(sequence, regions)), references, samples)
   }
 
   /**
@@ -327,17 +408,20 @@ sealed abstract class SequenceDataset extends AvroGenomicDataset[Sequence, Seque
    */
   def toReads: ReadDataset = {
     def toRead(sequence: Sequence): Read = {
-      Read.newBuilder()
+      val rb = Read.newBuilder()
         .setName(sequence.getName)
         .setDescription(sequence.getDescription)
         .setAlphabet(sequence.getAlphabet)
         .setSequence(sequence.getSequence)
         .setLength(sequence.getLength)
         .setQualityScores("B" * (if (sequence.getLength == null) 0 else sequence.getLength.toInt))
+        .setSampleId(sequence.getSampleId)
         .setAttributes(sequence.getAttributes)
-        .build()
+
+      Option(sequence.getSampleId).foreach(sampleId => rb.setSampleId(sampleId))
+      rb.build()
     }
-    ReadDataset(rdd.map(toRead), references)
+    ReadDataset(rdd.map(toRead), references, samples)
   }
 
   /**
@@ -347,7 +431,7 @@ sealed abstract class SequenceDataset extends AvroGenomicDataset[Sequence, Seque
    */
   def toSlices: SliceDataset = {
     def toSlice(sequence: Sequence): Slice = {
-      Slice.newBuilder()
+      val sb = Slice.newBuilder()
         .setName(sequence.getName)
         .setDescription(sequence.getDescription)
         .setAlphabet(sequence.getAlphabet)
@@ -357,20 +441,23 @@ sealed abstract class SequenceDataset extends AvroGenomicDataset[Sequence, Seque
         .setStart(0L)
         .setEnd(sequence.getLength)
         .setStrand(Strand.INDEPENDENT)
+        .setSampleId(sequence.getSampleId)
         .setAttributes(sequence.getAttributes)
-        .build()
+
+      Option(sequence.getSampleId).foreach(sampleId => sb.setSampleId(sampleId))
+      sb.build()
     }
-    SliceDataset(rdd.map(toSlice), references)
+    SliceDataset(rdd.map(toSlice), references, samples)
   }
 
   /**
-   * Replace the sequence dictionary for this SequenceDataset with one
+   * Replace the references for this SequenceDataset with those
    * created from the sequences in this SequenceDataset.
    *
-   * @return Returns a new SequenceDataset with the sequence dictionary replaced.
+   * @return Returns a new SequenceDataset with the references replaced.
    */
-  def createSequenceDictionary(): SequenceDataset = {
-    val sd = new SequenceDictionary(rdd.flatMap(sequence => {
+  def createReferences(): SequenceDataset = {
+    val references = new SequenceDictionary(rdd.flatMap(sequence => {
       if (sequence.getName != null) {
         Some(SequenceRecord.fromSequence(sequence))
       } else {
@@ -380,7 +467,7 @@ sealed abstract class SequenceDataset extends AvroGenomicDataset[Sequence, Seque
       .collect
       .toVector)
 
-    replaceReferences(sd)
+    replaceReferences(references)
   }
 
   /**
@@ -447,7 +534,7 @@ sealed abstract class SequenceDataset extends AvroGenomicDataset[Sequence, Seque
    */
   protected def replaceRdd(newRdd: RDD[Sequence],
                            newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): SequenceDataset = {
-    RDDBoundSequenceDataset(newRdd, references, newPartitionMap)
+    RDDBoundSequenceDataset(newRdd, references, samples, newPartitionMap)
   }
 
   /**
