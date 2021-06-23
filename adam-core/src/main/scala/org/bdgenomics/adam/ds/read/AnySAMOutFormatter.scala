@@ -24,14 +24,16 @@ import org.bdgenomics.adam.ds.OutFormatter
 import org.bdgenomics.formats.avro.Alignment
 import scala.annotation.tailrec
 import scala.collection.mutable.ListBuffer
+import java.io.{ BufferedReader, InputStreamReader }
+import org.bdgenomics.adam.ds._
 
 /**
  * An OutFormatter that automatically infers whether the piped input is SAM or
  * BAM. Autodetecting streamed CRAM is not currently supported.
  */
-case class AnySAMOutFormatter(stringency: ValidationStringency) extends OutFormatter[Alignment] {
+case class AnySAMOutFormatter(stringency: ValidationStringency, header: SAMFileHeader) extends OutFormatter[Alignment] {
 
-  def this() = this(ValidationStringency.STRICT)
+  def this() = this(ValidationStringency.STRICT, new SAMFileHeader())
 
   /**
    * Reads alignments from an input stream. Autodetects SAM/BAM format.
@@ -45,6 +47,12 @@ case class AnySAMOutFormatter(stringency: ValidationStringency) extends OutForma
     val reader = SamReaderFactory.makeDefault()
       .validationStringency(stringency)
       .open(SamInputResource.of(is))
+
+    //copy reader header
+    val r_header = reader.getFileHeader()
+    header.setSequenceDictionary(r_header.getSequenceDictionary())
+    header.setReadGroups(r_header.getReadGroups())
+    header.setProgramRecords(r_header.getProgramRecords())
 
     SAMIteratorConverter(reader)
   }
