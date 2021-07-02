@@ -428,6 +428,10 @@ class AlignmentConverter extends Serializable with Logging {
   private def trimSuffix(name: String): String = {
     name.replace("/[0-9]+^", "")
   }
+  
+  private def baseName(name:String): String = {
+    name.replaceAll("\\s[0-9]/[0-9]+","")
+  }
 
   /**
    * Converts a single ADAM record into a SAM record.
@@ -446,7 +450,7 @@ class AlignmentConverter extends Serializable with Logging {
     val builder: SAMRecord = new SAMRecord(header)
 
     // set canonically necessary fields
-    builder.setReadName(adamRecord.getReadName)
+    builder.setReadName(baseName(adamRecord.getReadName))
     builder.setReadString(adamRecord.getSequence)
     adamRecord.getQualityScores match {
       case null      => builder.setBaseQualityString("*")
