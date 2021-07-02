@@ -426,11 +426,11 @@ class AlignmentConverter extends Serializable with Logging {
    * @return The read name after trimming the index suffix if present.
    */
   private def trimSuffix(name: String): String = {
-    name.replace("/[0-9]+^", "")
+    name.replaceAll("/[0-9]+^", "")
   }
   
   private def baseName(name:String): String = {
-    name.replaceAll("\\s[0-9]/[0-9]+","")
+    name.replaceAll("\\s[0-9]+","")
   }
 
   /**
