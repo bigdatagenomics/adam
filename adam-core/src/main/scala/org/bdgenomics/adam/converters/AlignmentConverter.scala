@@ -426,7 +426,11 @@ class AlignmentConverter extends Serializable with Logging {
    * @return The read name after trimming the index suffix if present.
    */
   private def trimSuffix(name: String): String = {
-    name.replace("/[0-9]+^", "")
+    name.replaceAll("/[0-9]+^", "")
+  }
+  
+  private def baseName(name:String): String = {
+    name.replaceAll("\\s[0-9]+","")
   }
 
   /**
@@ -446,7 +450,7 @@ class AlignmentConverter extends Serializable with Logging {
     val builder: SAMRecord = new SAMRecord(header)
 
     // set canonically necessary fields
-    builder.setReadName(adamRecord.getReadName)
+    builder.setReadName(baseName(adamRecord.getReadName))
     builder.setReadString(adamRecord.getSequence)
     adamRecord.getQualityScores match {
       case null      => builder.setBaseQualityString("*")
