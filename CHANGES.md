@@ -1,5 +1,27 @@
 # ADAM Changelog #
 
+### Version 0.36.0 ###
+
+**Closed issues:**
+
+ - Update bdg-formats dependency version to 0.16.0 [\#2328](https://github.com/bigdatagenomics/adam/issues/2328)
+ - Add sample to Sequence, Slice, and Read [\#2319](https://github.com/bigdatagenomics/adam/issues/2319)
+ - Update Spark dependency version to 3.1.2 [\#2317](https://github.com/bigdatagenomics/adam/issues/2317)
+ - Update Spark dependency version to 3.1.1 [\#2302](https://github.com/bigdatagenomics/adam/issues/2302)
+ - Consider merging ADAM2Fastq into TransformAlignments [\#2173](https://github.com/bigdatagenomics/adam/issues/2173)
+ - Benchmark DNA sequence encodings vs Parquet string column compression [\#2164](https://github.com/bigdatagenomics/adam/issues/2164)
+
+**Merged and closed pull requests:**
+
+ - Update bdg-formats dependency version to 0.16.0 [\#2330](https://github.com/bigdatagenomics/adam/pull/2330) ([heuermh](https://github.com/heuermh))
+ - Update commons-io dependency version to 2.11.0, scala-guice to 5.0.1, mockito-core to 3.11.2 [\#2327](https://github.com/bigdatagenomics/adam/pull/2327) ([heuermh](https://github.com/heuermh))
+ - [ADAM-2319] Add sample to Sequence, Slice, and Read [\#2320](https://github.com/bigdatagenomics/adam/pull/2320) ([heuermh](https://github.com/heuermh))
+ - [ADAM-2317] Update Spark dependency version to 3.1.2 [\#2318](https://github.com/bigdatagenomics/adam/pull/2318) ([heuermh](https://github.com/heuermh))
+ - Add cache to deploy action [\#2316](https://github.com/bigdatagenomics/adam/pull/2316) ([heuermh](https://github.com/heuermh))
+ - [ADAM-2302] Update Spark dependency version to 3.1.1 [\#2315](https://github.com/bigdatagenomics/adam/pull/2315) ([heuermh](https://github.com/heuermh))
+ - Replace link to Freenode IRC with Libera.Chat [\#2314](https://github.com/bigdatagenomics/adam/pull/2314) ([heuermh](https://github.com/heuermh))
+
+
 ### Version 0.35.0 ###
 
 **Closed issues:**
