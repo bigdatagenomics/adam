@@ -17,7 +17,7 @@ milestone=$3
 branch=$(git status -bs | awk '{ print $2 }' | awk -F'.' '{ print $1 }' | head -n 1)
 
 # update changelog per Github milestone
-mvn com.github.heuermh.maven.plugin.changes:github-changes-maven-plugin:1.1:github-changes -DmilestoneId=${milestone}
+mvn com.github.heuermh.maven.plugin.changes:github-changes-maven-plugin:1.2:github-changes -DmilestoneId=${milestone}
 git commit -a -m "Modifying changelog."
 
 # update R version
