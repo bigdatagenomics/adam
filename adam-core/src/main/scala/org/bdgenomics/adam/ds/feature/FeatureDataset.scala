@@ -389,6 +389,14 @@ case class DatasetBoundFeatureDataset private[ds] (
     transformDataset(dataset => dataset.filter(dataset.col("exonId") isin (exonIds: _*)))
   }
 
+  override def filterToProtein(proteinId: String): FeatureDataset = {
+    transformDataset(dataset => dataset.filter(dataset.col("proteinId").eqNullSafe(proteinId)))
+  }
+
+  override def filterToProteins(proteinIds: Seq[String]): FeatureDataset = {
+    transformDataset(dataset => dataset.filter(dataset.col("proteinId") isin (proteinIds: _*)))
+  }
+
   override def filterByScore(minimumScore: Double): FeatureDataset = {
     transformDataset(dataset => dataset.filter(dataset.col("score").geq(minimumScore)))
   }
@@ -652,6 +660,36 @@ sealed abstract class FeatureDataset extends AvroGenomicDataset[Feature, Feature
    */
   def filterToExons(exonIds: Seq[String]): FeatureDataset = {
     transform((rdd: RDD[Feature]) => rdd.filter(f => Option(f.getExonId).exists(exonIds.contains(_))))
+  }
+
+  /**
+   * Filter this FeatureDataset by protein to those that match the specified protein.
+   *
+   * @param proteinId Protein to filter by.
+   * @return FeatureDataset filtered by the specified protein.
+   */
+  def filterToProtein(proteinId: String): FeatureDataset = {
+    transform((rdd: RDD[Feature]) => rdd.filter(f => Option(f.getProteinId).exists(_.equals(proteinId))))
+  }
+
+  /**
+   * (Java-specific) Filter this FeatureDataset by protein to those that match the specified proteins.
+   *
+   * @param proteinIds List of proteins to filter by.
+   * @return FeatureDataset filtered by the specified proteins.
+   */
+  def filterToProteins(proteinIds: java.util.List[String]): FeatureDataset = {
+    filterToProteins(asScalaBuffer(proteinIds))
+  }
+
+  /**
+   * (Scala-specific) Filter this FeatureDataset by protein to those that match the specified proteins.
+   *
+   * @param proteinIds Sequence of proteins to filter by.
+   * @return FeatureDataset filtered by the specified proteins.
+   */
+  def filterToProteins(proteinIds: Seq[String]): FeatureDataset = {
+    transform((rdd: RDD[Feature]) => rdd.filter(f => Option(f.getProteinId).exists(proteinIds.contains(_))))
   }
 
   /**

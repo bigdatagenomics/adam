@@ -159,6 +159,7 @@ private[feature] object Features {
         case "gene_id"       => f.setGeneId(entry._2)
         case "transcript_id" => f.setTranscriptId(entry._2)
         case "exon_id"       => f.setExonId(entry._2)
+        case "protein_id"    => f.setProteinId(entry._2)
         // unrecognized key, save to attributes
         case _               => remaining += entry
       }
@@ -200,6 +201,7 @@ private[feature] object Features {
     Option(feature.getGeneId).foreach(attrs += Tuple2("gene_id", _))
     Option(feature.getTranscriptId).foreach(attrs += Tuple2("transcript_id", _))
     Option(feature.getExonId).foreach(attrs += Tuple2("exon_id", _))
+    Option(feature.getProteinId).foreach(attrs += Tuple2("protein_id", _))
     Option(feature.getSampleId).foreach(attrs += Tuple2("sampleId", _))
     for (alias <- feature.getAliases) attrs += Tuple2("Alias", alias)
     for (note <- feature.getNotes) attrs += Tuple2("Note", note)
