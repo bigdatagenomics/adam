@@ -35,6 +35,8 @@ will need to have the Spark binaries on your system; prebuilt binaries
 can be downloaded from the `Spark
 website <http://spark.apache.org/downloads.html>`__.
 
+As of ADAM version 0.37.0, Spark version 3.2.0 or later is required.
+
 Once this alias is in place, you can run ADAM by simply typing
 ``adam-submit`` at the command line.
 
@@ -131,11 +133,11 @@ Installation of ``devtools`` may require ``libgit2`` as a dependency.
     apt-get install libgit2-dev
 
 The build also requires you to have the ``SparkR`` package installed,
-where ``v2.x.x`` should match your Spark version.
+where ``v3.x.x`` should match your Spark version.
 
 .. code:: bash
 
-   R -e "devtools::install_github('apache/spark@v2.x.x', subdir='R/pkg')"
+   R -e "devtools::install_github('apache/spark@v3.x.x', subdir='R/pkg')"
 
 The ADAM JARs can then be provided to ``SparkR`` with the following bash
 commands:

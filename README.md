@@ -61,6 +61,32 @@ R and Python.
 
 # Getting Started
 
+## Installing ADAM via Conda
+
+ADAM is available in Conda via Bioconda, https://bioconda.github.io
+
+```bash
+$ conda install adam
+```
+
+## Installing ADAM via Homebrew
+
+ADAM is available in Homebrew via Brewsci/bio, https://github.com/brewsci/homebrew-bio
+
+```bash
+$ brew install brewsci/bio/adam
+```
+
+## Installing ADAM via Docker
+
+ADAM is available in Docker via BioContainers, https://biocontainers.pro
+
+```bash
+$ docker pull quay.io/biocontainers/adam:{tag}
+```
+
+Find `{tag}` on the tag search page, https://quay.io/repository/biocontainers/adam?tab=tags
+
 ## Building from Source
 
 You will need to have [Apache Maven](http://maven.apache.org/) version 3.3.9 or
@@ -76,6 +102,9 @@ $ mvn install
 
 You'll need to have a Spark release on your system and the `$SPARK_HOME` environment variable pointing at it;
 prebuilt binaries can be downloaded from the [Spark website](http://spark.apache.org/downloads.html).
+
+As of ADAM version 0.37.0, Spark version 3.2.0 or later is required.
+
 
 # Documentation
 
