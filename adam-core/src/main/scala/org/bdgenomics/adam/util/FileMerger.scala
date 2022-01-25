@@ -224,7 +224,7 @@ private[adam] object FileMerger extends Logging {
     if (writeEmptyGzipBlock) {
       os.write(BlockCompressedStreamConstants.EMPTY_GZIP_BLOCK)
     } else if (writeCramEOF) {
-      CramIO.issueEOF(CramVersions.DEFAULT_CRAM_VERSION, os)
+      CramIO.writeCramEOF(CramVersions.DEFAULT_CRAM_VERSION, os)
     }
 
     // flush and close the output stream
