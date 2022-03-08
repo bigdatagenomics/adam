@@ -128,7 +128,7 @@ object ADAMShell {
       f.getReferenceName(),
       f.getStart().toString,
       f.getEnd().toString,
-      f.getStrand().toString,
+      Option(f.getStrand()).fold("")(_.toString),
       Option(f.getName()).getOrElse(""),
       Option(f.getFeatureId()).getOrElse(""),
       Option(f.getFeatureType()).getOrElse(""),
