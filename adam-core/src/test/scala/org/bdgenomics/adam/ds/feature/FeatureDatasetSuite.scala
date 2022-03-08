@@ -471,6 +471,12 @@ class FeatureDatasetSuite extends ADAMFunSuite {
     })
   }
 
+  sparkTest("allow space in IntervalList SP header value") {
+    val inputPath = testFile("wgs_calling_regions.hg38.interval_list")
+    val features = sc.loadIntervalList(inputPath)
+    assert(features.rdd.count() == 27)
+  }
+
   sparkTest("save NarrowPeak as GTF format") {
     val inputPath = testFile("wgEncodeOpenChromDnaseGm19238Pk.trunc10.narrowPeak")
     val features = sc.loadNarrowPeak(inputPath)

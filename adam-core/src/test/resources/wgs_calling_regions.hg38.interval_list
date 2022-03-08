@@ -1,0 +1,31 @@
+@HD	VN:1.5	SO:coordinate
+@SQ	SN:chr1	LN:248956422	M5:6aef897c3d6ff0c78aff06ac189178dd	AS:38	UR:/seq/references/Homo_sapiens_assembly38/v0/Homo_sapiens_assembly38.fasta	SP:Homo sapiens
+@SQ	SN:chr2	LN:242193529	M5:f98db672eb0993dcfdabafe2a882905c	AS:38	UR:/seq/references/Homo_sapiens_assembly38/v0/Homo_sapiens_assembly38.fasta	SP:Homo sapiens
+@PG	ID:1	CL:picard.util.IntervalListTools INPUT=[HG38excludeNs.interval_list, genome.interval_list] OUTPUT=wgs_calling_regions.v3.interval_list SORT=true ACTION=INTERSECT    PADDING=0 UNIQUE=false SCATTER_COUNT=1 INCLUDE_FILTERED=false BREAK_BANDS_AT_MULTIPLES_OF=0 SUBDIVISION_MODE=INTERVAL_SUBDIVISION INVERT=false VERBOSITY=INFO QUIET=false VALIDATION_STRINGENCY=STRICT COMPRESSION_LEVEL=5 MAX_RECORDS_IN_RAM=500000 CREATE_INDEX=false CREATE_MD5_FILE=false GA4GH_CLIENT_SECRETS=client_secrets.json	PN:IntervalListTools
+chr1	10001	207666	+	. intersection ACGTmer
+chr1	257667	297968	+	. intersection ACGTmer
+chr1	347969	535988	+	. intersection ACGTmer
+chr1	585989	2702781	+	. intersection ACGTmer
+chr1	2746291	12954384	+	. intersection ACGTmer
+chr1	13004385	16799163	+	. intersection ACGTmer
+chr1	16849164	29552233	+	. intersection ACGTmer
+chr1	29553836	121976459	+	. intersection ACGTmer
+chr1	122026460	124977944	+	. intersection ACGTmer
+chr1	124978327	125130246	+	. intersection ACGTmer
+chr1	125131848	125171347	+	. intersection ACGTmer
+chr1	125173584	125184587	+	. intersection ACGTmer
+chr1	143184588	223558935	+	. intersection ACGTmer
+chr1	223608936	228558364	+	. intersection ACGTmer
+chr1	228608365	248946422	+	. intersection ACGTmer
+chr2	10001	16145119	+	. intersection ACGTmer
+chr2	16146120	32867130	+	. intersection ACGTmer
+chr2	32868131	32916625	+	. intersection ACGTmer
+chr2	32917626	89330679	+	. intersection ACGTmer
+chr2	89530680	89685992	+	. intersection ACGTmer
+chr2	89753993	90402511	+	. intersection ACGTmer
+chr2	91402512	92138145	+	. intersection ACGTmer
+chr2	92188146	94090557	+	. intersection ACGTmer
+chr2	94140558	94293015	+	. intersection ACGTmer
+chr2	94496016	97439618	+	. intersection ACGTmer
+chr2	97489619	238903659	+	. intersection ACGTmer
+chr2	238904048	242183529	+	. intersection ACGTmer
