@@ -245,7 +245,7 @@ private[ds] class IntervalListParser extends FeatureParser {
   def parseHeader(line: String,
                   stringency: ValidationStringency): Option[SequenceRecord] = {
 
-    val fields = line.split("[ \t]+")
+    val fields = line.split("[\t]+")
 
     if (fields(0).startsWith("@SQ")) {
       val (name, length, url, md5) = {
