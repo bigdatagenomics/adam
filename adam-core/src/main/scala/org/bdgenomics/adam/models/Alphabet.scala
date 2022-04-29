@@ -99,7 +99,7 @@ trait Alphabet {
 case class Symbol(label: Char, complement: Char)
 
 /**
- * The standard DNA alphabet with A,T,C, and G
+ * The standard DNA alphabet with A,T,C, and G.
  */
 class DNAAlphabet extends Alphabet {
 
@@ -114,8 +114,35 @@ class DNAAlphabet extends Alphabet {
 }
 
 /**
+ * The IUPAC amino acid and nucleotide base alphabet with ambiguity codes.
+ */
+class IUPACAlphabet extends Alphabet {
+
+  override val caseSensitive = false
+
+  override val symbols = Seq(
+    Symbol('A', 'T'),
+    Symbol('T', 'A'),
+    Symbol('G', 'C'),
+    Symbol('C', 'G'),
+    Symbol('M', 'K'),
+    Symbol('R', 'Y'),
+    Symbol('W', 'W'),
+    Symbol('S', 'S'),
+    Symbol('Y', 'R'),
+    Symbol('K', 'M'),
+    Symbol('V', 'B'),
+    Symbol('H', 'D'),
+    Symbol('D', 'H'),
+    Symbol('B', 'V'),
+    Symbol('N', 'N')
+  )
+}
+
+/**
  * Singleton object with references to all supported alphabets.
  */
 object Alphabet {
   val dna = new DNAAlphabet
+  val iupac = new IUPACAlphabet
 }
