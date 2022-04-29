@@ -101,5 +101,12 @@ class AlphabetSuite extends ADAMFunSuite {
     assert(4 == Alphabet.dna.size)
     assert("CGNATAT" == Alphabet.dna.reverseComplement("ATATxcg", (c: Char) => Symbol('N', 'N')))
   }
+
+  test("IUPAC alphabet") {
+    assert(15 == Alphabet.iupac.size)
+    assert("CGCGATAT" == Alphabet.iupac.reverseComplement("atatcgcg"))
+    assert("CGxATAT" == Alphabet.iupac.reverseComplement("ATATxcg"))
+    assert("NVHDBMRSWYKACGT" == Alphabet.iupac.reverseComplement("ACGTMRWSYKVHDBN"))
+  }
 }
 
