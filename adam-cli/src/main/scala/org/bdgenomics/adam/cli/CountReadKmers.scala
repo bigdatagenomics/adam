@@ -21,8 +21,9 @@ import grizzled.slf4j.Logging
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.cli.FileSystemUtils._
-import org.bdgenomics.adam.projections.{ AlignmentField, Projection }
 import org.bdgenomics.adam.ds.ADAMContext._
+import org.bdgenomics.adam.projections.{ AlignmentField, Projection }
+import org.bdgenomics.adam.util.TextRddWriter._
 import org.bdgenomics.formats.avro.Alignment
 import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
@@ -37,16 +38,26 @@ object CountReadKmers extends BDGCommandCompanion {
 }
 
 class CountReadKmersArgs extends Args4jBase with ParquetArgs with CramArgs {
-  @Argument(required = true, metaVar = "INPUT", usage = "The ADAM, BAM or SAM file to count kmers from", index = 0)
+  @Argument(required = true, metaVar = "INPUT", usage = "The ADAM, BAM or SAM file to count kmers from.", index = 0)
   var inputPath: String = null
-  @Argument(required = true, metaVar = "OUTPUT", usage = "Location for storing k-mer counts", index = 1)
+
+  @Argument(required = true, metaVar = "OUTPUT", usage = "Location for storing k-mer counts.", index = 1)
   var outputPath: String = null
-  @Argument(required = true, metaVar = "KMER_LENGTH", usage = "Length of k-mers", index = 2)
+
+  @Argument(required = true, metaVar = "KMER_LENGTH", usage = "Length of k-mers.", index = 2)
   var kmerLength: Int = 0
+
   @Args4jOption(required = false, name = "-print_histogram", usage = "Prints a histogram of counts.")
   var printHistogram: Boolean = false
-  @Args4jOption(required = false, name = "-repartition", usage = "Set the number of partitions to map data to")
+
+  @Args4jOption(required = false, name = "-repartition", usage = "Set the number of partitions to map data to.")
   var repartition: Int = -1
+
+  @Args4jOption(required = false, name = "-single", usage = "Save as a single file, for text format.")
+  var asSingleFile: Boolean = false
+
+  @Args4jOption(required = false, name = "-disable_fast_concat", usage = "Disables the parallel file concatenation engine.")
+  var disableFastConcat: Boolean = false
 }
 
 class CountReadKmers(protected val args: CountReadKmersArgs) extends BDGSparkCommand[CountReadKmersArgs] with Logging {
@@ -71,11 +82,11 @@ class CountReadKmers(protected val args: CountReadKmersArgs) extends BDGSparkCom
     // count kmers
     val countedKmers = adamRecords.countKmers(args.kmerLength)
 
-    // cache counted kmers
-    countedKmers.cache()
-
     // print histogram, if requested
     if (args.printHistogram) {
+      // cache counted kmers
+      countedKmers.cache()
+
       countedKmers.map(kv => kv._2.toLong)
         .countByValue()
         .toSeq
@@ -84,6 +95,9 @@ class CountReadKmers(protected val args: CountReadKmersArgs) extends BDGSparkCom
     }
 
     // save as text file
-    countedKmers.saveAsTextFile(args.outputPath)
+    writeTextRdd(countedKmers.map(kv => kv._1 + "\t" + kv._2),
+      args.outputPath,
+      asSingleFile = args.asSingleFile,
+      disableFastConcat = args.disableFastConcat)
   }
 }
