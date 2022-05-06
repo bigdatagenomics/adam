@@ -44,9 +44,9 @@ class TransformSlicesArgs extends Args4jBase with ParquetSaveArgs {
     usage = "Maximum slice length. Defaults to 10000L.")
   var maximumLength: Long = 10000L
 
-  @Args4jOption(required = false, name = "-create_reference",
-    usage = "Create reference from sequence names and lengths. Defaults to false.")
-  var createReference: Boolean = false
+  @Args4jOption(required = false, name = "-create_references",
+    usage = "Create references from sequence names and lengths. Defaults to false.")
+  var createReferences: Boolean = false
 
   @Args4jOption(required = false, name = "-single",
     usage = "Save as a single file, for the text formats.")
@@ -69,7 +69,7 @@ class TransformSlices(val args: TransformSlicesArgs)
       optPredicate = None,
       optProjection = None
     )
-    val maybeCreateReference = if (args.createReference) slices.createReferences() else slices
-    maybeCreateReference.save(args.outputPath, args.single, args.disableFastConcat)
+    val maybeCreateReferences = if (args.createReferences) slices.createReferences() else slices
+    maybeCreateReferences.save(args.outputPath, args.single, args.disableFastConcat)
   }
 }
