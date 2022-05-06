@@ -41,9 +41,9 @@ class TransformSequencesArgs extends Args4jBase with ParquetSaveArgs {
     usage = "Location to write ADAM sequence data. If extension is not detected, Parquet is assumed.", index = 1)
   var outputPath: String = null
 
-  @Args4jOption(required = false, name = "-create_reference",
-    usage = "Create reference from sequence names and lengths. Defaults to false.")
-  var createReference: Boolean = false
+  @Args4jOption(required = false, name = "-create_references",
+    usage = "Create references from sequence names and lengths. Defaults to false.")
+  var createReferences: Boolean = false
 
   @Args4jOption(required = false, name = "-single",
     usage = "Save as a single file, for the text formats.")
@@ -70,7 +70,7 @@ class TransformSequences(val args: TransformSequencesArgs)
       case Alphabet.PROTEIN => sc.loadProteinSequences(args.sequencesFile, optPredicate = None, optProjection = None)
       case Alphabet.RNA     => sc.loadRnaSequences(args.sequencesFile, optPredicate = None, optProjection = None)
     }
-    val maybeCreateReference = if (args.createReference) sequences.createReferences() else sequences
-    maybeCreateReference.save(args.outputPath, args.single, args.disableFastConcat)
+    val maybeCreateReferences = if (args.createReferences) sequences.createReferences() else sequences
+    maybeCreateReferences.save(args.outputPath, args.single, args.disableFastConcat)
   }
 }
