@@ -21,6 +21,7 @@ import grizzled.slf4j.Logging
 import org.apache.spark.SparkContext
 import org.bdgenomics.adam.ds.ADAMContext._
 import org.bdgenomics.adam.cli.FileSystemUtils._
+import org.bdgenomics.adam.util.TextRddWriter._
 import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
@@ -34,14 +35,23 @@ object CountSliceKmers extends BDGCommandCompanion {
 }
 
 class CountSliceKmersArgs extends Args4jBase with ParquetArgs {
-  @Argument(required = true, metaVar = "INPUT", usage = "The ADAM or FASTA file to count kmers from", index = 0)
+  @Argument(required = true, metaVar = "INPUT", usage = "The ADAM or FASTA file to count kmers from.", index = 0)
   var inputPath: String = null
-  @Argument(required = true, metaVar = "OUTPUT", usage = "Location for storing k-mer counts", index = 1)
+
+  @Argument(required = true, metaVar = "OUTPUT", usage = "Location for storing k-mer counts.", index = 1)
   var outputPath: String = null
-  @Argument(required = true, metaVar = "KMER_LENGTH", usage = "Length of k-mers", index = 2)
+
+  @Argument(required = true, metaVar = "KMER_LENGTH", usage = "Length of k-mers.", index = 2)
   var kmerLength: Int = 0
+
   @Args4jOption(required = false, name = "-print_histogram", usage = "Prints a histogram of counts.")
   var printHistogram: Boolean = false
+
+  @Args4jOption(required = false, name = "-single", usage = "Save as a single file, for text format.")
+  var asSingleFile: Boolean = false
+
+  @Args4jOption(required = false, name = "-disable_fast_concat", usage = "Disables the parallel file concatenation engine.")
+  var disableFastConcat: Boolean = false
 }
 
 class CountSliceKmers(protected val args: CountSliceKmersArgs) extends BDGSparkCommand[CountSliceKmersArgs] with Logging {
@@ -52,9 +62,10 @@ class CountSliceKmers(protected val args: CountSliceKmersArgs) extends BDGSparkC
 
     // read from disk
     val slices = sc.loadSlices(args.inputPath)
+    val withReferences = if (slices.references.size == 0) slices.createReferences() else slices
 
     // count kmers
-    val countedKmers = slices.countKmers(args.kmerLength)
+    val countedKmers = withReferences.countKmers(args.kmerLength)
 
     // print histogram, if requested
     if (args.printHistogram) {
@@ -69,7 +80,9 @@ class CountSliceKmers(protected val args: CountSliceKmersArgs) extends BDGSparkC
     }
 
     // save as text file
-    countedKmers.map(kv => kv._1 + ", " + kv._2)
-      .saveAsTextFile(args.outputPath)
+    writeTextRdd(countedKmers.map(kv => kv._1 + "\t" + kv._2),
+      args.outputPath,
+      asSingleFile = args.asSingleFile,
+      disableFastConcat = args.disableFastConcat)
   }
 }
