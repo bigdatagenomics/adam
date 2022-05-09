@@ -19,6 +19,7 @@ package org.bdgenomics.adam.ds.sequence
 
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.spark.SparkContext
+import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.api.java.function.{ Function => JFunction }
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Dataset
@@ -525,6 +526,54 @@ sealed abstract class SequenceDataset extends AvroGenomicDataset[Sequence, Seque
       filePath,
       asSingleFile = asSingleFile,
       disableFastConcat = disableFastConcat)
+  }
+
+  /**
+   * (Scala-specific) Cuts sequences into _k_-mers, and then counts the number of occurrences of each _k_-mer.
+   *
+   * @param kmerLength The value of _k_ to use for cutting _k_-mers.
+   * @return Returns an RDD containing k-mer/count pairs.
+   */
+  def countKmers(kmerLength: Int): RDD[(String, Long)] = {
+    rdd.flatMap(r => {
+      // cut each read into k-mers, and attach a count of 1L
+      r.getSequence
+        .sliding(kmerLength)
+        .map(k => (k, 1L))
+    }).reduceByKey((k1: Long, k2: Long) => k1 + k2)
+  }
+
+  /**
+   * (Java-specific) Cuts sequences into _k_-mers, and then counts the number of occurrences of each _k_-mer.
+   *
+   * @param kmerLength The value of _k_ to use for cutting _k_-mers.
+   * @return Returns an JavaRDD containing k-mer/count pairs.
+   */
+  def countKmers(kmerLength: java.lang.Integer): JavaRDD[(String, java.lang.Long)] = {
+    val k: Int = kmerLength
+    countKmers(k).map(p => {
+      (p._1, p._2: java.lang.Long)
+    }).toJavaRDD()
+  }
+
+  /**
+   * Cuts sequences into _k_-mers, and then counts the number of occurrences of each _k_-mer
+   * as a Dataset.
+   *
+   * @param kmerLength The value of _k_ to use for cutting _k_-mers.
+   * @return Returns a Dataset containing k-mer/count pairs.
+   */
+  def countKmersAsDataset(kmerLength: Int): Dataset[(String, Long)] = {
+    import spark.implicits._
+    val kmers = dataset.select($"sequence".as[String])
+      .flatMap(_.sliding(kmerLength))
+      .as[String]
+
+    kmers.toDF()
+      .groupBy($"value")
+      .count()
+      .select($"value".as("kmer"), $"count".as("count"))
+      .as[(String, Long)]
   }
 
   /**

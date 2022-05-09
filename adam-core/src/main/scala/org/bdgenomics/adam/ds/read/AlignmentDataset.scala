@@ -747,7 +747,7 @@ sealed abstract class AlignmentDataset extends AvroReadGroupGenomicDataset[Align
   }
 
   /**
-   * Cuts reads into _k_-mers, and then counts the number of occurrences of each _k_-mer.
+   * (Scala-specific) Cuts reads into _k_-mers, and then counts the number of occurrences of each _k_-mer.
    *
    * @param kmerLength The value of _k_ to use for cutting _k_-mers.
    * @return Returns an RDD containing k-mer/count pairs.
@@ -762,7 +762,21 @@ sealed abstract class AlignmentDataset extends AvroReadGroupGenomicDataset[Align
   }
 
   /**
-   * Cuts reads into _k_-mers, and then counts the number of occurrences of each _k_-mer.
+   * (Java-specific) Cuts reads into _k_-mers, and then counts the number of occurrences of each _k_-mer.
+   *
+   * @param kmerLength The value of _k_ to use for cutting _k_-mers.
+   * @return Returns a JavaRDD containing k-mer/count pairs.
+   */
+  def countKmers(kmerLength: java.lang.Integer): JavaRDD[(String, java.lang.Long)] = {
+    val k: Int = kmerLength
+    countKmers(k).map(p => {
+      (p._1, p._2: java.lang.Long)
+    }).toJavaRDD()
+  }
+
+  /**
+   * Cuts reads into _k_-mers, and then counts the number of occurrences of each _k_-mer
+   * as a Dataset.
    *
    * @param kmerLength The value of _k_ to use for cutting _k_-mers.
    * @return Returns a Dataset containing k-mer/count pairs.
