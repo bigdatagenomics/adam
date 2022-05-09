@@ -50,6 +50,9 @@ class CountReadKmersArgs extends Args4jBase with ParquetArgs with CramArgs {
   @Args4jOption(required = false, name = "-print_histogram", usage = "Prints a histogram of counts.")
   var printHistogram: Boolean = false
 
+  @Args4jOption(required = false, name = "-sort", usage = "Sort kmers before writing.")
+  var sort: Boolean = false
+
   @Args4jOption(required = false, name = "-repartition", usage = "Set the number of partitions to map data to.")
   var repartition: Int = -1
 
@@ -94,8 +97,10 @@ class CountReadKmers(protected val args: CountReadKmersArgs) extends BDGSparkCom
         .foreach(println)
     }
 
+    val maybeSorted = if (args.sort) countedKmers.sortBy(_._1) else countedKmers
+
     // save as text file
-    writeTextRdd(countedKmers.map(kv => kv._1 + "\t" + kv._2),
+    writeTextRdd(maybeSorted.map(kv => kv._1 + "\t" + kv._2),
       args.outputPath,
       asSingleFile = args.asSingleFile,
       disableFastConcat = args.disableFastConcat)

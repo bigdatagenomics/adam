@@ -47,6 +47,12 @@ class CountSliceKmersArgs extends Args4jBase with ParquetArgs {
   @Args4jOption(required = false, name = "-print_histogram", usage = "Prints a histogram of counts.")
   var printHistogram: Boolean = false
 
+  @Args4jOption(required = false, name = "-maximum_length", usage = "Maximum slice length. Defaults to 10000L.")
+  var maximumLength: Long = 10000L
+
+  @Args4jOption(required = false, name = "-sort", usage = "Sort kmers before writing.")
+  var sort: Boolean = false
+
   @Args4jOption(required = false, name = "-single", usage = "Save as a single file, for text format.")
   var asSingleFile: Boolean = false
 
@@ -61,7 +67,7 @@ class CountSliceKmers(protected val args: CountSliceKmersArgs) extends BDGSparkC
     checkWriteablePath(args.outputPath, sc.hadoopConfiguration)
 
     // read from disk
-    val slices = sc.loadSlices(args.inputPath)
+    val slices = sc.loadSlices(args.inputPath, maximumLength = args.maximumLength)
     val withReferences = if (slices.references.size == 0) slices.createReferences() else slices
 
     // count kmers
@@ -79,8 +85,10 @@ class CountSliceKmers(protected val args: CountSliceKmersArgs) extends BDGSparkC
         .foreach(println)
     }
 
+    val maybeSorted = if (args.sort) countedKmers.sortBy(_._1) else countedKmers
+
     // save as text file
-    writeTextRdd(countedKmers.map(kv => kv._1 + "\t" + kv._2),
+    writeTextRdd(maybeSorted.map(kv => kv._1 + "\t" + kv._2),
       args.outputPath,
       asSingleFile = args.asSingleFile,
       disableFastConcat = args.disableFastConcat)
