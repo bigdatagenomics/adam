@@ -548,7 +548,7 @@ sealed abstract class SliceDataset extends AvroGenomicDataset[Slice, SliceProduc
   }
 
   /**
-   * (Java-friendly) For all adjacent slices in this genomic dataset, we extend the slices so that the adjacent
+   * (Java-specific) For all adjacent slices in this genomic dataset, we extend the slices so that the adjacent
    * slices now overlap by _n_ bases, where _n_ is the flank length.
    *
    * @param flankLength The length to extend adjacent slices by.
@@ -560,7 +560,7 @@ sealed abstract class SliceDataset extends AvroGenomicDataset[Slice, SliceProduc
   }
 
   /**
-   * (Scala-friendly) For all adjacent slices in this genomic dataset, we extend the slices so that the adjacent
+   * (Scala-specific) For all adjacent slices in this genomic dataset, we extend the slices so that the adjacent
    * slices now overlap by _n_ bases, where _n_ is the flank length.
    *
    * @param flankLength The length to extend adjacent slices by.
@@ -573,9 +573,10 @@ sealed abstract class SliceDataset extends AvroGenomicDataset[Slice, SliceProduc
   }
 
   /**
-   * (Scala-friendly) Counts the k-mers contained in this genomic dataset of slices.
+   * (Scala-specific) Cuts slices after flanking into _k_-mers, and then counts the
+   * number of occurrences of each _k_-mer.
    *
-   * @param kmerLength The length of k-mers to count.
+   * @param kmerLength The value of _k_ to use for cutting _k_-mers.
    * @return Returns an RDD containing k-mer/count pairs.
    */
   def countKmers(kmerLength: Int): RDD[(String, Long)] = {
@@ -596,10 +597,11 @@ sealed abstract class SliceDataset extends AvroGenomicDataset[Slice, SliceProduc
   }
 
   /**
-   * (Java-friendly) Counts the k-mers contained in this genomic dataset of slices.
+   * (Java-specific) Cuts slices after flanking into _k_-mers, and then counts the
+   * number of occurrences of each _k_-mer.
    *
-   * @param kmerLength The length of k-mers to count.
-   * @return Returns an RDD containing k-mer/count pairs.
+   * @param kmerLength The value of _k_ to use for cutting _k_-mers.
+   * @return Returns a JavaRDD containing k-mer/count pairs.
    */
   def countKmers(
     kmerLength: java.lang.Integer): JavaRDD[(String, java.lang.Long)] = {
