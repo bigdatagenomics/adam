@@ -580,10 +580,18 @@ sealed abstract class SliceDataset extends AvroGenomicDataset[Slice, SliceProduc
    */
   def countKmers(kmerLength: Int): RDD[(String, Long)] = {
     flankAdjacent(kmerLength).rdd.flatMap(r => {
-      // cut each read into k-mers, and attach a count of 1L
-      r.getSequence
-        .sliding(kmerLength)
-        .map(k => (k, 1L))
+      // first slice has no left flank
+      if (r.getStart == 0) {
+        r.getSequence
+          .sliding(kmerLength)
+          .map(k => (k, 1L))
+      } else {
+        // account for duplicate kmers on left flank
+        r.getSequence
+          .substring(kmerLength + 1)
+          .sliding(kmerLength)
+          .map(k => (k, 1L))
+      }
     }).reduceByKey((k1: Long, k2: Long) => k1 + k2)
   }
 
