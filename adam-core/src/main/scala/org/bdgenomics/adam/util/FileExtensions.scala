@@ -35,9 +35,11 @@ object FileExtensions {
    * @return Returns true if the path name matches a BAM/CRAM/SAM format file extension.
    */
   def isBamExt(pathName: String): Boolean = {
-    pathName.endsWith(".bam") ||
-      pathName.endsWith(".cram") ||
-      pathName.endsWith(".sam")
+    // workaround for BAM files hosted on SRA s3 archive
+    val trimmed = pathName.replaceAll("\\.[0-9]+$", "")
+    trimmed.endsWith(".bam") ||
+      trimmed.endsWith(".cram") ||
+      trimmed.endsWith(".sam")
   }
 
   /**

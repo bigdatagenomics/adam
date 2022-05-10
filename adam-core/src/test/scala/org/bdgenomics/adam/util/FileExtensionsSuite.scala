@@ -36,4 +36,20 @@ class FileExtensionsSuite extends FunSuite {
     assert(FileExtensions.isVcfExt("file.vcf.gz"))
     assert(!FileExtensions.isVcfExt("file.vcf.bgzf"))
   }
+
+  test("is a bam/cram/sam extension") {
+    assert(FileExtensions.isBamExt("file.bam"))
+    assert(FileExtensions.isBamExt("file.cram"))
+    assert(FileExtensions.isBamExt("file.cram"))
+    assert(!FileExtensions.isBamExt("file.vcf"))
+    assert(FileExtensions.isBamExt("file.bam.1"))
+    assert(FileExtensions.isBamExt("file.bam.10"))
+    assert(FileExtensions.isBamExt("file.cram.1"))
+    assert(FileExtensions.isBamExt("file.cram.10"))
+    assert(FileExtensions.isBamExt("file.sam.1"))
+    assert(FileExtensions.isBamExt("file.sam.10"))
+    assert(!FileExtensions.isBamExt("file.bam.x"))
+    assert(!FileExtensions.isBamExt("file.cram.y"))
+    assert(!FileExtensions.isBamExt("file.sam.z"))
+  }
 }
