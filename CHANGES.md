@@ -1,5 +1,40 @@
 # ADAM Changelog #
 
+### Version 1.0.0 ###
+
+**Closed issues:**
+
+ - Update bdg-formats dependency version to 1.0 [\#2371](https://github.com/bigdatagenomics/adam/issues/2371)
+ - Update bdg-utils dependency version to 1.0 [\#2370](https://github.com/bigdatagenomics/adam/issues/2370)
+ - Add maximum length parameter to countSliceKmers [\#2365](https://github.com/bigdatagenomics/adam/issues/2365)
+ - Add references parameter to transformSequences/transformSequences/countKmers etc. [\#2364](https://github.com/bigdatagenomics/adam/issues/2364)
+ - Add sort output parameter to countKmers/countSliceKmers [\#2363](https://github.com/bigdatagenomics/adam/issues/2363)
+ - Kmers overcounted in Slice countKmers [\#2362](https://github.com/bigdatagenomics/adam/issues/2362)
+ - Features without strand NPE in printFeatureAttributes [\#2357](https://github.com/bigdatagenomics/adam/issues/2357)
+ - Update Spark dependency version to 3.2.1 [\#2353](https://github.com/bigdatagenomics/adam/issues/2353)
+ - Add CITATION.cff for citation(s) [\#2329](https://github.com/bigdatagenomics/adam/issues/2329)
+ - Benchmark spark.kryo.unsafe config performance [\#2303](https://github.com/bigdatagenomics/adam/issues/2303)
+ - Clean up packaging of conversion methods [\#1170](https://github.com/bigdatagenomics/adam/issues/1170)
+ - Remove reliance on MD tags [\#622](https://github.com/bigdatagenomics/adam/issues/622)
+ - Clean up Rich records [\#577](https://github.com/bigdatagenomics/adam/issues/577)
+ - Create ADAM Benchmarking suite [\#120](https://github.com/bigdatagenomics/adam/issues/120)
+
+**Merged and closed pull requests:**
+
+ - Update bdg-formats dependency version to 1.0 [\#2373](https://github.com/bigdatagenomics/adam/pull/2373) ([heuermh](https://github.com/heuermh))
+ - Update bdg-utils dependency version to 1.0 [\#2372](https://github.com/bigdatagenomics/adam/pull/2372) ([heuermh](https://github.com/heuermh))
+ - [ADAM-2295] Add workaround for BAM files hosted on SRA s3 archive [\#2369](https://github.com/bigdatagenomics/adam/pull/2369) ([heuermh](https://github.com/heuermh))
+ - Add count kmers methods to SequenceDataset [\#2368](https://github.com/bigdatagenomics/adam/pull/2368) ([heuermh](https://github.com/heuermh))
+ - Add sort and maximum length arguments [\#2367](https://github.com/bigdatagenomics/adam/pull/2367) ([heuermh](https://github.com/heuermh))
+ - [ADAM-2362] Account for duplicate kmers on left flank [\#2366](https://github.com/bigdatagenomics/adam/pull/2366) ([heuermh](https://github.com/heuermh))
+ - Add single file argument to count kmers [\#2361](https://github.com/bigdatagenomics/adam/pull/2361) ([heuermh](https://github.com/heuermh))
+ - Add IUPAC amino acid and nucleotide base alphabet with ambiguity [\#2360](https://github.com/bigdatagenomics/adam/pull/2360) ([heuermh](https://github.com/heuermh))
+ - Update scala-guice dependency version to 5.0.2, guava to 31.1-jre [\#2359](https://github.com/bigdatagenomics/adam/pull/2359) ([heuermh](https://github.com/heuermh))
+ - Feature strand may be null [\#2358](https://github.com/bigdatagenomics/adam/pull/2358) ([heuermh](https://github.com/heuermh))
+ - Allow space in IntervalList species header value [\#2356](https://github.com/bigdatagenomics/adam/pull/2356) ([heuermh](https://github.com/heuermh))
+ - Update spark dependency version to 3.2.1 [\#2354](https://github.com/bigdatagenomics/adam/pull/2354) ([heuermh](https://github.com/heuermh))
+
+
 ### Version 0.37.0 ###
 
 **Closed issues:**
