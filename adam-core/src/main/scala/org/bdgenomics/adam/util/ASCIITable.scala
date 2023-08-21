@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.util
 
 import java.io.PrintWriter
-import org.apache.commons.lang.StringUtils
+import org.apache.commons.lang3.StringUtils
 import org.bdgenomics.adam.util.TextAlignment.TextAlignment
 
 /**
