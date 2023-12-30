@@ -103,7 +103,6 @@ import org.seqdoop.hadoop_bam.util._
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
-import scala.util.parsing.json.JSON
 
 /**
  * Case class that wraps a reference region for use with the Indexed VCF/BAM loaders.
@@ -2322,33 +2321,23 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       val dr = new GenericDatumReader[GenericRecord]
       val fr = new DataFileStream[GenericRecord](is, dr)
 
-      // parsing the json from the metadata header
-      // this unfortunately seems to be the only way to do this
-      // avro does not seem to support getting metadata fields out once
-      // you have the input from the string
-      val metaDataMap = JSON.parseFull(fr.getMetaString("avro.schema"))
-        // the cast here is required because parsefull does not cast for
-        // us. parsefull returns an object of type Any and leaves it to 
-        // the user to cast.
-        .get.asInstanceOf[Map[String, String]]
-
-      val optPartitionMap = metaDataMap.get("partitionMap")
-      // we didn't write a partition map, which means this was not sorted at write
-      // or at least we didn't have information that it was sorted
-      val partitionMap = optPartitionMap.getOrElse("")
-
-      // this is used to parse out the json. we use default because we don't need
-      // anything special
       implicit val formats = DefaultFormats
       val partitionMapBuilder = new ArrayBuffer[Option[(ReferenceRegion, ReferenceRegion)]]
 
       // using json4s to parse the json values
+      val partitionMap = (parse(fr.getMetaString("avro.schema")) \ "partitionMap")
+
+      // but... the value of partitionMap has been escaped, so re-render it
+      val reformatted = compact(render(partitionMap)).replace("\\", "").drop(1).dropRight(1)
+      val reparsed = parse(reformatted)
+      val parsedPartitionMap = reparsed \ "partitionMap"
+
       // we have to cast it because the JSON parser does not actually give
       // us the raw types. instead, it uses a wrapper which requires that we
       // cast to the correct types. we also have to use Any because there
       // are both Strings and BigInts stored there (by json4s), so we cast
       // them later
-      val parsedJson = (parse(partitionMap) \ "partitionMap").values
+      val parsedJson = parsedPartitionMap.values
         .asInstanceOf[List[Map[String, Any]]]
       for (f <- parsedJson) {
         if (f.get("ReferenceRegion1").get.toString == "None") {
