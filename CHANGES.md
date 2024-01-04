@@ -26,32 +26,6 @@
  - Update python dev version to 1.1a0 [\#2374](https://github.com/bigdatagenomics/adam/pull/2374) ([heuermh](https://github.com/heuermh))
 
 
-### Version 1.0.1 ###
-
-**Closed issues:**
-
- - Update Avro dependency version to 1.11.1 [\#2379](https://github.com/bigdatagenomics/adam/issues/2379)
- - BAM/BED to parquet  [\#2376](https://github.com/bigdatagenomics/adam/issues/2376)
- - Update Spark dependency version to 3.3.0 [\#2375](https://github.com/bigdatagenomics/adam/issues/2375)
-
-**Merged and closed pull requests:**
-
- - Update maven-gpg-plugin dependency version to 3.1.0 [\#2395](https://github.com/bigdatagenomics/adam/pull/2395) ([heuermh](https://github.com/heuermh))
- - Update bdg-formats dependency version to 1.0.2, bdg-utils to 1.0.1 [\#2394](https://github.com/bigdatagenomics/adam/pull/2394) ([heuermh](https://github.com/heuermh))
- - Update spark dependency version to 3.3.4, and other dependency updates [\#2393](https://github.com/bigdatagenomics/adam/pull/2393) ([heuermh](https://github.com/heuermh))
- - Remove dependency on scala json package [\#2392](https://github.com/bigdatagenomics/adam/pull/2392) ([heuermh](https://github.com/heuermh))
- - Bump com.google.guava:guava from 31.1-jre to 32.0.0-jre [\#2391](https://github.com/bigdatagenomics/adam/pull/2391) ([dependabot[bot]](https://github.com/apps/dependabot))
- - Bump org.apache.avro:avro from 1.11.1 to 1.11.3 [\#2390](https://github.com/bigdatagenomics/adam/pull/2390) ([dependabot[bot]](https://github.com/apps/dependabot))
- - Update dependency on commons-lang to commons-lang3 [\#2389](https://github.com/bigdatagenomics/adam/pull/2389) ([heuermh](https://github.com/heuermh))
- - Bump org.apache.spark:spark-core_2.12 from 3.3.2 to 3.3.3 [\#2388](https://github.com/bigdatagenomics/adam/pull/2388) ([dependabot[bot]](https://github.com/apps/dependabot))
- - Bump spark-core_2.12 from 3.3.2 to 3.4.0 [\#2386](https://github.com/bigdatagenomics/adam/pull/2386) ([dependabot[bot]](https://github.com/apps/dependabot))
- - Update Spark dependency version to 3.3.2 [\#2384](https://github.com/bigdatagenomics/adam/pull/2384) ([heuermh](https://github.com/heuermh))
- - Bump htsjdk from 2.19.0 to 3.0.1 [\#2381](https://github.com/bigdatagenomics/adam/pull/2381) ([dependabot[bot]](https://github.com/apps/dependabot))
- - Update avro dependency version to 1.11.1 [\#2380](https://github.com/bigdatagenomics/adam/pull/2380) ([heuermh](https://github.com/heuermh))
- - Update dependency versions [\#2378](https://github.com/bigdatagenomics/adam/pull/2378) ([heuermh](https://github.com/heuermh))
- - Update python dev version to 1.1a0 [\#2374](https://github.com/bigdatagenomics/adam/pull/2374) ([heuermh](https://github.com/heuermh))
-
-
 ### Version 1.0.0 ###
 
 **Closed issues:**
