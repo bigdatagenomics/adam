@@ -276,6 +276,11 @@
       <groupId>org.bdgenomics.adam</groupId>
       <artifactId>adam-codegen-spark3_${scala.version.prefix}</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-core</artifactId>
+      <scope>compile</scope>
+    </dependency>
   </dependencies>
   <profiles>
     <profile>
