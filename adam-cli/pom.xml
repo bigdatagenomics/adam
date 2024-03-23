@@ -56,7 +56,13 @@
               As explained here: http://stackoverflow.com/questions/1660441/java-flag-to-enable-extended-serialization-debugging-info
               The second option allows us better debugging for serialization-based errors.
           -->
-          <argLine>-Xmx1024m -Dsun.io.serialization.extendedDebugInfo=true</argLine>
+          <argLine>
+            -Xmx1024m -Dsun.io.serialization.extendedDebugInfo=true
+            --add-opens=java.base/java.lang.invoke=ALL-UNNAMED
+            --add-opens=java.base/java.nio=ALL-UNNAMED
+            --add-opens=java.base/java.util=ALL-UNNAMED
+            --add-opens=java.base/sun.nio.ch=ALL-UNNAMED
+          </argLine>
           <stdout>F</stdout>
         </configuration>
         <executions>
