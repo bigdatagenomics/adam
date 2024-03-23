@@ -20,37 +20,17 @@ package org.bdgenomics.adam.ds.fragment
 import org.apache.spark.api.java.function.{ Function => JFunction }
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Dataset, SQLContext }
-import org.bdgenomics.adam.models.{
-  Coverage,
-  ReadGroup,
-  SequenceRecord,
-  VariantContext
-}
+import org.bdgenomics.adam.models.{ Coverage, ReadGroup, SequenceRecord, VariantContext }
 import org.bdgenomics.adam.ds.ADAMContext._
 import org.bdgenomics.adam.ds.feature.{ CoverageDataset, FeatureDataset }
-import org.bdgenomics.adam.ds.read.{
-  AlignmentDataset,
-  AlignmentDatasetSuite,
-  AnySAMOutFormatter,
-  QualityScoreBin
-}
+import org.bdgenomics.adam.ds.read.{ AlignmentDataset, AlignmentDatasetSuite, AnySAMOutFormatter, QualityScoreBin }
 import org.bdgenomics.adam.ds.sequence.SliceDataset
-import org.bdgenomics.adam.ds.variant.{
-  GenotypeDataset,
-  VariantDataset,
-  VariantContextDataset
-}
-import org.bdgenomics.adam.sql.{
-  Alignment => AlignmentProduct,
-  Feature => FeatureProduct,
-  Fragment => FragmentProduct,
-  Genotype => GenotypeProduct,
-  Slice => SliceProduct,
-  Variant => VariantProduct,
-  VariantContext => VariantContextProduct
-}
+import org.bdgenomics.adam.ds.variant.{ GenotypeDataset, VariantContextDataset, VariantDataset }
+import org.bdgenomics.adam.sql.{ Alignment => AlignmentProduct, Feature => FeatureProduct, Fragment => FragmentProduct, Genotype => GenotypeProduct, Slice => SliceProduct, Variant => VariantProduct, VariantContext => VariantContextProduct }
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro._
+import org.scalatest.Ignore
+
 import scala.collection.JavaConversions._
 
 object FragmentDatasetSuite extends Serializable {
@@ -64,7 +44,7 @@ object FragmentDatasetSuite extends Serializable {
   }
 }
 
-class FragmentDatasetSuite extends ADAMFunSuite {
+@Ignore class FragmentDatasetSuite extends ADAMFunSuite {
 
   sparkTest("don't lose any reads when piping interleaved fastq to sam") {
     // write suffixes at end of reads

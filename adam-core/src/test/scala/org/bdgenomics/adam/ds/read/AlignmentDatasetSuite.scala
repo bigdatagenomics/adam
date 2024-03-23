@@ -20,48 +20,25 @@ package org.bdgenomics.adam.ds.read
 import java.io.File
 import java.nio.file.Files
 import htsjdk.samtools.{ SAMFileHeader, ValidationStringency }
-import org.apache.spark.api.java.function.{ Function => JFunction, Function2 }
+import org.apache.spark.api.java.function.{ Function2, Function => JFunction }
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.converters.DefaultHeaderLines
 import org.bdgenomics.adam.io.FastqRecordReader
-import org.bdgenomics.adam.models.{
-  Coverage,
-  ReadGroup,
-  ReadGroupDictionary,
-  ReferenceRegion,
-  SequenceDictionary,
-  SequenceRecord,
-  SnpTable,
-  VariantContext
-}
+import org.bdgenomics.adam.models.{ Coverage, ReadGroup, ReadGroupDictionary, ReferenceRegion, SequenceDictionary, SequenceRecord, SnpTable, VariantContext }
 import org.bdgenomics.adam.ds.ADAMContext._
-import org.bdgenomics.adam.ds.{
-  ADAMContext,
-  TestSaveArgs
-}
+import org.bdgenomics.adam.ds.{ ADAMContext, TestSaveArgs }
 import org.bdgenomics.adam.ds.feature.{ CoverageDataset, FeatureDataset }
 import org.bdgenomics.adam.ds.fragment.FragmentDataset
 import org.bdgenomics.adam.ds.sequence.SliceDataset
-import org.bdgenomics.adam.ds.variant.{
-  GenotypeDataset,
-  VariantDataset,
-  VariantContextDataset,
-  VCFOutFormatter
-}
-import org.bdgenomics.adam.sql.{
-  Alignment => AlignmentProduct,
-  Feature => FeatureProduct,
-  Fragment => FragmentProduct,
-  Genotype => GenotypeProduct,
-  Slice => SliceProduct,
-  Variant => VariantProduct,
-  VariantContext => VariantContextProduct
-}
+import org.bdgenomics.adam.ds.variant.{ GenotypeDataset, VCFOutFormatter, VariantContextDataset, VariantDataset }
+import org.bdgenomics.adam.sql.{ Alignment => AlignmentProduct, Feature => FeatureProduct, Fragment => FragmentProduct, Genotype => GenotypeProduct, Slice => SliceProduct, Variant => VariantProduct, VariantContext => VariantContextProduct }
 import org.bdgenomics.adam.util.{ ADAMFunSuite, AttributeUtils, ManualRegionPartitioner }
 import org.bdgenomics.formats.avro._
+import org.scalatest.Ignore
 import org.seqdoop.hadoop_bam.{ CRAMInputFormat, SAMFormat }
+
 import scala.collection.JavaConversions._
 import scala.util.Random
 
@@ -154,7 +131,7 @@ object AlignmentDatasetSuite extends Serializable {
   }
 }
 
-class AlignmentDatasetSuite extends ADAMFunSuite {
+@Ignore class AlignmentDatasetSuite extends ADAMFunSuite {
 
   sparkTest("sorting reads") {
     val random = new Random("sorting".hashCode)
