@@ -176,6 +176,9 @@ object MdTag {
 
           case (CigarOperator.INSERTION | CigarOperator.H | CigarOperator.S | CigarOperator.P, _) =>
             cigarIdx += 1
+
+          case _ =>
+          throw new UnsupportedOperationException(s"Unsupported CigarOperator: ${cigarElement.getOperator}")
         }
       }
       new MdTag(referenceStart, matches, mismatches, deletions)
@@ -245,7 +248,7 @@ object MdTag {
             readPos += cigarElement.getLength
           }
           if (cigarElement.getOperator.consumesReferenceBases) {
-            throw new IllegalArgumentException("Cannot handle operator: " + cigarElement.getOperator)
+            throw new UnsupportedOperationException("Cannot handle operator: " + cigarElement.getOperator)
           }
         }
       }
@@ -339,7 +342,7 @@ object MdTag {
             readPos += cigarElement.getLength
           }
           if (cigarElement.getOperator.consumesReferenceBases) {
-            throw new IllegalArgumentException("Cannot handle operator: " + cigarElement.getOperator)
+            throw new UnsupportedOperationException("Cannot handle operator: " + cigarElement.getOperator)
           }
         }
       }
@@ -511,7 +514,7 @@ case class MdTag(
             readPos += insLength
           }
           if (cigarElement.getOperator.consumesReferenceBases) {
-            throw new IllegalArgumentException("Cannot handle operator: " + cigarElement.getOperator)
+            throw new UnsupportedOperationException("Cannot handle operator: " + cigarElement.getOperator)
           }
         }
       }
