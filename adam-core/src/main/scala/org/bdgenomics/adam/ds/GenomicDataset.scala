@@ -274,11 +274,22 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logg
    * the SpecificRecordBase abstract class, or the SpecificRecord interface.
    * As such, we must force the user to pass in the schema.
    *
-   * @tparam U The type of the specific record we are saving.
+   * The `ClassTag` parameter is required to support reflection, which allows 
+   * us to instantiate a specific Avro record type (`U`) at runtime. This is 
+   * crucial for operations on generic types, enabling the code to work with 
+   * specific Avro record types while retaining type safety and avoiding 
+   * reflection-based issues.
+   *
+   * @tparam U The type of the specific record we are saving. This must be a 
+   *           subtype of `SpecificRecordBase`, which represents the Avro 
+   *           record being saved.
    * @param pathName Path to save records to.
    * @param sc SparkContext used for identifying underlying file system.
    * @param schema Schema of records we are saving.
    * @param avro Seq of records we are saving.
+   * @param tUag Implicit `ClassTag` for the type `U`, required to handle 
+   *             reflection and ensure proper handling of specific Avro record 
+   *             types at runtime.
    */
   protected def saveAvro[U <: SpecificRecordBase](pathName: String,
                                                   sc: SparkContext,
